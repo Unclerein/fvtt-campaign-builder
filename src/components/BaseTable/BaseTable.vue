@@ -53,6 +53,15 @@
               </template>
             </Button>
             <div 
+              v-if="props.helpText"
+              class="fcb-table-help-icon"
+              :style="props.helpLink ? 'cursor: pointer;' : ''"
+              :data-tooltip="props.helpText"
+              @click="onHelpIconClick"
+            >
+              <i class="fas fa-info-circle"></i>
+            </div>
+            <div 
               v-if="props.extraAddText"
               :class="['fcb-table-new-drop-box', isDragHover ? 'valid-drag-hover' : '']"
               @dragover="onDragoverNew"
@@ -353,7 +362,15 @@
       type: Boolean,
       required: false,
       default: false,
-    }
+    },
+    helpText: {   // displays an info icon with this tooltip
+      type: String,
+      default: '',
+    },
+    helpLink: {   // clicking the icon opens this link
+      type: String,
+      default: '',
+    },
   });
 
   ////////////////////////////////
@@ -558,6 +575,12 @@
     }
   }
 
+  const onHelpIconClick = () => {
+    if (props.helpLink) {
+      window.open(props.helpLink, '_blank');
+    }
+  }
+
   ////////////////////////////////
   // watchers
   // reload when topic changes
@@ -619,6 +642,13 @@
       color: var(--color-text-accent);
       border-color: var(--color-text-accent);
     }
+  }
+
+  .fcb-table-help-icon {
+    margin-left: 8px;
+    margin-right: 8px;
+    // display: flex;
+    // align-items: center;
   }
 
 </style>

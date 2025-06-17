@@ -252,7 +252,15 @@
         "addActor": "Add actor",
         "addActorDrag": "(or drag/drop an actor)",
         "addScene": "Add scene",
-        "addSceneDrag": "(or drag/drop a scene)"
+        "addSceneDrag": "(or drag/drop a scene)",
+        "loreHelpText": "Tweet-sized bits of useful and interesting information. Click to read more from Lazy DM.",
+        "itemHelpText": "Magic items that fit your PCs and the plot. Click to read more from Lazy DM.",
+        "npcHelpText": "NPCs likely to be encountered in the session.",
+        "monsterHelpText": "Monsters that fit the situation and location. Click to read more from Lazy DM.",
+        "vignetteHelpText": "Scenes that bring resolution, open new paths, shift the story.  1 per 45 minutes. Click to read more from Lazy DM.",
+        "locationHelpText": "Detailed, memorable, fantastic locations the characters can explore. Click to read more from Lazy DM.",
+        "strongStart": "Strong Start",
+        "startHelpText": "A strong start is a short, impactful event that sets the tone for the session. Click to read more from Lazy DM."
       },
       "campaign": {
         "addPC": "Add PC",
@@ -260,6 +268,7 @@
         "description": "Description",
         "pcs": "PCs",
         "lore": "Lore",
+        "loreHelpText": "Track big campaign-level secrets and smaller ones that you aren't ready to deliver. Click to read more from Lazy DM.",
         "todo": "To-Do",
         "addToDo": "Add To-do Item",
         "ideas": "Ideas",

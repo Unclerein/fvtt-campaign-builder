@@ -11,6 +11,8 @@
     :extra-add-text="localize('labels.session.addLoreDrag')"
     :allow-drop-row="true"
     :show-move-to-campaign="true"
+    :help-text="localize('labels.session.loreHelpText')"
+    help-link="https://slyflourish.com/sharing_secrets.html"
     @add-item="onAddLore"
     @delete-item="onDeleteLore"
     @mark-item-delivered="onMarkLoreDelivered"

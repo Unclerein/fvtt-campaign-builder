@@ -10,6 +10,8 @@
     :add-button-label="localize('labels.session.addLore')"
     :extra-add-text="localize('labels.session.addLoreDrag')"
     :allow-drop-row="true"
+    :help-text="localize('labels.campaign.loreHelpText')"
+    help-link="https://slyflourish.com/sharing_secrets.html"
     @add-item="onAddLore"
     @delete-item="onDeleteLore"
     @mark-item-delivered="onMarkLoreDelivered"

@@ -8,6 +8,8 @@
     :edit-item-label="localize('tooltips.editRow')"
     :show-add-button="true"
     :add-button-label="localize('labels.session.addVignette')"
+    :help-text="localize('labels.session.vignetteHelpText')"
+    help-link="https://slyflourish.com/scenes_catch_all_step.html"
     @add-item="onAddVignette"
     @delete-item="onDeleteVignette"
     @mark-item-delivered="onMarkVignetteDelivered"

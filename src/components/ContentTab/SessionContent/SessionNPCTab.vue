@@ -7,6 +7,7 @@
     :show-add-button="true"
     :add-button-label="localize('labels.session.addNPC')" 
     :extra-add-text="localize('labels.session.addNPCDrag')"
+    :help-text="localize('labels.session.npcHelpText')"
     @add-item="showNPCPicker=true"
     @delete-item="onDeleteNPC"
     @mark-item-delivered="onMarkNPCDelivered"

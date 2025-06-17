@@ -18,6 +18,8 @@
       :delete-item-label="props.deleteItemLabel"
       :show-move-to-campaign="props.showMoveToCampaign"
       :draggable-rows="props.draggableRows"
+      :help-text="props.helpText"
+      :help-link="props.helpLink"
       @row-select="(event) => emit('rowContextMenu', event)"
       @edit-item="(data) => emit('editItem', data)"
       @delete-item="(uuid) => emit('deleteItem', uuid)"
@@ -70,6 +72,14 @@
     allowDropRow: {   // allow dropping on a row (i.e. as an edit action)
       type: Boolean,
       default: false,
+    },
+    helpText: {   // displays an info icon with this tooltop
+      type: String,
+      default: '',
+    },
+    helpLink: {   // clicking the icon opens this link
+      type: String,
+      default: '',
     },
     rows: {
       type: Array as PropType<SessionTableGridRow[]>,

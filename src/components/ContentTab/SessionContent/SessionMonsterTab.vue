@@ -9,6 +9,8 @@
     :add-button-label="localize('labels.session.addMonster')"
     :extra-add-text="localize('labels.session.addMonsterDrag')"
     :draggable-rows="true"
+    :help-text="localize('labels.session.monsterHelpText')"
+    help-link="https://slyflourish.com/choose_monsters_based_on_the_story.html"
     @add-item="showMonsterPicker=true"
     @drop-new="onDropNew"
     @dragoverNew="onDragoverNew"

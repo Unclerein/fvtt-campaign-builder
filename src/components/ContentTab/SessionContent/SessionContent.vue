@@ -94,6 +94,16 @@
             </div>
             <div class="tab flexcol" data-group="primary" data-tab="start">
               <div class="tab-inner">
+                <div class="fcb-strong-start-header">
+                  {{ localize('labels.session.strongStart') }}
+                  <span 
+                    class="fcb-table-help-icon" 
+                    :data-tooltip="localize('labels.session.startHelpText')"
+                    @click="onStartHelpClick"
+                  >
+                    <i class="fas fa-info-circle"></i>
+                  </span>
+                </div>
                 <Editor 
                   :initial-content="currentSession?.startingAction || ''"
                   @editor-saved="onStartEditorSaved"
@@ -237,6 +247,10 @@
     }, debounceTime);
   };
 
+  const onStartHelpClick = () => {
+    window.open('https://slyflourish.com/starting_strong.html', '_blank');
+  }
+
   const onNotesEditorSaved = async (newContent: string) => {
     if (!currentSession.value)
       return;
@@ -343,4 +357,17 @@
 </script>
 
 <style lang="scss">
+  .fcb-strong-start-header {
+    font-size: var(--font-size-16);
+    font-weight: 600;
+    font-family: var(--fcb-font-family);
+    color: var(--fcb-sheet-header-label-color);
+    margin-bottom: 8px;
+  }
+  .fcb-table-help-icon {
+    margin-left: 8px;
+    margin-right: 8px;
+    font-size: var(--font-size-14);
+    cursor: pointer;
+  }
 </style>

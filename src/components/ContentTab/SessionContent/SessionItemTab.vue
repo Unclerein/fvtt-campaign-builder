@@ -8,6 +8,8 @@
     :add-button-label="localize('labels.session.addItem')"
     :extra-add-text="localize('labels.session.addItemDrag')"
     :draggable-rows="true"
+    :help-text="localize('labels.session.itemHelpText')"
+    help-link="https://slyflourish.com/lazy_magic_items.html"
     @add-item="showItemPicker=true"
     @dragoverNew="onDragoverNew"
     @dropNew="onDropNew"
