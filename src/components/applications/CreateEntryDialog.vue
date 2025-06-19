@@ -372,7 +372,7 @@
 
         result = await Backend.api.apiCharacterGeneratePost({
           genre: currentSetting.value.genre,
-          worldFeeling: currentSetting.value.worldFeeling,
+          settingFeeling: currentSetting.value.settingFeeling,
           type: type.value,
           species: speciesName.value,
           speciesDescription: speciesDescription,
@@ -420,7 +420,7 @@
       try {
         const options = {
           genre: currentSetting.value.genre,
-          worldFeeling: currentSetting.value.worldFeeling,
+          settingFeeling: currentSetting.value.settingFeeling,
           type: type.value,
           parentName: parent?.name || '',
           parentType: parent?.type || '',

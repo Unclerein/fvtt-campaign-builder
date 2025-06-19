@@ -34,11 +34,11 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
   private _compendiumId: string;  // the uuid for the world compendium 
   private _description: string;
   private _genre: string;
-  private _worldFeeling: string;
+  private _settingFeeling: string;
   private _img: string;
   private _nameStyles: number[];
   private _rollTableConfig: WorldGeneratorConfig | null;
-  private _nameStyleExamples: { genre: string; worldFeeling: string; examples: ApiNamePreviewPost200ResponsePreviewInner[] } | null;
+  private _nameStyleExamples: { genre: string; settingFeeling: string; examples: ApiNamePreviewPost200ResponsePreviewInner[] } | null;
 
   /**
    * Note: you should always call validate() after creating a new Setting - this ensures the 
@@ -55,7 +55,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
     this._compendiumId = this.getFlag(WorldFlagKey.compendiumId);
     this._description = this.getFlag(WorldFlagKey.description) || '';
     this._genre = this.getFlag(WorldFlagKey.genre) || '';
-    this._worldFeeling = this.getFlag(WorldFlagKey.worldFeeling) || '';
+    this._settingFeeling = this.getFlag(WorldFlagKey.settingFeeling) || '';
     this._img = this.getFlag(WorldFlagKey.img) || '';
     this._nameStyles = this.getFlag(WorldFlagKey.nameStyles) || [0];
     this._rollTableConfig = this.getFlag(WorldFlagKey.rollTableConfig);
@@ -245,13 +245,13 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
     this.updateCumulative(WorldFlagKey.genre, value);
   }
 
-  public get worldFeeling(): string {
-    return this._worldFeeling;
+  public get settingFeeling(): string {
+    return this._settingFeeling;
   }
 
-  public set worldFeeling(value: string) {
-    this._worldFeeling = value;
-    this.updateCumulative(WorldFlagKey.worldFeeling, value);
+  public set settingFeeling(value: string) {
+    this._settingFeeling = value;
+    this.updateCumulative(WorldFlagKey.settingFeeling, value);
   }
 
   public get img(): string {
@@ -762,11 +762,11 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
     }
   }
 
-  public get nameStyleExamples(): { genre: string; worldFeeling: string; examples: ApiNamePreviewPost200ResponsePreviewInner[] } | null {
+  public get nameStyleExamples(): { genre: string; settingFeeling: string; examples: ApiNamePreviewPost200ResponsePreviewInner[] } | null {
     return this._nameStyleExamples;
   }
 
-  public set nameStyleExamples(value: { genre: string; worldFeeling: string; examples: ApiNamePreviewPost200ResponsePreviewInner[] } | null) {
+  public set nameStyleExamples(value: { genre: string; settingFeeling: string; examples: ApiNamePreviewPost200ResponsePreviewInner[] } | null) {
     this._nameStyleExamples = value;
     this.updateCumulative(WorldFlagKey.nameStyleExamples, value);
   }

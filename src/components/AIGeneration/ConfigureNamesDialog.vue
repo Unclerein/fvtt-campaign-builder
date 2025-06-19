@@ -162,14 +162,14 @@
       const storedExamples = currentSetting.value.nameStyleExamples;
       if (storedExamples && 
           storedExamples.genre === currentSetting.value.genre && 
-          storedExamples.worldFeeling === currentSetting.value.worldFeeling) {
+          storedExamples.settingFeeling === currentSetting.value.settingFeeling) {
         previewData.value = storedExamples.examples;
       } else {
         // If no stored examples or they don't match, generate new ones
         const response = await Backend.api.apiNamePreviewPost({
           nameStyles: nameStylePrompts.value,
           genre: currentSetting.value.genre,
-          worldFeeling: currentSetting.value.worldFeeling
+          settingFeeling: currentSetting.value.settingFeeling
         });
         
         previewData.value = response.data.preview;
@@ -177,7 +177,7 @@
         // Store the new examples
         currentSetting.value.nameStyleExamples = {
           genre: currentSetting.value.genre,
-          worldFeeling: currentSetting.value.worldFeeling,
+          settingFeeling: currentSetting.value.settingFeeling,
           examples: response.data.preview
         };
         await currentSetting.value.save();

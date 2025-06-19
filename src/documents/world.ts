@@ -15,7 +15,7 @@ export enum WorldFlagKey {
   expandedIds = 'expandedIds',   // ids of nodes that are expanded in the tree (could be compendia or entries or subentries) - handles topic tree
   hierarchies = 'hierarchies',   // the full tree hierarchy or null for topics without hierarchy
   genre = 'genre',
-  worldFeeling = 'worldFeeling',
+  settingFeeling = 'worldFeeling', // leaving the key value for backwards compatibility
   description = 'description',
   img = 'img',   // image path for the world
   nameStyles = 'nameStyles',   // array of name styles to use for name generation
@@ -31,12 +31,12 @@ export type WorldFlagType<K extends WorldFlagKey> =
   K extends WorldFlagKey.expandedIds ? Record<string, boolean | null> :  // keyed by uuid (id for compendium); can be false or missing to represent false; we allow null only because of the strange foundry syntax for removing a key
   K extends WorldFlagKey.hierarchies ? Record<string, Hierarchy> :   // keyed by entry id (don't need to key by topic since entry id is unique)
   K extends WorldFlagKey.genre ? string :
-  K extends WorldFlagKey.worldFeeling ? string :
+  K extends WorldFlagKey.settingFeeling ? string :
   K extends WorldFlagKey.description ? string :
   K extends WorldFlagKey.img ? string :
   K extends WorldFlagKey.nameStyles ? number[] :
   K extends WorldFlagKey.rollTableConfig ? WorldGeneratorConfig | null :
-  K extends WorldFlagKey.nameStyleExamples ? { genre: string; worldFeeling: string; examples: ApiNamePreviewPost200ResponsePreviewInner[] } | null :
+  K extends WorldFlagKey.nameStyleExamples ? { genre: string; settingFeeling: string; examples: ApiNamePreviewPost200ResponsePreviewInner[] } | null :
   never;
 
 export const flagSettings = [
@@ -68,7 +68,7 @@ export const flagSettings = [
     keyedByUUID: true,
   },
   {
-    flagId: WorldFlagKey.worldFeeling,
+    flagId: WorldFlagKey.settingFeeling,
     default: '',
   },
   {
@@ -93,7 +93,7 @@ export const flagSettings = [
   },
   {
     flagId: WorldFlagKey.nameStyleExamples,
-    default: null as { genre: string; worldFeeling: string; examples: ApiNamePreviewPost200ResponsePreviewInner[] } | null,
+    default: null as { genre: string; settingFeeling: string; examples: ApiNamePreviewPost200ResponsePreviewInner[] } | null,
   },
 ] as FlagSettings<WorldFlagKey, {[K in WorldFlagKey]: WorldFlagType<K>}>[];
 

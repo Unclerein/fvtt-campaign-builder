@@ -51,11 +51,11 @@
               </div>
               <div class="flexrow form-group">
                 <LabelWithHelp
-                  label-text="labels.fields.worldFeeling"
-                  help-text="help.worldFeeling" 
+                  label-text="labels.fields.settingFeeling"
+                  help-text="help.settingFeeling" 
                 />
                 <Textarea
-                  v-model="currentSetting.worldFeeling"
+                  v-model="currentSetting.settingFeeling"
                   rows="3"
                   style="width: calc(100% - 2px); font-family: var(--font-body)"
                   @update:model-value="onWorldFeelingSaved"

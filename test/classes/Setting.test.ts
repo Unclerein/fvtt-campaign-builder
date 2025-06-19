@@ -62,7 +62,7 @@ export const registerWBWorldTests = () => {
           getFlag.withArgs(sinon.match.any, WorldFlagKey.compendiumId).returns('test-compendium-id');
           getFlag.withArgs(sinon.match.any, WorldFlagKey.description).returns('Test description');
           getFlag.withArgs(sinon.match.any, WorldFlagKey.genre).returns('Fantasy');
-          getFlag.withArgs(sinon.match.any, WorldFlagKey.worldFeeling).returns('Epic');
+          getFlag.withArgs(sinon.match.any, WorldFlagKey.settingFeeling).returns('Epic');
           getFlag.withArgs(sinon.match.any, WorldFlagKey.img).returns('test-image.jpg');
           
           setFlag = sinon.stub(Folder.prototype, 'setFlag');
@@ -287,10 +287,10 @@ export const registerWBWorldTests = () => {
             expect(world.genre).to.equal('Sci-Fi');
           });
 
-          it('should get and set worldFeeling correctly', () => {
-            expect(world.worldFeeling).to.equal('Epic');
-            world.worldFeeling = 'Gritty';
-            expect(world.worldFeeling).to.equal('Gritty');
+          it('should get and set settingFeeling correctly', () => {
+            expect(world.settingFeeling).to.equal('Epic');
+            world.settingFeeling = 'Gritty';
+            expect(world.settingFeeling).to.equal('Gritty');
           });
 
           it('should get and set img correctly', () => {

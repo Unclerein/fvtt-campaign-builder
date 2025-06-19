@@ -156,7 +156,7 @@
     },
     "help": {
       "worldGenre": "ex. \"Fantasy\" - Needed for AI generation",
-      "worldFeeling": "ex. \"Rugged and dangerous with low level of magic\" - Improves AI generation"
+      "settingFeeling": "ex. \"Rugged and dangerous with low level of magic\" - Improves AI generation"
     },
     "labels": {
       "newTab": "New Tab",
@@ -208,7 +208,7 @@
         "topic": "Topic",
         "species": "Species",
         "worldGenre": "Genre",
-        "worldFeeling": "Setting Feeling",
+        "settingFeeling": "Setting Feeling",
         "campaignDescription": "Campaign description",
         "campaignHouseRules": "House rules",
         "startingDescription": "Starting description",

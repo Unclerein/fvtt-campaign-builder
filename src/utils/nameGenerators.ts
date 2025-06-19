@@ -125,7 +125,7 @@ const generateWorldTableResults = async (type: GeneratorType, count: number, wor
   try {
     // Get world settings for genre, feeling, and name styles
     const genre = world.genre || 'fantasy';
-    const worldFeeling = world.worldFeeling || '';
+    const settingFeeling = world.settingFeeling || '';
     
     // Convert name style indices to actual style prompts
     const selectedNameStyles = world.nameStyles.map(index => {
@@ -138,7 +138,7 @@ const generateWorldTableResults = async (type: GeneratorType, count: number, wor
     const request = {
       count,
       genre,
-      worldFeeling,
+      settingFeeling,
       nameStyles: selectedNameStyles
     };
 
