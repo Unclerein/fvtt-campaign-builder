@@ -98,14 +98,14 @@
           ></i>
         </h6>
         <Textarea
-          v-model="briefDescription"
+          v-model="startingDescription"
           :pt="{ root: { 
             style: { 
               'font-size': 'var(--font-size-14)', 
               'color': 'var(--input-text-color)',
               'min-height': '6rem',
               'max-height': '6rem',
-              'background': !props.generateMode || !generateComplete ? 'rgba(255, 228, 196, .3)' : '',
+              'background': !generateComplete ? 'rgba(255, 228, 196, .3)' : '',
             }
           }}"
         />
