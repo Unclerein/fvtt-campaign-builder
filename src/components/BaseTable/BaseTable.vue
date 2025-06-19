@@ -273,7 +273,7 @@
 
 <script setup lang="ts">
   // library imports
-  import { ref, PropType, computed, reactive } from 'vue';
+  import { ref, PropType, computed, reactive, nextTick } from 'vue';
   import { FilterMatchMode } from '@primevue/core/api';
 
   // local imports
@@ -450,6 +450,19 @@
       //    of the page containing the row we need
       pagination.first = page * pagination.rowsPerPage;
       pagination.page = page + 1; // Update the page number too
+
+      // wait for the next tick to ensure the table has updated
+      nextTick(() => {
+        // find the first editable column and set the focus on it
+        const firstEditableColumn = props.columns.find(col => col.editable);
+        if (firstEditableColumn) {
+          const id = `${uuid}-${firstEditableColumn.field}`;
+          const input = document.getElementById(id) as HTMLInputElement;
+          if (input) {
+            input.focus();
+          }
+        }
+      });
     }
 
     emit('setEditingRow', uuid);
