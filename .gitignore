@@ -7,4 +7,3 @@ coverage/
 .cursor
 tsconfig.tsbuildinfo
 docs/.vitepress/cache
-
