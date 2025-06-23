@@ -6,3 +6,5 @@ coverage/
 .npmrc
 .cursor
 tsconfig.tsbuildinfo
+docs/.vitepress/cache
+
