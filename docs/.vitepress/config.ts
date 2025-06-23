@@ -1,0 +1,97 @@
+import { defineConfig } from 'vitepress'
+import fs from 'fs'
+import path from 'path'
+import tooltipPlugin from './theme/plugins/tooltip/tooltip-plugin'
+import { VERSION } from './theme/utils/version'
+
+// Read the common links file
+const commonLinksPath = path.join(__dirname, '/theme/plugins/shortcuts/common-links.md')
+const commonLinks = fs.existsSync(commonLinksPath) ? fs.readFileSync(commonLinksPath, 'utf-8') : ''
+
+export default defineConfig({
+  // ignoreDeadLinks: true,
+  title: 'World & Campaign Builder',
+  description: 'A Foundry VTT module for world building and campaign management',
+  base: '/fvtt-campaign-builder/',
+  
+  markdown: {
+    config: (md) => {
+      // Add tooltip plugin
+      md.use(tooltipPlugin)
+      
+      // Add a rule to append common links to every page
+      const originalRender = md.render;
+
+      md.render = function(src, env) {
+        // Append common links to the source before rendering
+        const modifiedSrc = src + '\n\n' + commonLinks;
+        return originalRender.call(this, modifiedSrc, env);
+      }
+    }
+  },
+  
+  themeConfig: {
+    search: {
+      provider: 'local'
+    },
+
+    nav: [
+      { text: 'Home', link: '/' },
+      { text: 'Getting Started', link: '/getting-started/' },
+      { text: 'User Guide', link: '/guide/' },
+      { text: 'Reference', link: '/reference/' }
+    ],
+
+    sidebar: [
+      {
+        text: 'Getting Started',
+        items: [
+          { text: 'Overview', link: '/getting-started/' },
+          { text: 'World Building', link: '/getting-started/#world-building' },
+          { text: 'Running a Campaign', link: '/getting-started/#running-a-campaign' }
+        ]
+      },
+      {
+        text: 'User Guide',
+        items: [  
+          { text: 'Overview', link: '/guide/' },
+          { text: 'World Building', link: '/guide/world-building' },
+          { text: 'Session Prep', link: '/guide/session-prep' },
+          { text: 'Playing a Session', link: '/guide/session-play' },
+          { text: 'Recording Play Results', link: '/guide/record-results' }
+        ]
+      },
+      {
+        text: 'Reference',
+        items: [
+          { text: 'Overview', link: '/reference' },
+          { text: 'Navigation & Interface', link: '/reference/navigation' },
+          { text: 'World Building', link: '/reference/world-building', items: [
+            { text: 'Settings', link: '/reference/world-building/content/setting' },
+            { text: 'Entry Overview', link: '/reference/world-building/content/entry', },
+            { text: 'Characters', link: '/reference/world-building/content/character' },
+            { text: 'Locations', link: '/reference/world-building/content/location' },
+            { text: 'Organizations', link: '/reference/world-building/content/organization' },
+          ]},
+          { text: 'Campaign Management', link: '/reference/campaign-mgt', items: [
+            { text: 'Campaigns', link: '/reference/campaign-mgt/content/campaign' },
+            { text: 'Sessions', link: '/reference/campaign-mgt/content/session' },
+            { text: 'To-do List', link: '/reference/campaign-mgt/content/campaign/todos' },
+          ] },
+          { text: 'Play Mode', link: '/reference/play-mode' },
+          { text: 'Advanced Features & Backend', link: '/reference/backend' },
+          { text: 'Configuration', link: '/reference/configuration' }
+        ]
+      }
+    ],
+
+    socialLinks: [
+      { icon: 'github', link: 'https://github.com/dovrosenberg/fvtt-campaign-builder' }
+    ],
+
+    footer: {
+      message: `Foundry Campaign Builder v${VERSION} - Licensed under the Apache License, Version 2.0.`,
+      copyright: 'Copyright © 2025 Dov Rosenberg'
+    }
+  }
+}) 

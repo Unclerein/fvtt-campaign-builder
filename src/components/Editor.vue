@@ -2,60 +2,67 @@
   <div
     :id="editorId"
     ref="wrapperRef"
-    class="fcb-editor"
+    class="fcb-editor-wrapper"
     :style="wrapperStyle"
-    @drop="onDrop"
-    @dragover="onDragover"
+  >
+    <!-- activation button positioned outside the scrolling area -->
+    <a
+      v-if="!props.editOnlyMode && props.editable"
+      ref="buttonRef"
+      class="editor-edit"
+      :style="`display: ${ buttonDisplay }`"
+      @click="activateEditor"
     >
-    <!-- this reproduces the Vue editor() Handlebars helper -->
-    <!-- editorVisible used to reset the DOM by toggling-->
+      <i class="fa-solid fa-edit"></i>
+    </a>
     <div
-      v-if="editorVisible"
-      ref="editorRef"
-      :class="'editor ' + props.class"
-      :style="innerStyle"
+      class="fcb-editor"
+      @drop="onDrop"
+      @dragover="onDragover"
     >
-      <!-- activation button -->
-      <a
-        v-if="props.hasButton && props.editable"
-        ref="buttonRef"
-        class="editor-edit"
-        :style="`display: ${ buttonDisplay }`"
-        @click="activateEditor"
-      >
-        <i class="fa-solid fa-edit"></i>
-      </a>
+      <!-- this reproduces the Vue editor() Handlebars helper -->
+      <!-- editorVisible used to reset the DOM by toggling-->
       <div
-        ref="coreEditorRef"
-        class="editor-content"
-        v-bind="datasetProperties"
-        v-html="enrichedInitialContent"
+        v-if="editorVisible"
+        ref="editorRef"
+        :class="'editor ' + props.class"
+        :style="innerStyle"
       >
+        <div
+          ref="coreEditorRef"
+          class="editor-content"
+          v-bind="datasetProperties"
+          v-html="safeEnrichedContent"
+        >
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-  // !!! TODO - use vue-safe-html instead of v-html!!!
-
   // library imports
-  import { computed, nextTick, onMounted, ref, toRaw, watch } from 'vue';
+  import { computed, nextTick, onMounted, ref, toRaw, watch, } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
-  import { enrichFwbHTML } from './Editor/helpers';
+  import { enrichFcbHTML } from './Editor/helpers';
   import { useMainStore } from '@/applications/stores';
-  import { Campaign, Entry, Session, WBWorld } from '@/classes';
+  import { Campaign, Entry, Session, Setting } from '@/classes';
   import { getValidatedData } from '@/utils/dragdrop';
   import { notifyInfo } from '@/utils/notifications';
   import { localize } from '@/utils/game';
+  import { sanitizeHTML } from '@/utils/sanitizeHtml';
+  import { replaceEntityReferences } from '@/utils/entityLinking';
+  import { extractUUIDs, compareUUIDs, } from '@/utils/uuidExtraction';
+
 
   // library components
 
   // local components
 
   // types
+  const TextEditor = foundry.applications.ux.TextEditor;
 
   // type EditorOptions = {
   //   document: Document<any>,
@@ -69,6 +76,11 @@
   ////////////////////////////////
   // props
   const props = defineProps({
+    editOnlyMode: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
     initialContent: {
       type: String,
       required: false,
@@ -78,11 +90,6 @@
       type: String,
       required: false,
       default: '',
-    },
-    hasButton: {
-      type: Boolean,
-      required: false,
-      default: false,
     },
     editable: {
       type: Boolean,
@@ -104,6 +111,21 @@
       required: false,
       default: null,
     },
+    currentEntityUuid: {
+      type: String,
+      required: false,
+      default: undefined,
+    },
+    enableEntityLinking: {
+      type: Boolean,
+      required: false,
+      default: true,
+    },
+    enableRelatedEntriesTracking: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   });
 
   ////////////////////////////////
@@ -111,12 +133,13 @@
   const emit = defineEmits<{
     (e: 'editorSaved', content: string): void;
     (e: 'editorLoaded', content: string): void;  // to catch any initial transforms of the data 
+    (e: 'relatedEntriesChanged', addedUUIDs: string[], removedUUIDs: string[]): void;
   }>();
 
   ////////////////////////////////
   // store
   const mainStore = useMainStore();
-  const { currentWorld } = storeToRefs(mainStore);
+  const { currentSetting } = storeToRefs(mainStore);
 
   ////////////////////////////////
   // data
@@ -126,6 +149,7 @@
   const buttonDisplay = ref<string>('');   // is button currently visible
   const editorVisible = ref<boolean>(true);
   const lastSavedContent = ref<string>('');   // the parsemirror serialized content last saved, to see if any changes were made
+  const initialUUIDs = ref<string[]>([]);     // UUIDs present when editor was first loaded
 
   const coreEditorRef = ref<HTMLDivElement>();
   const editorRef = ref<HTMLDivElement>();
@@ -144,12 +168,10 @@
     return dataset;
   });
 
+  const safeEnrichedContent = computed((): string => (sanitizeHTML(enrichedInitialContent.value)));
+
   const wrapperStyle = computed((): string => (props.fixedHeight ? `height: ${props.fixedHeight + 'px'}` : ''));
   const innerStyle = computed((): string => (props.height ? `height: ${props.height + 'px'}` : ''));
-
-  const editOnlyMode = computed((): boolean => {
-    return props.editable && !props.hasButton
-  });
 
   ////////////////////////////////
   // methods
@@ -202,11 +224,11 @@
     return {
       menu: ProseMirror.ProseMirrorMenu.build(ProseMirror.defaultSchema, {
         // In edit-only mode, we want to keep the editor open after saving
-        destroyOnSave: !editOnlyMode.value,  // Controls whether the save button or save & close button is shown
-        onSave: () => saveEditor({ remove: !editOnlyMode.value })
+        destroyOnSave: !props.editOnlyMode,  // Controls whether the save button or save & close button is shown
+        onSave: () => saveEditor({ remove: !props.editOnlyMode })
       }),
       keyMaps: ProseMirror.ProseMirrorKeyMaps.build(ProseMirror.defaultSchema, {
-        onSave: () => saveEditor({ remove: !editOnlyMode.value })
+        onSave: () => saveEditor({ remove: !props.editOnlyMode })
       })
     };
   };
@@ -220,10 +242,36 @@
     // @ts-ignore 
     content = ProseMirror.dom.serializeString(toRaw(editor.value).view.state.doc.content);
 
+    // see if dirty
+    const dirty = isDirty();
+
+    // Apply entity linking if enabled and content is dirty
+    if (dirty && props.enableEntityLinking && currentSetting.value) {
+      try {
+        content = await replaceEntityReferences(content, currentSetting.value, {
+          currentEntityUuid: props.currentEntityUuid
+        });
+      } catch (error) {
+        console.error('Failed to apply entity linking:', error);
+        // Continue with original content if entity linking fails
+      }
+    }
+
+    // Check for UUID changes if related items tracking is enabled
+    if (dirty && props.enableRelatedEntriesTracking) {
+      const currentUUIDs = extractUUIDs(content);
+      const { added, removed } = compareUUIDs(initialUUIDs.value, currentUUIDs);
+      
+      if (added.length > 0 || removed.length > 0) {
+        // Emit the UUID changes for the parent component to handle
+        emit('relatedEntriesChanged', added, removed);
+      }
+    }
+
     // For edit-only mode (like in SessionNotes), don't destroy the editor
-    if (remove && !editOnlyMode.value) {
+    if (remove && !props.editOnlyMode) {
       // this also blows up the DOM... don't think we actually need it
-      toRaw(editor.value).destroy();  
+      toRaw(editor.value)?.destroy();  
       editor.value = null;
 
       buttonDisplay.value = '';   // brings the button back
@@ -232,19 +280,39 @@
       editorVisible.value = false;
       await nextTick();
       editorVisible.value = true;
-    } else if (isDirty()) {
+    } else if (dirty) {
       // if we're not removing it, then do a ui confirmation
       notifyInfo(localize('notifications.changesSaved'));
     }
     
-    if (isDirty()) {
+    if (dirty) {
       lastSavedContent.value = content;
+      
+      if (props.enableRelatedEntriesTracking) {
+        initialUUIDs.value = [];
+      }
+      
       emit('editorSaved', content);
     }
   };
 
-  const isDirty = () => (lastSavedContent.value !== ProseMirror.dom.serializeString(toRaw(editor.value).view.state.doc.content));
-  
+  const isDirty = (): boolean => {
+    if (!editor.value)
+      return false;
+    
+    return lastSavedContent.value !== getContent();
+  }
+
+  const getContent = (): string => {
+    if (!editor.value)
+      return '';
+    
+    return ProseMirror.dom.serializeString(toRaw(editor.value).view.state.doc.content);
+  }
+
+  // expose methods
+  defineExpose({ isDirty, getContent });
+
   ////////////////////////////////
   // event handlers
   const onDragover = (event: DragEvent) => {
@@ -278,7 +346,7 @@
 
     // Handle different data structures from various drag sources
     if (data.entryNode) {
-      // From TopicDirectoryNodeWithChildren or TopicDirectoryNode
+      // From SettingDirectoryNodeWithChildren or SettingDirectoryNode
       entryUuid = data.childId;
       entryName = data.name;
     } else if (data.campaignNode) {
@@ -286,7 +354,7 @@
       entryUuid = data.campaignId;
       entryName = data.name;
     } else if (data.worldNode) {
-      // From TopicDirectory world
+      // From SettingDirectory world
       entryUuid = data.worldId;
       entryName = data.name;
     } else if (data.sessionNode) {
@@ -317,7 +385,7 @@
             }
           } else if (data.worldNode) {
             // It's a world
-            const world = await WBWorld.fromUuid(entryUuid);
+            const world = await Setting.fromUuid(entryUuid);
             if (world) {
               entryName = world.name;
             }
@@ -353,29 +421,51 @@
 
   ////////////////////////////////
   // watchers
-  watch(() => props.initialContent, async () =>{
-    if (!currentWorld.value)
+  watch(() => props.initialContent, async (newContent) =>{
+    if (!currentSetting.value)
       return;
+
+    const content = newContent || '';
       
-    enrichedInitialContent.value = await enrichFwbHTML(currentWorld.value.uuid, props.initialContent || '');
+    // Initialize UUIDs for tracking if enabled
+    if (props.enableRelatedEntriesTracking) {
+      initialUUIDs.value = extractUUIDs(content);
+    }
 
     // if edit-only and no editor exists yet, activate it
-    if (editOnlyMode.value && !editor.value) {
+    if (props.editOnlyMode && !editor.value) {
+      await nextTick();
       await activateEditor();
     }
     // If editor is already active, update its content
     else if (editor.value) {
+      await nextTick();
+
       // Update the editor content
       const view = toRaw(editor.value).view;
       const { state, dispatch } = view;
       
+      // Do nothing if the content is already what we want it to be
+      const currentContent = ProseMirror.dom.serializeString(state.doc.content);
+      if (currentContent === content) 
+        return;
+      
       // Create a transaction that replaces the entire document content
       const schema = state.schema;
-      const newDoc = ProseMirror.dom.parseString(enrichedInitialContent.value || '', schema);
+      const newDoc = ProseMirror.dom.parseString(content, schema);
       const tr = state.tr.replaceWith(0, state.doc.content.size, newDoc.content);
       
-      // Apply the transaction
-      dispatch(tr);
+      // Apply the transaction - this is throwing a Foundry ProseMirrorMenu plugin error, but it doesn't seem to matter as
+      //    the update still happens
+      try {
+        dispatch(tr);
+      } catch (error) {
+        // just move on
+      }
+      
+      lastSavedContent.value = content;
+    } else {
+      enrichedInitialContent.value = await enrichFcbHTML(currentSetting.value.uuid, content);
     }
   });
 
@@ -383,7 +473,7 @@
   ////////////////////////////////
   // lifecycle events
   onMounted(async () => {
-    if (!currentWorld.value)
+    if (!currentSetting.value)
       return;
 
     // we create a random ID so we can use multiple instances
@@ -395,59 +485,109 @@
 
     editor.value = null;
 
-    // show the pretty text
-    enrichedInitialContent.value = await enrichFwbHTML(currentWorld.value.uuid, props.initialContent || '');
+    // show the pretty text - but only if we have a button... otherwise we're in permananent edit mode and shouldn't be enriching the text
+    enrichedInitialContent.value = !props.editOnlyMode ? await enrichFcbHTML(currentSetting.value.uuid, props.initialContent || '') : props.initialContent || '';
 
-    if (!props.hasButton) {
-      void activateEditor();
+    // Initialize UUIDs for tracking if enabled
+    if (props.enableRelatedEntriesTracking) {
+      initialUUIDs.value = extractUUIDs(props.initialContent || '');
+    }
+
+    if (props.editOnlyMode) {
+      await nextTick();
+      await activateEditor();
     }
   });
 
 </script>
 
 <style lang="scss">
-  .fcb-editor {
+  .fcb-editor-wrapper {
     height: 100%;
     display: flex;
     flex: 1;
-    border: 1px solid var(--fcb-button-border-color);
-    overflow-y: auto !important;
-    border-radius: 4px;
-    font-family: var(--font-body);
-    font-size: var(--font-size-14);
-    font-weight: normal;
-    padding: 0;
-    background: var(--fcb-dark-overlay);
-    color: var(--color-dark-2);
+    position: relative;
 
-    .theme-dark & {
-      background: var(--fcb-light-overlay);
-      color: var(--color-light-2);
-    }
+    .editor-edit {
+      position: absolute;
+      z-index: 1000;
+      right: 12px;
+      top: 3px;
+      color: coral;
+      font-family: var(--font-body);
+      font-size: var(--font-size-14);
+      font-weight: normal;
 
-    &:focus-within {
-      border: 2px solid var(--color-warm-2);
-    }
-
-    &:disabled {
-      color: var(--color-dark-4);
-
-      .theme-dark & {
-         background: var(--color-light-4);
+      &:hover {
+        color: green;
+        background: orange;
+        box-shadow: 0 0 5px red;
       }
     }
 
-    .prosemirror {
+    .fcb-editor {
+      height: 100%;
       width: 100%;
-      
-      .editor-menu {
-        padding: 4px 0 4px 8px;
-      }
-      .editor-container {
-        margin: 0px;
+      display: flex;
+      flex: 1;
+      border: 1px solid var(--fcb-button-border-color);
+      overflow-y: auto !important;
+      border-radius: 4px;
+      font-family: var(--font-body);
+      font-size: var(--font-size-14);
+      font-weight: normal;
+      padding: 0;
+      background: var(--fcb-dark-overlay);
+      color: var(--color-dark-2);
+
+      .editor {
+        overflow: visible;
+        height: 100%;
+        width: 100%;
+        min-height: 100%;
+        position: relative;
 
         .editor-content {
-          padding: 0 8px 0 3px;
+          overflow-y: visible;
+          height: unset;
+          min-height: calc(100% - 8px);
+          padding: 2px;
+        }
+      }
+
+      .theme-dark & {
+        background: var(--fcb-light-overlay);
+        color: var(--color-light-2);
+      }
+
+      &:focus-within {
+        border: 2px solid var(--color-warm-2);
+      }
+
+      &:disabled {
+        color: var(--color-dark-4);
+
+        .theme-dark & {
+           background: var(--color-light-4);
+        }
+      }
+
+      .prosemirror {
+        width: 100%;
+        
+        .editor-menu {
+          padding: 4px 0 4px 8px;
+        }
+        .editor-container {
+          margin: 0px;
+
+          .editor-content {
+            padding: 0 8px 0 3px;
+
+            &:focus-visible {
+              outline: none;  // override the default focus outline
+            }
+          }
         }
       }
     }

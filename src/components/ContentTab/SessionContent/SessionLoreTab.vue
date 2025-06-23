@@ -4,12 +4,15 @@
     :rows="relatedLoreRows"
     :columns="sessionStore.extraFields[SessionTableTypes.Lore]"
     :delete-item-label="localize('tooltips.deleteLore')"
-    :allow-edit="false"
+    :allow-edit="true"
+    :edit-item-label="localize('tooltips.editRow')"
     :show-add-button="true"
     :add-button-label="localize('labels.session.addLore')"
     :extra-add-text="localize('labels.session.addLoreDrag')"
     :allow-drop-row="true"
     :show-move-to-campaign="true"
+    :help-text="localize('labels.session.loreHelpText')"
+    help-link="https://slyflourish.com/sharing_secrets.html"
     @add-item="onAddLore"
     @delete-item="onDeleteLore"
     @mark-item-delivered="onMarkLoreDelivered"
@@ -17,10 +20,10 @@
     @move-to-next-session="onMoveLoreToNext"
     @move-to-campaign="onMoveToCampaign"
     @cell-edit-complete="onCellEditComplete"
-    @dragoverNew="onDragover"
-    @dragoverRow="onDragover"
-    @dropRow="onDropRow"
-    @dropNew="onDropNew"
+    @dragover-new="onDragover"
+    @dragover-row="onDragover"
+    @drop-row="onDropRow"
+    @drop-new="onDropNew"
   />
 </template>
 
@@ -88,6 +91,10 @@
     switch (field) {
       case 'description':
         await sessionStore.updateLoreDescription(data.uuid, newValue);
+        break;
+
+      case 'significant':
+        await sessionStore.markLoreSignificant(data.uuid, newValue);
         break;
 
       default:

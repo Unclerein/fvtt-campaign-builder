@@ -1,5 +1,6 @@
-import { ValidTopic, Hierarchy, } from '@/types';
+import { ValidTopic, Hierarchy, WorldGeneratorConfig } from '@/types';
 import { FlagSettings } from '@/settings/DocumentFlags';
+import { ApiNamePreviewPost200ResponsePreviewInner } from '@/apiClient';
 
 // campaigns are journal entries, not documents
 export interface WorldDoc extends Folder {
@@ -7,16 +8,19 @@ export interface WorldDoc extends Folder {
 }
 
 export enum WorldFlagKey {
-  isWorld = 'isWorld',    // used to mark the folder as a world
+  isWorld = 'isWorld',    // used to mark the folder as a world; didn't replace as setting for compatibility
   compendiumId = 'compendiumId',   // the uuid for the world compendium
   topicIds = 'topicIds',   // the uuid for each topic
   campaignNames = 'campaignNames',   // name of each campaign; keyed by journal entry uuid
   expandedIds = 'expandedIds',   // ids of nodes that are expanded in the tree (could be compendia or entries or subentries) - handles topic tree
   hierarchies = 'hierarchies',   // the full tree hierarchy or null for topics without hierarchy
   genre = 'genre',
-  worldFeeling = 'worldFeeling',
+  settingFeeling = 'worldFeeling', // leaving the key value for backwards compatibility
   description = 'description',
   img = 'img',   // image path for the world
+  nameStyles = 'nameStyles',   // array of name styles to use for name generation
+  rollTableConfig = 'rollTableConfig',   // world-specific roll table configuration
+  nameStyleExamples = 'nameStyleExamples',   // stored example names for each style with their genre and world feeling
 }
 
 export type WorldFlagType<K extends WorldFlagKey> =
@@ -27,9 +31,12 @@ export type WorldFlagType<K extends WorldFlagKey> =
   K extends WorldFlagKey.expandedIds ? Record<string, boolean | null> :  // keyed by uuid (id for compendium); can be false or missing to represent false; we allow null only because of the strange foundry syntax for removing a key
   K extends WorldFlagKey.hierarchies ? Record<string, Hierarchy> :   // keyed by entry id (don't need to key by topic since entry id is unique)
   K extends WorldFlagKey.genre ? string :
-  K extends WorldFlagKey.worldFeeling ? string :
+  K extends WorldFlagKey.settingFeeling ? string :
   K extends WorldFlagKey.description ? string :
   K extends WorldFlagKey.img ? string :
+  K extends WorldFlagKey.nameStyles ? number[] :
+  K extends WorldFlagKey.rollTableConfig ? WorldGeneratorConfig | null :
+  K extends WorldFlagKey.nameStyleExamples ? { genre: string; settingFeeling: string; examples: ApiNamePreviewPost200ResponsePreviewInner[] } | null :
   never;
 
 export const flagSettings = [
@@ -61,7 +68,7 @@ export const flagSettings = [
     keyedByUUID: true,
   },
   {
-    flagId: WorldFlagKey.worldFeeling,
+    flagId: WorldFlagKey.settingFeeling,
     default: '',
   },
   {
@@ -75,6 +82,18 @@ export const flagSettings = [
   {
     flagId: WorldFlagKey.img,
     default: '' as string,
+  },
+  {
+    flagId: WorldFlagKey.nameStyles,
+    default: [0, 1, 2, 3, 4] as number[],
+  },
+  {
+    flagId: WorldFlagKey.rollTableConfig,
+    default: null as WorldGeneratorConfig | null,
+  },
+  {
+    flagId: WorldFlagKey.nameStyleExamples,
+    default: null as { genre: string; settingFeeling: string; examples: ApiNamePreviewPost200ResponsePreviewInner[] } | null,
   },
 ] as FlagSettings<WorldFlagKey, {[K in WorldFlagKey]: WorldFlagType<K>}>[];
 

@@ -10,6 +10,7 @@ export type * from './tags.d.ts';
 
 // @ts-ignore - need to pull enum
 export * from './generators.ts';
+export type * from './generators.ts';
 
 // used to determine which component to display in the tab
 export enum WindowTabType  {
@@ -88,4 +89,30 @@ export enum RelatedItemDialogModes {
   Add = 'add',
   Edit = 'edit',
   Session = 'session' // for adding to sessions
+}
+
+export enum ToDoTypes {
+  Manual = 'manual',
+  Entry = 'entry',
+  Lore = 'lore',
+  Vignette = 'vignette',
+  Monster = 'monster',
+  Item = 'item',
+  GeneratedName = 'generatedName'  // generated name
+}
+
+export interface ToDoItem {
+  uuid: string;  // uuid of the to-do item
+  lastTouched: Date;
+  manuallyUpdated: boolean;   // has the user edited the text yet
+  linkedUuid: string | null;  // uuid of the linked entry, lore, etc.
+  linkedText: string | null;  // text to display for linked items
+  sessionUuid: string | null; // uuid of the session if it's a session to-do (lore, vignette, monster, item)
+  text: string;
+  type: ToDoTypes;
+}
+
+export interface Idea {
+  uuid: string;  // uuid of the idea item
+  text: string;
 }

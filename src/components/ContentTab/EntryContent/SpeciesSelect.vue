@@ -4,7 +4,7 @@
     :initial-value="currentSpeciesId || ''"
     :allow-new-items="props.allowNewItems"
     @selection-made="onSpeciesSelectionMade"
-    @item-added="onSpeciesItemAdded"
+    @item-added="($event) => onSpeciesItemAdded($event as SpeciesSelectOption)"
   />
 </template>
 
@@ -21,7 +21,7 @@
   import TypeAhead from '@/components/TypeAhead.vue';
 
   // types
-  import { onMounted } from 'vue';
+  import { onMounted, onUnmounted } from 'vue';
   type SpeciesSelectOption = { id: string; label: string };
 
   ////////////////////////////////
@@ -59,6 +59,22 @@
 
   ////////////////////////////////
   // methods
+  const refreshSpeciesList = () => {
+    validSpecies.value = ModuleSettings.get(SettingKey.speciesList).map((s) => ({
+      id: s.id,
+      label: s.name,
+    })) || [];
+  };
+
+  // Event handler for species list updates
+  const handleSpeciesListUpdate = () => {
+    refreshSpeciesList();
+  };
+
+  // Expose the refresh method so parent components can call it
+  defineExpose({
+    refreshSpeciesList
+  });
 
   ////////////////////////////////
   // event handlers
@@ -114,12 +130,16 @@
     currentSpeciesId.value = props.initialValue;
 
     // load the species list
-    validSpecies.value = ModuleSettings.get(SettingKey.speciesList).map((s) => ({
-      id: s.id,
-      label: s.name,
-    })) || [];
+    refreshSpeciesList();
+
+    // Listen for species list updates
+    document.addEventListener('fcb-species-list-updated', handleSpeciesListUpdate);
   });
 
+  onUnmounted(() => {
+    // Clean up event listener
+    document.removeEventListener('fcb-species-list-updated', handleSpeciesListUpdate);
+  });
 
 </script>
 

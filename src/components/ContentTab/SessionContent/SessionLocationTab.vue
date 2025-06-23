@@ -7,6 +7,8 @@
     :show-add-button="true"
     :add-button-label="localize('labels.session.addLocation')" 
     :extra-add-text="localize('labels.session.addLocationDrag')"
+    :help-text="localize('labels.session.locationHelpText')"
+    help-link="https://slyflourish.com/designing_fantastic_locations.html"
     @add-item="showLocationPicker=true"
     @delete-item="onDeleteLocation"
     @mark-item-delivered="onMarkLocationDelivered"

@@ -34,9 +34,15 @@
       "advancedHelp": "Configurer les paramètres avancés (y compris l'IA)",
       "speciesList": "Gérer la Liste des Espèces",
       "speciesListLabel": "Liste des Espèces",
-      "speciesListHelp": "Définir les espèces à rendre disponibles. Celles-ci traversent tous les mondes - déposez un problème si vous avez besoin de listes différentes par monde.",
+      "speciesListHelp": "Définissez les espèces à rendre disponibles. Cela concerne tous les Paramètres - signalez un problème si vous avez besoin de listes différentes par Paramètre.",
       "hideBackendWarning": "Masquer l'avertissement de backend manquant ?",
-      "hideBackendWarningHelp": "Si vous n'utilisez pas le backend, cela vous permet de désactiver la notification indiquant qu'il est manquant"
+      "hideBackendWarningHelp": "Si vous n'utilisez pas le backend, cela vous permet de désactiver la notification indiquant qu'il est manquant",
+      "defaultAddToSession": "Par défaut 'Ajouter à la session en cours'",
+      "defaultAddToSessionHelp": "En mode lecture, la case à cocher lors de la création d'une entrée doit-elle être activée ou désactivée par défaut ?",
+      "enableToDoList": "Activer la liste de tâches",
+      "enableToDoListHelp": "Si désactivé, la fonctionnalité de liste de tâches sera désactivée.",
+      "autoRelationships": "Suggérer automatiquement des relations",
+      "autoRelationshipsHelp": "Si activé, l'éditeur suggérera automatiquement des modifications aux relations entre les entrées en fonction des changements apportés à la description."
     },
     "applications": {
       "sessionNotes": {
@@ -58,7 +64,15 @@
           "APIToken": "Jeton API",
           "APITokenHint": "Sortie du script pour déployer le backend.",
           "defaultToLong": "Par défaut, utiliser des descriptions longues",
-          "defaultToLongHint": "Contrôle le paramètre par défaut pour créer une description longue ou courte lors de la génération par IA."
+          "defaultToLongHint": "Contrôle le paramètre par défaut pour créer une description longue ou courte lors de la génération par IA.",
+          "useGmailToDos": "Utiliser Gmail pour les tâches",
+          "useGmailToDosHint": "Lorsqu'elle est activée, les éléments à faire seront créés à partir de la boîte de réception Gmail",
+          "emailDefaultWorld": "Paramètre par défaut pour l'email",
+          "emailDefaultWorldHint": "Le Paramètre à utiliser par défaut pour les fonctionnalités d'email (ex. envoi de tâches par email)",
+          "emailDefaultCampaign": "Campagne par défaut pour l'email",
+          "emailDefaultCampaignHint": "La campagne à utiliser par défaut pour les fonctionnalités d'email (ex. envoyer des éléments à faire par email)",
+          "selectWorld": "Sélectionnez un paramètre...",
+          "selectCampaign": "Sélectionnez une campagne..."
         }
       },
       "rollTableSettings": {
@@ -68,6 +82,10 @@
         "labels": {
           "refreshAll": "Rafraîchir toutes les tables",
           "refreshAllHelp": "Remplacer tous les éléments utilisés par de nouveaux"
+        },
+        "notifications": {
+          "refreshSuccess": "Tables de lancer rafraîchies avec succès",
+          "refreshError": "Échec du rafraîchissement des tables de lancer. Vérifiez la console pour plus de détails."
         }
       },
       "createEntry": {
@@ -105,7 +123,7 @@
       "use": "Utiliser",
       "useOnce": "Utiliser une fois",
       "tryAgain": "Réessayer",
-      "addToWorld": "Ajouter au monde",
+      "addToWorld": "Ajouter au Paramètre",
       "prep": "Préparer",
       "play": "Jouer",
       "fields": {
@@ -119,13 +137,17 @@
         "desiredMagicItems": "Objets Magiques Désirés",
         "species": "Espèces",
         "worldGenre": "Genre",
-        "worldFeeling": "Ambiance du Monde",
+        "worldFeeling": "Sentiment du Paramètre",
         "campaignDescription": "Description de la campagne, notes, idées, etc...",
         "name": "Nom",
         "briefDescription": "Brève description",
         "longDescriptions": "Générer des descriptions longues",
         "generateImage": "Générer une image",
-        "description": "Description"
+        "description": "Description",
+        "campaign": "Campagne",
+        "campaignHouseRules": "Règles de maison",
+        "addToCurrentSession": "Ajouter à la session en cours",
+        "topic": "Sujet"
       },
       "addTopic": {
         "character": "Ajouter un Personnage",
@@ -142,7 +164,8 @@
       "entry": {
         "topic": "DossierSujet",
         "type": "Type",
-        "relationships": "Relations"
+        "relationships": "Relations",
+        "sessions": "Sessions"
       },
       "session": {
         "session": "Session",
@@ -165,7 +188,12 @@
       },
       "campaign": {
         "addPC": "Ajouter un PJ",
-        "addPCDrag": "(ou glisser/déposer un acteur)"
+        "addPCDrag": "(ou glisser/déposer un acteur)",
+        "description": "Description",
+        "pcs": "PJ",
+        "lore": "Tradition",
+        "todo": "À faire",
+        "addToDo": "Créer un nouveau 'À faire'"
       },
       "pc": {
         "linkToNewActor": "Lier à un nouvel acteur"
@@ -181,12 +209,14 @@
           "organizations": "Organisations",
           "organizationChildren": "Sous-organisations",
           "scenes": "Scènes",
-          "actors": "Acteurs"
+          "actors": "Acteurs",
+          "sessions": "Sessions"
         },
         "campaign": {
           "description": "Description",
           "pcs": "PJs",
-          "lore": "Savoir"
+          "lore": "Savoir",
+          "toDo": "À faire"
         },
         "session": {
           "notes": "Notes",
@@ -197,11 +227,35 @@
           "locations": "Lieux",
           "npcs": "PNJs",
           "monsters": "Monstres",
-          "magic": "Objets Magiques"
+          "magic": "Objets Magiques",
+          "todo": "À faire"
         }
       },
       "noResults": "Rien ici",
-      "loading": "Chargement"
+      "loading": "Chargement",
+      "homePage": {
+        "createWorld": "Créer un Paramètre",
+        "createCampaign": "Créer une campagne",
+        "createCharacter": "Créer un personnage",
+        "createLocation": "Créer un lieu",
+        "createOrganization": "Créer une organisation"
+      },
+      "save": "Enregistrer",
+      "ok": "OK",
+      "yes": "Oui",
+      "no": "Non",
+      "close": "Fermer",
+      "update": "Mettre à jour",
+      "noToAll": "Non à tout",
+      "tableHeaders": {
+        "actions": "Actions",
+        "name": "Nom",
+        "location": "Emplacement"
+      },
+      "locations": {
+        "compendium": "Compendium",
+        "setting": "Paramètre"
+      }
     },
     "placeholders": {
       "search": "Rechercher",
@@ -211,7 +265,7 @@
       "locationName": "Nom du Lieu",
       "organizationName": "Nom de l'Organisation",
       "campaignName": "Nom de la Campagne",
-      "worldName": "Nom du Monde",
+      "worldName": "Nom du Paramètre",
       "sessionName": "Nom de la Session",
       "sessionDate": "Date",
       "sessionNumber": "Numéro de Session",
@@ -259,14 +313,65 @@
         "sessionName": "Nom de la Session"
       },
       "createWorld": {
-        "title": "Créer un Monde",
-        "worldName": "Nom du Monde"
+        "title": "Créer un Paramètre",
+        "worldName": "Nom du Paramètre"
       },
       "createEntry": {
         "generatedName": "Nom généré",
         "generatedDescription": "Description générée",
         "generatePrompt": "Appuyez sur générer pour obtenir des résultats",
         "generatePrompt2": "Sinon, \"Brève Description\" sera utilisée comme nouvelle description de l'entrée."
+      },
+      "addToDo": {
+        "title": "Ajouter une tâche",
+        "text": "Entrez le texte de la tâche :"
+      },
+      "configureNames": {
+        "title": "Configurer les styles de nom",
+        "description": "Sélectionnez les styles de nommage que vous souhaitez utiliser pour les noms générés par l'IA dans ce paramètre. Vous pouvez prévisualiser des exemples de chaque style ci-dessous, basés sur le genre et l'ambiance de ce paramètre.",
+        "errorMessage": "Il y a eu une erreur :"
+      },
+      "relatedItems": {
+        "additionalInformation": "Informations supplémentaires",
+        "allItemsConnected": "Tous les éléments possibles liés sont déjà connectés.",
+        "character": {
+          "title": "Ajouter un personnage",
+          "editTitle": "Modifier le personnage",
+          "createButtonTitle": "Créer un personnage",
+          "buttonTitle": "Ajouter une relation",
+          "editButtonTitle": "Enregistrer le personnage"
+        },
+        "location": {
+          "title": "Ajouter un emplacement",
+          "editTitle": "Modifier l'emplacement",
+          "createButtonTitle": "Créer un emplacement",
+          "buttonTitle": "Ajouter une relation",
+          "editButtonTitle": "Enregistrer l'emplacement"
+        },
+        "organization": {
+          "title": "Ajouter une organisation",
+          "editTitle": "Modifier l'organisation",
+          "createButtonTitle": "Créer une organisation",
+          "buttonTitle": "Ajouter une relation",
+          "editButtonTitle": "Enregistrer l'organisation"
+        },
+        "addToSession": "Ajouter à la session"
+      },
+      "relatedDocuments": {
+        "selectActors": "Sélectionner les acteurs",
+        "selectItems": "Sélectionner les éléments",
+        "addActor": "Ajouter un acteur",
+        "addItem": "Ajouter un élément"
+      },
+      "relatedEntriesManagement": {
+        "title": "Gérer les entrées liées",
+        "addedItems": "Ajouter des relations à ceux-ci ?",
+        "removedItems": "Supprimer les relations de ceux-ci ?"
+      },
+      "contextMenus": {
+        "cannotActivateFromCompendium": "Impossible d'activer depuis le compendium",
+        "cannotToggleNavigationFromCompendium": "Impossible de basculer la navigation depuis une scène dans un compendium",
+        "cannotToggleNavigationWhileActive": "Impossible de basculer la navigation pendant que la scène est active"
       }
     },
     "contextMenus": {
@@ -275,7 +380,7 @@
         "delete": "Supprimer le favori"
       },
       "worldFolder": {
-        "delete": "Supprimer le monde",
+        "delete": "Supprimer le Paramètre",
         "createCampaign": "Créer une campagne"
       },
       "campaignsHeader": {
@@ -312,12 +417,16 @@
       "generate": {
         "description": "Générer une description",
         "image": "Générer une image",
-        "inProgress": "en cours"
+        "inProgress": "en cours",
+        "configureNames": "Configurer les noms"
+      },
+      "tabs": {
+        "closeAll": "Fermer tous les onglets"
       }
     },
     "tooltips": {
       "mainButton": "Lancer le Créateur de Campagne",
-      "createWorld": "Créer un monde",
+      "createWorld": "Créer un Paramètre",
       "expandDirectory": "Développer le répertoire",
       "collapseDirectory": "Réduire le répertoire",
       "collapseAllTopics": "Réduire tout",
@@ -351,7 +460,7 @@
         "2": "Campagne",
         "3": "Session",
         "4": "PJ",
-        "5": "Monde"
+        "5": "Paramètre"
       },
       "dragActorFromEntry": "Glisser vers la scène",
       "addToASession": "Ajouter à une session",
@@ -361,12 +470,14 @@
         "type": "Si vous créez un nouveau type, il sera ajouté à la liste principale",
         "description": "Facultatif. Utilisez pour spécifier les caractéristiques physiques ou traits de personnalité que vous souhaitez inclure",
         "parent": "Peut influencer le texte généré dans certains cas",
-        "species": "Si vide, une espèce aléatoire de votre monde sera utilisée pour la génération AI. Les entrées personnalisées seront transmises à l'AI mais ne seront pas ajoutées à votre liste d'espèces",
+        "species": "Si vide, une espèce aléatoire de votre Paramètre sera utilisée pour la génération par IA. Les entrées personnalisées seront transmises à l'IA mais ne seront pas ajoutées à votre liste d'espèces",
         "longDescriptions": "Générer une description détaillée ou un court résumé ?",
         "generateImage": "Générer une nouvelle image en arrière-plan après la création"
       },
       "moveToCampaign": "Déplacer vers la campagne pour une utilisation ultérieure",
-      "addToCampaign": "Ajouter à la campagne"
+      "addToCampaign": "Ajouter à la campagne",
+      "deleteToDo": "Compléter l'élément à faire",
+      "worldGenerateContent": "Gérer les paramètres de génération du monde"
     },
     "errors": {
       "duplicateBookmark": "Déjà enregistré comme favori"
@@ -375,7 +486,8 @@
       "backend": {
         "successfulConnection": "Connexion réussie au backend de Campaign Builder.",
         "failedConnection": "Échec de la connexion au backend - vérifiez vos paramètres \"avancés\" pour vous assurer qu'ils correspondent correctement au serveur backend que vous avez déployé. Vous ne pourrez pas utiliser les fonctionnalités avancées entre-temps.",
-        "versionMismatch": "La version de votre backend World & Campaign Builder ($1) ne correspond pas à la version requise par la version du module que vous avez installée ($2). Veuillez mettre à jour l'un ou l'autre (ou les deux). Vous ne pourrez pas utiliser les fonctionnalités avancées entre-temps."
+        "versionMismatch": "La version de votre backend World & Campaign Builder ($1) ne correspond pas à la version requise par la version du module que vous avez installée ($2). Veuillez mettre à jour l'un ou l'autre (ou les deux). Vous ne pourrez pas utiliser les fonctionnalités avancées entre-temps.",
+        "emailSettingsNotSet": "Vous avez activé la fonctionnalité de liste de tâches par email, mais vous n'avez pas défini de Paramètre ou de Campagne par défaut. Veuillez les définir dans les paramètres avancés."
       },
       "addedToSession": "ajouté à la session",
       "changesSaved": "modifications enregistrées"

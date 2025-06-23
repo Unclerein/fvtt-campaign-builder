@@ -1,12 +1,13 @@
 import { toRaw } from 'vue';
 
 import { DOCUMENT_TYPES, EntryDoc, relationshipKeyReplace,  } from '@/documents';
-import { RelatedItemDetails, ValidTopic, Topics, TagInfo } from '@/types';
+import { RelatedItemDetails, ValidTopic, Topics, TagInfo, ToDoTypes } from '@/types';
 import { FCBDialog } from '@/dialogs';
 import { getTopicText } from '@/compendia';
-import { TopicFolder, WBWorld } from '@/classes';
+import { TopicFolder, Setting } from '@/classes';
 import { getParentId } from '@/utils/hierarchy';
 import { searchService } from '@/utils/search';
+import { useMainStore, usePlayingStore } from '@/applications/stores';
 
 export type CreateEntryOptions = { name?: string; type?: string; parentId?: string};
 
@@ -112,7 +113,7 @@ export class Entry {
       
       // Add to search index
       try {
-        await searchService.addOrUpdateIndex(entry, world, true);
+        await searchService.addOrUpdateEntryIndex(entry, world);
       } catch (error) {
         console.error('Failed to add entry to search index:', error);
       }
@@ -281,9 +282,9 @@ export class Entry {
     * Gets the world associated with a entry, loading into the topic
     * if needed.
     * 
-    * @returns {Promise<WBWorld>} A promise to the world associated with the campaign.
+    * @returns {Promise<Setting>} A promise to the world associated with the campaign.
     */
-  public async getWorld(): Promise<WBWorld> {
+  public async getWorld(): Promise<Setting> {
     if (!this.topicFolder)
       await this.loadTopic();
   
@@ -341,13 +342,19 @@ export class Entry {
       this._cumulativeUpdate = {};
     });
 
-    // Update the search index
+    // Update the search index and to-do list
     try {
       if (retval) {
-        await searchService.addOrUpdateIndex(this, world, true);
+        await searchService.addOrUpdateEntryIndex(this, world);
+
+        // Update the to-do list if in play mode
+        const campaign = usePlayingStore().currentPlayedCampaign;
+        if (useMainStore().isInPlayMode && campaign) {
+          await campaign.mergeToDoItem(ToDoTypes.Entry, `Edited during session ${campaign.currentSession?.number}`, this.uuid);
+        }
       }
     } catch (error) {
-      console.error('Failed to update search index:', error);
+      console.error('Failed to update todos or search index:', error);
     }
 
     return retval ? this : null;

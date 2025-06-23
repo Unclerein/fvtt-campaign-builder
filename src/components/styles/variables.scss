@@ -1,5 +1,6 @@
 body {
-  --fcb-font-family: 'Modesto Condensed', 'Palatino Linotype', serif;
+  --fcb-name-font-family: 'Modesto Condensed', 'Palatino Linotype', serif;
+  --fcb-font-family: (var--font-body);
 
   --fcb-dark-overlay: rgba(0, 0, 0, 0.05);
   --fcb-light-overlay: rgba(255, 255, 255, 0.10);
@@ -27,6 +28,7 @@ body {
   --fcb-header-nav-btn-background-hover: var(--fcb-header-nav-btn-background);
   --fcb-header-nav-btn-color-hover: var(--fcb-header-nav-btn-color);
   --fcb-header-nav-vertical-line:  rgb(238, 237, 224);
+  --fcb-tab-body-background: rgba(238, 237, 224, 0.3);
   --fcb-sheet-header-input-border: 1px solid rgb(122, 121, 113);
   --fcb-sheet-header-input-background: var(--fcb-dark-overlay);
   --fcb-sheet-header-label-color: rgb(75, 74, 68);
@@ -35,7 +37,7 @@ body {
   --fcb-sheet-header-button-background: var(--button-background-color);
   --fcb-sheet-header-detail-input-color: var(--color-text-primary);
   --fcb-sheet-header-icon-color: #777;
-  --fcb-sheet-tab-bottom-border: rgb(238, 237, 224);
+  --fcb-sheet-tab-bottom-border: rgb(250, 250, 230);
   --fcb-sheet-tab-border: 3px solid rgb(181, 179, 164);
   --fcb-sheet-tab-border-active: rgb(68, 25, 26);
   --fcb-sheet-page-control-color: var(--color-text-dark-primary);
@@ -53,20 +55,20 @@ body {
   --fcb-blank-color: rgba(0, 0, 0, 0.5);
   --fcb-blank-link-hover: rgba(0, 0, 0, 0.8);
   
-  --fcb-sidebar-background: url(../../../ui/parchment.jpg) repeat;
+  --fcb-sidebar-background: rgba( 255, 255, 255, 0.3); 
   --fcb-sidebar-label-color: var(--color-text-dark-primary);
-  --fcb-sidebar-world-color: var(--color-text-light-highlight);
-  --fcb-sidebar-world-background: rgb(201, 201, 182);
-  --fcb-sidebar-world-border: rgb(219, 219, 219);
-  --fcb-sidebar-world-color-collapsed: rgb(130, 130, 130);
-  --fcb-sidebar-world-background-collapsed: rgb(219, 219, 219);
-  --fcb-sidebar-world-border-collapsed: rgb(199, 199, 199);
-  --fcb-sidebar-campaign-color: var(--fcb-sidebar-world-color);
-  --fcb-sidebar-campaign-background: inherit;    // var(--fcb-sidebar-world-background);
-  --fcb-sidebar-campaign-border: var(--fcb-sidebar-world-border);;
+  --fcb-sidebar-setting-color: var(--color-text-light-highlight);
+  --fcb-sidebar-setting-background: rgb(215, 215, 202);
+  --fcb-sidebar-setting-border: rgb(219, 219, 219);
+  --fcb-sidebar-setting-color-collapsed: rgb(130, 130, 130);
+  --fcb-sidebar-setting-background-collapsed: rgb(219, 219, 219);
+  --fcb-sidebar-setting-border-collapsed: rgb(199, 199, 199);
+  --fcb-sidebar-campaign-color: var(--fcb-sidebar-setting-color);
+  --fcb-sidebar-campaign-background: inherit;    // var(--fcb-sidebar-setting-background);
+  --fcb-sidebar-campaign-border: var(--fcb-sidebar-setting-border);;
   --fcb-sidebar-campaign-color-collapsed: var(--fcb-sidebar-campaign-color);
-  --fcb-sidebar-campaign-background-collapsed: inherit;  //var(--fcb-sidebar-world-background-collapsed);
-  --fcb-sidebar-campaign-border-collapsed: var(--fcb-sidebar-world-border-collapsed);
+  --fcb-sidebar-campaign-background-collapsed: inherit;  //var(--fcb-sidebar-setting-background-collapsed);
+  --fcb-sidebar-campaign-border-collapsed: var(--fcb-sidebar-setting-border-collapsed);
   --fcb-directory-expand-button-background: #999;
   --fcb-sidebar-topic-icon-color: #999;
 
@@ -124,16 +126,16 @@ body.theme-dark {
   
   --fcb-sidebar-background: inherit;  //url(../../../ui/parchment.jpg) repeat;
   --fcb-sidebar-label-color: var(--color-text-light-primary);
-  --fcb-sidebar-world-color: var(--color-text-light-highlight);
-  --fcb-sidebar-world-background: var(--color-dark-3);
-  --fcb-sidebar-world-border: var(--color-dark-2);
-  --fcb-sidebar-world-color-collapsed: var(--color-dark-6);
-  --fcb-sidebar-world-background-collapsed: var(--color-dark-2);
-  --fcb-sidebar-world-border-collapsed: var(--color-dark-2);
-  --fcb-sidebar-campaign-color: var(--fcb-sidebar-world-color);
-  --fcb-sidebar-campaign-border: var(--fcb-sidebar-world-border);;
+  --fcb-sidebar-setting-color: var(--color-text-light-highlight);
+  --fcb-sidebar-setting-background: var(--color-dark-3);
+  --fcb-sidebar-setting-border: var(--color-dark-2);
+  --fcb-sidebar-setting-color-collapsed: var(--color-dark-6);
+  --fcb-sidebar-setting-background-collapsed: var(--color-dark-2);
+  --fcb-sidebar-setting-border-collapsed: var(--color-dark-2);
+  --fcb-sidebar-campaign-color: var(--fcb-sidebar-setting-color);
+  --fcb-sidebar-campaign-border: var(--fcb-sidebar-setting-border);;
   --fcb-sidebar-campaign-color-collapsed: var(--fcb-sidebar-campaign-color);
-  --fcb-sidebar-campaign-border-collapsed: var(--fcb-sidebar-world-border-collapsed);
+  --fcb-sidebar-campaign-border-collapsed: var(--fcb-sidebar-setting-border-collapsed);
   --fcb-directory-expand-button-background: var(--color-light-6);
   --fcb-sidebar-topic-icon-color: var(--color-light-6);
 

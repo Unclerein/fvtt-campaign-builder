@@ -10,10 +10,11 @@ import { localize } from '@/utils/game';
 import { getTopicIcon, getTabTypeIcon } from '@/utils/misc';
 import { UserFlagKey, UserFlags } from '@/settings';
 import { useMainStore } from './mainStore';
+import { scrollToActiveEntry } from '@/utils/directoryScroll';
 
 // types
 import { Bookmark, TabHeader, WindowTabType, } from '@/types';
-import { WindowTab, Entry, Campaign, Session, PC, WBWorld } from '@/classes';
+import { WindowTab, Entry, Campaign, Session, PC, Setting } from '@/classes';
 
 // the store definition
 export const useNavigationStore = defineStore('navigation', () => {
@@ -23,7 +24,7 @@ export const useNavigationStore = defineStore('navigation', () => {
   ///////////////////////////////
   // other stores
   const mainStore = useMainStore();
-  const { currentWorld, currentContentTab } = storeToRefs(mainStore);
+  const { currentSetting, } = storeToRefs(mainStore);
 
   ///////////////////////////////
   // internal state
@@ -41,6 +42,7 @@ export const useNavigationStore = defineStore('navigation', () => {
     activate?: boolean;
     newTab?: boolean;
     updateHistory?: boolean;
+    contentTabId?: string;
   }
 
   /**
@@ -51,6 +53,7 @@ export const useNavigationStore = defineStore('navigation', () => {
    * @param options.activate Should we switch to the tab after creating? Defaults to true.
    * @param options.newTab Should the entry open in a new tab? Defaults to true.
    * @param options.updateHistory Should the entry be added to the history of the tab? Defaults to true.
+   * @param options.contentTabId The id of the content tab to open. If null, defaults to the default content tab for the type.
    * @returns The newly opened tab.
    */
   const openEntry = async function(entryId = null as string | null, options?: OpenContentOptions) {
@@ -65,9 +68,10 @@ export const useNavigationStore = defineStore('navigation', () => {
    * @param options.activate Should we switch to the tab after creating? Defaults to true.
    * @param options.newTab Should the entry open in a new tab? Defaults to true.
    * @param options.updateHistory Should the world be added to the history of the tab? Defaults to true.
+   * @param options.contentTabId The id of the content tab to open. If null, defaults to the default content tab for the type.
    * @returns The newly opened tab.
    */
-  const openWorld = async function(worldId = null as string | null, options?: OpenContentOptions) {
+  const openSetting = async function(worldId = null as string | null, options?: OpenContentOptions) {
     await openContent(worldId, WindowTabType.World, options );
   };
 
@@ -79,6 +83,7 @@ export const useNavigationStore = defineStore('navigation', () => {
    * @param options.activate Should we switch to the tab after creating? Defaults to true.
    * @param options.newTab Should the campaign open in a new tab? Defaults to true.
    * @param options.updateHistory Should the campaign be added to the history of the tab? Defaults to true.
+   * @param options.contentTabId The id of the content tab to open. If null, defaults to the default content tab for the type.
    * @returns The newly opened tab.
    */
   const openCampaign = async function(campaignId = null as string | null, options?: OpenContentOptions) {
@@ -93,6 +98,7 @@ export const useNavigationStore = defineStore('navigation', () => {
    * @param options.activate Should we switch to the tab after creating? Defaults to true.
    * @param options.newTab Should the PC open in a new tab? Defaults to true.
    * @param options.updateHistory Should the PC be added to the history of the tab? Defaults to true.
+   * @param options.contentTabId The id of the content tab to open. If null, defaults to the default content tab for the type.
    * @returns The newly opened tab.
    */
   const openPC = async function(pcId = null as string | null, options?: OpenContentOptions) {
@@ -107,6 +113,7 @@ export const useNavigationStore = defineStore('navigation', () => {
    * @param options.activate Should we switch to the tab after creating? Defaults to true.
    * @param options.newTab Should the session open in a new tab? Defaults to true.
    * @param options.updateHistory Should the session be added to the history of the tab? Defaults to true.
+   * @param options.contentTabId The id of the content tab to open. If null, defaults to the default content tab for the type.
    * @returns The newly opened tab.
    */
   const openSession = async function(sessionId = null as string | null, options?: OpenContentOptions) {
@@ -121,6 +128,7 @@ export const useNavigationStore = defineStore('navigation', () => {
    * @param options.activate Should we switch to the tab after creating? Defaults to true.
    * @param options.newTab Should the entry open in a new tab? Defaults to true.
    * @param options.updateHistory Should the entry be added to the history of the tab? Defaults to true.
+   * @param options.contentTabId The id of the content tab to open. If null, defaults to the default content tab for the type.
    * @param contentType The type of content to open. If null, defaults to entry.
    * @returns The newly opened tab.
    */
@@ -130,6 +138,7 @@ export const useNavigationStore = defineStore('navigation', () => {
       activate: true,
       newTab: true,
       updateHistory: true,
+      contentTabId: undefined,
       ...options,
     };
 
@@ -161,7 +170,7 @@ export const useNavigationStore = defineStore('navigation', () => {
         }
       } break;
       case WindowTabType.World: {
-        const world = contentId ? await WBWorld.fromUuid(contentId) : null;
+        const world = contentId ? await Setting.fromUuid(contentId) : null;
         if (!world) {
           badId = true;
         } else {
@@ -220,10 +229,12 @@ export const useNavigationStore = defineStore('navigation', () => {
         headerData.uuid,
         contentType, 
         null,
+        options.contentTabId || defaultContentTab[contentType]
       );
 
       //add to tabs list
       tabs.value.push(tab);
+      tab.addToHistory(contentId, contentType, options.contentTabId || defaultContentTab[contentType]);
     } else {
       tab = getActiveTab(false);
 
@@ -237,7 +248,7 @@ export const useNavigationStore = defineStore('navigation', () => {
       // add to history -- it should go immediately after the current tab and all other forward history should go away
       // this is a new thing so the contentTab should always be the default
       if (headerData.uuid && options.updateHistory) {
-        tab.addToHistory(contentId, contentType, defaultContentTab[contentType]);
+        tab.addToHistory(contentId, contentType, options.contentTabId || defaultContentTab[contentType]);
       }
 
       // force a refresh of reactivity
@@ -245,7 +256,7 @@ export const useNavigationStore = defineStore('navigation', () => {
     }
     
     if (options.activate)
-      await activateTab(tab.id);  
+      await activateTab(tab.id);
 
     // activating doesn't always save (ex. if we added a new entry to active tab)
     await _saveTabs();
@@ -255,6 +266,9 @@ export const useNavigationStore = defineStore('navigation', () => {
       await _updateRecent(headerData);
 
     await mainStore.setNewTab(tab);
+
+    // scroll to the entry
+    await scrollToActiveEntry();
 
     return tab;
   };
@@ -336,6 +350,9 @@ export const useNavigationStore = defineStore('navigation', () => {
       await _updateRecent(newTab.header);
 
     await mainStore.setNewTab(newTab);
+
+    // Scroll to and expand the active entry in the directory tree
+    await scrollToActiveEntry();
 
     return;
   };
@@ -450,8 +467,12 @@ export const useNavigationStore = defineStore('navigation', () => {
 
       // refresh the current tab just in case it was displaying the now-deleted item
       const activeTab = getActiveTab(false);
-      if (activeTab) 
+      if (activeTab) {
         await mainStore.setNewTab(activeTab);
+        
+        // Scroll to and expand the active entry in the directory tree
+        await scrollToActiveEntry();
+      }
     }
 
     // now remove from bookmarks
@@ -507,12 +528,12 @@ export const useNavigationStore = defineStore('navigation', () => {
   };
 
   const loadTabs = async function () {
-    if (!currentWorld.value)
+    if (!currentSetting.value)
       return;
 
-    tabs.value = UserFlags.get(UserFlagKey.tabs, currentWorld.value.uuid) || [];
-    bookmarks.value = UserFlags.get(UserFlagKey.bookmarks, currentWorld.value.uuid) || [];
-    recent.value = UserFlags.get(UserFlagKey.recentlyViewed, currentWorld.value.uuid) || [];
+    tabs.value = UserFlags.get(UserFlagKey.tabs, currentSetting.value.uuid) || [];
+    bookmarks.value = UserFlags.get(UserFlagKey.bookmarks, currentSetting.value.uuid) || [];
+    recent.value = UserFlags.get(UserFlagKey.recentlyViewed, currentSetting.value.uuid) || [];
 
     if (!tabs.value.length) {
       // if there are no tabs, add one
@@ -520,6 +541,8 @@ export const useNavigationStore = defineStore('navigation', () => {
     } else {
       // activate the active one
       await mainStore.setNewTab(getActiveTab(true) as WindowTab);
+      // Scroll to and expand the active entry in the directory tree
+      await scrollToActiveEntry();
     }
   };
  
@@ -554,24 +577,24 @@ export const useNavigationStore = defineStore('navigation', () => {
   // internal functions
   // save tabs to database
   const _saveTabs = async function () {
-    if (!currentWorld.value)
+    if (!currentSetting.value)
       return;
 
-    await UserFlags.set(UserFlagKey.tabs, tabs.value, currentWorld.value.uuid);
+    await UserFlags.set(UserFlagKey.tabs, tabs.value, currentSetting.value.uuid);
   };
 
   const _saveBookmarks = async function () {
-    if (!currentWorld.value)
+    if (!currentSetting.value)
       return;
 
-    await UserFlags.set(UserFlagKey.bookmarks, bookmarks.value, currentWorld.value.uuid);
+    await UserFlags.set(UserFlagKey.bookmarks, bookmarks.value, currentSetting.value.uuid);
   };
 
   const _saveRecent = async function () {
-    if (!currentWorld.value)
+    if (!currentSetting.value)
       return;
 
-    await UserFlags.set(UserFlagKey.recentlyViewed, recent.value, currentWorld.value.uuid);
+    await UserFlags.set(UserFlagKey.recentlyViewed, recent.value, currentSetting.value.uuid);
   };
 
   // add a new entity to the recent list
@@ -609,7 +632,7 @@ export const useNavigationStore = defineStore('navigation', () => {
     openEntry,
     openSession,
     openCampaign,
-    openWorld,
+    openSetting,
     openPC,
     openContent,
     updateContentTab,
