@@ -5,3 +5,4 @@ coverage/
 .tscout/
 .npmrc
 tsconfig.tsbuildinfo
+docs/.vitepress/cache
