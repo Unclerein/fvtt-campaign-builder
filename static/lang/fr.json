@@ -42,7 +42,11 @@
       "enableToDoList": "Activer la liste de tâches",
       "enableToDoListHelp": "Si désactivé, la fonctionnalité de liste de tâches sera désactivée.",
       "autoRelationships": "Suggérer automatiquement des relations",
-      "autoRelationshipsHelp": "Si activé, l'éditeur suggérera automatiquement des modifications aux relations entre les entrées en fonction des changements apportés à la description."
+      "autoRelationshipsHelp": "Si activé, l'éditeur suggérera automatiquement des modifications aux relations entre les entrées en fonction des changements apportés à la description.",
+      "Keybindings": {
+        "closeTab": "Fermer l'onglet",
+        "closeTabHelp": "Fermer l'onglet actuel"
+      }
     },
     "applications": {
       "sessionNotes": {
@@ -54,6 +58,44 @@
           "add": "Ajouter une espèce",
           "edit": "Modifier l'espèce",
           "delete": "Supprimer l'espèce"
+        },
+        "defaultSpecies": {
+          "dwarf": {
+            "name": "Nain",
+            "description": "Robustes et résilients, les nains sont connus pour leur artisanat, leur endurance et leur forte connexion aux montagnes et à la pierre. Ils sont généralement petits et trapus, avec de longues barbes et des constructions robustes qui soulignent leur ténacité."
+          },
+          "elf": {
+            "name": "Elfe",
+            "description": "Gracieux et longévifs, les elfes possèdent des sens aiguisés, une affinité naturelle pour la magie et une connexion durable avec la nature. Ils sont grands et minces, avec des oreilles pointues, des traits anguleux et une beauté d'un autre monde."
+          },
+          "halfling": {
+            "name": "Halfelin",
+            "description": "Petits et agiles, les halfelins sont joyeux et ingénieux, connus pour leur chance et leur capacité à éviter le danger. Ils sont petits, mesurant environ trois pieds de haut, avec des visages ronds, des cheveux bouclés et une attitude amicale."
+          },
+          "human": {
+            "name": "Humain",
+            "description": "Polyvalents et ambitieux, les humains s'adaptent à n'importe quel environnement, excellant dans une large gamme de compétences et de professions. Ils varient largement en taille, en corpulence, en teint de peau et en traits du visage, reflétant la diversité de leurs cultures."
+          },
+          "dragonborn": {
+            "name": "Drakéide",
+            "description": "Fiers et puissants, les drakéides sont des dragons humanoïdes avec un fort sens de l'honneur et une arme de souffle innée. Ils sont grands et musclés, couverts d'écailles colorées, avec des têtes reptiliennes, des mains griffues et des queues."
+          },
+          "gnome": {
+            "name": "Gnome",
+            "description": "Curieux et inventifs, les gnomes sont petits et agiles, connus pour leur esprit vif et leur amour du bricolage. Ils sont petits, avec des oreilles pointues, une attitude espiègle et un talent pour trouver des trésors cachés."
+          },
+          "half-elf": {
+            "name": "Demi-Elfe",
+            "description": "Mêlant la polyvalence humaine à la grâce elfique, les demi-elfes sont charismatiques et adaptables, s'intégrant dans les deux mondes sans appartenir pleinement à aucun. Ils ont des oreilles légèrement pointues, des traits du visage anguleux et un mélange de traits humains et elfiques qui varient selon l'ascendance."
+          },
+          "half-orc": {
+            "name": "Demi-Orc",
+            "description": "Forts et tenaces, les demi-orcs héritent de l'endurance et de l'esprit combatif de leur ascendance orque tout en cherchant souvent à prouver leur valeur au-delà. Ils sont grands et puissamment bâtis, avec une peau verte ou grise, des crocs inférieurs proéminents et des sourcils épais."
+          },
+          "tiefling": {
+            "name": "Tieffelin",
+            "description": "Marqués par une ascendance infernale, les tieffelins possèdent des traits démoniaques, une résilience innée au feu et un talent pour la magie. Ils ont des cornes, des queues et des couleurs d'yeux et de peau inhabituelles, allant des rouges profonds aux violets et bleus."
+          }
         }
       },
       "advancedSettings": {
@@ -65,14 +107,16 @@
           "APITokenHint": "Sortie du script pour déployer le backend.",
           "defaultToLong": "Par défaut, utiliser des descriptions longues",
           "defaultToLongHint": "Contrôle le paramètre par défaut pour créer une description longue ou courte lors de la génération par IA.",
-          "useGmailToDos": "Utiliser Gmail pour les tâches",
-          "useGmailToDosHint": "Lorsqu'elle est activée, les éléments à faire seront créés à partir de la boîte de réception Gmail",
           "emailDefaultWorld": "Paramètre par défaut pour l'email",
           "emailDefaultWorldHint": "Le Paramètre à utiliser par défaut pour les fonctionnalités d'email (ex. envoi de tâches par email)",
           "emailDefaultCampaign": "Campagne par défaut pour l'email",
           "emailDefaultCampaignHint": "La campagne à utiliser par défaut pour les fonctionnalités d'email (ex. envoyer des éléments à faire par email)",
           "selectWorld": "Sélectionnez un paramètre...",
-          "selectCampaign": "Sélectionnez une campagne..."
+          "selectCampaign": "Sélectionnez une campagne...",
+          "longDescriptionParagraphs": "Paragraphes de longue description",
+          "longDescriptionParagraphsHint": "Nombre de paragraphes à générer pour les longues descriptions (1-4).",
+          "useGmailIdeas": "Utiliser Gmail pour les idées",
+          "useGmailIdeasHint": "Lorsqu'il est activé, les éléments d'idée seront créés à partir de la boîte de réception Gmail"
         }
       },
       "rollTableSettings": {
@@ -85,7 +129,8 @@
         },
         "notifications": {
           "refreshSuccess": "Tables de lancer rafraîchies avec succès",
-          "refreshError": "Échec du rafraîchissement des tables de lancer. Vérifiez la console pour plus de détails."
+          "refreshError": "Échec du rafraîchissement des tables de lancer. Vérifiez la console pour plus de détails.",
+          "refreshStarted": "Génération de nouveaux noms pour les tables de lancer en arrière-plan"
         }
       },
       "createEntry": {
@@ -95,10 +140,10 @@
             "location": "Créer un lieu",
             "organization": "Créer une organisation"
           },
-          "generate": {
-            "character": "Générer un personnage",
-            "location": "Générer un lieu",
-            "organization": "Générer une organisation"
+          "update": {
+            "character": "Mettre à jour le personnage",
+            "location": "Mettre à jour l'emplacement",
+            "organization": "Mettre à jour l'organisation"
           }
         },
         "labels": {
@@ -111,7 +156,7 @@
     },
     "help": {
       "worldGenre": "ex. \"Fantasy\" - Nécessaire pour la génération AI",
-      "worldFeeling": "ex. \"Rugueux et dangereux avec un faible niveau de magie\" - Améliore la génération AI"
+      "settingFeeling": "ex. \"Rugueux et dangereux avec un faible niveau de magie\" - Améliore la génération IA"
     },
     "labels": {
       "newTab": "Nouvel Onglet",
@@ -137,17 +182,17 @@
         "desiredMagicItems": "Objets Magiques Désirés",
         "species": "Espèces",
         "worldGenre": "Genre",
-        "worldFeeling": "Sentiment du Paramètre",
         "campaignDescription": "Description de la campagne, notes, idées, etc...",
         "name": "Nom",
-        "briefDescription": "Brève description",
         "longDescriptions": "Générer des descriptions longues",
         "generateImage": "Générer une image",
         "description": "Description",
         "campaign": "Campagne",
         "campaignHouseRules": "Règles de maison",
         "addToCurrentSession": "Ajouter à la session en cours",
-        "topic": "Sujet"
+        "topic": "Sujet",
+        "settingFeeling": "Ambiance du cadre",
+        "startingDescription": "Description de départ"
       },
       "addTopic": {
         "character": "Ajouter un Personnage",
@@ -184,7 +229,15 @@
         "addActor": "Ajouter un acteur",
         "addActorDrag": "(ou glisser/déposer un acteur)",
         "addScene": "Ajouter une scène",
-        "addSceneDrag": "(ou glisser/déposer une scène)"
+        "addSceneDrag": "(ou glisser/déposer une scène)",
+        "loreHelpText": "Morceaux d'informations utiles et intéressantes de la taille d'un tweet. Cliquez pour en savoir plus de Lazy DM.",
+        "itemHelpText": "Objets magiques qui conviennent à vos PJ et à l'intrigue. Cliquez pour en savoir plus de Lazy DM.",
+        "npcHelpText": "PNJ susceptibles d'être rencontrés lors de la session.",
+        "monsterHelpText": "Monstres qui conviennent à la situation et au lieu. Cliquez pour en savoir plus de Lazy DM.",
+        "vignetteHelpText": "Scènes qui apportent une résolution, ouvrent de nouveaux chemins, modifient l'histoire. 1 par 45 minutes. Cliquez pour en savoir plus de Lazy DM.",
+        "locationHelpText": "Lieux détaillés, mémorables et fantastiques que les personnages peuvent explorer. Cliquez pour en savoir plus de Lazy DM.",
+        "strongStart": "Début fort",
+        "strongStartHelpText": "Un début fort est un événement court et percutant qui donne le ton à la session. Cliquez pour en savoir plus de Lazy DM."
       },
       "campaign": {
         "addPC": "Ajouter un PJ",
@@ -193,10 +246,14 @@
         "pcs": "PJ",
         "lore": "Tradition",
         "todo": "À faire",
-        "addToDo": "Créer un nouveau 'À faire'"
+        "addToDo": "Créer un nouveau 'À faire'",
+        "loreHelpText": "Suivez les grands secrets au niveau de la campagne et les plus petits que vous n'êtes pas prêt à révéler. Cliquez pour en savoir plus de Lazy DM.",
+        "ideas": "Idées",
+        "addIdea": "Ajouter une idée"
       },
       "pc": {
-        "linkToNewActor": "Lier à un nouvel acteur"
+        "linkToNewActor": "Lier à un nouvel acteur",
+        "pc": "PJ"
       },
       "groupTree": "Grouper par type",
       "tabs": {
@@ -216,7 +273,8 @@
           "description": "Description",
           "pcs": "PJs",
           "lore": "Savoir",
-          "toDo": "À faire"
+          "toDo": "À faire",
+          "ideas": "Idées"
         },
         "session": {
           "notes": "Notes",
@@ -254,7 +312,7 @@
       },
       "locations": {
         "compendium": "Compendium",
-        "setting": "Paramètre"
+        "world": "Monde"
       }
     },
     "placeholders": {
@@ -372,16 +430,20 @@
         "cannotActivateFromCompendium": "Impossible d'activer depuis le compendium",
         "cannotToggleNavigationFromCompendium": "Impossible de basculer la navigation depuis une scène dans un compendium",
         "cannotToggleNavigationWhileActive": "Impossible de basculer la navigation pendant que la scène est active"
+      },
+      "saveSessionNotes": {
+        "title": "Enregistrer les modifications ?",
+        "message": "Voulez-vous enregistrer les notes de session actuelles avant de fermer ?"
+      },
+      "deleteEntry": {
+        "title": "Supprimer l'entrée ?",
+        "message": "Êtes-vous sûr de vouloir supprimer cette entrée ? Elle sera retirée de toutes les relations et sessions. Toutes les références à celle-ci dans les éditeurs deviendront cassées."
       }
     },
     "contextMenus": {
       "bookmarks": {
         "openNewTab": "Ouvrir dans un nouvel Onglet",
         "delete": "Supprimer le favori"
-      },
-      "worldFolder": {
-        "delete": "Supprimer le Paramètre",
-        "createCampaign": "Créer une campagne"
       },
       "campaignsHeader": {
         "createCampaign": "Créer une campagne"
@@ -398,7 +460,9 @@
         "changeImage": "Changer l'Image",
         "removeImage": "Retirer l'Image",
         "postToChat": "Publier dans le Chat",
-        "createScene": "Créer une scène"
+        "createScene": "Créer une scène",
+        "addImage": "Ajouter une image",
+        "generateImage": "Générer une image"
       },
       "topicFolder": {
         "create": {
@@ -421,7 +485,12 @@
         "configureNames": "Configurer les noms"
       },
       "tabs": {
-        "closeAll": "Fermer tous les onglets"
+        "closeAll": "Fermer tous les onglets",
+        "closeOther": "Fermer les autres onglets"
+      },
+      "settingFolder": {
+        "delete": "Supprimer le paramètre",
+        "createCampaign": "Créer une campagne"
       }
     },
     "tooltips": {
@@ -477,7 +546,9 @@
       "moveToCampaign": "Déplacer vers la campagne pour une utilisation ultérieure",
       "addToCampaign": "Ajouter à la campagne",
       "deleteToDo": "Compléter l'élément à faire",
-      "worldGenerateContent": "Gérer les paramètres de génération du monde"
+      "editRow": "Modifier cet élément. Appuyez sur Entrée pour enregistrer les modifications.",
+      "deleteIdea": "Supprimer l'idée",
+      "settingGenerateContent": "Gérer la configuration de génération de paramètres"
     },
     "errors": {
       "duplicateBookmark": "Déjà enregistré comme favori"
@@ -487,10 +558,13 @@
         "successfulConnection": "Connexion réussie au backend de Campaign Builder.",
         "failedConnection": "Échec de la connexion au backend - vérifiez vos paramètres \"avancés\" pour vous assurer qu'ils correspondent correctement au serveur backend que vous avez déployé. Vous ne pourrez pas utiliser les fonctionnalités avancées entre-temps.",
         "versionMismatch": "La version de votre backend World & Campaign Builder ($1) ne correspond pas à la version requise par la version du module que vous avez installée ($2). Veuillez mettre à jour l'un ou l'autre (ou les deux). Vous ne pourrez pas utiliser les fonctionnalités avancées entre-temps.",
-        "emailSettingsNotSet": "Vous avez activé la fonctionnalité de liste de tâches par email, mais vous n'avez pas défini de Paramètre ou de Campagne par défaut. Veuillez les définir dans les paramètres avancés."
+        "emailSettingsNotSet": "Vous avez activé la fonctionnalité de liste de tâches par email, mais vous n'avez pas défini de Paramètre ou de Campagne par défaut. Veuillez les définir dans les paramètres avancés.",
+        "rollTablesNotAvailable": "Le backend n'est pas disponible. Les RollTables automatiques ne seront pas rafraîchies. Configurez le backend dans les paramètres avancés pour activer les noms générés par l'IA qui correspondent au thème de votre monde."
       },
       "addedToSession": "ajouté à la session",
-      "changesSaved": "modifications enregistrées"
+      "changesSaved": "modifications enregistrées",
+      "todoReferenceNotFound": "La référence liée pour cet élément à faire n'existe plus."
     }
-  }
+  },
+  "temp": "temp"
 }

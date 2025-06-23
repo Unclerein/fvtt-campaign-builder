@@ -42,7 +42,11 @@
       "enableToDoList": "ToDo-Liste aktivieren",
       "enableToDoListHelp": "Wenn deaktiviert, wird die ToDo-Listen-Funktion ausgeschaltet.",
       "autoRelationships": "Beziehungen automatisch vorschlagen",
-      "autoRelationshipsHelp": "Wenn aktiviert, schlägt der Editor automatisch Änderungen an den Beziehungen zwischen Einträgen basierend auf Änderungen in der Beschreibung vor."
+      "autoRelationshipsHelp": "Wenn aktiviert, schlägt der Editor automatisch Änderungen an den Beziehungen zwischen Einträgen basierend auf Änderungen in der Beschreibung vor.",
+      "Keybindings": {
+        "closeTab": "Tab schließen",
+        "closeTabHelp": "Den aktuellen Tab schließen"
+      }
     },
     "applications": {
       "sessionNotes": {
@@ -54,6 +58,44 @@
           "add": "Art hinzufügen",
           "edit": "Art bearbeiten",
           "delete": "Art löschen"
+        },
+        "defaultSpecies": {
+          "dwarf": {
+            "name": "Zwerg",
+            "description": "Stämmig und widerstandsfähig, sind Zwerge bekannt für ihr Handwerk, ihre Ausdauer und ihre starke Verbindung zu Bergen und Steinmetzarbeiten. Sie sind typischerweise klein und stämmig, mit dicken Bärten und robusten Körpern, die ihre Zähigkeit betonen."
+          },
+          "elf": {
+            "name": "Elf",
+            "description": "Anmutig und langlebig, besitzen Elfen scharfe Sinne, eine natürliche Affinität zur Magie und eine dauerhafte Verbindung zur Natur. Sie sind groß und schlank, mit spitzen Ohren, markanten Gesichtszügen und einer überirdischen Schönheit."
+          },
+          "halfling": {
+            "name": "Halbling",
+            "description": "Klein und wendig, sind Halblinge fröhlich und einfallsreich, bekannt für ihr Glück und ihre Fähigkeit, Gefahren zu vermeiden. Sie sind klein, etwa drei Fuß groß, mit runden Gesichtern, lockigem Haar und einem freundlichen Auftreten."
+          },
+          "human": {
+            "name": "Mensch",
+            "description": "Vielseitig und ehrgeizig, passen sich Menschen an jede Umgebung an und zeichnen sich in einer Vielzahl von Fähigkeiten und Berufen aus. Sie variieren stark in Größe, Statur, Hautfarbe und Gesichtszügen, was die Vielfalt ihrer Kulturen widerspiegelt."
+          },
+          "dragonborn": {
+            "name": "Drachenblütiger",
+            "description": "Stolz und mächtig, sind Drachenblütige humanoide Drachen mit einem starken Sinn für Ehre und einer angeborenen Atemwaffe. Sie sind groß und muskulös, bedeckt mit bunten Schuppen, mit reptilienartigen Köpfen, klauenartigen Händen und Schwänzen."
+          },
+          "gnome": {
+            "name": "Gnom",
+            "description": "Neugierig und erfinderisch, sind Gnome klein und wendig, bekannt für ihren scharfen Verstand und ihre Liebe zum Basteln. Sie sind klein, mit spitzen Ohren, einem schelmischen Auftreten und einem Talent, verborgene Schätze zu finden."
+          },
+          "half-elf": {
+            "name": "Halb-Elf",
+            "description": "Die menschliche Vielseitigkeit mit elfischer Anmut verbindend, sind Halb-Elfen charismatisch und anpassungsfähig, passen in beide Welten, gehören aber keiner vollständig an. Sie haben leicht spitze Ohren, markante Gesichtszüge und eine Mischung aus menschlichen und elfischen Merkmalen, die je nach Abstammung variieren."
+          },
+          "half-orc": {
+            "name": "Halb-Ork",
+            "description": "Stark und zäh, erben Halb-Orks die Ausdauer und den Kampfgeist ihrer orkischen Abstammung, während sie oft danach streben, sich darüber hinaus zu beweisen. Sie sind groß und kräftig gebaut, mit grüner oder grauer Haut, hervorstehenden unteren Hauern und dicken Brauen."
+          },
+          "tiefling": {
+            "name": "Tiefling",
+            "description": "Gezeichnet durch infernalisches Erbe, besitzen Tieflinge teuflische Merkmale, eine angeborene Feuerresistenz und ein Talent für Magie. Sie haben Hörner, Schwänze und ungewöhnliche Augen- und Hautfarben, die von tiefem Rot bis zu Violett und Blau reichen."
+          }
         }
       },
       "advancedSettings": {
@@ -65,14 +107,16 @@
           "APITokenHint": "Ausgabe des Skripts zum Bereitstellen des Backends.",
           "defaultToLong": "Standardmäßig lange Beschreibungen verwenden",
           "defaultToLongHint": "Steuert die Standardeinstellung für die Erstellung einer langen oder kurzen Beschreibung bei der KI-Generierung.",
-          "useGmailToDos": "Gmail für Aufgaben verwenden",
-          "useGmailToDosHint": "Wenn aktiviert, werden Aufgaben aus dem Gmail-Posteingang erstellt",
           "emailDefaultWorld": "Standardeinstellung für E-Mail",
           "emailDefaultWorldHint": "Die Einstellung, die standardmäßig für E-Mail-Funktionen verwendet wird (z.B. E-Mail von Aufgaben)",
           "emailDefaultCampaign": "Standardkampagne für E-Mail",
           "emailDefaultCampaignHint": "Die Kampagne, die standardmäßig für E-Mail-Funktionen verwendet wird (z. B. Aufgaben per E-Mail senden)",
           "selectWorld": "Wählen Sie eine Einstellung...",
-          "selectCampaign": "Wählen Sie eine Kampagne..."
+          "selectCampaign": "Wählen Sie eine Kampagne...",
+          "longDescriptionParagraphs": "Lange Beschreibungsabsätze",
+          "longDescriptionParagraphsHint": "Anzahl der Absätze, die für lange Beschreibungen generiert werden sollen (1-4).",
+          "useGmailIdeas": "Gmail für Ideen verwenden",
+          "useGmailIdeasHint": "Wenn aktiviert, werden Ideenelemente aus dem Gmail-Posteingang erstellt"
         }
       },
       "rollTableSettings": {
@@ -85,7 +129,8 @@
         },
         "notifications": {
           "refreshSuccess": "Wurftabellen erfolgreich aktualisiert",
-          "refreshError": "Aktualisierung der Wurftabellen fehlgeschlagen. Details in der Konsole prüfen."
+          "refreshError": "Aktualisierung der Wurftabellen fehlgeschlagen. Details in der Konsole prüfen.",
+          "refreshStarted": "Erstellen neuer Namen für Rollentabellen im Hintergrund"
         }
       },
       "createEntry": {
@@ -95,10 +140,10 @@
             "location": "Ort erstellen",
             "organization": "Organisation erstellen"
           },
-          "generate": {
-            "character": "Charakter generieren",
-            "location": "Ort generieren",
-            "organization": "Organisation generieren"
+          "update": {
+            "character": "Charakter aktualisieren",
+            "location": "Ort aktualisieren",
+            "organization": "Organisation aktualisieren"
           }
         },
         "labels": {
@@ -111,7 +156,7 @@
     },
     "help": {
       "worldGenre": "z.B. \"Fantasy\" - Erforderlich für KI-Generierung",
-      "worldFeeling": "z.B. \"Rau und gefährlich mit niedrigem Magieniveau\" - Verbessert die KI-Generierung"
+      "settingFeeling": "z.B. \"Rau und gefährlich mit niedrigem Magieniveau\" - Verbessert die KI-Generierung"
     },
     "labels": {
       "newTab": "Neuer Tab",
@@ -137,17 +182,17 @@
         "desiredMagicItems": "Gewünschte magische Gegenstände",
         "species": "Art",
         "worldGenre": "Genre",
-        "worldFeeling": "Gefühl der Einstellung",
         "campaignDescription": "Kampagnenbeschreibung, Notizen, Ideen, etc...",
         "name": "Name",
-        "briefDescription": "Kurze Beschreibung",
         "longDescriptions": "Lange Beschreibungen generieren",
         "generateImage": "Bild generieren",
         "description": "Beschreibung",
         "campaign": "Kampagne",
         "campaignHouseRules": "Hausregeln",
         "addToCurrentSession": "Zur aktuellen Sitzung hinzufügen",
-        "topic": "Thema"
+        "topic": "Thema",
+        "settingFeeling": "Einstellung Gefühl",
+        "startingDescription": "Anfangsbeschreibung"
       },
       "addTopic": {
         "character": "Charakter hinzufügen",
@@ -184,7 +229,15 @@
         "addActor": "Schauspieler hinzufügen",
         "addActorDrag": "(oder Schauspieler ziehen/ablegen)",
         "addScene": "Szene hinzufügen",
-        "addSceneDrag": "(oder Szene ziehen/ablegen)"
+        "addSceneDrag": "(oder Szene ziehen/ablegen)",
+        "loreHelpText": "Tweet-große Stücke nützlicher und interessanter Informationen. Klicken Sie, um mehr von Lazy DM zu lesen.",
+        "itemHelpText": "Magische Gegenstände, die zu Ihren PCs und der Handlung passen. Klicken Sie, um mehr von Lazy DM zu lesen.",
+        "npcHelpText": "NSCs, die wahrscheinlich in der Sitzung angetroffen werden.",
+        "monsterHelpText": "Monster, die zur Situation und zum Ort passen. Klicken Sie, um mehr von Lazy DM zu lesen.",
+        "vignetteHelpText": "Szenen, die eine Lösung bringen, neue Wege öffnen, die Geschichte verändern. 1 pro 45 Minuten. Klicken Sie, um mehr von Lazy DM zu lesen.",
+        "locationHelpText": "Detaillierte, denkwürdige, fantastische Orte, die die Charaktere erkunden können. Klicken Sie, um mehr von Lazy DM zu lesen.",
+        "strongStart": "Starker Start",
+        "strongStartHelpText": "Ein starker Start ist ein kurzes, eindrucksvolles Ereignis, das den Ton für die Sitzung angibt. Klicken Sie, um mehr von Lazy DM zu lesen."
       },
       "campaign": {
         "addPC": "PC hinzufügen",
@@ -193,10 +246,14 @@
         "pcs": "SCs",
         "lore": "Überlieferung",
         "todo": "Zu erledigen",
-        "addToDo": "Neues 'Zu erledigen' erstellen"
+        "addToDo": "Neues 'Zu erledigen' erstellen",
+        "loreHelpText": "Verfolgen Sie große kampagnenweite Geheimnisse und kleinere, die Sie noch nicht preisgeben möchten. Klicken Sie, um mehr von Lazy DM zu lesen.",
+        "ideas": "Ideen",
+        "addIdea": "Idee hinzufügen"
       },
       "pc": {
-        "linkToNewActor": "Mit neuem Schauspieler verknüpfen"
+        "linkToNewActor": "Mit neuem Schauspieler verknüpfen",
+        "pc": "PC"
       },
       "groupTree": "Baum nach Typ gruppieren",
       "tabs": {
@@ -216,7 +273,8 @@
           "description": "Beschreibung",
           "pcs": "PCs",
           "lore": "Überlieferung",
-          "toDo": "Zu erledigen"
+          "toDo": "Zu erledigen",
+          "ideas": "Ideen"
         },
         "session": {
           "notes": "Notizen",
@@ -254,7 +312,7 @@
       },
       "locations": {
         "compendium": "Kompendium",
-        "setting": "Einstellung"
+        "world": "Welt"
       }
     },
     "placeholders": {
@@ -372,16 +430,20 @@
         "cannotActivateFromCompendium": "Kann nicht aus dem Kompendium aktiviert werden",
         "cannotToggleNavigationFromCompendium": "Navigation kann nicht aus einer Szene im Kompendium umgeschaltet werden",
         "cannotToggleNavigationWhileActive": "Navigation kann nicht umgeschaltet werden, während die Szene aktiv ist"
+      },
+      "saveSessionNotes": {
+        "title": "Änderungen speichern?",
+        "message": "Möchten Sie die aktuellen Sitzungsnotizen vor dem Schließen speichern?"
+      },
+      "deleteEntry": {
+        "title": "Eintrag löschen?",
+        "message": "Sind Sie sicher, dass Sie diesen Eintrag löschen möchten? Er wird aus allen Beziehungen und Sitzungen entfernt. Alle Verweise darauf in Editoren werden ungültig."
       }
     },
     "contextMenus": {
       "bookmarks": {
         "openNewTab": "In neuem Tab öffnen",
         "delete": "Lesezeichen löschen"
-      },
-      "worldFolder": {
-        "delete": "Einstellung löschen",
-        "createCampaign": "Kampagne erstellen"
       },
       "campaignsHeader": {
         "createCampaign": "Kampagne erstellen"
@@ -398,7 +460,9 @@
         "changeImage": "Bild ändern",
         "removeImage": "Bild entfernen",
         "postToChat": "Im Chat posten",
-        "createScene": "Szene erstellen"
+        "createScene": "Szene erstellen",
+        "addImage": "Bild hinzufügen",
+        "generateImage": "Bild generieren"
       },
       "topicFolder": {
         "create": {
@@ -421,7 +485,12 @@
         "configureNames": "Namen konfigurieren"
       },
       "tabs": {
-        "closeAll": "Alle Tabs schließen"
+        "closeAll": "Alle Tabs schließen",
+        "closeOther": "Andere Tabs schließen"
+      },
+      "settingFolder": {
+        "delete": "Einstellung löschen",
+        "createCampaign": "Kampagne erstellen"
       }
     },
     "tooltips": {
@@ -477,7 +546,9 @@
       "moveToCampaign": "In die Kampagne für spätere Verwendung verschieben",
       "addToCampaign": "Zur Kampagne hinzufügen",
       "deleteToDo": "Aufgabe abschließen",
-      "worldGenerateContent": "Verwalten der Weltgenerierungseinstellungen"
+      "editRow": "Dieses Element bearbeiten. Drücken Sie die Eingabetaste, um Änderungen zu speichern.",
+      "deleteIdea": "Idee löschen",
+      "settingGenerateContent": "Einstellungsgenerierungskonfiguration verwalten"
     },
     "errors": {
       "duplicateBookmark": "Bereits als Lesezeichen gespeichert"
@@ -487,10 +558,13 @@
         "successfulConnection": "Erfolgreich mit dem Campaign Builder-Backend verbunden.",
         "failedConnection": "Verbindung zum Backend fehlgeschlagen - überprüfen Sie Ihre \"erweiterten\" Einstellungen, um sicherzustellen, dass sie korrekt mit dem bereitgestellten Backend-Server übereinstimmen. Sie können in der Zwischenzeit keine erweiterten Funktionen verwenden.",
         "versionMismatch": "Die Version Ihres World & Campaign Builder-Backends ($1) stimmt nicht mit der von der installierten Modulversion benötigten Version ($2) überein. Bitte aktualisieren Sie eines von beiden (oder beide). Sie können in der Zwischenzeit keine erweiterten Funktionen verwenden.",
-        "emailSettingsNotSet": "Sie haben die E-Mail-Aufgabenlistenfunktion aktiviert, aber Sie haben keine Standard-Einstellung oder Kampagne festgelegt. Bitte legen Sie diese in den erweiterten Einstellungen fest."
+        "emailSettingsNotSet": "Sie haben die E-Mail-Aufgabenlistenfunktion aktiviert, aber Sie haben keine Standard-Einstellung oder Kampagne festgelegt. Bitte legen Sie diese in den erweiterten Einstellungen fest.",
+        "rollTablesNotAvailable": "Backend ist nicht verfügbar. Automatische Rollentabellen werden nicht aktualisiert. Konfigurieren Sie das Backend in den erweiterten Einstellungen, um von der KI generierte Namen zu aktivieren, die zum Thema Ihrer Welt passen."
       },
       "addedToSession": "zur Sitzung hinzugefügt",
-      "changesSaved": "Änderungen gespeichert"
+      "changesSaved": "Änderungen gespeichert",
+      "todoReferenceNotFound": "Die verknüpfte Referenz für dieses To-Do-Element existiert nicht mehr."
     }
-  }
+  },
+  "temp": "temp"
 }
