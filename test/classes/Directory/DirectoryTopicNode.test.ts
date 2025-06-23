@@ -3,7 +3,7 @@ import { DirectoryTopicNode } from '@/classes/Directory/DirectoryTopicNode';
 import { CollapsibleNode } from '@/classes/Directory/CollapsibleNode';
 import { TopicFolder } from '@/classes/TopicFolder';
 import { Entry } from '@/classes/Entry';
-import { WBWorld } from '@/classes/WBWorld';
+import { Setting } from '@/classes/Setting';
 import { Topics } from '@/types';
 import { NO_TYPE_STRING } from '@/utils/hierarchy';
 import * as sinon from 'sinon';
@@ -15,7 +15,7 @@ export const registerDirectoryTopicNodeTests = () => {
       const { describe, it, expect, beforeEach, afterEach } = context;
 
       describe('DirectoryTopicNode', () => {
-        let mockWorld: WBWorld;
+        let mockWorld: Setting;
         let mockTopicFolder: TopicFolder;
         let mockEntry: Entry;
         let topicNode: DirectoryTopicNode;
@@ -35,7 +35,7 @@ export const registerDirectoryTopicNodeTests = () => {
               ancestors: [],
               type: 'Character'
             })
-          } as unknown as WBWorld;
+          } as unknown as Setting;
 
           // Create a mock entry
           mockEntry = {
@@ -55,7 +55,7 @@ export const registerDirectoryTopicNodeTests = () => {
           } as unknown as TopicFolder;
 
           // Set the current world
-          CollapsibleNode.currentWorld = mockWorld;
+          CollapsibleNode.currentSetting = mockWorld;
 
           // Create a topic node
           topicNode = new DirectoryTopicNode(
@@ -67,7 +67,7 @@ export const registerDirectoryTopicNodeTests = () => {
 
         afterEach(() => {
           sinon.restore();
-          CollapsibleNode.currentWorld = null;
+          CollapsibleNode.currentSetting = null;
         });
 
         describe('constructor', () => {
@@ -87,7 +87,7 @@ export const registerDirectoryTopicNodeTests = () => {
         describe('_loadNodeList', () => {
           it('should do nothing if no current world', async () => {
             // Set current world to null
-            CollapsibleNode.currentWorld = null;
+            CollapsibleNode.currentSetting = null;
             
             // Call _loadNodeList
             await topicNode._loadNodeList(['entry-uuid'], []);

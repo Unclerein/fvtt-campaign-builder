@@ -3,7 +3,7 @@ import { DirectoryEntryNode } from '@/classes/Directory/DirectoryEntryNode';
 import { CollapsibleNode } from '@/classes/Directory/CollapsibleNode';
 import { Entry } from '@/classes/Entry';
 import { TopicFolder } from '@/classes/TopicFolder';
-import { WBWorld } from '@/classes/WBWorld';
+import { Setting } from '@/classes/Setting';
 import { Hierarchy } from '@/types';
 import { NO_NAME_STRING, NO_TYPE_STRING } from '@/utils/hierarchy';
 import * as sinon from 'sinon';
@@ -15,7 +15,7 @@ export const registerDirectoryEntryNodeTests = () => {
       const { describe, it, expect, beforeEach, afterEach } = context;
 
       describe('DirectoryEntryNode', () => {
-        let mockWorld: WBWorld;
+        let mockWorld: Setting;
         let mockTopicFolder: TopicFolder;
         let mockEntry: Entry;
         let entryNode: DirectoryEntryNode;
@@ -39,7 +39,7 @@ export const registerDirectoryEntryNodeTests = () => {
               'entry-uuid': true
             },
             getEntryHierarchy: sinon.stub().returns(mockHierarchy)
-          } as unknown as WBWorld;
+          } as unknown as Setting;
 
           // Create a mock topic folder
           mockTopicFolder = {
@@ -56,7 +56,7 @@ export const registerDirectoryEntryNodeTests = () => {
           } as unknown as Entry;
 
           // Set the current world
-          CollapsibleNode.currentWorld = mockWorld;
+          CollapsibleNode.currentSetting = mockWorld;
 
           // Create an entry node
           entryNode = new DirectoryEntryNode(
@@ -74,7 +74,7 @@ export const registerDirectoryEntryNodeTests = () => {
 
         afterEach(() => {
           sinon.restore();
-          CollapsibleNode.currentWorld = null;
+          CollapsibleNode.currentSetting = null;
         });
 
         describe('constructor', () => {
@@ -94,10 +94,10 @@ export const registerDirectoryEntryNodeTests = () => {
         describe('fromEntry', () => {
           it('should throw an error if no current world', () => {
             // Set current world to null
-            CollapsibleNode.currentWorld = null;
+            CollapsibleNode.currentSetting = null;
             
             // Call fromEntry and expect an error
-            expect(() => DirectoryEntryNode.fromEntry(mockEntry)).to.throw('No currentWorld');
+            expect(() => DirectoryEntryNode.fromEntry(mockEntry)).to.throw('No currentSetting');
           });
 
           it('should throw an error if entry has no topic folder', () => {

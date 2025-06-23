@@ -1,8 +1,9 @@
 import { DOCUMENT_TYPES, PCDoc } from '@/documents';
-import { Campaign, WBWorld } from '@/classes';
+import { Campaign, Setting } from '@/classes';
 import { localize } from '@/utils/game';
 import { FCBDialog } from '@/dialogs';
 import { toRaw } from 'vue';
+import { searchService } from '@/utils/search';
 
 // represents a PC - these are stored in flag inside campaigns so saving, etc. is handled by campaign
 export class PC {
@@ -63,7 +64,9 @@ export class PC {
    * Gets the Actor associated with the PC. If the actor is already loaded, the promise resolves
    * to the existing actor; otherwise, it loads the actor and then resolves to it.
    * 
-   * @returns {Promise<Actor | null>} A promise to the world associated with the campaign.
+   * @note It's possible the actorId is populated but the actor has been deleted.  In this case, 
+   * will return null and also set the actorId to null.
+   * @returns {Promise<Actor | null>} A promise to the actor associated with the PC.
    */
   public async getActor(): Promise<Actor | null> {
     if (this._actor)
@@ -73,12 +76,15 @@ export class PC {
 
     this._actor = await fromUuid<Actor>(this._pcDoc.system.actorId);
 
-    if (!this._actor)
-      throw new Error('Invalid actor in PC.getActor()');
+    if (!this._actor) {
+      this.actorId = '';
+      await this.save();
+    }
 
     return this._actor;
   }
 
+  /** note: this should only be used if you know getActor() has already been called */
   public get actor(): Actor | null {
     return this._actor;
   }
@@ -87,9 +93,9 @@ export class PC {
    * Gets the world associated with a PC, loading into the campaign 
    * if needed.
    * 
-   * @returns {Promise<WBWorld>} A promise to the world associated with the campaign.
+   * @returns {Promise<Setting>} A promise to the world associated with the campaign.
    */
-  public async getWorld(): Promise<WBWorld> {
+  public async getWorld(): Promise<Setting> {
     if (!this.campaign)
       this.campaign = await this.loadCampaign();
 
@@ -133,6 +139,14 @@ export class PC {
 
     if (pcDoc && pcDoc.length > 0) {
       const pc = new PC(pcDoc[0], campaign);
+
+      // Add to search index
+      try {
+        await searchService.addOrUpdatePCIndex(pc);
+      } catch (error) {
+        console.error('Failed to add PC to search index:', error);
+      }
+      
       return pc;
     } else {
       return null;
@@ -260,6 +274,15 @@ export class PC {
       this._cumulativeUpdate = {};
     });
 
+    // Update the search index and to-do list
+    try {
+      if (retval) {
+        await searchService.addOrUpdatePCIndex(this);
+      }
+    } catch (error) {
+      console.error('Failed to update search index:', error);
+    }
+
     return retval ? this : null;
   }
 
@@ -267,7 +290,7 @@ export class PC {
     if (!this._pcDoc)
       return;
 
-    const world = await this.getWorld() as WBWorld;
+    const world = await this.getWorld() as Setting;
 
     await world.executeUnlocked(async () => {
       await this._pcDoc.delete();

@@ -96,7 +96,7 @@
   ////////////////////////////////
   // store
   const mainStore = useMainStore();
-  const { currentWorld } = storeToRefs(mainStore);
+  const { currentSetting } = storeToRefs(mainStore);
 
   ////////////////////////////////
   // data
@@ -111,7 +111,7 @@
   // computed
   // Define the name styles (computed to react to world changes)
   const nameStylePrompts = computed(() => 
-    nameStyles.map(style => style.prompt.replace('{genre}', currentWorld.value?.genre || 'Fantasy'))
+    nameStyles.map(style => style.prompt.replace('{genre}', currentSetting.value?.genre || 'Fantasy'))
   );
 
   // Define display names (shorter versions for UI)
@@ -152,19 +152,36 @@
   };
 
   const loadPreviewData = async () => {
-    if (!currentWorld.value) return;
+    if (!currentSetting.value) return;
     
     loading.value = true;
     error.value = '';
     
     try {
-      const response = await Backend.api.apiNamePreviewPost({
-        nameStyles: nameStylePrompts.value,
-        genre: currentWorld.value.genre,
-        worldFeeling: currentWorld.value.worldFeeling
-      });
-      
-      previewData.value = response.data.preview;
+      // Check if we have stored examples with matching genre and world feeling
+      const storedExamples = currentSetting.value.nameStyleExamples;
+      if (storedExamples && 
+          storedExamples.genre === currentSetting.value.genre && 
+          storedExamples.settingFeeling === currentSetting.value.settingFeeling) {
+        previewData.value = storedExamples.examples;
+      } else {
+        // If no stored examples or they don't match, generate new ones
+        const response = await Backend.api.apiNamePreviewPost({
+          nameStyles: nameStylePrompts.value,
+          genre: currentSetting.value.genre,
+          settingFeeling: currentSetting.value.settingFeeling
+        });
+        
+        previewData.value = response.data.preview;
+
+        // Store the new examples
+        currentSetting.value.nameStyleExamples = {
+          genre: currentSetting.value.genre,
+          settingFeeling: currentSetting.value.settingFeeling,
+          examples: response.data.preview
+        };
+        await currentSetting.value.save();
+      }
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e);
     } finally {

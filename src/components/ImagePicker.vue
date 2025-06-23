@@ -26,6 +26,8 @@
 
   // types
   import { Topics, ValidTopic, WindowTabType } from '@/types';
+  import { MenuItem } from '@imengyu/vue3-context-menu';
+  import { Backend } from '@/classes';
 
   ////////////////////////////////
   // props
@@ -57,10 +59,12 @@
   const emit = defineEmits<{
     (e: 'update:modelValue', value: string): void;
     (e: 'create-scene', value: string): void; 
+    (e: 'generate-image'): void; 
   }>();
 
   ////////////////////////////////
   // data
+  // these don't match the TabTypeIcons or TopicIcons because they need to be files, not icons
   const WINDOW_TYPE_IMAGES = {
     [WindowTabType.World]: 'icons/svg/castle.svg',
     [WindowTabType.Campaign]: 'icons/svg/ruins.svg',
@@ -121,52 +125,85 @@
 
   // Handle right-click to show context menu with options
   const onContextMenu = (event: MouseEvent) => {
-    // Only show context menu if we have a non-default image
-    if (!isDefaultImage.value) {
-      event.preventDefault();
+    event.preventDefault();
 
-      // Show context menu using the Vue context menu component
-      ContextMenu.showContextMenu({
-        customClass: 'fcb',
-        x: event.x,
-        y: event.y,
-        zIndex: 300,
-        items: [
-          {
-            icon: 'fa-eye',
-            iconFontClass: 'fas',
-            label: localize('contextMenus.image.viewImage'),
-            onClick: () => showImagePopout()
-          },
-          {
-            icon: 'fa-edit',
-            iconFontClass: 'fas',
-            label: localize('contextMenus.image.changeImage'),
-            onClick: () => openFilePicker()
-          },
-          {
-            icon: 'fa-trash',
-            iconFontClass: 'fas',
-            label: localize('contextMenus.image.removeImage'),
-            onClick: () => removeImage()
-          },
-          {
-            icon: 'fa-comment',
-            iconFontClass: 'fas',
-            label: localize('contextMenus.image.postToChat'),
-            onClick: () => postToChat()
-          },
-        ].concat(props.topic === Topics.Location ?
-          [{
-            icon: 'fa-comment',
-            iconFontClass: 'fas',
-            label: localize('contextMenus.image.createScene'),
-            onClick: () => createScene()
-          }] :
-          []
-        ),
-      });
-    }
+    let items = [] as MenuItem[];
+
+    if (isDefaultImage.value) {
+      // if it's the default, all we do is add an image
+      items = [
+        {
+          icon: 'fa-edit',
+          iconFontClass: 'fas',
+          label: localize('contextMenus.image.addImage'),
+          onClick: () => openFilePicker()
+        },
+      ];
+
+      if (Backend.available && [Topics.Character, Topics.Location, Topics.Organization].includes(props.topic)) {
+        items.push({
+          icon: 'fa-head-side-virus',
+          iconFontClass: 'fas',
+          label: localize('contextMenus.image.generateImage'),
+          onClick: () => generateImage()
+        });
+      }
+    } else {
+      items = [
+        {
+          icon: 'fa-eye',
+          iconFontClass: 'fas',
+          label: localize('contextMenus.image.viewImage'),
+          onClick: () => showImagePopout()
+        },
+        {
+          icon: 'fa-edit',
+          iconFontClass: 'fas',
+          label: localize('contextMenus.image.changeImage'),
+          onClick: () => openFilePicker()
+        },
+        {
+          icon: 'fa-trash',
+          iconFontClass: 'fas',
+          label: localize('contextMenus.image.removeImage'),
+          onClick: () => removeImage()
+        },
+        {
+          icon: 'fa-comment',
+          iconFontClass: 'fas',
+          label: localize('contextMenus.image.postToChat'),
+          onClick: () => postToChat()
+        },
+      ];
+      
+      if (props.topic === Topics.Location) {
+        items.push({
+          icon: 'fa-image',
+          iconFontClass: 'fas',
+          label: localize('contextMenus.image.createScene'),
+          onClick: () => createScene()
+        });
+      }
+
+      if (Backend.available && [Topics.Character, Topics.Location, Topics.Organization].includes(props.topic)) {
+        // insert it after change image
+        items.splice(items.findIndex((i)=> i.icon === 'fa-edit'), 0, {
+          icon: 'fa-head-side-virus',
+          iconFontClass: 'fas',
+          label: localize('contextMenus.image.generateImage'),
+          onClick: () => generateImage()
+        });
+      }
+    } 
+
+    // Show context menu using the Vue context menu component
+    ContextMenu.showContextMenu({
+      customClass: 'fcb',
+      x: event.x,
+      y: event.y,
+      zIndex: 300,
+      items,
+    });
   };
 
   // Open the FilePicker to select a new image
@@ -211,6 +248,10 @@
     }
   };
 
+  const generateImage = () => {
+    emit('generate-image');
+  };
+
   const removeImage = () => {
     emit('update:modelValue', '');
   };
@@ -220,7 +261,8 @@
   };
 
   const createScene = () => {
-    emit('create-scene', props.modelValue);
+    if (props.modelValue) 
+      emit('create-scene', props.modelValue);
   };
 
   ////////////////////////////////

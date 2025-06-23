@@ -3,7 +3,7 @@ import { localize } from '@/utils/game';
 import { Topics, } from '@/types';
 import { SettingKey, ModuleSettings, UserFlagKey, UserFlags,} from '@/settings';
 import { toTopic } from '@/utils/misc';
-import { WBWorld } from '@/classes';
+import { Setting } from '@/classes';
 
 /**
  * Gets the root folder.
@@ -61,35 +61,35 @@ export async function createRootFolder(name?: string): Promise<Folder> {
 
 
 /**
- * Gets the root and world folders.
+ * Gets the root and setting folders.
  * Will create new folders if missing.
- * @returns The root and world folders.
+ * @returns The root and setting folders.
  */
-export async function getDefaultFolders(): Promise<{ rootFolder: Folder; world: WBWorld}> {
+export async function getDefaultFolders(): Promise<{ rootFolder: Folder; setting: Setting}> {
   const rootFolder = await getRootFolder(); // will create if needed
-  const worldId = UserFlags.get(UserFlagKey.currentWorld);  // this isn't world-specific (obviously)
+  const settingId = UserFlags.get(UserFlagKey.currentSetting);  // this isn't world-specific (obviously)
 
   // make sure we have a default and it exists
-  let world = null as WBWorld | null;
-  if (worldId) {
-    world = await WBWorld.fromUuid(worldId);
+  let setting = null as Setting | null;
+  if (settingId) {
+    setting = await Setting.fromUuid(settingId);
   }   
 
-  if (!world) {
+  if (!setting) {
     // couldn't find it, default to top if one exists
     if (rootFolder.children.length>0 && rootFolder.children[0]?.folder?.uuid) {
-      world = await WBWorld.fromUuid(rootFolder.children[0].folder.uuid);
+      setting = await Setting.fromUuid(rootFolder.children[0].folder.uuid);
     } else {
-      // no world folder, so create one
-      world = await WBWorld.create(true);
+      // no setting folder, so create one
+      setting = await Setting.create(true);
     }
   }
 
   // if we couldn't create one, then throw an error
-  if (!world)
-    throw new Error('Couldn\'t create world folder in compendia/index.getDefaultFolders()');
+  if (!setting)
+    throw new Error('Couldn\'t create setting folder in compendia/index.getDefaultFolders()');
 
-  return { rootFolder, world };
+  return { rootFolder, setting };
 }
 
 

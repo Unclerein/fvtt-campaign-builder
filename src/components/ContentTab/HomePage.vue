@@ -6,7 +6,7 @@
       </div>
     </div>
     <h3>
-      {{ currentWorld?.name }}
+      {{ currentSetting?.name }}
     </h3>
     <br>
     <br>
@@ -84,7 +84,7 @@
   // local imports
   import { localize } from '@/utils/game';
   import { getTabTypeIcon, getTopicIcon } from '@/utils/misc';
-  import { useCampaignDirectoryStore, useMainStore, useNavigationStore, useTopicDirectoryStore } from '@/applications/stores';
+  import { useCampaignDirectoryStore, useMainStore, useNavigationStore, useSettingDirectoryStore } from '@/applications/stores';
   import { FCBDialog } from '@/dialogs';
   
   // library components
@@ -106,9 +106,9 @@
   // store
   const mainStore = useMainStore();
   const navigationStore = useNavigationStore();
-  const topicDirectoryStore = useTopicDirectoryStore();
+  const settingDirectoryStore = useSettingDirectoryStore();
   const campaignDirectoryStore = useCampaignDirectoryStore();
-  const { currentWorld } = storeToRefs(mainStore);
+  const { currentSetting } = storeToRefs(mainStore);
   const { recent } = storeToRefs(navigationStore);
 
   ////////////////////////////////
@@ -121,7 +121,7 @@
   ////////////////////////////////
   // methods
   const onCreateWorld = async () => {
-    await topicDirectoryStore.createWorld();
+    await settingDirectoryStore.createWorld();
   };
 
   const onCreateCampaign = async () => {
@@ -141,10 +141,10 @@
   };
 
   const onCreateEntry = async (topic: Topics) => {
-    if (!currentWorld.value)
+    if (!currentSetting.value)
       throw new Error('No current world in HomePage.onCreateEntry()');
 
-    const topicFolder = currentWorld.value.topicFolders[topic];
+    const topicFolder = currentSetting.value.topicFolders[topic];
 
     if (!topicFolder)
       throw new Error('No topic folder in HomePage.onCreateEntry()');
@@ -176,7 +176,7 @@
           break;
 
         case getTabTypeIcon(WindowTabType.World):
-          await navigationStore.openWorld(item.uuid, { newTab: false });
+          await navigationStore.openSetting(item.uuid, { newTab: false });
           break;
 
         case getTabTypeIcon(WindowTabType.Campaign):

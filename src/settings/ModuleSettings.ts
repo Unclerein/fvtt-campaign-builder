@@ -12,7 +12,7 @@ export enum SettingKey {
   sessionDisplayMode = 'sessionDisplayMode',  // how to display sessions in the directory
   hideBackendWarning = 'hideBackendWarning', // don't show the warning about no backend
   defaultAddToSession = 'defaultAddToSession', // default state of "Add to current session" checkbox
-  enableToDoList = 'enableToDoList', // whether the todo list feature is enabled
+  enableToDoList = 'enableToDoList', // whether the to-do list feature is enabled
   autoRelationships = 'autoRelationships', // whether to automatically suggest relationship changes based on editor
   
   // internal only
@@ -27,6 +27,7 @@ export enum SettingKey {
   APIURL = 'APIURL',   // URL of backend
   APIToken = 'APIToken',
   defaultToLongDescriptions = 'defaultToLongDescriptions',
+  longDescriptionParagraphs = 'longDescriptionParagraphs', // number of paragraphs for long descriptions (1-4)
   useGmailToDos = 'useGmailToDos', // whether to use Gmail for todos
   emailDefaultWorld = 'emailDefaultWorld', // default world for email features
   emailDefaultCampaign = 'emailDefaultCampaign', // default campaign for email features
@@ -51,6 +52,7 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.APIURL ? string :
     K extends SettingKey.APIToken ? string :
     K extends SettingKey.defaultToLongDescriptions ? boolean :
+    K extends SettingKey.longDescriptionParagraphs ? number :
     K extends SettingKey.defaultAddToSession ? boolean :
     K extends SettingKey.rollTableSettingsMenu ? never :
     K extends SettingKey.autoRefreshRollTables ? boolean :
@@ -257,6 +259,11 @@ export class ModuleSettings {
       settingID: SettingKey.defaultToLongDescriptions,
       default: true,
       type: Boolean,
+    },
+    {
+      settingID: SettingKey.longDescriptionParagraphs,
+      default: 1,
+      type: Number,
     },
   ];
   

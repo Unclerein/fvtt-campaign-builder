@@ -1,7 +1,7 @@
 // library imports
 
 // local imports
-import { useMainStore, useTopicDirectoryStore, } from '@/applications/stores';
+import { useMainStore, useSettingDirectoryStore, } from '@/applications/stores';
 
 // types
 import { 
@@ -11,12 +11,12 @@ import {
   Species, 
   Topics, 
 } from '@/types';
-import { Entry, TopicFolder, WBWorld, } from '@/classes';
+import { Entry, TopicFolder, Setting, } from '@/classes';
 import { Backend } from '@/classes';
 import { ModuleSettings, SettingKey } from '@/settings';
 
 /**
- * Type representing all possible generated content details
+ * Union type representing all possible generated content details.
  */
 export type GeneratedDetails = 
   CharacterDetails |
@@ -24,22 +24,23 @@ export type GeneratedDetails =
   LocationDetails;
 
 /**
- * Handles the creation and setup of a newly generated entry
+ * Handles the creation and setup of a newly generated entry.
+ * Creates the entry, sets its properties based on the generated details,
+ * and optionally triggers image generation.
  * 
- * @param details The details of the generated content
- * @param topicFolder The topic folder to create the entry in 
- * @param generateImage Whether to generate an image for the entry after creation
- * @returns The created entry or undefined if creation failed
+ * @param details - The generated content details containing name, description, type, and topic-specific data
+ * @param topicFolder - The topic folder to create the entry in
+ * @returns A promise that resolves to the created entry, or undefined if creation failed
  */
 export const handleGeneratedEntry = async (details: GeneratedDetails, topicFolder: TopicFolder): Promise<Entry | undefined> => {
   const { name, description, type } = details;
-  const topicDirectoryStore = useTopicDirectoryStore();
+  const settingDirectoryStore = useSettingDirectoryStore();
   
   if (!topicFolder)
     return undefined;
 
   // create the entry
-  const entry = await topicDirectoryStore.createEntry(topicFolder, { name: name, type: type });
+  const entry = await settingDirectoryStore.createEntry(topicFolder, { name: name, type: type });
 
   if (!entry)
     throw new Error('Failed to create entry in generation.handleGeneratedEntry()');
@@ -58,7 +59,7 @@ export const handleGeneratedEntry = async (details: GeneratedDetails, topicFolde
       // @ts-ignore
       if (details.parentId)
         // @ts-ignore
-        await topicDirectoryStore.setNodeParent(topicFolder, entry.uuid, details.parentId);
+        await settingDirectoryStore.setNodeParent(topicFolder, entry.uuid, details.parentId);
       break;
   }
   
@@ -70,8 +71,18 @@ export const handleGeneratedEntry = async (details: GeneratedDetails, topicFolde
   return entry;
 };
 
-export const generateImage = async (currentWorld: WBWorld, entry: Entry): Promise<void> => {
-  if (!entry || !currentWorld || ![Topics.Character, Topics.Location, Topics.Organization].includes(entry.topic)) {
+/**
+ * Generates an AI image for an entry based on its type, description, and world context.
+ * Handles different generation logic for characters, locations, and organizations.
+ * Shows user notifications during the generation process and updates the entry with the result.
+ * 
+ * @param forSetting - The setting containing the entry (used for genre and world feeling)
+ * @param entry - The entry to generate an image for
+ * @returns A promise that resolves when image generation is complete
+ * @throws {Error} If image generation fails or the entry type is not supported
+ */
+export const generateImage = async (forSetting: Setting, entry: Entry): Promise<void> => {
+  if (!entry || !forSetting || ![Topics.Character, Topics.Location, Topics.Organization].includes(entry.topic)) {
     return;
   }
 
@@ -91,8 +102,8 @@ export const generateImage = async (currentWorld: WBWorld, entry: Entry): Promis
       case Topics.Character:
         // Call the API to generate an image
          result = await Backend.api.apiCharacterGenerateImagePost({
-          genre: currentWorld.genre,
-          worldFeeling: currentWorld.worldFeeling,
+          genre: forSetting.genre,
+          settingFeeling: forSetting.settingFeeling,
           type: entry.type,
           species: species?.name || '',
           speciesDescription: species?.description || '',
@@ -119,8 +130,8 @@ export const generateImage = async (currentWorld: WBWorld, entry: Entry): Promis
 
         // Call the API to generate an image
         const options = {
-          genre: currentWorld.genre,
-          worldFeeling: currentWorld.worldFeeling,
+          genre: forSetting.genre,
+          settingFeeling: forSetting.settingFeeling,
           type: entry.type,
           name: entry.name,
           parentName: parent?.name,

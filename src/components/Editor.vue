@@ -7,7 +7,7 @@
   >
     <!-- activation button positioned outside the scrolling area -->
     <a
-      v-if="props.hasButton && props.editable"
+      v-if="!props.editOnlyMode && props.editable"
       ref="buttonRef"
       class="editor-edit"
       :style="`display: ${ buttonDisplay }`"
@@ -46,9 +46,9 @@
   import { storeToRefs } from 'pinia';
 
   // local imports
-  import { enrichFwbHTML } from './Editor/helpers';
+  import { enrichFcbHTML } from './Editor/helpers';
   import { useMainStore } from '@/applications/stores';
-  import { Campaign, Entry, Session, WBWorld } from '@/classes';
+  import { Campaign, Entry, Session, Setting } from '@/classes';
   import { getValidatedData } from '@/utils/dragdrop';
   import { notifyInfo } from '@/utils/notifications';
   import { localize } from '@/utils/game';
@@ -62,6 +62,7 @@
   // local components
 
   // types
+  const TextEditor = foundry.applications.ux.TextEditor;
 
   // type EditorOptions = {
   //   document: Document<any>,
@@ -75,6 +76,11 @@
   ////////////////////////////////
   // props
   const props = defineProps({
+    editOnlyMode: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
     initialContent: {
       type: String,
       required: false,
@@ -84,11 +90,6 @@
       type: String,
       required: false,
       default: '',
-    },
-    hasButton: {
-      type: Boolean,
-      required: false,
-      default: false,
     },
     editable: {
       type: Boolean,
@@ -138,7 +139,7 @@
   ////////////////////////////////
   // store
   const mainStore = useMainStore();
-  const { currentWorld } = storeToRefs(mainStore);
+  const { currentSetting } = storeToRefs(mainStore);
 
   ////////////////////////////////
   // data
@@ -171,10 +172,6 @@
 
   const wrapperStyle = computed((): string => (props.fixedHeight ? `height: ${props.fixedHeight + 'px'}` : ''));
   const innerStyle = computed((): string => (props.height ? `height: ${props.height + 'px'}` : ''));
-
-  const editOnlyMode = computed((): boolean => {
-    return props.editable && !props.hasButton
-  });
 
   ////////////////////////////////
   // methods
@@ -227,11 +224,11 @@
     return {
       menu: ProseMirror.ProseMirrorMenu.build(ProseMirror.defaultSchema, {
         // In edit-only mode, we want to keep the editor open after saving
-        destroyOnSave: !editOnlyMode.value,  // Controls whether the save button or save & close button is shown
-        onSave: () => saveEditor({ remove: !editOnlyMode.value })
+        destroyOnSave: !props.editOnlyMode,  // Controls whether the save button or save & close button is shown
+        onSave: () => saveEditor({ remove: !props.editOnlyMode })
       }),
       keyMaps: ProseMirror.ProseMirrorKeyMaps.build(ProseMirror.defaultSchema, {
-        onSave: () => saveEditor({ remove: !editOnlyMode.value })
+        onSave: () => saveEditor({ remove: !props.editOnlyMode })
       })
     };
   };
@@ -246,12 +243,12 @@
     content = ProseMirror.dom.serializeString(toRaw(editor.value).view.state.doc.content);
 
     // see if dirty
-    const isDirty = (lastSavedContent.value !== ProseMirror.dom.serializeString(toRaw(editor.value).view.state.doc.content));
+    const dirty = isDirty();
 
     // Apply entity linking if enabled and content is dirty
-    if (isDirty && props.enableEntityLinking && currentWorld.value) {
+    if (dirty && props.enableEntityLinking && currentSetting.value) {
       try {
-        content = await replaceEntityReferences(content, currentWorld.value, {
+        content = await replaceEntityReferences(content, currentSetting.value, {
           currentEntityUuid: props.currentEntityUuid
         });
       } catch (error) {
@@ -261,7 +258,7 @@
     }
 
     // Check for UUID changes if related items tracking is enabled
-    if (isDirty && props.enableRelatedEntriesTracking) {
+    if (dirty && props.enableRelatedEntriesTracking) {
       const currentUUIDs = extractUUIDs(content);
       const { added, removed } = compareUUIDs(initialUUIDs.value, currentUUIDs);
       
@@ -272,7 +269,7 @@
     }
 
     // For edit-only mode (like in SessionNotes), don't destroy the editor
-    if (remove && !editOnlyMode.value) {
+    if (remove && !props.editOnlyMode) {
       // this also blows up the DOM... don't think we actually need it
       toRaw(editor.value)?.destroy();  
       editor.value = null;
@@ -283,12 +280,12 @@
       editorVisible.value = false;
       await nextTick();
       editorVisible.value = true;
-    } else if (isDirty) {
+    } else if (dirty) {
       // if we're not removing it, then do a ui confirmation
       notifyInfo(localize('notifications.changesSaved'));
     }
     
-    if (isDirty) {
+    if (dirty) {
       lastSavedContent.value = content;
       
       if (props.enableRelatedEntriesTracking) {
@@ -299,6 +296,22 @@
     }
   };
 
+  const isDirty = (): boolean => {
+    if (!editor.value)
+      return false;
+    
+    return lastSavedContent.value !== getContent();
+  }
+
+  const getContent = (): string => {
+    if (!editor.value)
+      return '';
+    
+    return ProseMirror.dom.serializeString(toRaw(editor.value).view.state.doc.content);
+  }
+
+  // expose methods
+  defineExpose({ isDirty, getContent });
 
   ////////////////////////////////
   // event handlers
@@ -333,7 +346,7 @@
 
     // Handle different data structures from various drag sources
     if (data.entryNode) {
-      // From TopicDirectoryNodeWithChildren or TopicDirectoryNode
+      // From SettingDirectoryNodeWithChildren or SettingDirectoryNode
       entryUuid = data.childId;
       entryName = data.name;
     } else if (data.campaignNode) {
@@ -341,7 +354,7 @@
       entryUuid = data.campaignId;
       entryName = data.name;
     } else if (data.worldNode) {
-      // From TopicDirectory world
+      // From SettingDirectory world
       entryUuid = data.worldId;
       entryName = data.name;
     } else if (data.sessionNode) {
@@ -372,7 +385,7 @@
             }
           } else if (data.worldNode) {
             // It's a world
-            const world = await WBWorld.fromUuid(entryUuid);
+            const world = await Setting.fromUuid(entryUuid);
             if (world) {
               entryName = world.name;
             }
@@ -408,34 +421,51 @@
 
   ////////////////////////////////
   // watchers
-  watch(() => props.initialContent, async () =>{
-    if (!currentWorld.value)
+  watch(() => props.initialContent, async (newContent) =>{
+    if (!currentSetting.value)
       return;
-      
-    enrichedInitialContent.value = await enrichFwbHTML(currentWorld.value.uuid, props.initialContent || '');
 
+    const content = newContent || '';
+      
     // Initialize UUIDs for tracking if enabled
     if (props.enableRelatedEntriesTracking) {
-      initialUUIDs.value = extractUUIDs(props.initialContent || '');
+      initialUUIDs.value = extractUUIDs(content);
     }
 
     // if edit-only and no editor exists yet, activate it
-    if (editOnlyMode.value && !editor.value) {
+    if (props.editOnlyMode && !editor.value) {
+      await nextTick();
       await activateEditor();
     }
     // If editor is already active, update its content
     else if (editor.value) {
+      await nextTick();
+
       // Update the editor content
       const view = toRaw(editor.value).view;
       const { state, dispatch } = view;
       
+      // Do nothing if the content is already what we want it to be
+      const currentContent = ProseMirror.dom.serializeString(state.doc.content);
+      if (currentContent === content) 
+        return;
+      
       // Create a transaction that replaces the entire document content
       const schema = state.schema;
-      const newDoc = ProseMirror.dom.parseString(enrichedInitialContent.value || '', schema);
+      const newDoc = ProseMirror.dom.parseString(content, schema);
       const tr = state.tr.replaceWith(0, state.doc.content.size, newDoc.content);
       
-      // Apply the transaction
-      dispatch(tr);
+      // Apply the transaction - this is throwing a Foundry ProseMirrorMenu plugin error, but it doesn't seem to matter as
+      //    the update still happens
+      try {
+        dispatch(tr);
+      } catch (error) {
+        // just move on
+      }
+      
+      lastSavedContent.value = content;
+    } else {
+      enrichedInitialContent.value = await enrichFcbHTML(currentSetting.value.uuid, content);
     }
   });
 
@@ -443,7 +473,7 @@
   ////////////////////////////////
   // lifecycle events
   onMounted(async () => {
-    if (!currentWorld.value)
+    if (!currentSetting.value)
       return;
 
     // we create a random ID so we can use multiple instances
@@ -455,16 +485,17 @@
 
     editor.value = null;
 
-    // show the pretty text
-    enrichedInitialContent.value = await enrichFwbHTML(currentWorld.value.uuid, props.initialContent || '');
+    // show the pretty text - but only if we have a button... otherwise we're in permananent edit mode and shouldn't be enriching the text
+    enrichedInitialContent.value = !props.editOnlyMode ? await enrichFcbHTML(currentSetting.value.uuid, props.initialContent || '') : props.initialContent || '';
 
     // Initialize UUIDs for tracking if enabled
     if (props.enableRelatedEntriesTracking) {
       initialUUIDs.value = extractUUIDs(props.initialContent || '');
     }
 
-    if (!props.hasButton) {
-      void activateEditor();
+    if (props.editOnlyMode) {
+      await nextTick();
+      await activateEditor();
     }
   });
 
@@ -509,6 +540,21 @@
       background: var(--fcb-dark-overlay);
       color: var(--color-dark-2);
 
+      .editor {
+        overflow: visible;
+        height: 100%;
+        width: 100%;
+        min-height: 100%;
+        position: relative;
+
+        .editor-content {
+          overflow-y: visible;
+          height: unset;
+          min-height: calc(100% - 8px);
+          padding: 2px;
+        }
+      }
+
       .theme-dark & {
         background: var(--fcb-light-overlay);
         color: var(--color-light-2);
@@ -537,6 +583,10 @@
 
           .editor-content {
             padding: 0 8px 0 3px;
+
+            &:focus-visible {
+              outline: none;  // override the default focus outline
+            }
           }
         }
       }

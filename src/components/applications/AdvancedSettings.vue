@@ -41,7 +41,23 @@
       </div>
 
       <div class="form-group">
-        <label>{{ localize('applications.advancedSettings.labels.useGmailToDos') }}</label>
+        <label>{{ localize('applications.advancedSettings.labels.longDescriptionParagraphs') }}</label>
+        <div class="form-fields">
+          <RangePicker
+            v-model="longDescriptionParagraphs"
+            name="longDescriptionParagraphs"
+            :min="1"
+            :max="4"
+            :step="1"
+          />
+        </div>
+        <p class="hint">
+          {{ localize('applications.advancedSettings.labels.longDescriptionParagraphsHint') }}
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label>{{ localize('applications.advancedSettings.labels.useGmailIdeas') }}</label>
         <div class="form-fields">
           <Checkbox 
               v-model="useGmailToDos" 
@@ -49,7 +65,7 @@
             />
         </div>
         <p class="hint">
-          {{ localize('applications.advancedSettings.labels.useGmailToDosHint') }}
+          {{ localize('applications.advancedSettings.labels.useGmailIdeasHint') }}
         </p>
       </div>
 
@@ -113,7 +129,7 @@
   
   // local imports
   import { ModuleSettings, SettingKey } from '@/settings';
-  import { Backend, WBWorld } from '@/classes';
+  import { Backend, Setting } from '@/classes';
   import { advancedSettingsApp } from '@/applications/settings/AdvancedSettingsApplication';
   import { localize } from '@/utils/game';
   import { getDefaultFolders } from '@/compendia';
@@ -123,8 +139,8 @@
   import Checkbox from 'primevue/checkbox';
   import Select from 'primevue/select';
 
-
   // local components
+  import RangePicker from '@/components/RangePicker.vue';
 
   // types
   
@@ -142,6 +158,7 @@
   const APIURL = ref<string>('');
   const APIToken = ref<string>('');
   const defaultToLongDescriptions = ref<boolean>(true);
+  const longDescriptionParagraphs = ref<number>(1);
   const useGmailToDos = ref<boolean>(false);
   const emailDefaultWorld = ref<string>('');
   const emailDefaultCampaign = ref<string>('');
@@ -167,7 +184,7 @@
       return;
     }
 
-    const world = await WBWorld.fromUuid(worldUuid);
+    const world = await Setting.fromUuid(worldUuid);
     if (!world) {
       campaignOptions.value = [];
       return;
@@ -188,12 +205,13 @@
     await ModuleSettings.set(SettingKey.APIURL, APIURL.value);
     await ModuleSettings.set(SettingKey.APIToken, APIToken.value);
     await ModuleSettings.set(SettingKey.defaultToLongDescriptions, defaultToLongDescriptions.value);
+    await ModuleSettings.set(SettingKey.longDescriptionParagraphs, longDescriptionParagraphs.value);
     await ModuleSettings.set(SettingKey.useGmailToDos, useGmailToDos.value);
     await ModuleSettings.set(SettingKey.emailDefaultWorld, emailDefaultWorld.value);
     await ModuleSettings.set(SettingKey.emailDefaultCampaign, emailDefaultCampaign.value);
 
     // reset the backend
-    await Backend.configure();
+    await Backend.configure(true);
 
     // close
     advancedSettingsApp?.close();
@@ -203,6 +221,7 @@
     APIURL.value = ModuleSettings.get(SettingKey.APIURL);
     APIToken.value = ModuleSettings.get(SettingKey.APIToken);
     defaultToLongDescriptions.value = ModuleSettings.get(SettingKey.defaultToLongDescriptions);
+    longDescriptionParagraphs.value = ModuleSettings.get(SettingKey.longDescriptionParagraphs);
     useGmailToDos.value = ModuleSettings.get(SettingKey.useGmailToDos);
     emailDefaultWorld.value = ModuleSettings.get(SettingKey.emailDefaultWorld);
     emailDefaultCampaign.value = ModuleSettings.get(SettingKey.emailDefaultCampaign);
@@ -219,6 +238,7 @@
     APIURL.value = ModuleSettings.get(SettingKey.APIURL);
     APIToken.value = ModuleSettings.get(SettingKey.APIToken);
     defaultToLongDescriptions.value = ModuleSettings.get(SettingKey.defaultToLongDescriptions);
+    longDescriptionParagraphs.value = ModuleSettings.get(SettingKey.longDescriptionParagraphs);
     useGmailToDos.value = ModuleSettings.get(SettingKey.useGmailToDos);
     emailDefaultWorld.value = ModuleSettings.get(SettingKey.emailDefaultWorld);
     emailDefaultCampaign.value = ModuleSettings.get(SettingKey.emailDefaultCampaign);

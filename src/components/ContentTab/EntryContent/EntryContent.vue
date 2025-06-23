@@ -42,127 +42,130 @@
           @tag-removed="onTagChange"
         />
       </div>
-      <nav class="fcb-sheet-navigation flexrow tabs" data-group="primary">
-        <a class="item" data-tab="description">{{ localize('labels.tabs.entry.description') }}</a>
-        <a 
-          v-for="relationship in relationships"
-          :key="relationship.label"
-          class="item" 
-          :data-tab="relationship.tab"
-        >
-          {{ localize(relationship.label) }}
-        </a>
-        <a 
-          v-if="topic===Topics.Character"
-          class="item" 
-          data-tab="actors"
-        >
-          {{ localize('labels.tabs.entry.actors') }}
-        </a>
-        <a 
-          v-if="topic===Topics.Location"
-          class="item" 
-          data-tab="scenes"
-        >
-          {{ localize('labels.tabs.entry.scenes') }}
-        </a>
-        <a 
-          class="item" 
-          data-tab="sessions"
-        >
-          {{ localize('labels.tabs.entry.sessions') }}
-        </a>
-      </nav>
-      <div class="fcb-tab-body flexrow">
-        <DescriptionTab 
-          :name="currentEntry?.name || 'Entry'"
-          :image-url="currentEntry?.img"
-          :window-type="WindowTabType.Entry"
-          :topic="topic as ValidTopic"
-          @image-change="onImageChange"
-        >
-          <div class="flexrow form-group">
-            <LabelWithHelp
-              label-text="labels.fields.type"
-            />
-            <TypeSelect
-              :initial-value="currentEntry?.type || ''"
+      <div class="fcb-sheet-subtab-container flexrow">
+        <div class="fcb-subtab-wrapper">
+          <nav class="fcb-sheet-navigation flexrow tabs" data-group="primary">
+            <a class="item" data-tab="description">{{ localize('labels.tabs.entry.description') }}</a>
+            <a 
+              v-for="relationship in relationships"
+              :key="relationship.label"
+              class="item" 
+              :data-tab="relationship.tab"
+            >
+              {{ localize(relationship.label) }}
+            </a>
+            <a 
+              v-if="topic===Topics.Character"
+              class="item" 
+              data-tab="actors"
+            >
+              {{ localize('labels.tabs.entry.actors') }}
+            </a>
+            <a 
+              v-if="topic===Topics.Location"
+              class="item" 
+              data-tab="scenes"
+            >
+              {{ localize('labels.tabs.entry.scenes') }}
+            </a>
+            <a 
+              class="item" 
+              data-tab="sessions"
+            >
+              {{ localize('labels.tabs.entry.sessions') }}
+            </a>
+          </nav>
+          <div class="fcb-tab-body flexrow">
+            <DescriptionTab 
+              :name="currentEntry?.name || 'Entry'"
+              :image-url="currentEntry?.img"
+              :window-type="WindowTabType.Entry"
               :topic="topic as ValidTopic"
-              @type-selection-made="onTypeSelectionMade"
-            />
-          </div>
+              @image-change="onImageChange"
+            >
+              <div class="flexrow form-group">
+                <LabelWithHelp
+                  label-text="labels.fields.type"
+                />
+                <TypeSelect
+                  :initial-value="currentEntry?.type || ''"
+                  :topic="topic as ValidTopic"
+                  @type-selection-made="onTypeSelectionMade"
+                />
+              </div>
 
-          <!-- show the species for characters -->
-          <div 
-            v-if="topic===Topics.Character"
-            class="flexrow form-group"
-          >
-            <LabelWithHelp
-              label-text="labels.fields.species"
-            />
-            <SpeciesSelect
-              :initial-value="currentEntry?.speciesId || ''"
-              :allow-new-items="false"
-              @species-selection-made="onSpeciesSelectionMade"
-            />
-          </div>
+              <!-- show the species for characters -->
+              <div 
+                v-if="topic===Topics.Character"
+                class="flexrow form-group"
+              >
+                <LabelWithHelp
+                  label-text="labels.fields.species"
+                />
+                <SpeciesSelect
+                  :initial-value="currentEntry?.speciesId || ''"
+                  :allow-new-items="false"
+                  @species-selection-made="onSpeciesSelectionMade"
+                />
+              </div>
 
-          <div 
-            v-if="showHierarchy"
-            class="flexrow form-group"
-          >
-            <LabelWithHelp
-              label-text="labels.fields.parent"
-            />
-            <TypeAhead 
-              :initial-list="validParents"
-              :initial-value="parentId || ''"
-              @selection-made="onParentSelectionMade"
-            />
-          </div>
+              <div 
+                v-if="showHierarchy"
+                class="flexrow form-group"
+              >
+                <LabelWithHelp
+                  label-text="labels.fields.parent"
+                />
+                <TypeAhead 
+                  :initial-list="validParents"
+                  :initial-value="parentId || ''"
+                  @selection-made="onParentSelectionMade"
+                />
+              </div>
 
-          <div class="flexrow form-group description">
-            <Editor
-              :initial-content="currentEntry?.description || ''"
-              :has-button="true"
-              :current-entity-uuid="currentEntry?.uuid"
-              :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
-              @editor-saved="onDescriptionEditorSaved"
-              @related-entries-changed="onRelatedEntriesChanged"
-            />
+              <div class="flexrow form-group description">
+                <Editor
+                  :initial-content="currentEntry?.description || ''"
+                  :current-entity-uuid="currentEntry?.uuid"
+                  :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
+                  @editor-saved="onDescriptionEditorSaved"
+                  @related-entries-changed="onRelatedEntriesChanged"
+                />
+              </div>
+            </DescriptionTab>
+            <div class="tab flexcol" data-group="primary" data-tab="characters">
+              <div class="tab-inner">
+                <RelatedItemTable :topic="Topics.Character" />
+              </div>
+            </div> 
+            <div class="tab flexcol" data-group="primary" data-tab="locations">
+              <div class="tab-inner">
+                <RelatedItemTable :topic="Topics.Location" />
+              </div>
+            </div>
+            <div class="tab flexcol" data-group="primary" data-tab="organizations">
+              <div class="tab-inner">
+                <RelatedItemTable :topic="Topics.Organization" />
+              </div>
+            </div>
+            <div class="tab flexcol" data-group="primary" data-tab="scenes">
+              <div class="tab-inner">
+                <RelatedDocumentTable 
+                  :document-link-type="DocumentLinkType.Scenes"
+                />
+              </div>
+            </div>
+            <div class="tab flexcol" data-group="primary" data-tab="actors">
+              <div class="tab-inner">
+                <RelatedDocumentTable 
+                  :document-link-type="DocumentLinkType.Actors"
+                />
+              </div>
+            </div>
+            <div class="tab flexcol" data-group="primary" data-tab="sessions">
+              <SessionsTab />
+            </div>
           </div>
-        </DescriptionTab>
-        <div class="tab flexcol" data-group="primary" data-tab="characters">
-          <div class="tab-inner">
-            <RelatedItemTable :topic="Topics.Character" />
-          </div>
-        </div> 
-        <div class="tab flexcol" data-group="primary" data-tab="locations">
-          <div class="tab-inner">
-            <RelatedItemTable :topic="Topics.Location" />
-          </div>
-        </div>
-        <div class="tab flexcol" data-group="primary" data-tab="organizations">
-          <div class="tab-inner">
-            <RelatedItemTable :topic="Topics.Organization" />
-          </div>
-        </div>
-        <div class="tab flexcol" data-group="primary" data-tab="scenes">
-          <div class="tab-inner">
-            <RelatedDocumentTable 
-              :document-link-type="DocumentLinkType.Scenes"
-            />
-          </div>
-        </div>
-        <div class="tab flexcol" data-group="primary" data-tab="actors">
-          <div class="tab-inner">
-            <RelatedDocumentTable 
-              :document-link-type="DocumentLinkType.Actors"
-            />
-          </div>
-        </div>
-        <div class="tab flexcol" data-group="primary" data-tab="sessions">
-          <SessionsTab />
         </div>
       </div>
     </div>
@@ -186,7 +189,7 @@
   // local imports
   import { getTopicIcon, } from '@/utils/misc';
   import { localize } from '@/utils/game';
-  import { useTopicDirectoryStore, useMainStore, useNavigationStore, useRelationshipStore, useCampaignStore, } from '@/applications/stores';
+  import { useSettingDirectoryStore, useMainStore, useNavigationStore, useRelationshipStore, usePlayingStore, } from '@/applications/stores';
   import { hasHierarchy, validParentItems, } from '@/utils/hierarchy';
   import { generateImage } from '@/utils/generation';
   import { ModuleSettings, SettingKey } from '@/settings';
@@ -214,7 +217,7 @@
 
   // types
   import { DocumentLinkType, Topics, ValidTopic, WindowTabType } from '@/types';
-  import { WBWorld, TopicFolder, Backend, Entry } from '@/classes';
+  import { Setting, TopicFolder, Backend, Entry } from '@/classes';
 
 
   ////////////////////////////////
@@ -226,12 +229,12 @@
   ////////////////////////////////
   // store
   const mainStore = useMainStore();
-  const topicDirectoryStore = useTopicDirectoryStore();
+  const settingDirectoryStore = useSettingDirectoryStore();
   const navigationStore = useNavigationStore();
   const relationshipStore = useRelationshipStore();
-  const campaignStore = useCampaignStore();
-  const { currentEntry, currentWorld, currentContentTab, refreshCurrentEntry, } = storeToRefs(mainStore);
-  const { currentPlayedCampaign } = storeToRefs(campaignStore);
+  const playingStore = usePlayingStore();
+  const { currentEntry, currentSetting, currentContentTab, refreshCurrentEntry, } = storeToRefs(mainStore);
+  const { currentPlayedCampaign } = storeToRefs(playingStore);
 
   ////////////////////////////////
   // data
@@ -292,10 +295,10 @@
       name.value = currentEntry.value.name || '';
 
       // set the parent and valid parents
-      if (currentWorld.value) {    
+      if (currentSetting.value) {    
         parentId.value = await currentEntry.value.getParentId();
 
-        validParents.value = validParentItems(currentWorld.value as WBWorld, currentEntry.value).map((e)=> ({
+        validParents.value = validParentItems(currentSetting.value as Setting, currentEntry.value).map((e)=> ({
           id: e.id,
           label: e.name || '',
         }));
@@ -305,13 +308,13 @@
 
     /** how many campaigns have available sessions */
     const numAvailableSessions = (): number => {
-    if (!currentWorld.value)
+    if (!currentSetting.value)
       return 0;
 
     let num = 0;
     // otherwise check all campaigns until we find one with sessions that don't have it
-    for (const campaignId of Object.keys(currentWorld.value?.campaigns || {})) {
-      if (currentWorld.value?.campaigns[campaignId].currentSession && !currentWorld.value.campaigns[campaignId].currentSession.npcs.find((npc) => npc.uuid===currentEntry.value?.uuid)) {
+    for (const campaignId of Object.keys(currentSetting.value?.campaigns || {})) {
+      if (currentSetting.value?.campaigns[campaignId].currentSession && !currentSetting.value.campaigns[campaignId].currentSession.npcs.find((npc) => npc.uuid===currentEntry.value?.uuid)) {
         num++;
       }
     }
@@ -350,7 +353,7 @@
         currentEntry.value.name = newValue;
         await currentEntry.value.save();
 
-        await topicDirectoryStore.refreshTopicDirectoryTree([currentEntry.value.uuid]);
+        await settingDirectoryStore.refreshSettingDirectoryTree([currentEntry.value.uuid]);
         await navigationStore.propagateNameChange(currentEntry.value.uuid, newValue);
         await relationshipStore.propagateFieldChange(currentEntry.value, 'name');
       }
@@ -362,15 +365,15 @@
     event.preventDefault();
     event.stopPropagation();
 
-    if (!currentWorld.value)
+    if (!currentSetting.value)
       return;
 
     // find all the campaigns with an active session
     let campaignsWithSessions = [] as { uuid: string; name: string}[];
 
-    for (const campaignId of Object.keys(currentWorld.value.campaigns)) {
-      if (currentWorld.value?.campaigns[campaignId].currentSession && !currentWorld.value.campaigns[campaignId].currentSession.npcs.find((npc) => npc.uuid===currentEntry.value?.uuid)) {
-        campaignsWithSessions.push({ uuid: campaignId, name: currentWorld.value.campaigns[campaignId].name });
+    for (const campaignId of Object.keys(currentSetting.value.campaigns)) {
+      if (currentSetting.value?.campaigns[campaignId].currentSession && !currentSetting.value.campaigns[campaignId].currentSession.npcs.find((npc) => npc.uuid===currentEntry.value?.uuid)) {
+        campaignsWithSessions.push({ uuid: campaignId, name: currentSetting.value.campaigns[campaignId].name });
       }
     }
 
@@ -380,7 +383,7 @@
     }
 
     // if there's more than one, we need the menu
-    const campaigns = currentWorld.value.campaigns;
+    const campaigns = currentSetting.value.campaigns;
 
     type MenuItem = {
       label: string;
@@ -438,7 +441,7 @@
 
   const selectCampaignForPush = async (campaignUuid: string): Promise<void> => {
     // get the campaign
-    const campaign = await currentWorld.value?.campaigns[campaignUuid];
+    const campaign = await currentSetting.value?.campaigns[campaignUuid];
     if (!campaign)
       return;
 
@@ -489,13 +492,13 @@
         label: `${localize('contextMenus.generate.image')} ${isGeneratingImage[currentEntry.value?.uuid as string] ? ` - ${localize('contextMenus.generate.inProgress')}` : ''}`,
         disabled: isGeneratingImage[currentEntry.value?.uuid as string],
         onClick: async () => {
-          if (!isGeneratingImage[currentEntry.value?.uuid as string] && currentWorld.value && currentEntry.value) {
+          if (!isGeneratingImage[currentEntry.value?.uuid as string] && currentSetting.value && currentEntry.value) {
             // save entry because it could change before generation is done
             const entryGenerated = currentEntry.value.uuid;
 
             isGeneratingImage[entryGenerated] = true;
 
-            await generateImage(currentWorld.value, currentEntry.value);
+            await generateImage(currentSetting.value, currentEntry.value);
 
             if (entryGenerated===currentEntry.value.uuid)
               mainStore.refreshEntry();
@@ -538,7 +541,7 @@
       await currentEntry.value.save();
 
       // Update the type in the directory tree
-      await topicDirectoryStore.updateEntryType(currentEntry.value, oldType);
+      await settingDirectoryStore.updateEntryType(currentEntry.value, oldType);
 
       // Propagate the type change to all related entries
       await relationshipStore.propagateFieldChange(currentEntry.value, 'type');
@@ -552,7 +555,7 @@
     if (!currentEntry.value.topicFolder)
       throw new Error('Invalid topic in EntryContent.onParentSelectionMade()');
 
-    await topicDirectoryStore.setNodeParent(currentEntry.value.topicFolder, currentEntry.value.uuid, selection || null);
+    await settingDirectoryStore.setNodeParent(currentEntry.value.topicFolder, currentEntry.value.uuid, selection || null);
   };
 
   const onDescriptionEditorSaved = async (newContent: string) => {

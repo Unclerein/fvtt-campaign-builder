@@ -54,7 +54,7 @@ export const useRelationshipStore = defineStore('relationship', () => {
   ///////////////////////////////
   // other stores
   const mainStore = useMainStore();
-  const { currentEntry, currentContentTab, currentDocumentType, currentWorld, } = storeToRefs(mainStore);
+  const { currentEntry, currentContentTab, currentDocumentType, currentSetting, } = storeToRefs(mainStore);
 
   ///////////////////////////////
   // internal state
@@ -436,16 +436,17 @@ export const useRelationshipStore = defineStore('relationship', () => {
     }
   };
 
-  // if this ever becomes too slow, we could store a lookup table on each entry - or a global one on the world - and refresh it
-  //    whenever a link is added/removed on the session side.  But for now, this seems to be fine.
+  // if this ever becomes too slow, we could store a lookup table on each entry - or a global one on the 
+  // world - and refresh it whenever a link is added/removed on the session side.  But for now, this 
+  // seems to be fine.
   const _refreshSessionReferences = async () => {
-    if (!currentEntry.value || !currentWorld.value) {
+    if (!currentEntry.value || !currentSetting.value) {
       sessionReferences.value = [];
       return;
     }
 
     const references: SessionReference[] = [];
-    const campaigns = Object.values(currentWorld.value.campaigns);
+    const campaigns = Object.values(currentSetting.value.campaigns);
 
     // Go through all campaigns in the world
     for (const campaign of campaigns) {
@@ -457,12 +458,12 @@ export const useRelationshipStore = defineStore('relationship', () => {
 
         // Check if entry is referenced as delivered content
         if (currentEntry.value.topic === Topics.Character) {
-          const npcRef = session.npcs.find(npc => npc.uuid === currentEntry.value?.uuid);
+          const npcRef = session.npcs.find(npc => npc.uuid === currentEntry.value?.uuid && npc.delivered);
           if (npcRef) {
             isReferenced = true;
           }
         } else if (currentEntry.value.topic === Topics.Location) {
-          const locationRef = session.locations.find(loc => loc.uuid === currentEntry.value?.uuid);
+          const locationRef = session.locations.find(loc => loc.uuid === currentEntry.value?.uuid && loc.delivered);
           if (locationRef) {
             isReferenced = true;
           }

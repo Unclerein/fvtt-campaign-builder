@@ -1,25 +1,43 @@
 <template>
-  <!-- a table for data inside a session that supports moving rows around to other sessions -->
+  <!-- For available lore -->
   <SessionTable
-    ref="sessionTableRef"
-    :rows="relatedLoreRows"
+    ref="availableLoreRef"
+    :rows="availableLoreRows"
     :columns="campaignStore.extraFields[CampaignTableTypes.Lore]"
     :delete-item-label="localize('tooltips.deleteLore')"
-    :allow-edit="false"
+    :allow-edit="true"
     :show-add-button="true"
     :add-button-label="localize('labels.session.addLore')"
     :extra-add-text="localize('labels.session.addLoreDrag')"
     :allow-drop-row="true"
+    :help-text="localize('labels.campaign.loreHelpText')"
+    help-link="https://slyflourish.com/sharing_secrets.html"
     @add-item="onAddLore"
     @delete-item="onDeleteLore"
     @mark-item-delivered="onMarkLoreDelivered"
-    @unmark-item-delivered="onUnmarkLoreDelivered"
     @move-to-next-session="onMoveLoreToNext"
     @cell-edit-complete="onCellEditComplete"
-    @dragoverNew="onDragover"
-    @dragoverRow="onDragover"
-    @dropRow="onDropRow"
-    @dropNew="onDropNew"
+    @dragover-new="onDragover"
+    @dragover-row="onDragover"
+    @drop-row="onDropRow"
+    @drop-new="onDropNew"
+  />
+
+  <!-- For delivered lore -->
+  <div style="font-size: 1.3em; font-weight: bold"> 
+    Delivered Lore
+  </div>
+  <SessionTable
+    :rows="deliveredLoreRows"
+    :columns="campaignStore.extraFields[CampaignTableTypes.DeliveredLore]"
+    :allow-delete="true"
+    :delete-item-label="localize('tooltips.deleteLore')"
+    :allow-edit="true"
+    :show-add-button="false"
+    :allow-drop-row="false"
+    @delete-item="onDeleteLore"
+    @unmark-item-delivered="onUnmarkLoreDelivered"
+    @cell-edit-complete="onCellEditComplete"
   />
 </template>
 
@@ -51,11 +69,11 @@
   ////////////////////////////////
   // store
   const campaignStore = useCampaignStore();
-  const { relatedLoreRows } = storeToRefs(campaignStore);
+  const { availableLoreRows, deliveredLoreRows } = storeToRefs(campaignStore);
   
   ////////////////////////////////
   // data
-  const sessionTableRef = ref<any>(null);
+  const availableLoreRef = ref<any>(null);
 
   ////////////////////////////////
   // computed data
@@ -65,6 +83,7 @@
 
   ////////////////////////////////
   // event handlers
+  // only applicable to the available lore table
   const onAddLore = async () => {
     // Add the lore and get the UUID of the newly added item
     const loreUuid = await campaignStore.addLore();
@@ -73,13 +92,14 @@
     if (loreUuid) {
       // We need to wait for the DOM to update first
       setTimeout(() => {
-        if (sessionTableRef.value) {
-          sessionTableRef.value.setEditingRow(loreUuid);
+        if (availableLoreRef.value) {
+          availableLoreRef.value.setEditingRow(loreUuid);
         }
       }, 50); // Small delay to ensure the DOM has updated
     }
   }
 
+  // only applicable to the available lore table
   const onCellEditComplete = async (event: DataTableCellEditCompleteEvent) => {
     const { data, newValue, field, originalEvent } = event;
 
@@ -98,10 +118,12 @@
     await campaignStore.deleteLore(uuid);
   }
 
+  // only applicable to the available lore table
   const onMarkLoreDelivered = async (uuid: string) => {
     await campaignStore.markLoreDelivered(uuid, true);
   }
 
+  // only applicable to the delivered lore table
   const onUnmarkLoreDelivered = async (uuid: string) => {
     await campaignStore.markLoreDelivered(uuid, false);
   }

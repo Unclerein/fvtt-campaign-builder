@@ -1,18 +1,18 @@
 import { toRaw } from 'vue';
 import { moduleId, ModuleSettings, SettingKey, } from '@/settings'; 
-import { CampaignDoc, CampaignFlagKey, campaignFlagSettings, DOCUMENT_TYPES, PCDoc, SessionDoc, } from '@/documents';
-import { DocumentWithFlags, Entry, PC, Session, WBWorld } from '@/classes';
+import { CampaignDoc, CampaignFlagKey, campaignFlagSettings, DOCUMENT_TYPES, PCDoc, SessionDoc, CampaignLore } from '@/documents';
+import { DocumentWithFlags, Entry, PC, Session, Setting } from '@/classes';
 import { FCBDialog } from '@/dialogs';
 import { localize } from '@/utils/game';
 import { SessionLore } from '@/documents/session';
-import { ToDoItem, ToDoTypes } from '@/types';
+import { ToDoItem, ToDoTypes, Idea } from '@/types';
 
 // represents a topic entry (ex. a character, location, etc.)
 export class Campaign extends DocumentWithFlags<CampaignDoc> {
   static override _documentName = 'JournalEntry';
   static override _flagSettings = campaignFlagSettings;
 
-  public world: WBWorld | null;  // the world the campaign is in (if we don't setup up front, we can load it later)
+  public world: Setting | null;  // the world the campaign is in (if we don't setup up front, we can load it later)
 
   // saved on JournalEntry
   private _name: string;
@@ -23,13 +23,14 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
   private _lore: CampaignLore[];
   private _img: string;
   private _todoItems: ToDoItem[];
+  private _ideas: Idea[];
 
   /**
    * 
    * @param {CampaignDoc} campaignDoc - The campaign Foundry document
-   * @param {WBWorld} world - The world the campaign is in
+   * @param {Setting} world - The world the campaign is in
    */
-  constructor(campaignDoc: CampaignDoc, world?: WBWorld) {
+  constructor(campaignDoc: CampaignDoc, world?: Setting) {
     super(campaignDoc, CampaignFlagKey.isCampaign);
 
     this.world = world || null;
@@ -40,9 +41,10 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
     this._img = this.getFlag(CampaignFlagKey.img) || '';
     this._name = campaignDoc.name;
     this._todoItems = this.getFlag(CampaignFlagKey.todoItems) || [];
+    this._ideas = this.getFlag(CampaignFlagKey.ideas) || [];
   }
 
-  override async _getWorld(): Promise<WBWorld> {
+  override async _getWorld(): Promise<Setting> {
     return await this.getWorld();
   };
 
@@ -66,9 +68,9 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
    * Gets the world associated with a campaign 
    * if needed.
    * 
-   * @returns {Promise<WBWorld>} A promise to the world associated with the campaign.
+   * @returns {Promise<Setting>} A promise to the world associated with the campaign.
    */
-  public async getWorld(): Promise<WBWorld> {
+  public async getWorld(): Promise<Setting> {
     if (!this.world)
       this.world = await this.loadWorld();
 
@@ -76,18 +78,18 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
   }
   
   /**
-   * Gets the WBWorld associated with the campaign. If the world is already loaded, the promise resolves
+   * Gets the Setting associated with the campaign. If the world is already loaded, the promise resolves
    * to the existing world; otherwise, it loads the world and then resolves to it.
-   * @returns {Promise<WBWorld>} A promise to the world associated with the campaign.
+   * @returns {Promise<Setting>} A promise to the world associated with the campaign.
    */
-  public async loadWorld(): Promise<WBWorld> {
+  public async loadWorld(): Promise<Setting> {
     if (this.world)
       return this.world;
 
     if (!this._doc.collection?.folder)
       throw new Error('Invalid folder id in Campaign.loadWorld()');
     
-    this.world = await WBWorld.fromUuid(this._doc.collection.folder.uuid);
+    this.world = await Setting.fromUuid(this._doc.collection.folder.uuid);
 
     if (!this.world)
       throw new Error('Error loading world in Campaign.loadWorld()');
@@ -176,6 +178,7 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
     return this._lore;
   }
   
+  // returns the uuid
   async addLore(description: string): Promise<string> {
     const uuid = foundry.utils.randomID();
 
@@ -183,6 +186,7 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
       uuid: uuid,
       description: description,
       delivered: false,
+      significant: true,
       journalEntryPageId: null,
       lockedToSessionId: null,
       lockedToSessionName: null,
@@ -240,12 +244,12 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
     return this._todoItems;
   }
 
-  set todoItems(value: ToDoItem[]) {
-    this._todoItems = value;
-    this.updateCumulative(CampaignFlagKey.todoItems, value);
+  set todoItems(value: ToDoItem[] | readonly ToDoItem[]) {
+    this._todoItems = value.slice();     // we clone it so it can't be edited outside
+    this.updateCumulative(CampaignFlagKey.todoItems, this._todoItems);
   }
 
-  /** Creates a new todo item and adds to the campaign*/
+  /** Creates a new to-do item and adds to the campaign*/
   async addNewToDoItem(type: ToDoTypes, text: string, linkedUuid?: string, sessionUuid?: string, manualDate?: Date): Promise<ToDoItem | null> {
     if (!ModuleSettings.get(SettingKey.enableToDoList)) 
       return null;
@@ -254,8 +258,8 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
       this._todoItems = [];
     }
 
-    // manual entries don't have a linked uuid, but the others do
-    if ((!linkedUuid && type !== ToDoTypes.Manual) || (linkedUuid && type === ToDoTypes.Manual)) {
+    // manual entries/generated names don't have a linked uuid, but the others do
+    if ((!linkedUuid && ![ToDoTypes.Manual, ToDoTypes.GeneratedName].includes(type)) || (linkedUuid && [ToDoTypes.Manual, ToDoTypes.GeneratedName].includes(type))) {
       throw new Error('Invalid linkedUuid for type in Campaign.addToDoItem()');
     }
 
@@ -283,12 +287,12 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
   }
 
   /**
-   * Adds a todo item to the campaign. If there is already one with a matching linkeduuid, it adds the text
+   * Adds a to-do item to the campaign. If there is already one with a matching linkeduuid, it adds the text
    * to the end of the current text.  Otherwise, it creates a new one.
    * 
    */
   async mergeToDoItem(type: ToDoTypes, text: string, linkedUuid?: string, sessionUuid?: string): Promise<void> {
-    // Check if todo list is enabled
+    // Check if to-do list is enabled
     if (!ModuleSettings.get(SettingKey.enableToDoList)) 
       return;
 
@@ -297,7 +301,7 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
 
     // make sure the type matches
     if (existingItem && existingItem.type !== type) {
-      throw new Error(`ToDo item with linkedUuid ${linkedUuid} already exists with different type in Campaign.mergeToDoItem()`);
+      throw new Error(`To-do item with linkedUuid ${linkedUuid} already exists with different type in Campaign.mergeToDoItem()`);
     }
 
     // otherwise, if we have one, add the text to the end of the current text
@@ -341,13 +345,61 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
     await this.save();
   }
 
+  get ideas(): readonly Idea[] {
+    return this._ideas;
+  }
+
+  set ideas(value: Idea[] | readonly Idea[]) {
+    this._ideas = value.slice();     // we clone it so it can't be edited outside
+    this.updateCumulative(CampaignFlagKey.ideas, this._ideas);
+  }
+
+  /** Creates a new idea item and adds to the campaign*/
+  /** returns the uuid */
+  async addIdea(text: string): Promise<string | null> {
+    if (!this._ideas) {
+      this._ideas = [];
+    }
+
+    const item: Idea = {
+      uuid: foundry.utils.randomID(),
+      text: text || '',
+    };
+
+    this._ideas.push(item);
+    this.updateCumulative(CampaignFlagKey.ideas, this._ideas);
+    await this.save();
+
+    return item.uuid;
+  }
+
+  async updateIdea(uuid: string, newText: string): Promise<void> {
+    const item = this._ideas.find(i => i.uuid === uuid);
+    if (!item)
+      return;
+
+    item.text = newText;
+    this.updateCumulative(CampaignFlagKey.ideas, this._ideas);
+    await this.save();
+  }
+
+  async deleteIdea(uuid: string): Promise<void> {
+    if (!this._ideas) {
+      this._ideas = [];
+    }
+
+    this._ideas = this._ideas.filter(i => i.uuid !== uuid);
+    this.updateCumulative(CampaignFlagKey.ideas, this._ideas);
+    await this.save();
+  }
+
   /**
    * Creates a new campaign.  Prompts for a name.
    * 
-   * @param {WBWorld} world - The world to create the campaign in. 
+   * @param {Setting} world - The world to create the campaign in. 
    * @returns A promise that resolves when the campaign has been created, with either the resulting entry or null on error
    */
-  static async create(world: WBWorld): Promise<Campaign | null> {
+  static async create(world: Setting): Promise<Campaign | null> {
     // get the name
     let name;
 
@@ -412,7 +464,7 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
     return (toRaw(this._doc).pages.contents as unknown as SessionDoc[])
       .filter((p) => p.type===DOCUMENT_TYPES.Session)
       .map((s: SessionDoc)=> new Session(s, this))
-      .filter((s: Session)=> filterFn(s));
+      .filter((s: Session)=> filterFn(s)) || [];
   }
 
   /**

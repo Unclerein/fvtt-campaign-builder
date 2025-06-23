@@ -90,7 +90,7 @@
         </div>
 
         <h6>
-          {{ Backend.available ? localize('labels.fields.briefDescription') : localize('labels.fields.description') }}
+          {{ Backend.available ? localize('labels.fields.startingDescription') : localize('labels.fields.description') }}
           <i
             v-if="Backend.available" 
             class="fas fa-info-circle tooltip-icon" 
@@ -98,14 +98,14 @@
           ></i>
         </h6>
         <Textarea
-          v-model="briefDescription"
+          v-model="startingDescription"
           :pt="{ root: { 
             style: { 
               'font-size': 'var(--font-size-14)', 
               'color': 'var(--input-text-color)',
               'min-height': '6rem',
               'max-height': '6rem',
-              'background': !props.generateMode || !generateComplete ? 'rgba(255, 228, 196, .3)' : '',
+              'background': !generateComplete ? 'rgba(255, 228, 196, .3)' : '',
             }
           }}"
         />
@@ -196,7 +196,7 @@
   import { localize } from '@/utils/game';
   import { ModuleSettings, SettingKey } from '@/settings';
   import { Backend } from '@/classes';
-  import { generatedTextToHTML, htmlToPlainText } from '@/utils/misc';
+  import { generatedTextToHTML, htmlToPlainText } from '@/utils/sanitizeHtml';
   import { hasHierarchy, } from '@/utils/hierarchy';
   import { nameStyles } from '@/utils/nameStyles';
   
@@ -277,13 +277,13 @@
   // store
   const mainStore = useMainStore();
   const sessionStore = useSessionStore();
-  const { currentWorld, isInPlayMode } = storeToRefs(mainStore);
+  const { currentSetting, isInPlayMode } = storeToRefs(mainStore);
 
   ////////////////////////////////
   // data
   const name = ref<string>(props.initialName);
   const type = ref<string>(props.initialType);
-  const briefDescription = ref<string>('');
+  const startingDescription = ref<string>('');
   const generatedName = ref<string>('');
   const generatedDescription = ref<string>('');
   const generateComplete = ref<boolean>(false);
@@ -307,12 +307,12 @@
   ////////////////////////////////
   // computed data
   const selectedNameStyles = computed((): string[] => {
-    if (!currentWorld.value) return [];
+    if (!currentSetting.value) return [];
     
-    return currentWorld.value.nameStyles.map(index => {
+    return currentSetting.value.nameStyles.map(index => {
       const style = nameStyles[index];
       if (!style) return '';
-      return style.prompt.replace('{genre}', currentWorld.value?.genre || '');
+      return style.prompt.replace('{genre}', currentSetting.value?.genre || '');
     }).filter(style => style !== '');
   });
 
@@ -341,7 +341,7 @@
   };
 
   const onGenerateClick = async function() {
-    if (!currentWorld.value) 
+    if (!currentSetting.value) 
       return;
 
     loading.value = true;
@@ -371,22 +371,25 @@
         let result: Awaited<ReturnType<typeof Backend.api.apiCharacterGeneratePost>>;
 
         result = await Backend.api.apiCharacterGeneratePost({
-          genre: currentWorld.value.genre,
-          worldFeeling: currentWorld.value.worldFeeling,
+          genre: currentSetting.value.genre,
+          settingFeeling: currentSetting.value.settingFeeling,
           type: type.value,
           species: speciesName.value,
           speciesDescription: speciesDescription,
           name: name.value,
-          briefDescription: briefDescription.value,
+          briefDescription: startingDescription.value,
           createLongDescription: longDescriptions.value,
+          longDescriptionParagraphs: ModuleSettings.get(SettingKey.longDescriptionParagraphs),
           nameStyles: selectedNameStyles.value,
         });
 
         generatedName.value = result.data.name;
         generatedDescription.value = result.data.description;
         
-        // also fill into the name block
-        name.value = result.data.name;
+        // only fill into the name block if user hasn't entered a name
+        if (!name.value || name.value.trim() === '') {
+          name.value = result.data.name;
+        }
 
         // apply the species here if needed - we don't do it above because it makes the species show up before the
         //    generation happens, which looks weird
@@ -416,8 +419,8 @@
       // pull the other things we need  
       try {
         const options = {
-          genre: currentWorld.value.genre,
-          worldFeeling: currentWorld.value.worldFeeling,
+          genre: currentSetting.value.genre,
+          settingFeeling: currentSetting.value.settingFeeling,
           type: type.value,
           parentName: parent?.name || '',
           parentType: parent?.type || '',
@@ -426,8 +429,9 @@
           grandparentType: grandparent?.type || '',
           grandparentDescription: grandparent?.description || '',
           name: name.value,
-          briefDescription: briefDescription.value,
+          briefDescription: startingDescription.value,
           createLongDescription: longDescriptions.value,
+          longDescriptionParagraphs: ModuleSettings.get(SettingKey.longDescriptionParagraphs),
           nameStyles: selectedNameStyles.value,
         };
 
@@ -440,8 +444,10 @@
         generatedName.value = result.data.name;
         generatedDescription.value = result.data.description;
 
-        // also fill into the name block
-        name.value = result.data.name;
+        // only fill into the name block if user hasn't entered a name
+        if (!name.value || name.value.trim() === '') {
+          name.value = result.data.name;
+        }
       } catch (error) {
         generateError.value = (error as Error).message;
         generateComplete.value = true;
@@ -459,7 +465,7 @@
   }
 
   const onUseClick = async function() {
-    if (!currentWorld.value)
+    if (!currentSetting.value)
       return;
 
     // create the entry and kick off image generation if needed
@@ -473,7 +479,7 @@
       details = {
         name: generateComplete.value ? generatedName.value : name.value,
         type: type.value,
-        description: generateComplete.value ? generatedTextToHTML(generatedDescription.value) : briefDescription.value,
+        description: generateComplete.value ? generatedTextToHTML(generatedDescription.value) : startingDescription.value,
         speciesId: validSpecies.includes(speciesId.value) ? speciesId.value : '',
         generateImage: generateImageAfterAccept.value
       }
@@ -482,7 +488,7 @@
         name: generateComplete.value ? generatedName.value : name.value,
         type: type.value,
         parentId: parentId.value,
-        description: generateComplete.value ? generatedTextToHTML(generatedDescription.value) : briefDescription.value,
+        description: generateComplete.value ? generatedTextToHTML(generatedDescription.value) : startingDescription.value,
         generateImage: generateImageAfterAccept.value
       }
     }
@@ -544,7 +550,7 @@
     }
   });
   watch(() => props.initialDescription, (newValue) => {
-    briefDescription.value = htmlToPlainText(newValue);
+    startingDescription.value = htmlToPlainText(newValue);
   });
 
   ////////////////////////////////
@@ -572,7 +578,7 @@
     }
 
     longDescriptions.value = ModuleSettings.get(SettingKey.defaultToLongDescriptions);
-    briefDescription.value = htmlToPlainText(props.initialDescription);
+    startingDescription.value = htmlToPlainText(props.initialDescription);
     generateComplete.value = false;
     generateError.value = '';
     loading.value = false;
@@ -642,6 +648,10 @@
         .error-label {
           font-weight: bold;
         }
+      }
+
+      .generated-content {
+        white-space: pre-wrap;
       }
 
       .prompt-message {

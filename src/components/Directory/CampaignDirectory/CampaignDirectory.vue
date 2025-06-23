@@ -2,8 +2,8 @@
   <!-- these are the campaigns -->
   <ol class="fcb-campaign-list">
     <li 
-      v-if="currentWorld" 
-      class="fcb-world-folder folder flexcol" 
+      v-if="currentSetting" 
+      class="fcb-setting-folder folder flexcol" 
     >
       <header 
         class="folder-header flexrow"
@@ -11,13 +11,14 @@
       >
         <div class="noborder">
           <i class="fas fa-folder-open fa-fw"></i>
-          {{ currentWorld.name }} Campaigns
+          {{ currentSetting.name }} Campaigns
         </div>
       </header>
 
-      <ol v-if="campaignDirectoryStore.currentCampaignTree.value.length>0">
+      <!-- Note that we have to use value despite being in a template because it's reactive not ref -->
+      <ol v-if="currentCampaignTree.value.length > 0">
         <DirectoryCampaignNodeComponent 
-          v-for="campaign in campaignDirectoryStore.currentCampaignTree.value as DirectoryCampaignNode[]"
+          v-for="campaign in currentCampaignTree.value"
           :key="campaign.id"
           :campaign-node="campaign"
         />
@@ -42,7 +43,6 @@
   import DirectoryCampaignNodeComponent from './DirectoryCampaignNode.vue';
   
   // types
-  import { DirectoryCampaignNode, } from '@/classes';
   import { WindowTabType } from '@/types';
   
   ////////////////////////////////
@@ -55,7 +55,8 @@
   // store
   const mainStore = useMainStore();
   const campaignDirectoryStore = useCampaignDirectoryStore();
-  const { currentWorld, isInPlayMode } = storeToRefs(mainStore);
+  const { currentSetting, isInPlayMode } = storeToRefs(mainStore);
+  const { currentCampaignTree } = campaignDirectoryStore;
   
   ////////////////////////////////
   // data

@@ -65,7 +65,7 @@
 
   // types
   import { WindowTabType, Topics, ValidTopic } from '@/types';
-  import { Backend, WBWorld, } from '@/classes';
+  import { Backend, Setting, } from '@/classes';
   import { CampaignDoc } from '@/documents';
 
   
@@ -79,7 +79,7 @@
   // store
   const mainStore = useMainStore();
   const navigationStore = useNavigationStore();
-  const { currentWorld, rootFolder, } = storeToRefs(mainStore);
+  const { currentSetting, rootFolder, } = storeToRefs(mainStore);
   
   ////////////////////////////////
   // data
@@ -96,7 +96,7 @@
   ////////////////////////////////
   // event handlers
   const onDirectoryWorldSelected = async (worldId: string) => {
-    await mainStore.setNewWorld(worldId);
+    await mainStore.setNewSetting(worldId);
   };
 
   const onSidebarToggleClick = async () => { 
@@ -143,28 +143,28 @@
         void navigationStore.openPC(target.dataset.uuid, { newTab: event.ctrlKey});
         break;
       case WindowTabType.World:
-        void navigationStore.openWorld(target.dataset.uuid, { newTab: event.ctrlKey});
+        void navigationStore.openSetting(target.dataset.uuid, { newTab: event.ctrlKey});
         break;
     }  
   };
 
   ////////////////////////////////
   // watchers
-  watch(currentWorld, async (newWorld: WBWorld | null, oldWorld: WBWorld | null) => {
+  watch(currentSetting, async (newWorld: Setting | null, oldWorld: Setting | null) => {
     // Update the window title when the world changes
     updateWindowTitle(newWorld?.name || null);
     
-    if (currentWorld.value && currentWorld.value.topicIds && newWorld?.uuid!==oldWorld?.uuid) {
+    if (currentSetting.value && currentSetting.value.topicIds && newWorld?.uuid!==oldWorld?.uuid) {
       // this will force a refresh of the directory; before we do that make sure all the static variables are setup
-      const worldId = currentWorld.value.uuid;
+      const worldId = currentSetting.value.uuid;
 
-      const worldCompendium = currentWorld.value.compendium || null;
+      const settingCompendium = currentSetting.value.compendium || null;
 
-      if (!worldCompendium)
-        throw new Error(`Could not find compendium for world ${worldId} in CampaignBuilder.currentWorld watch`);
+      if (!settingCompendium)
+        throw new Error(`Could not find compendium for world ${worldId} in CampaignBuilder.currentSetting watch`);
 
-      const topicIds = currentWorld.value.topicIds;
-      const campaignNames = currentWorld.value.campaignNames;
+      const topicIds = currentSetting.value.topicIds;
+      const campaignNames = currentSetting.value.campaignNames;
       const topics = [ Topics.Character, Topics.Location, Topics.Organization ] as ValidTopic[];
       const topicJournals = {
         [Topics.Character]: null,
@@ -236,11 +236,11 @@
     if (import.meta.env.MODE === 'development') {
       // need to set _customProperties on all stores - use dynamic import to avoid the import in production
       const module = await import('@/applications/stores/index.ts');
-      const { useMainStore, useNavigationStore, useTopicDirectoryStore, useCampaignDirectoryStore, useRelationshipStore, useCampaignStore, useSessionStore } = module;
+      const { useMainStore, useNavigationStore, useSettingDirectoryStore, useCampaignDirectoryStore, useRelationshipStore, useCampaignStore, useSessionStore } = module;
 
       useNavigationStore()._customProperties = new Set();
       useMainStore()._customProperties = new Set();
-      useTopicDirectoryStore()._customProperties = new Set();
+      useSettingDirectoryStore()._customProperties = new Set();
       useCampaignDirectoryStore()._customProperties = new Set();
       useRelationshipStore()._customProperties = new Set();
       useCampaignStore()._customProperties = new Set();
@@ -268,14 +268,14 @@
     if (!folders || !folders.rootFolder)
         throw new Error(`Couldn't get folders in CampaignBuilder.onMounted()`);
 
-    const world = folders.world;
-    const worldId = folders.world?.uuid;
-    const worldCompendium = folders.world?.compendium || null;
+    const setting = folders.setting;
+    const settingId = folders.setting?.uuid;
+    const settingCompendium = folders.setting?.compendium || null;
 
-    if (!world || !worldId || !worldCompendium)
-        throw new Error(`Could not find world/compendium for world ${worldId} in CampaignBuilder.onMounted()`);
+    if (!setting || !settingId || !settingCompendium)
+        throw new Error(`Could not find world/compendium for world ${settingId} in CampaignBuilder.onMounted()`);
 
-    if (world.topicIds) {
+    if (setting.topicIds) {
       // this will force a refresh of the directory; before we do that make sure all the static variables are setup
       const topics = [ Topics.Character, Topics.Location, Topics.Organization ] as ValidTopic[];
       const topicJournals = {
@@ -289,13 +289,13 @@
         const t = topics[i];
 
         // we need to load the actual entries - not just the index headers
-        topicJournals[t] = await fromUuid<JournalEntry>(world.topicIds[t]);
+        topicJournals[t] = await fromUuid<JournalEntry>(setting.topicIds[t]);
 
         if (!topicJournals[t])
-          throw new Error(`Could not find journal for topic ${t} in world ${worldId}`);
+          throw new Error(`Could not find journal for topic ${t} in world ${settingId}`);
       }
 
-      for (const campaignId in world.campaignNames) {
+      for (const campaignId in setting.campaignNames) {
         // we need to load the actual entries - not just the index headers
         const j = await fromUuid<CampaignDoc>(campaignId);
         if (j) {
@@ -304,15 +304,18 @@
       }
 
       rootFolder.value = folders.rootFolder;
-      mainStore.setNewWorld(folders.world.uuid);
+      mainStore.setNewSetting(folders.setting.uuid);
+
+      // Wait up to 5 seconds for the backend to finish configuring
+      for (let i = 0; i < 50; i++) {
+        if (!Backend.inProgress) break;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
 
       // Check if backend is available and show warning if not
       if (!Backend.available) {
         if (!ModuleSettings.get(SettingKey.hideBackendWarning)) {
-          ui.notifications?.warn(
-            "Backend is not available. Automatic RollTables  will not be refreshed. " +
-            "Configure the backend in Advanced Settings to enable AI-generated names that match your world's theme."
-          );
+          ui.notifications?.warn(localize('notifications.backend.rollTablesNotAvailable'));
         }
       } else {
         // this is a convenient time to poll for email
@@ -326,7 +329,7 @@
       setTimeout(() => {
         createTitleBarComponents();
         // Initialize the window title with the current world name
-        updateWindowTitle(currentWorld.value?.name || null);
+        updateWindowTitle(currentSetting.value?.name || null);
       }, 100);
     } else {
       throw new Error('Failed to load or create folder structure');
@@ -337,117 +340,122 @@
 </script>
 
 <style lang="scss">
-@import "@/components/styles/styles.scss";
+  @import "@/components/styles/styles.scss";
 
-// this is from the Vue handler, but we need it to be a flexbox so the overall app window controls the size the rest
-//    of the way down
-div[data-application-part="app"]:has(> div.fcb) {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-// the launch button in the top right corner
-#fcb-launch {
-  background-color: rgba(0,0,0,.5);
-  color: var(--color-text-light-highlight);
-}
-
-.fcb-main-window {  
-  min-width: 640px;
-
-  .window-header {
-    // we need it to be higher than the content so search results can cover
-    z-index: 2;
-
-    overflow: visible;  // for the search drop down
+  // this is from the Vue handler, but we need it to be a flexbox so the overall app window controls the size the rest
+  //    of the way down
+  div[data-application-part="app"]:has(> div.fcb) {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
   }
 
-  .window-content {
-    padding: 0;
-    z-index: 1;
+  // the launch button in the top right corner
+  #fcb-launch {
+    background-color: rgba(0,0,0,.5);
+    color: var(--color-text-light-highlight);
   }
 
-  .window-content > div {
-    overflow: hidden;
-  }
+  .fcb-main-window {  
+    min-width: 640px;
 
-  .fcb {
-    height: 100%;
-    width: 100%;
-    margin-top: 0px;
-    flex-wrap: nowrap;
-    padding: 0.1rem;
+    .window-header {
+      // we need it to be higher than the content so search results can cover
+      z-index: 2;
 
-    // Sidebar 
-    #fcb-directory-sidebar {
-      display: flex;
-      flex: 0 0 250px;
-      height: 100%;
+      overflow: visible;  // for the search drop down
+    }
+
+    .window-content {
+      padding: 0;
+      z-index: 1;
+    }
+
+    .window-content > div {
       overflow: hidden;
-      background: var(--fcb-sidebar-background);
-      border-left: 1px solid var(--fcb-header-border-color);
-      transition: width 0.5s, flex 0.5s;
+    }
 
-      & > div {
-        display: flex !important;
+    .fcb {
+      height: 100%;
+      width: 100%;
+      margin-top: 0px;
+      flex-wrap: nowrap;
+      padding: 0.1rem;
+
+      // Sidebar 
+      #fcb-directory-sidebar {
+        display: flex;
+        flex: 0 0 250px;
+        height: 100%;
+        overflow: hidden;
+        background: var(--fcb-sidebar-background);
+        border-left: 1px solid var(--fcb-header-border-color);
+        transition: width 0.5s, flex 0.5s;
+
+        & > div {
+          display: flex !important;
+          height: 100%;
+        }
+      }
+
+      #fcb-directory .entry-name > i {
+        margin-right: 8px;
+        margin-left: 4px;
+        flex: 0 0 15px;
+      }
+
+      .fcb-body {
         height: 100%;
       }
     }
 
-    #fcb-directory .entry-name > i {
-      margin-right: 8px;
-      margin-left: 4px;
-      flex: 0 0 15px;
-    }
-
-    .fcb-body {
+    .fcb-content {
+      flex: 1;
       height: 100%;
+      overflow: hidden;
+      position: relative;
+      width: 100%;
+    }
+    
+  }
+
+  .fcb-splitter {
+    height: 100%;
+  }
+
+  .fcb-left-panel {
+    position: relative;
+    overflow: visible !important;  // make sure the tab shows
+  }
+
+  .fcb-sidebar-toggle-tab {
+    position: absolute;
+    top: 50%; // Center vertically in the gutter
+    transform: translateY(-50%); // Adjust for perfect vertical centering
+    left: calc(100% - 12px); // Position on the edge of the left panel
+    z-index: 100;
+    width: 12px;
+    height: 40px;
+    background-color: var(--color-light-5) !important;
+    color: white;
+    border-color: var(--button-hover-border-color);
+    border: 1px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+
+    &:hover {
+      background-color: #fda948;
+      border-color: var(--color-warm-3);
     }
   }
 
-  .fcb-content {
-    flex: 1;
-    height: 100%;
-    overflow: hidden;
-    position: relative;
-    width: 100%;
+  // we need the resize handle to be visible
+  #app-fcb-CampaignBuilder .window-resize-handle {
+    z-index:99;
   }
-  
-}
-
-.fcb-splitter {
-  height: 100%;
-}
-
-.fcb-left-panel {
-  position: relative;
-  overflow: visible !important;  // make sure the tab shows
-}
-
-.fcb-sidebar-toggle-tab {
-  position: absolute;
-  top: 50%; // Center vertically in the gutter
-  transform: translateY(-50%); // Adjust for perfect vertical centering
-  left: calc(100% - 12px); // Position on the edge of the left panel
-  z-index: 100;
-  width: 12px;
-  height: 40px;
-  background-color: var(--color-light-5) !important;
-  color: white;
-  border-color: var(--button-hover-border-color);
-  border: 1px;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-
-  &:hover {
-    background-color: #fda948;
-    border-color: var(--color-warm-3);
-  }
-}
 </style>
 

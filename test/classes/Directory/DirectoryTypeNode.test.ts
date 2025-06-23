@@ -4,7 +4,7 @@ import { DirectoryTypeEntryNode } from '@/classes/Directory/DirectoryTypeEntryNo
 import { CollapsibleNode } from '@/classes/Directory/CollapsibleNode';
 import { Entry } from '@/classes/Entry';
 import { TopicFolder } from '@/classes/TopicFolder';
-import { WBWorld } from '@/classes/WBWorld';
+import { Setting } from '@/classes/Setting';
 import { Topics } from '@/types';
 import * as sinon from 'sinon';
 
@@ -15,7 +15,7 @@ export const registerDirectoryTypeNodeTests = () => {
       const { describe, it, expect, beforeEach, afterEach } = context;
 
       describe('DirectoryTypeNode', () => {
-        let mockWorld: WBWorld;
+        let mockWorld: Setting;
         let mockTopicFolder: TopicFolder;
         let mockEntry: Entry;
         let typeNode: DirectoryTypeNode;
@@ -36,7 +36,7 @@ export const registerDirectoryTypeNodeTests = () => {
               ancestors: [],
               type: 'Character'
             })
-          } as unknown as WBWorld;
+          } as unknown as Setting;
 
           // Create a mock topic folder
           mockTopicFolder = {
@@ -54,7 +54,7 @@ export const registerDirectoryTypeNodeTests = () => {
           } as unknown as Entry;
 
           // Set the current world
-          CollapsibleNode.currentWorld = mockWorld;
+          CollapsibleNode.currentSetting = mockWorld;
 
           // Create a type node
           typeNode = new DirectoryTypeNode(
@@ -68,7 +68,7 @@ export const registerDirectoryTypeNodeTests = () => {
 
         afterEach(() => {
           sinon.restore();
-          CollapsibleNode.currentWorld = null;
+          CollapsibleNode.currentSetting = null;
         });
 
         describe('constructor', () => {
@@ -85,7 +85,7 @@ export const registerDirectoryTypeNodeTests = () => {
         describe('_loadNodeList', () => {
           it('should do nothing if no current world', async () => {
             // Set current world to null
-            CollapsibleNode.currentWorld = null;
+            CollapsibleNode.currentSetting = null;
             
             // Call _loadNodeList
             await typeNode._loadNodeList(['entry-uuid'], []);

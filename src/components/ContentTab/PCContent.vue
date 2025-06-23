@@ -14,81 +14,85 @@
           }" 
         />
       </header>
-      <div class="fcb-tab-body flexrow">
-        <div class="tab flexcol">
-          <div class="tab-inner">
-            <div class="fcb-description-wrapper flexrow">
-              <div 
-                class="fcb-sheet-image"
-                @drop="onDropActor"
-                @dragover="onDragoverActor"
-                @click="onActorImageClick"
-                @contextmenu.prevent="onImageContextMenu"
-              >
-                <div v-if="currentPC?.actorId">
-                  <img 
-                    class="profile"
-                    :src="currentImage"
+      <div class="fcb-sheet-subtab-container flexrow">
+        <div class="fcb-subtab-wrapper">
+          <nav class="fcb-sheet-navigation flexrow tabs" data-group="primary">
+            <a class="item" data-tab="description">{{ localize('labels.tabs.entry.description') }}</a>
+          </nav>
+          <div class="fcb-tab-body flexrow">
+            <div class="tab flexcol" data-group="primary" data-tab="description" style="height:100%">
+              <div class="tab-inner">
+                <div class="fcb-description-wrapper flexrow">
+                  <div 
+                    class="fcb-sheet-image"
+                    @drop="onDropActor"
+                    @dragover="onDragoverActor"
+                    @click="onActorImageClick"
+                    @contextmenu.prevent="onImageContextMenu"
                   >
-                </div>
-                <div v-else>
-                  Drag an actor here to link it.
-                </div>
-              </div>
-              <div class="fcb-description-content flexcol" style="height: unset">
-                <div class="flexrow form-group">
-                  <LabelWithHelp
-                    label-text="labels.fields.playerName"
-                  />
-                  <InputText
-                    v-model="playerName"
-                    for="fcb-input-name" 
-                    class="fcb-input-name"
-                    unstyled
-                    @update:model-value="onPlayerNameUpdate"
-                    :pt="{
-                      root: { class: 'full-height' } 
-                    }" 
-                  />
-                </div>
-                <div class="flexrow form-group">
-                  <LabelWithHelp
-                    label-text="labels.fields.backgroundPoints"
-                  />
-                </div>
-                <div class="flexrow form-group">
-                  <Editor 
-                    :initial-content="currentPC?.background || ''"
-                    :has-button="true"
-                    :style="{ 'height': '240px', 'margin-bottom': '6px'}"
-                    @editor-saved="onBackgroundSaved"
-                  />
-                </div>
-                <div class="flexrow form-group">
-                  <LabelWithHelp
-                    label-text="labels.fields.otherPlotPoints"
-                  />
-                </div>
-                <div class="flexrow form-group">
-                  <Editor 
-                    :initial-content="currentPC?.plotPoints || ''"
-                    :has-button="true"
-                    :style="{ 'height': '240px', 'margin-bottom': '6px'}"
-                    @editor-saved="onPlotPointsSaved"
-                  />
-                </div>
-                <div class="flexrow form-group">
-                  <LabelWithHelp
-                    label-text="labels.fields.desiredMagicItems"
-                  />
-                </div>
-                <div class="flexrow form-group">
-                  <Editor 
-                    :initial-content="currentPC?.magicItems || ''"
-                    :has-button="true"
-                    :style="{ 'height': '240px', 'margin-bottom': '6px'}"
-                    @editor-saved="onMagicItemsSaved"
-                  />
+                    <div v-if="currentPC?.actorId">
+                      <img 
+                        class="profile"
+                        :src="currentImage"
+                      >
+                    </div>
+                    <div v-else>
+                      Drag an actor here to link it.
+                    </div>
+                  </div>
+                  <div class="fcb-description-content flexcol" style="height: unset">
+                    <div class="flexrow form-group">
+                      <LabelWithHelp
+                        label-text="labels.fields.playerName"
+                      />
+                      <InputText
+                        v-model="playerName"
+                        for="fcb-input-name" 
+                        class="fcb-input-name"
+                        unstyled
+                        @update:model-value="onPlayerNameUpdate"
+                        :pt="{
+                          root: { class: 'full-height' } 
+                        }" 
+                      />
+                    </div>
+                    <div class="flexrow form-group">
+                      <LabelWithHelp
+                        label-text="labels.fields.backgroundPoints"
+                      />
+                    </div>
+                    <div class="flexrow form-group">
+                      <Editor 
+                        :initial-content="currentPC?.background || ''"
+                        :style="{ 'height': '240px', 'margin-bottom': '6px'}"
+                        @editor-saved="onBackgroundSaved"
+                      />
+                    </div>
+                    <div class="flexrow form-group">
+                      <LabelWithHelp
+                        label-text="labels.fields.otherPlotPoints"
+                      />
+                    </div>
+                    <div class="flexrow form-group">
+                      <Editor 
+                        :initial-content="currentPC?.plotPoints || ''"
+                        :style="{ 'height': '240px', 'margin-bottom': '6px'}"
+                        @editor-saved="onPlotPointsSaved"
+                      />
+                    </div>
+                    <div class="flexrow form-group">
+                      <LabelWithHelp
+                        label-text="labels.fields.desiredMagicItems"
+                      />
+                    </div>
+                    <div class="flexrow form-group">
+                      <Editor 
+                        :initial-content="currentPC?.magicItems || ''"
+                        :style="{ 'height': '240px', 'margin-bottom': '6px'}"
+                        @editor-saved="onMagicItemsSaved"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -103,12 +107,14 @@
 
   // library imports
   import { storeToRefs } from 'pinia';
-  import { ref, watch, onMounted, computed, toRaw } from 'vue';
+  import { ref, watch, onMounted, computed, toRaw, nextTick } from 'vue';
 
   // local imports
   import { useMainStore, useNavigationStore } from '@/applications/stores';
   import { WindowTabType } from '@/types';
   import { getTabTypeIcon, } from '@/utils/misc';
+  import { localize } from '@/utils/game';
+  import { getValidatedData } from '@/utils/dragdrop';
   
   // library components
   import InputText from 'primevue/inputtext';
@@ -119,6 +125,7 @@
 
   // types
   import { PC } from '@/classes';
+
   
   ////////////////////////////////
   // props
@@ -130,11 +137,12 @@
   // store
   const mainStore = useMainStore();
   const navigationStore = useNavigationStore();
-  const { currentPC } = storeToRefs(mainStore);
+  const { currentPC, currentContentTab } = storeToRefs(mainStore);
   
   ////////////////////////////////
   // data
   const playerName = ref<string>('');
+  const tabs = ref<foundry.applications.ux.Tabs>();
 
   const contentRef = ref<HTMLElement | null>(null);
  
@@ -161,16 +169,15 @@
     event.preventDefault();
     event.stopPropagation();
 
-    // validate the drop
-    if (!currentPC.value || event.dataTransfer?.types[0]!=='text/plain')
+    if (!currentPC.value)
       return;
-   
-    try {  // in case parse fails
-      let data = JSON.parse(event.dataTransfer?.getData('text/plain') || '');
 
-      if (data.type!=='Actor' || !data.uuid)
-        return;
+    // parse the data
+    let data = getValidatedData(event);
+    if (!data)
+      return;
 
+    if (data.type==='Actor' && data.uuid) {
       currentPC.value.actorId = data.uuid;
       await currentPC.value.save();
       await mainStore.refreshPC();
@@ -178,9 +185,6 @@
       // need to refreshPC first to ensure that the new actor gets loaded so we can call name
       await navigationStore.propagateNameChange(currentPC.value.uuid, currentPC.value.name);
     }
-    catch (err) {
-      return;
-    }      
   }
 
   const onImageContextMenu = (event: MouseEvent) => {
@@ -236,13 +240,18 @@
   }
   ////////////////////////////////
   // watchers
-  // watch(currentContentTab, async (newTab: string | null, oldTab: string | null): Promise<void> => {
-  //   if (newTab!==oldTab)
-  //     tabs.value?.activate(newTab || 'description');    
-  // });
+  watch(currentContentTab, async (newTab: string | null, oldTab: string | null): Promise<void> => {
+    if (newTab!==oldTab)
+      tabs.value?.activate(newTab || 'description');    
+  });
 
   watch(currentPC, async (newPC: PC | null): Promise<void> => {
     if (newPC && newPC.uuid) {
+      if (!currentContentTab.value)
+        currentContentTab.value = 'description';
+
+      tabs.value?.activate(currentContentTab.value); 
+
       // load starting data values
       playerName.value = newPC.playerName || '';
 
@@ -254,6 +263,18 @@
   ////////////////////////////////
   // lifecycle events
   onMounted(async () => {
+    tabs.value = new foundry.applications.ux.Tabs({ navSelector: '.tabs', contentSelector: '.fcb-tab-body', initial: 'description', /*callback: null*/ });
+
+    // update the store when tab changes
+    tabs.value.callback = () => {
+      currentContentTab.value = tabs.value?.active || null;
+    };
+
+    // have to wait until they render
+    await nextTick();
+    if (contentRef.value)
+      tabs.value.bind(contentRef.value);
+
     if (currentPC.value) {
       // load starting data values
       playerName.value = currentPC.value.playerName || '';

@@ -5,10 +5,10 @@ import { ref, watch, } from 'vue';
 import { defineStore, storeToRefs, } from 'pinia';
 
 // local imports
-import { useCampaignDirectoryStore, useCampaignStore, useMainStore, useNavigationStore, } from '@/applications/stores';
+import { useCampaignDirectoryStore, useMainStore, useNavigationStore, usePlayingStore, } from '@/applications/stores';
 import { FCBDialog } from '@/dialogs';
 import { localize } from '@/utils/game'; 
-import { htmlToPlainText } from '@/utils/misc';
+import { htmlToPlainTextReplaceUuid } from '@/utils/sanitizeHtml';
 
 // types
 import { 
@@ -73,24 +73,23 @@ export const useSessionStore = defineStore('session', () => {
       { field: 'description', style: 'text-align: left', header: 'Vignette', editable: true },
     ],
     [SessionTableTypes.Lore]: [
+      { field: 'significant', header: 'Sig.', editable: true, type: 'boolean', tooltip: 'Mark as Significant/Insignificant', style: 'text-align: center; width: 40px; max-width: 40px' },
       { field: 'description', style: 'text-align: left', header: 'Description', editable: true },
-      { field: 'journalEntryPageName', style: 'text-align: left', header: 'Journal', editable: false,
+      { field: 'journalEntryPageName', style: 'text-align: left; width: 25%;max-width: 25%', header: 'Journal Page', editable: false,
         onClick: onJournalClick
       },
     ],  
   } as Record<SessionTableTypes, FieldData>;
 
-  // track the last value of notes we saved - have to do this 
-  const lastSavedNotes = ref<string>();
   
   ///////////////////////////////
   // other stores
   const mainStore = useMainStore();
   const navigationStore = useNavigationStore();
   const campaignDirectoryStore = useCampaignDirectoryStore();
-  const campaignStore = useCampaignStore();
-  const { currentWorld, currentContentTab, currentSession, } = storeToRefs(mainStore);
-  const { currentPlayedSession } = storeToRefs(campaignStore);
+  const playingStore = usePlayingStore();
+  const { currentSetting, currentContentTab, currentSession, } = storeToRefs(mainStore);
+  const { currentPlayedSession } = storeToRefs(playingStore);
 
   ///////////////////////////////
   // internal state
@@ -427,16 +426,30 @@ export const useSessionStore = defineStore('session', () => {
 
     const lore = currentSession.value.lore.find(l=> l.uuid===uuid);
 
-    let campaign;
-    if (lore)
-      campaign = await currentSession.value.loadCampaign();
+    // add to do do list if needed
+    if (lore && delivered) {
+      let campaign = await currentSession.value.loadCampaign();
 
-    if (lore && delivered && campaign) {
-      await campaign.mergeToDoItem(ToDoTypes.Lore, `Delivered in session ${currentSession.value.number}`, uuid, currentSession.value.uuid);
+      if (campaign) {
+        await campaign.mergeToDoItem(ToDoTypes.Lore, `Delivered in session ${currentSession.value.number}`, uuid, currentSession.value.uuid);
+      }
     }
 
     await _refreshLoreRows();
-  }
+  };
+
+  /**
+   * Set the significant status for a given lore.
+   * @param uuid the UUID of the lore
+   * @param significant the new significant status
+   */
+  const markLoreSignificant = async (uuid: string, significant: boolean): Promise<void> => {
+    if (!currentSession.value)
+      throw new Error('Invalid session in sessionStore.markLoreSignificant()');
+
+    await currentSession.value.markLoreSignificant(uuid, significant);
+    await _refreshLoreRows();
+  };
 
   /**
    * Move a lore to the next session in the campaign, creating it if needed.
@@ -721,42 +734,32 @@ export const useSessionStore = defineStore('session', () => {
       navigationStore.openEntry(parentId, { newTab: event.ctrlKey, activate: true });
   }
 
-  // when we click on a todo item that has a UUID, open it
-  async function onToDoClick (event: MouseEvent, uuid: string) {
-    // make sure it's an entry (vs. lore, etc)
-    const entry = await Entry.fromUuid(uuid);
 
-    if (!entry)
-      return;
-        
-    await navigationStore.openEntry(uuid, { newTab: event.ctrlKey, activate: true });
-  }
+  // const _refreshRows = async () => {
+  //   relatedLocationRows.value = [];
+  //   relatedItemRows.value = [];
+  //   relatedNPCRows.value = [];
+  //   relatedMonsterRows.value = [];
+  //   relatedVignetteRows.value = [];
+  //   relatedLoreRows.value = [];
 
-  const _refreshRows = async () => {
-    relatedLocationRows.value = [];
-    relatedItemRows.value = [];
-    relatedNPCRows.value = [];
-    relatedMonsterRows.value = [];
-    relatedVignetteRows.value = [];
-    relatedLoreRows.value = [];
+  //   if (!currentSession.value)
+  //     return;
 
-    if (!currentSession.value)
-      return;
-
-    await _refreshLocationRows();
-    await _refreshItemRows();
-    await _refreshNPCRows();
-    await _refreshMonsterRows();
-    await _refreshVignetteRows();
-    await _refreshLoreRows();
-  };
+  //   await _refreshLocationRows();
+  //   await _refreshItemRows();
+  //   await _refreshNPCRows();
+  //   await _refreshMonsterRows();
+  //   await _refreshVignetteRows();
+  //   await _refreshLoreRows();
+  // };
 
   const _refreshLocationRows = async () => {
     if (!currentSession.value)
       return;
 
     const retval = [] as SessionLocationDetails[];
-    const topicFolder = currentWorld.value?.topicFolders[Topics.Location];
+    const topicFolder = currentSetting.value?.topicFolders[Topics.Location];
 
     if (!topicFolder)
       throw new Error('Invalid topic folder in sessionStore._refreshRows()');
@@ -769,7 +772,7 @@ export const useSessionStore = defineStore('session', () => {
 
       const parentId = await entry.getParentId();
       const parent = parentId ? await Entry.fromUuid(parentId) : null;
-      const cleanDescription = htmlToPlainText(entry.description);
+      const cleanDescription = await htmlToPlainTextReplaceUuid(entry.description);
 
       if (entry) {
         retval.push({
@@ -793,7 +796,7 @@ export const useSessionStore = defineStore('session', () => {
       return;
 
     const retval = [] as SessionNPCDetails[];
-    const topicFolder = currentWorld.value?.topicFolders[Topics.Character];
+    const topicFolder = currentSetting.value?.topicFolders[Topics.Character];
 
     if (!topicFolder)
       throw new Error('Invalid topic folder in sessionStore._refreshRows()');
@@ -802,7 +805,7 @@ export const useSessionStore = defineStore('session', () => {
       const entry = await topicFolder.findEntry(npc.uuid);
 
       if (entry) {
-        const cleanDescription = htmlToPlainText(entry.description);
+        const cleanDescription = await htmlToPlainTextReplaceUuid(entry.description);
 
         retval.push({
           uuid: npc.uuid,
@@ -833,6 +836,9 @@ export const useSessionStore = defineStore('session', () => {
           name: entry.name, 
           dragTooltip: localize('tooltips.dragItemFromSession'),
         });
+      } else {
+        // the item was deleted - remove it from our session
+        await currentSession.value.deleteItem(item.uuid);
       }
     }
 
@@ -856,6 +862,9 @@ export const useSessionStore = defineStore('session', () => {
           name: entry.name, 
           dragTooltip: localize('tooltips.dragMonsterFromSession'),
         });
+      } else {
+        // the actor was deleted - remove it from our session
+        await currentSession.value.deleteMonster(monster.uuid);
       }
     }
 
@@ -895,6 +904,7 @@ export const useSessionStore = defineStore('session', () => {
       retval.push({
         uuid: lore.uuid,
         delivered: lore.delivered,
+        significant: lore.significant,
         description: lore.description,
         journalEntryPageId: lore.journalEntryPageId,
         journalEntryPageName: entry?.name || null,
@@ -905,15 +915,47 @@ export const useSessionStore = defineStore('session', () => {
     relatedLoreRows.value = retval;
   }
 
+  const _refreshRowsForTab = async () => {
+    switch (currentContentTab.value) {
+      case 'notes':
+        await _refreshLocationRows();
+        break;
+      case 'lore':
+        await _refreshLoreRows();
+        break;
+      case 'vignettes':
+        await _refreshVignetteRows();
+        break;
+      case 'locations':
+        await _refreshLocationRows();
+        break;
+      case 'npcs':
+        await _refreshNPCRows();
+        break;
+      case 'monsters':
+        await _refreshMonsterRows();
+        break;
+      case 'magic':
+        await _refreshItemRows();
+        break;
+      case 'pcs':
+        // handled by campaignStore
+        break;
+      default:
+        break;
+    }
+  }
+
 
   ///////////////////////////////
   // watchers
   watch(()=> currentSession.value, async () => {
-    await _refreshRows();
+    // just refresh the rows for the current contentTab
+    await _refreshRowsForTab();
   });
 
   watch(()=> currentContentTab.value, async () => {
-    await _refreshRows();
+    await _refreshRowsForTab();
   });
 
   ///////////////////////////////
@@ -929,7 +971,6 @@ export const useSessionStore = defineStore('session', () => {
     relatedVignetteRows,
     relatedLoreRows,
     extraFields,
-    lastSavedNotes,
     addLocation,
     addLocationToPlayedSession,
     deleteLocation,
@@ -959,6 +1000,7 @@ export const useSessionStore = defineStore('session', () => {
     updateLoreDescription,
     updateLoreJournalEntry,
     markLoreDelivered,
+    markLoreSignificant,
     moveLoreToNext,
     moveLoreToCampaign,
   };
