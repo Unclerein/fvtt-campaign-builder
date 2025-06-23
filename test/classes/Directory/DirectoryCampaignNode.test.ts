@@ -4,7 +4,7 @@ import { DirectorySessionNode } from '@/classes/Directory/DirectorySessionNode';
 import { CollapsibleNode } from '@/classes/Directory/CollapsibleNode';
 import { Campaign } from '@/classes/Campaign';
 import { Session } from '@/classes/Session';
-import { WBWorld } from '@/classes/WBWorld';
+import { Setting } from '@/classes/Setting';
 import * as sinon from 'sinon';
 
 export const registerDirectoryCampaignNodeTests = () => {
@@ -14,7 +14,7 @@ export const registerDirectoryCampaignNodeTests = () => {
       const { describe, it, expect, beforeEach, afterEach } = context;
 
       describe('DirectoryCampaignNode', () => {
-        let mockWorld: WBWorld;
+        let mockWorld: Setting;
         let mockCampaign: Campaign;
         let mockSession: Session;
         let campaignNode: DirectoryCampaignNode;
@@ -29,7 +29,7 @@ export const registerDirectoryCampaignNodeTests = () => {
               'campaign-uuid': true,
               'session-uuid': true
             }
-          } as unknown as WBWorld;
+          } as unknown as Setting;
 
           // Create a mock session
           mockSession = {
@@ -53,7 +53,7 @@ export const registerDirectoryCampaignNodeTests = () => {
           } as unknown as DirectorySessionNode);
 
           // Set the current world
-          CollapsibleNode.currentWorld = mockWorld;
+          CollapsibleNode.currentSetting = mockWorld;
 
           // Create a campaign node
           campaignNode = new DirectoryCampaignNode(
@@ -67,7 +67,7 @@ export const registerDirectoryCampaignNodeTests = () => {
 
         afterEach(() => {
           sinon.restore();
-          CollapsibleNode.currentWorld = null;
+          CollapsibleNode.currentSetting = null;
         });
 
         describe('constructor', () => {
@@ -85,7 +85,7 @@ export const registerDirectoryCampaignNodeTests = () => {
         describe('_loadNodeList', () => {
           it('should do nothing if no current world', async () => {
             // Set current world to null
-            CollapsibleNode.currentWorld = null;
+            CollapsibleNode.currentSetting = null;
             
             // Call _loadNodeList
             await campaignNode._loadNodeList(['session-uuid'], []);

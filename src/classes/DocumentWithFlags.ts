@@ -11,7 +11,7 @@ import {
 } from '@/documents';
 import { FlagSettings, } from '@/settings/DocumentFlags';
 import { moduleId } from '@/settings';
-import { WBWorld } from './WBWorld';
+import { Setting } from './Setting';
 
 
 /**
@@ -81,11 +81,11 @@ export class DocumentWithFlags<DocType extends ValidDocTypes> {
   }
   
   /** needed so we can unlock it if needed */
-  protected async _getWorld(): Promise<WBWorld> {
+  protected async _getWorld(): Promise<Setting> {
     throw new Error('Failed to implement DocumentWithFlags._getWorld');
   }
 
-  /** some classes - specifically WBWorld - don't need to be unlocked to modify flags */
+  /** some classes - specifically Setting - don't need to be unlocked to modify flags */
   protected get requiresUnlock(): boolean {
     return true;
   }
@@ -190,6 +190,28 @@ export class DocumentWithFlags<DocType extends ValidDocTypes> {
     }
 
     return retval;
+  };
+
+  /**
+   * Updates the _cumulativeUpdate object with a new value for a given flag.
+   * 
+   * @param flag - The flag key to update
+   * @param value - The value to set
+   */
+  protected updateCumulative = <
+    FK extends FlagKey<DocType> = FlagKey<DocType>,
+    FT extends FlagType<DocType, FK> = FlagType<DocType, FK>
+  >(flag: FK, value: FT): void => {
+    this._cumulativeUpdate = {
+      ...this._cumulativeUpdate,
+      flags: {
+        ...this._cumulativeUpdate.flags,
+        [moduleId]: {
+          ...(this._cumulativeUpdate.flags?.[moduleId] || {}),
+          [flag]: value
+        }
+      }
+    };
   };
 
   /**

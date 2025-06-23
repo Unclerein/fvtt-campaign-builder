@@ -1,6 +1,6 @@
 <template>
   <li
-    :class="'fcb-campaign-folder folder entry flexcol fcb-directory-compendium ' + (props.campaignNode.expanded ? '' : 'collapsed')"
+    :class="`fcb-campaign-folder folder entry flexcol fcb-directory-compendium ${props.campaignNode.expanded ? '' : 'collapsed'} ${isActiveCampaign ? 'active' : ''}`"
     :data-campaign="props.campaignNode.id"
     draggable="true"
     @dragstart="onDragStart"
@@ -76,7 +76,7 @@
   const campaignDirectoryStore = useCampaignDirectoryStore();
   const navigationStore = useNavigationStore();
   const mainStore = useMainStore();
-  const { isInPlayMode } = storeToRefs(mainStore);
+  const { isInPlayMode, currentCampaign } = storeToRefs(mainStore);
 
   ////////////////////////////////
   // data
@@ -89,6 +89,11 @@
   const sortedChildren = computed((): DirectorySessionNode[] => {
     const children = props.campaignNode.loadedChildren;
     return children.sort((a, b) => a.sessionNumber - b.sessionNumber);
+  });
+
+  // Check if this campaign is current showing in the content window
+  const isActiveCampaign = computed((): boolean => {
+    return currentCampaign.value?.uuid === props.campaignNode.id;
   });
 
   ////////////////////////////////
@@ -176,7 +181,7 @@
           justify-content: flex-start;
 
           &.active {
-            background: #cfcdc2;
+            font-weight: bold;
           }
         }
 

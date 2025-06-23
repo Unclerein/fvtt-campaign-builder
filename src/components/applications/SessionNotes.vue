@@ -1,62 +1,81 @@
 <template>
   <div class="fcb-session-notes-container">
+    <!-- enabledEntityLinking is false because when we save we don't want to convert ids into html tags -->
     <Editor 
       ref="editorRef"
       :initial-content="sessionNotes"
-      :has-button="false"
+      :edit-only-mode="true"
       :editable="true"
+      :enable-entity-linking="false"
       @editor-saved="onNotesEditorSaved"
-      @editor-loaded="(notes) => { lastSavedNotes = notes; }"
     />
   </div>
 </template>
 
 <script setup lang="ts">
   // library imports
-  import { ref, watch, onMounted, computed } from 'vue';
+  import { ref, watch, onMounted, computed, } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
-  import { useCampaignStore, useMainStore, useSessionStore } from '@/applications/stores';
+  import { useMainStore, usePlayingStore } from '@/applications/stores';
   import Editor from '@/components/Editor.vue';
+  import { Session } from '@/classes';
 
   // stores
   const mainStore = useMainStore();
-  const campaignStore = useCampaignStore();
-  const sessionStore = useSessionStore();
-  const { currentPlayedSession } = storeToRefs(campaignStore);
+  const playingStore = usePlayingStore();
+  const { currentPlayedSession } = storeToRefs(playingStore);
   const { currentSession } = storeToRefs(mainStore);
-  const { lastSavedNotes } = storeToRefs(sessionStore);
 
   // data
-  const sessionNotes = ref<string>('');
   const editorRef = ref<typeof Editor | null>(null);
+  const sessionNotes = ref<string>('');
 
   // computed
-  const dirty = computed((): boolean => (editorRef?.value?.dirty || false));
-
-  defineExpose({ dirty });
+  const isDirty = (): boolean => editorRef.value?.isDirty();
 
   // methods
   const onNotesEditorSaved = async (newContent: string) => {
-    if (!currentPlayedSession.value) return;
+    const session = currentPlayedSession.value;
 
-    currentPlayedSession.value.notes = newContent;
-    lastSavedNotes.value = newContent;
-    await currentPlayedSession.value.save();
+    if (!session) return;
+
+    session.notes = newContent;
+    await session.save();
 
     // if we're showing the session, refresh it
-    if (currentSession.value && currentSession.value.uuid===currentPlayedSession.value.uuid) {
+    if (currentSession.value && currentSession.value.uuid===session.uuid) {
       await mainStore.refreshSession();
     }
   };
 
+  ////////////////////////////////
+  // exposed functions
+  defineExpose({ getNotes: () => editorRef.value?.getContent() ?? null, isDirty });
+
+  ////////////////////////////////
   // watchers
   // changes to the played session 
-  watch(() => currentPlayedSession.value, async () => {
-    sessionNotes.value = currentPlayedSession.value?.notes || '';
+  watch(() => currentPlayedSession.value, async (newSession: Session | null, oldSession: Session | null) => {
+    sessionNotes.value = newSession?.notes || '';
+
+    // if (!oldSession) 
+    //   return;
+
+    // // check if the session notes window is dirty and save if needed
+    // if (editorRef.value && isDirty()) {
+    //   if (await FCBDialog.confirmDialog(localize('dialogs.saveSessionNotes.title'), localize('dialogs.saveSessionNotes.message'))) {
+    //     oldSession.notes = editorRef.value.getContent();
+    //     await oldSession.save();
+
+    //     // refresh the content in case we're looking at the notes page for that session
+    //     await mainStore.refreshCurrentContent();
+    //   }
+    // }
   }, { immediate: true });
 
+  /** Handle when the notes are saved by the main session screen */
   watch(() => currentPlayedSession.value?.notes, async () => {
     sessionNotes.value = currentPlayedSession.value?.notes || '';
   }, { immediate: true });

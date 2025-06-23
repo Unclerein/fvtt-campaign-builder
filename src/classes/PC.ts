@@ -1,12 +1,13 @@
 import { DOCUMENT_TYPES, PCDoc } from '@/documents';
-import { Campaign, WBWorld } from '@/classes';
+import { Campaign, Setting } from '@/classes';
 import { localize } from '@/utils/game';
 import { FCBDialog } from '@/dialogs';
 import { toRaw } from 'vue';
+import { searchService } from '@/utils/search';
 
 // represents a PC - these are stored in flag inside campaigns so saving, etc. is handled by campaign
 export class PC {
-  public parentCampaign: Campaign | null;  // the campaign the session is in (if we don't setup up front, we can load it later)
+  public campaign: Campaign | null;  // the campaign the session is in (if we don't setup up front, we can load it later)
 
   private _pcDoc: PCDoc;
   private _actor: Actor | null;
@@ -15,7 +16,7 @@ export class PC {
   /**
    * 
    */
-  constructor(pcDoc: PCDoc, parentCampaign?: Campaign) {
+  constructor(pcDoc: PCDoc, campaign?: Campaign) {
     // make sure it's the right kind of document
     if (pcDoc.type !== DOCUMENT_TYPES.PC)
       throw new Error('Invalid document type in PC constructor');
@@ -23,7 +24,7 @@ export class PC {
     // clone it to avoid unexpected changes
     this._pcDoc = foundry.utils.deepClone(pcDoc);
     this._cumulativeUpdate = {};
-    this.parentCampaign = parentCampaign || null;
+    this.campaign = campaign || null;
   }
 
   static async fromUuid(pcId: string, options?: Record<string, any>): Promise<PC | null> {
@@ -45,25 +46,27 @@ export class PC {
    * @returns {Promise<Campaign>} A promise to the world associated with the campaign.
    */
   public async loadCampaign(): Promise<Campaign> {
-    if (this.parentCampaign)
-      return this.parentCampaign;
+    if (this.campaign)
+      return this.campaign;
 
     if (!this._pcDoc.parent)
       throw new Error('Invalid parent in PC.loadCampaign()');
 
-    this.parentCampaign = await Campaign.fromUuid(this._pcDoc.parent.uuid);
+    this.campaign = await Campaign.fromUuid(this._pcDoc.parent.uuid);
 
-    if (!this.parentCampaign)
+    if (!this.campaign)
       throw new Error('Invalid session in PC.loadCampaign()');
 
-    return this.parentCampaign;
+    return this.campaign;
   }
   
   /**
    * Gets the Actor associated with the PC. If the actor is already loaded, the promise resolves
    * to the existing actor; otherwise, it loads the actor and then resolves to it.
    * 
-   * @returns {Promise<Actor | null>} A promise to the world associated with the campaign.
+   * @note It's possible the actorId is populated but the actor has been deleted.  In this case, 
+   * will return null and also set the actorId to null.
+   * @returns {Promise<Actor | null>} A promise to the actor associated with the PC.
    */
   public async getActor(): Promise<Actor | null> {
     if (this._actor)
@@ -73,12 +76,15 @@ export class PC {
 
     this._actor = await fromUuid<Actor>(this._pcDoc.system.actorId);
 
-    if (!this._actor)
-      throw new Error('Invalid actor in PC.getActor()');
+    if (!this._actor) {
+      this.actorId = '';
+      await this.save();
+    }
 
     return this._actor;
   }
 
+  /** note: this should only be used if you know getActor() has already been called */
   public get actor(): Actor | null {
     return this._actor;
   }
@@ -87,16 +93,16 @@ export class PC {
    * Gets the world associated with a PC, loading into the campaign 
    * if needed.
    * 
-   * @returns {Promise<WBWorld>} A promise to the world associated with the campaign.
+   * @returns {Promise<Setting>} A promise to the world associated with the campaign.
    */
-  public async getWorld(): Promise<WBWorld> {
-    if (!this.parentCampaign)
-      this.parentCampaign = await this.loadCampaign();
+  public async getWorld(): Promise<Setting> {
+    if (!this.campaign)
+      this.campaign = await this.loadCampaign();
 
-    if (!this.parentCampaign)
+    if (!this.campaign)
       throw new Error('Invalid campaign in PC.getWorld()');
     
-    return this.parentCampaign.getWorld();
+    return this.campaign.getWorld();
   }
 
   
@@ -133,6 +139,14 @@ export class PC {
 
     if (pcDoc && pcDoc.length > 0) {
       const pc = new PC(pcDoc[0], campaign);
+
+      // Add to search index
+      try {
+        await searchService.addOrUpdatePCIndex(pc);
+      } catch (error) {
+        console.error('Failed to add PC to search index:', error);
+      }
+      
       return pc;
     } else {
       return null;
@@ -260,6 +274,15 @@ export class PC {
       this._cumulativeUpdate = {};
     });
 
+    // Update the search index and to-do list
+    try {
+      if (retval) {
+        await searchService.addOrUpdatePCIndex(this);
+      }
+    } catch (error) {
+      console.error('Failed to update search index:', error);
+    }
+
     return retval ? this : null;
   }
 
@@ -267,7 +290,7 @@ export class PC {
     if (!this._pcDoc)
       return;
 
-    const world = await this.getWorld() as WBWorld;
+    const world = await this.getWorld() as Setting;
 
     await world.executeUnlocked(async () => {
       await this._pcDoc.delete();

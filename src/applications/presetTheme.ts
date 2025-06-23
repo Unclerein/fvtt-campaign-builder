@@ -25,13 +25,13 @@ export default definePreset(Aura, {
           headerCellSelectedColor: foundryVariables.colorWarm3,
           rowColor: foundryVariables.colorTextDarkPrimary,
           rowHoverColor: foundryVariables.colorTextDarkPrimary,
-          bodyCellBorderColor: foundryVariables.colorBorderDark5,
+          bodyCellBorderColor: 'rgb(165, 165, 155)',
         },
         dark: {
           headerCellSelectedColor: foundryVariables.colorWarm2,
           rowColor: foundryVariables.colorTextLightPrimary,
           rowHoverColor: foundryVariables.colorTextLightPrimary,
-          bodyCellBorderColor: foundryVariables.colorBorderDark5,
+          bodyCellBorderColor: 'rgb(165, 165, 155)',
         }
       },
       headerBackground: 'inherit',
@@ -77,6 +77,7 @@ export default definePreset(Aura, {
       },
  
       borderRadius: '4px',
+      fontSize: '16px',
       padding: {
         x: '3px',
         y: '1px',
@@ -161,6 +162,9 @@ export default definePreset(Aura, {
         background: 'inherit',
         borderColor: 'none',
         color: 'inherit',
+      }, 
+      gutter: {
+        background: 'rgb(185, 185, 172)',
       }
     },
     splitterpanel: {

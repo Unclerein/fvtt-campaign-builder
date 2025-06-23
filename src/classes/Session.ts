@@ -1,15 +1,15 @@
 import { toRaw } from 'vue';
 
-import { DOCUMENT_TYPES, SessionDoc, SessionLocation, SessionItem, SessionNPC, SessionMonster, SessionVignette, SessionLore } from '@/documents';
+import { DOCUMENT_TYPES, SessionDoc, SessionLocation, SessionItem, SessionNPC, SessionMonster, SessionVignette, SessionLore, } from '@/documents';
 import { searchService } from '@/utils/search';
 import { FCBDialog } from '@/dialogs';
-import { Campaign, WBWorld } from '@/classes';
+import { Campaign, Setting } from '@/classes';
 import { localize } from '@/utils/game';
-import { TagInfo } from '@/types';
+import { TagInfo, } from '@/types';
 
 // represents a topic entry (ex. a character, location, etc.)
 export class Session {
-  public parentCampaign: Campaign | null;  // the campaign the session is in (if we don't setup up front, we can load it later)
+  public campaign: Campaign | null;  // the campaign the session is in (if we don't setup up front, we can load it later)
 
   private _sessionDoc: SessionDoc;
   private _cumulativeUpdate: Record<string, any>;   // tracks the update object based on changes made
@@ -18,7 +18,7 @@ export class Session {
    * 
    * @param {SessionDoc} sessionDoc - The session Foundry document
    */
-  constructor(sessionDoc: SessionDoc, parentCampaign?: Campaign) {
+  constructor(sessionDoc: SessionDoc, campaign?: Campaign) {
     // make sure it's the right kind of document
     if (sessionDoc.type !== DOCUMENT_TYPES.Session)
       throw new Error('Invalid document type in Session constructor');
@@ -26,7 +26,7 @@ export class Session {
     // clone it to avoid unexpected changes
     this._sessionDoc = foundry.utils.deepClone(sessionDoc);
     this._cumulativeUpdate = {};
-    this.parentCampaign = parentCampaign || null;
+    this.campaign = campaign || null;
   }
 
   static async fromUuid(sessionId: string, options?: Record<string, any>): Promise<Session | null> {
@@ -47,34 +47,34 @@ export class Session {
    * @returns {Promise<Campaign>} A promise to the world associated with the campaign.
    */
   public async loadCampaign(): Promise<Campaign> {
-    if (this.parentCampaign)
-      return this.parentCampaign;
+    if (this.campaign)
+      return this.campaign;
 
     if (!this._sessionDoc.parent)
       throw new Error('call to Session.loadCampaign() without _sessionDoc');
 
-    this.parentCampaign = await Campaign.fromUuid(this._sessionDoc.parent.uuid);
+    this.campaign = await Campaign.fromUuid(this._sessionDoc.parent.uuid);
 
-    if (!this.parentCampaign)
+    if (!this.campaign)
       throw new Error('Invalid session in Session.loadCampaign()');
 
-    return this.parentCampaign;
+    return this.campaign;
   }
   
   /**
    * Gets the world associated with a session, loading into the campaign 
    * if needed.
    * 
-   * @returns {Promise<WBWorld>} A promise to the world associated with the campaign.
+   * @returns {Promise<Setting>} A promise to the world associated with the campaign.
    */
-  public async getWorld(): Promise<WBWorld> {
-    if (!this.parentCampaign)
-      this.parentCampaign = await this.loadCampaign();
+  public async getWorld(): Promise<Setting> {
+    if (!this.campaign)
+      this.campaign = await this.loadCampaign();
 
-    if (!this.parentCampaign)
+    if (!this.campaign)
       throw new Error('Invalid campaign in Session.getWorld()');
     
-    return this.parentCampaign.getWorld();
+    return this.campaign.getWorld();
   }
   
 
@@ -90,10 +90,10 @@ export class Session {
     if (!nameToUse)
       return null;
 
-    const world = await campaign.getWorld();
+    const setting = await campaign.getWorld();
 
     let sessionDoc: SessionDoc[] = [];
-    await world.executeUnlocked(async () => {
+    await setting.executeUnlocked(async () => {
       sessionDoc = await JournalEntryPage.createDocuments([{
         type: DOCUMENT_TYPES.Session,
         name: nameToUse,
@@ -112,7 +112,7 @@ export class Session {
 
       // Add to search index
       try {
-        await searchService.addOrUpdateIndex(session, world, false);
+        await searchService.addOrUpdateSessionIndex(session, setting);
       } catch (error) {
         console.error('Failed to add session to search index:', error);
       }
@@ -202,16 +202,16 @@ export class Session {
     };
   }
 
-  get startingAction(): string {
-    return this._sessionDoc.system.startingAction;
+  get strongStart(): string {
+    return this._sessionDoc.system.strongStart;
   }
 
-  set startingAction(value: string) {
-    this._sessionDoc.system.startingAction = value;
+  set strongStart(value: string) {
+    this._sessionDoc.system.strongStart = value;
     this._cumulativeUpdate = {
       ...this._cumulativeUpdate,
       system: {
-        startingAction: value,
+        strongStart: value,
       }
     };
   }
@@ -234,13 +234,13 @@ export class Session {
     return this._sessionDoc.system.locations || [];
   }
 
-  async addLocation(uuid: string): Promise<void> {
+  async addLocation(uuid: string, delivered: boolean = false): Promise<void> {
     if (this._sessionDoc.system.locations.find(l=> l.uuid===uuid))
       return;
 
     this._sessionDoc.system.locations.push({
       uuid: uuid,
-      delivered: false
+      delivered: delivered
     });
 
     this._cumulativeUpdate = {
@@ -287,13 +287,13 @@ export class Session {
     return this._sessionDoc.system.npcs || [];
   }
 
-  async addNPC(uuid: string): Promise<void> {
+  async addNPC(uuid: string, delivered: boolean = false): Promise<void> {
     if (this._sessionDoc.system.npcs.find(l=> l.uuid===uuid))
       return;
 
     this._sessionDoc.system.npcs.push({
       uuid: uuid,
-      delivered: false
+      delivered: delivered
     });
 
     this._cumulativeUpdate = {
@@ -420,6 +420,7 @@ export class Session {
       uuid: uuid,
       description: description,
       delivered: false,
+      significant: false,
       journalEntryPageId: null,
     });
 
@@ -473,6 +474,23 @@ export class Session {
 
   async deleteLore(uuid: string): Promise<void> {
     this._sessionDoc.system.lore = this._sessionDoc.system.lore.filter(l=> l.uuid!==uuid);
+
+    this._cumulativeUpdate = {
+      ...this._cumulativeUpdate,
+      system: {
+        lore: this._sessionDoc.system.lore
+      }
+    };
+
+    await this.save();
+  }
+
+  async markLoreSignificant(uuid: string, significant: boolean): Promise<void> {
+    const lore = this._sessionDoc.system.lore.find((l) => l.uuid===uuid);
+    if (!lore)
+      return;
+    
+    lore.significant = significant;
 
     this._cumulativeUpdate = {
       ...this._cumulativeUpdate,
@@ -645,12 +663,30 @@ export class Session {
    * @returns {Promise<Session | null>} The updated session, or null if the update failed.
    */
   public async save(): Promise<Session | null> {
-    const world = await this.getWorld();
+    const setting = await this.getWorld();
 
     const updateData = this._cumulativeUpdate;
 
+    // see if the number is taken, if so, everything after it needs to be renumbered
+    const campaign = await this.loadCampaign();
+    const sessions = (await campaign.sessions).sort((a, b) => a.number - b.number);
+
+    // find the index of the session with the same number 
+    const currentNumberedSession = sessions.findIndex(s=> s.number===this.number && s.uuid!==this.uuid);
+
+    if (currentNumberedSession!==-1) {
+      // need to re-number everything after this one
+      // go backward because otherwise these saves will kickoff a cascade of changes
+      for (let i = sessions.length-1; i>= currentNumberedSession; i--) {
+        if (sessions[i].uuid!==this.uuid) {
+          sessions[i].number++;
+          await sessions[i].save();
+        }
+      }
+    }
+
     let retval: SessionDoc | null = null;
-    await world.executeUnlocked(async () => {
+    await setting.executeUnlocked(async () => {
       retval = await toRaw(this._sessionDoc).update(updateData) || null;
       if (retval) {
         this._sessionDoc = retval;
@@ -662,7 +698,7 @@ export class Session {
      // Update the search index
      try {
       if (retval) {
-        await searchService.addOrUpdateIndex(this, world, false);
+        await searchService.addOrUpdateSessionIndex(this, setting);
       }
     } catch (error) {
       console.error('Failed to update search index:', error);
@@ -676,7 +712,7 @@ export class Session {
       return;
 
     const id = this._sessionDoc.uuid;
-    const world = await this.getWorld() as WBWorld;
+    const world = await this.getWorld() as Setting;
 
     await world.executeUnlocked(async () => {
       await this._sessionDoc.delete();
@@ -695,6 +731,5 @@ export class Session {
    */
   public getAllRelatedSessions(_campaignId: string): string[] {
     return [];
-  }
-  
+  }  
 }

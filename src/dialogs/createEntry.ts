@@ -2,7 +2,7 @@ import { VueApplicationMixin } from '@/libraries/fvtt-vue/VueApplicationMixin';
 import PrimeVue from 'primevue/config';
 import App from '@/components/applications/CreateEntryDialog.vue';
 import { hasHierarchy, } from '@/utils/hierarchy';
-import { useMainStore, useTopicDirectoryStore, useRelationshipStore, useNavigationStore } from '@/applications/stores'; 
+import { useMainStore, useSettingDirectoryStore, useRelationshipStore, useNavigationStore, } from '@/applications/stores'; 
 import { CharacterDetails, LocationDetails, OrganizationDetails, Topics, ValidTopic } from '@/types';
 import { Entry, TopicFolder } from '@/classes';
 import { generateImage, handleGeneratedEntry } from '@/utils/generation';
@@ -19,10 +19,10 @@ const createTitles = {
   [Topics.Location]: 'applications.createEntry.titles.create.location',
   [Topics.Organization]: 'applications.createEntry.titles.create.organization',
 }
-const generateTitles = {
-  [Topics.Character]: 'applications.createEntry.titles.create.character',
-  [Topics.Location]: 'applications.createEntry.titles.create.location',
-  [Topics.Organization]: 'applications.createEntry.titles.create.organization',
+const updateTitles = {
+  [Topics.Character]: 'applications.createEntry.titles.update.character',
+  [Topics.Location]: 'applications.createEntry.titles.update.location',
+  [Topics.Organization]: 'applications.createEntry.titles.update.organization',
 }
 
 class CreateEntryApplication extends VueApplicationMixin(ApplicationV2) {
@@ -38,7 +38,7 @@ class CreateEntryApplication extends VueApplicationMixin(ApplicationV2) {
       // popOut: true,
       // editable: true,
       // //viewPermission: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE,
-      // scrollY: ['ol.fcb-world-list']
+      // scrollY: ['ol.fcb-setting-list']
     },
     position: {
       // width: 600,
@@ -70,16 +70,16 @@ class CreateEntryApplication extends VueApplicationMixin(ApplicationV2) {
 
 async function createEntryDialog(topic: ValidTopic, 
   options?: { name?: string; type?: string; parentId?: string }): Promise<Entry | null> {
-  const currentWorld = useMainStore().currentWorld;
+  const currentSetting = useMainStore().currentSetting;
 
-  if (!currentWorld) 
+  if (!currentSetting) 
     return null;
 
   const { name, type, parentId } = options ?? {};
 
   // get the valid parents
   let validParents = [] as { id: string; label: string }[];
-  const topicFolder = currentWorld.topicFolders[topic];
+  const topicFolder = currentSetting.topicFolders[topic];
 
   if (topicFolder && hasHierarchy(topic)) {
     validParents = topicFolder
@@ -101,7 +101,8 @@ async function createEntryDialog(topic: ValidTopic,
         dialog.close(); 
 
         const entry = await createdCallback(topicFolder, details);
-        await resolve(entry) 
+        resolve(entry) 
+        return entry;
       }        
     };
    
@@ -110,21 +111,21 @@ async function createEntryDialog(topic: ValidTopic,
 }
 
 const createdCallback = async (topicFolder: TopicFolder, details: AnyDetails | null): Promise<Entry | null> => {
-  const currentWorld = useMainStore().currentWorld;
+  const currentSetting = useMainStore().currentSetting;
 
-  if (!currentWorld || !details) 
+  if (!currentSetting || !details) 
     return null;
 
   const entry = await handleGeneratedEntry(details, topicFolder);
-
+  
   return entry || null;
 }
 
 // used for updating an existing entry
 async function updateEntryDialog(entry: Entry): Promise<Entry | null> {
-  const currentWorld = useMainStore().currentWorld;
+  const currentSetting = useMainStore().currentSetting;
 
-  if (!currentWorld) 
+  if (!currentSetting) 
     return null;
 
   const topic = entry.topic;
@@ -136,7 +137,7 @@ async function updateEntryDialog(entry: Entry): Promise<Entry | null> {
  
   // get the valid parents
   let validParents = [] as { id: string; label: string }[];
-  const topicFolder = currentWorld.topicFolders[topic];
+  const topicFolder = currentSetting.topicFolders[topic];
 
   if (topicFolder && hasHierarchy(topic)) {
     validParents = topicFolder
@@ -150,7 +151,7 @@ async function updateEntryDialog(entry: Entry): Promise<Entry | null> {
     const props = { 
       generateMode: true,
       topic: topic, 
-      title: localize(generateTitles[topic]),
+      title: localize(updateTitles[topic]),
       validParents: validParents,
       initialName: name || '',
       initialDescription: description || '',
@@ -161,23 +162,24 @@ async function updateEntryDialog(entry: Entry): Promise<Entry | null> {
         dialog.close(); 
 
         await updatedCallback(entry, details);
-        await resolve(entry);
+        resolve(entry);
+        return entry;
       }        
     };
    
-    dialog.render(true, { props });
+    dialog.render({ force: true, props });
   });
 }
 
 const updatedCallback = async (entry: Entry, details: AnyDetails | null): Promise<Entry | null> => {
-  const currentWorld = useMainStore().currentWorld;
+  const currentSetting = useMainStore().currentSetting;
   
-  if (!currentWorld || !details || !entry) 
+  if (!currentSetting || !details || !entry) 
     return null;
 
   const navigationStore = useNavigationStore();
   const relationshipStore = useRelationshipStore();
-  const topicDirectoryStore = useTopicDirectoryStore();
+  const settingDirectoryStore = useSettingDirectoryStore();
   const mainStore = useMainStore();
 
   // Update the entry with the generated content
@@ -190,14 +192,14 @@ const updatedCallback = async (entry: Entry, details: AnyDetails | null): Promis
   }
   
   if (hasHierarchy(entry.topic)) {
-    await topicDirectoryStore.setNodeParent(entry.topicFolder as TopicFolder, entry.uuid, (details as LocationDetails).parentId || null);
+    await settingDirectoryStore.setNodeParent(entry.topicFolder as TopicFolder, entry.uuid, (details as LocationDetails).parentId || null);
   }
 
   // Save the entry
   await entry.save();
 
   // Refresh the directory tree to show the updated name
-  await topicDirectoryStore.refreshTopicDirectoryTree([entry.uuid]);
+  await settingDirectoryStore.refreshSettingDirectoryTree([entry.uuid]);
   await navigationStore.propagateNameChange(entry.uuid, entry.name);
 
   // Propagate the name and type changes to all related entries
@@ -208,7 +210,7 @@ const updatedCallback = async (entry: Entry, details: AnyDetails | null): Promis
     await mainStore.refreshCurrentContent();
 
   if (details.generateImage)
-    void generateImage(await currentWorld, entry);  
+    void generateImage(await currentSetting, entry);  
 
   return entry || null;
 }

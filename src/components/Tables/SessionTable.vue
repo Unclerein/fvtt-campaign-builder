@@ -14,11 +14,14 @@
       :columns="columns"
       :allow-edit="props.allowEdit"
       :edit-item-label="props.editItemLabel"
+      :allow-delete="props.allowDelete"
       :delete-item-label="props.deleteItemLabel"
       :show-move-to-campaign="props.showMoveToCampaign"
       :draggable-rows="props.draggableRows"
+      :help-text="props.helpText"
+      :help-link="props.helpLink"
       @row-select="(event) => emit('rowContextMenu', event)"
-      @edit-item="(uuid) => emit('editItem', uuid)"
+      @edit-item="(data) => emit('editItem', data)"
       @delete-item="(uuid) => emit('deleteItem', uuid)"
       @add-item="() => emit('addItem')"
       @row-contextmenu="(event) => emit('rowContextMenu', event)"
@@ -70,6 +73,14 @@
       type: Boolean,
       default: false,
     },
+    helpText: {   // displays an info icon with this tooltop
+      type: String,
+      default: '',
+    },
+    helpLink: {   // clicking the icon opens this link
+      type: String,
+      default: '',
+    },
     rows: {
       type: Array as PropType<SessionTableGridRow[]>,
       required: true,
@@ -86,9 +97,13 @@
       type: String,
       default: '',
     },
+    allowDelete: {
+      type: Boolean,
+      default: true,
+    },
     deleteItemLabel: {
       type: String,
-      required: true,
+      default: '',
     },
     showMoveToCampaign: {
       type: Boolean,
@@ -125,7 +140,7 @@
 
   ////////////////////////////////
   // data
-  const baseTableRef = ref<any>(null);
+  const baseTableRef = ref<typeof BaseTable | null>(null);
 
   ////////////////////////////////
   // computed data

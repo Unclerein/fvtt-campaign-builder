@@ -1,6 +1,5 @@
 <template>
   <div 
-    v-if="Backend.available"
     class="fcb-play-generators flexrow"
   >
     <div class="fcb-generate-label">Generate</div>
@@ -31,22 +30,22 @@
   import { storeToRefs } from 'pinia';
 
   // local imports
-  import { useMainStore, useNavigationStore } from '@/applications/stores';
-  import { SettingKey, ModuleSettings } from '@/settings/ModuleSettings';
-  import { Backend } from '@/classes'
+  import { useMainStore, useNavigationStore, usePlayingStore } from '@/applications/stores';
+  import { ModuleSettings, SettingKey } from '@/settings';
   import { FCBDialog } from '@/dialogs';
   
   // local components
   import GenerateNameDialog from '@/components/AIGeneration/GenerateNameDialog.vue';
   
   // types
-  import { GeneratorType, Topics, ValidTopic} from '@/types';
+  import { GeneratorType, ToDoTypes, Topics, ValidTopic} from '@/types';
 
   ////////////////////////////////
   // store
   const mainStore = useMainStore();
   const navigationStore = useNavigationStore();
-  const { currentWorld } = storeToRefs(mainStore);
+  const playingStore = usePlayingStore();
+  const { currentSetting, currentCampaign } = storeToRefs(mainStore);
 
 
   ////////////////////////////////
@@ -72,7 +71,7 @@
     showGenerateNameDialog.value = true;
   };
 
-  const onOptionUse = (value: string) => {
+  const onOptionUse = async (value: string) => {
     // Display the result
     ui?.notifications?.info(`Name: ${value}`);
 
@@ -80,10 +79,22 @@
     navigator.clipboard.writeText(value).then(() => {
       ui?.notifications?.info('Copied to clipboard!');
     });
+
+    // add to the to-do list
+    const campaign = playingStore.currentPlayedCampaign;
+    if (campaign) {
+      await campaign.mergeToDoItem(ToDoTypes.GeneratedName, `Name ${value} Generated during session ${campaign.currentSession?.number}`);
+
+      // if the campaign is showing, refresh it
+      if (currentCampaign.value) {
+        await mainStore.refreshCurrentContent();
+      }
+    }
+
   };
 
   const onOptionAddToWorld = async (value: string) => {
-    if (!currentWorld.value) {
+    if (!currentSetting.value) {
       return;
     }
 
@@ -106,9 +117,11 @@
         return;
     }
 
-    const config = ModuleSettings.get(SettingKey.generatorConfig);
+    // Get default types from settings
+    const defaultTypes = ModuleSettings.get(SettingKey.generatorDefaultTypes);
+    
     initialName.value = value;
-    initialType.value = config?.defaultTypes[currentGeneratorType.value] || '';
+    initialType.value = defaultTypes[currentGeneratorType.value] || '';
     
     const entry = await FCBDialog.createEntryDialog(topic, { 
       name: initialName.value || '',

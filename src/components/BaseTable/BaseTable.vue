@@ -11,6 +11,7 @@
       :editMode="props.columns.find(c=>c.editable) ? 'cell' : undefined"
       :sort-field="pagination.sortField"
       :sort-order="pagination.sortOrder"
+      :first="pagination.first"
       :default-sort-order="1"
       :total-records="rows.length"
       :global-filter-fields="props.filterFields"
@@ -52,6 +53,15 @@
               </template>
             </Button>
             <div 
+              v-if="props.helpText"
+              class="fcb-table-help-icon"
+              :style="props.helpLink ? 'cursor: pointer;' : ''"
+              :data-tooltip="props.helpText"
+              @click="onHelpIconClick"
+            >
+              <i class="fas fa-info-circle"></i>
+            </div>
+            <div 
               v-if="props.extraAddText"
               :class="['fcb-table-new-drop-box', isDragHover ? 'valid-drag-hover' : '']"
               @dragover="onDragoverNew"
@@ -70,6 +80,7 @@
             </InputIcon>
             <InputText 
               v-model="pagination.filters.global.value"  
+              style="font-size: var(--font-size-14);"
               :placeholder="localize('placeholders.search')"
             />
           </IconField>
@@ -106,6 +117,7 @@
             @drop="onDropRow($event, data.uuid)"
           >
             <a 
+              v-if="props.allowDelete"
               class="fcb-action-icon" 
               :data-tooltip="props.deleteItemLabel"
               @click.stop="emit('deleteItem', data.uuid)" 
@@ -116,20 +128,26 @@
               v-if="props.allowEdit"
               class="fcb-action-icon" 
               :data-tooltip="props.editItemLabel"
-              @click.stop="emit('editItem', data)" 
+              @click.stop="onEditButtonClick(data)" 
             >
               <i class="fas fa-pen"></i>
             </a>
             <span v-if="props.trackDelivery">
-              <!-- lockedToSessionId is a way to see if this is a seesion lore list or a campaign list for things that aren't delivered -->
+              <!-- we track delivery on campaign (delivered and not) and session lore lists -->
+              <!-- if it's delivered, lockedToSessionId is null but lockedToSession is 'Campaign' if we're looking at the campaign delivered table -->
+              <!-- if it's not delivered, lockedToSessionId is a session id where it sits or null for the campaign -->
+
+              <!--  this is a undelivered one - campaign or session, both can be delivered -->
               <a 
-                v-if="!data.delivered  && !data.lockedToSessionId"
+                v-if="!data.delivered"
                 class="fcb-action-icon" 
                 :data-tooltip="localize('tooltips.markAsDelivered')"
                 @click.stop="emit('markItemDelivered', data.uuid)" 
               >
                 <i class="fas fa-check"></i>
               </a>
+              <!-- this is a delivered campaign one on campaign table or session one on the 
+                   session table; can undeliver in either case -->
               <a 
                 v-if="data.delivered && !data.lockedToSessionId"
                 class="fcb-action-icon" 
@@ -138,16 +156,18 @@
               >
                 <i class="fas fa-circle-xmark"></i>
               </a>
+              <!-- this is a undelivered session one -->
               <a 
-                v-if="props.showMoveToCampaign && !data.delivered && !data.lockedToSessionId"
+                v-if="props.showMoveToCampaign && !data.delivered"
                 class="fcb-action-icon" 
                 :data-tooltip="localize('tooltips.moveToCampaign')"
                 @click.stop="emit('moveToCampaign', data.uuid)" 
               >
                 <i class="fas fa-reply"></i>
               </a>
+              <!-- this is a undelivered session or campaign one; can move either to next session -->
               <a 
-                v-if="!data.lockedToSessionId"
+                v-if="!data.delivered"
                 class="fcb-action-icon" 
                 :data-tooltip="localize('tooltips.moveToNextSession')"
                 @click.stop="emit('moveToNextSession', data.uuid)" 
@@ -179,7 +199,7 @@
           </div>
         </template>
         <template
-          v-if="col.editable"
+          v-if="col.editable && col.type !== 'boolean'"
           #body="{ data }"
         >
           <div 
@@ -218,6 +238,14 @@
             </div>
           </div>
         </template>
+        <template
+          v-if="col.editable && col.type === 'boolean'"
+          #body="{ data, field }"
+        >
+          <div class="fcb-row-wrapper" style="text-align: center;">
+            <Checkbox :model-value="data[field]" :binary="true" @update:modelValue="onCheckboxChange(data, field, $event)" />
+          </div>
+        </template>
         <!-- Standard column format -->
         <template
           v-if="!col.editable && col.field!=='actions' && col.field!=='drag'"
@@ -237,8 +265,11 @@
                 col.onClick ? 'clickable' : '',
               ]"
               @click.stop="col.onClick && col.onClick($event, data.uuid)"
-            >
-              {{ data[col.field] }}
+            >              
+              <span :style="col.onClick ? 'text-decoration: underline;' : ''">
+                {{ data[col.field] }}               
+              </span>
+              &nbsp; <!-- nbsp because otherwise the cell will have 0 width and the mouse events won't work; here so it doesn't get underlined -->
             </div>
           </div>
         </template>
@@ -250,7 +281,7 @@
 
 <script setup lang="ts">
   // library imports
-  import { ref, PropType, } from 'vue';
+  import { ref, PropType, computed, reactive, nextTick } from 'vue';
   import { FilterMatchMode } from '@primevue/core/api';
 
   // local imports
@@ -264,6 +295,7 @@
   import IconField from 'primevue/iconfield';
   import InputIcon from 'primevue/inputicon';
   import Textarea from 'primevue/textarea';
+  import Checkbox from 'primevue/checkbox';
 
   // local components
 
@@ -314,6 +346,7 @@
       type: Array as PropType<any[]>,
       required: true,
     },
+    /** show the edit action icon */
     allowEdit: {
       type: Boolean,
       default: false,
@@ -322,9 +355,13 @@
       type: String,
       default: '',
     },
+    allowDelete: {
+      type: Boolean,
+      default: true,
+    },
     deleteItemLabel: {
       type: String,
-      required: true,
+      default: '',
     },
     showMoveToCampaign: {
       type: Boolean,
@@ -334,14 +371,22 @@
       type: Boolean,
       required: false,
       default: false,
-    }
+    },
+    helpText: {   // displays an info icon with this tooltip
+      type: String,
+      default: '',
+    },
+    helpLink: {   // clicking the icon opens this link
+      type: String,
+      default: '',
+    },
   });
 
   ////////////////////////////////
   // emits
   const emit = defineEmits<{
     (e: 'rowSelect', originalEvent: DataTableRowSelectEvent): void;
-    (e: 'editItem', uuid: string): void;
+    (e: 'editItem', data: BaseTableGridRow): void;
     (e: 'deleteItem', uuid: string): void;
     (e: 'addItem'): void;
     (e: 'rowContextMenu', originalEvent: DataTableRowContextMenuEvent): void;
@@ -363,7 +408,7 @@
 
   ////////////////////////////////
   // data
-  const pagination = ref<TablePagination>({
+  const pagination = reactive<TablePagination>({
     sortField: 'name', 
     sortOrder: 1, 
     first: 0,
@@ -389,6 +434,10 @@
 
   ////////////////////////////////
   // computed data
+  /** Check if any columns are editable */
+  const hasEditableColumns = computed(() => {
+    return props.columns.some(col => col.editable);
+  });
 
   ////////////////////////////////
   // methods
@@ -398,7 +447,54 @@
    */
   const setEditingRow = (uuid: string) => {
     editingRow.value = uuid;
+
+    // Find the index of the row
+    const rowIndex = props.rows.findIndex(row => row.uuid === uuid);
+
+    if (rowIndex !== -1) {
+      // Calculate the page number (0-based)
+      const page = Math.floor(rowIndex / pagination.rowsPerPage);
+
+      // Set the 'first' property for pagination to the first record
+      //    of the page containing the row we need
+      pagination.first = page * pagination.rowsPerPage;
+      pagination.page = page + 1; // Update the page number too
+
+      // wait for the next tick to ensure the table has updated
+      nextTick(() => {
+        // find the first editable column and set the focus on it
+        const firstEditableColumn = props.columns.find(col => col.editable);
+        if (firstEditableColumn) {
+          const id = `${uuid}-${firstEditableColumn.field}`;
+          const input = document.getElementById(id) as HTMLInputElement;
+          if (input) {
+            input.focus();
+          }
+        }
+      });
+    }
+
     emit('setEditingRow', uuid);
+  }
+
+  /**
+   * Saves the currently editing row by extracting values from input fields
+   * and emitting cellEditComplete events for each editable field
+   */
+  const saveCurrentlyEditingRow = () => {
+    if (editingRow.value) {
+      // loop over all the inputs
+      for (const col of props.columns) {
+        if (col.editable) {
+          const id = `${editingRow.value}-${col.field}`;
+          const input = document.getElementById(id) as HTMLInputElement;
+          if (input) {
+            // pull the value from the input and fire an event to save it
+            emit('cellEditComplete', { data: { uuid: editingRow.value }, newValue: input.value, field: col.field, originalEvent: null } as unknown as DataTableCellEditCompleteEvent );
+          }
+        }
+      }
+    }
   }
 
   // Expose the setEditingRow method to parent components
@@ -408,7 +504,17 @@
 
   ////////////////////////////////
   // event handlers
-  const onCellEditComplete = async (event: DataTableCellEditCompleteEvent) => {
+  const onCheckboxChange = (rowData: any, field: string, newValue: boolean) => {
+    const event = {
+      data: rowData,
+      field: field,
+      newValue: newValue,
+      originalEvent: new Event('change'),
+    };
+    onCellEditComplete(event as any);
+  }
+
+  const onCellEditComplete = (event: DataTableCellEditCompleteEvent) => {
     // turn off editing mode
     editingRow.value = null;
 
@@ -416,19 +522,8 @@
   }
 
   const onClickEditableCell = (uuid: string) => {
-    // if we were already editing a row, fire off a complete event
-    if (editingRow.value) {
-      // loop over all the inputs
-      for (const col of props.columns) {
-        const id = `${editingRow.value}-${col.field}`;
-        const input = document.getElementById(id) as HTMLInputElement;
-        if (input) {
-          // pull the value from the input and fire an event to save it
-          // TODO: change the event type because we're not firing a full event here
-          emit('cellEditComplete', { data: { uuid: editingRow.value }, newValue: input.value, field: col.field, originalEvent: null } as unknown as  DataTableCellEditCompleteEvent );
-        }
-      }
-    }
+    // if we were already editing a row, save it first
+    saveCurrentlyEditingRow();
 
     // set the new row
     editingRow.value = uuid;
@@ -498,6 +593,26 @@
     }
   }
 
+  const onEditButtonClick = (data: BaseTableGridRow) => {
+    // Check if there are any editable columns
+    if (hasEditableColumns.value) {
+      // If we were already editing a row, save it first
+      saveCurrentlyEditingRow();
+      
+      // If there are editable columns, put the row in edit mode
+      setEditingRow(data.uuid);
+    } else {
+      // If no editable columns, emit the editItem event as before
+      emit('editItem', data);
+    }
+  }
+
+  const onHelpIconClick = () => {
+    if (props.helpLink) {
+      window.open(props.helpLink, '_blank');
+    }
+  }
+
   ////////////////////////////////
   // watchers
   // reload when topic changes
@@ -559,6 +674,13 @@
       color: var(--color-text-accent);
       border-color: var(--color-text-accent);
     }
+  }
+
+  .fcb-table-help-icon {
+    margin-left: 8px;
+    margin-right: 8px;
+    // display: flex;
+    // align-items: center;
   }
 
 </style>

@@ -2,11 +2,12 @@ import { createPinia, setActivePinia } from 'pinia';
 
 export * from './mainStore';
 export * from './navigationStore';
-export * from './topicDirectoryStore';
+export * from './settingDirectoryStore';
 export * from './campaignDirectoryStore';
 export * from './relationshipStore';
 export * from './campaignStore';
 export * from './sessionStore';
+export * from './playingStore';
 
 // global pinia instance
 const pinia = createPinia();

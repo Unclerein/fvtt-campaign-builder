@@ -7,12 +7,18 @@
       "startCollapsedHelp": "Should the sidebar start closed when opening the window for the first time?",
       "displaySessionNotes": "Display pop-up session notes",
       "displaySessionNotesHelp": "When enabled, a session notes window will automatically open when a play session starts",
+      "defaultAddToSession": "Default 'Add to current session'",
+      "defaultAddToSessionHelp": "When in play mode, should the checkbox when creating an entry default to on or off?",
       "sessionDisplayMode": "Session display format",
       "sessionDisplayModeHelp": "Choose how sessions are displayed in the campaign directory",
       "sessionDisplayModeOptions": {
         "number": "Session Number",
         "date": "Session Date",
         "name": "Session Name"
+      },
+      "Keybindings": {
+        "closeTab": "Close tab",
+        "closeTabHelp": "Close the current tab"
       },
       "autoRefreshRollTables": "Automatically refresh RollTables",
       "autoRefreshRollTablesHelp": "When enabled, generator roll tables will be automatically refreshed with new values when the module loads",
@@ -34,9 +40,13 @@
       "advancedHelp": "Configure advanced settings (including AI)",
       "speciesList": "Manage Species List",
       "speciesListLabel": "Species List",
-      "speciesListHelp": "Define the species to make available.  These cross all worlds - file an issue if you have need more different lists per world.",
+      "speciesListHelp": "Define the species to make available.  These cross all Settings - file an issue if you have need more different lists per Setting.",
       "hideBackendWarning": "Hide missing backend warning?",
-      "hideBackendWarningHelp": "If you're not using the backend, this lets you turn off the notification that it's missing"
+      "hideBackendWarningHelp": "If you're not using the backend, this lets you turn off the notification that it's missing",
+      "enableToDoList": "Enable To-do List",
+      "enableToDoListHelp": "If disabled, the todo list feature will be turned off.",
+      "autoRelationships": "Auto-suggest relationships",
+      "autoRelationshipsHelp": "If enabled, the editor will automatically suggest changes to relationships between entries based changes made to the description."
     },
     "applications": {
       "sessionNotes": {
@@ -48,6 +58,44 @@
           "add": "Add species",
           "edit": "Edit species",
           "delete": "Delete species"
+        },
+        "defaultSpecies": {
+          "dwarf": {
+            "name": "Dwarf",
+            "description": "Stout and resilient, dwarves are known for their craftsmanship, endurance, and strong connection to mountains and stonework. They are typically short and stocky, with thick beards and sturdy builds that emphasize their toughness."
+          },
+          "elf": {
+            "name": "Elf",
+            "description": "Graceful and long-lived, elves possess keen senses, a natural affinity for magic, and an enduring connection to nature. They are tall and slender, with pointed ears, angular features, and an otherworldly beauty."
+          },
+          "halfling": {
+            "name": "Halfling",
+            "description": "Small and nimble, halflings are cheerful and resourceful, known for their luck and ability to avoid danger. They are short, standing around three feet tall, with round faces, curly hair, and a friendly demeanor."
+          },
+          "human": {
+            "name": "Human",
+            "description": "Versatile and ambitious, humans adapt to any environment, excelling in a wide range of skills and professions. They vary widely in height, build, skin tone, and facial features, reflecting the diversity of their cultures."
+          },
+          "dragonborn": {
+            "name": "Dragonborn",
+            "description": "Proud and powerful, dragonborn are humanoid dragons with a strong sense of honor and an innate breath weapon. They are tall and muscular, covered in colorful scales, with reptilian heads, clawed hands, and tails."
+          },
+          "gnome": {
+            "name": "Gnome",
+            "description": "Curious and inventive, gnomes are small and agile, known for their sharp minds and love of tinkering. They are short, with pointed ears, a mischievous demeanor, and a knack for finding hidden treasures."
+          },
+          "half-elf": {
+            "name": "Half-Elf",
+            "description": "Blending human versatility with elven grace, half-elves are charismatic and adaptable, fitting into both worlds yet fully belonging to neither. They have slightly pointed ears, angular facial features, and a mix of human and elven traits that vary by ancestry."
+          },
+          "half-orc": {
+            "name": "Half-Orc",
+            "description": "Strong and tenacious, half-orcs inherit the endurance and fighting spirit of their orcish ancestry while often striving to prove themselves beyond it. They are tall and powerfully built, with green or gray skin, prominent lower tusks, and thick brows."
+          },
+          "tiefling": {
+            "name": "Tiefling",
+            "description": "Marked by infernal heritage, tieflings possess fiendish traits, an innate resilience to fire, and a talent for magic. They have horns, tails, and unusual eye and skin colors, ranging from deep reds to purples and blues."
+          }
         }
       },
       "advancedSettings": {
@@ -58,7 +106,17 @@
           "APIToken": "API Token",
           "APITokenHint": "Output from script to deploy the backend.",
           "defaultToLong": "Default to long descriptions",
-          "defaultToLongHint": "Controls the default setting for creating a long vs short description when doing AI generation."
+          "defaultToLongHint": "Controls the default setting for creating a long vs short description when doing AI generation.",
+          "longDescriptionParagraphs": "Long description paragraphs",
+          "longDescriptionParagraphsHint": "Number of paragraphs to generate for long descriptions (1-4).",
+          "useGmailIdeas": "Use Gmail for Ideas",
+          "useGmailIdeasHint": "When enabled, idea items will be created from the Gmail inbox",
+          "emailDefaultWorld": "Default Setting for email",
+          "emailDefaultWorldHint": "The Setting to use by default for email features (ex. emailing idea items)",
+          "emailDefaultCampaign": "Default Campaign for email",
+          "emailDefaultCampaignHint": "The campaign to use by default for email features (ex. emailing idea items)",
+          "selectWorld": "Select a setting...",
+          "selectCampaign": "Select a campaign..."
         }
       },
       "rollTableSettings": {
@@ -68,6 +126,11 @@
         "labels": {
           "refreshAll": "Refresh all tables",
           "refreshAllHelp": "Replace any used items with new ones"
+        },
+        "notifications": {
+          "refreshStarted": "Generating new names for roll tables in the background",
+          "refreshSuccess": "Roll tables refreshed successfully",
+          "refreshError": "Failed to refresh roll tables. Check console for details."
         }
       },
       "createEntry": {
@@ -77,10 +140,10 @@
             "location": "Create Location",
             "organization": "Create Organization"
           },
-          "generate": {
-            "character": "Generate Character",
-            "location": "Generate Location",
-            "organization": "Generate Organization"
+          "update": {
+            "character": "Update Character",
+            "location": "Update Location",
+            "organization": "Update Organization"
           }
         },
         "labels": {
@@ -93,24 +156,48 @@
     },
     "help": {
       "worldGenre": "ex. \"Fantasy\" - Needed for AI generation",
-      "worldFeeling": "ex. \"Rugged and dangerous with low level of magic\" - Improves AI generation"
+      "settingFeeling": "ex. \"Rugged and dangerous with low level of magic\" - Improves AI generation"
     },
     "labels": {
       "newTab": "New Tab",
       "saveChanges": "Save Changes",
       "reset": "Reset",
       "cancel": "Cancel",
+      "save": "Save",
       "generate": "Generate",
       "accept": "Accept",
       "use": "Use",
       "useOnce": "Use once",
       "tryAgain": "Try Again",
-      "addToWorld": "Add to world",
+      "addToWorld": "Add to Setting",
       "prep": "Prep",
       "play": "Play",
+      "ok": "OK",
+      "yes": "Yes",
+      "no": "No",
+      "close": "Close",
+      "update": "Update",
+      "noToAll": "No to All",
+      "tableHeaders": {
+        "actions": "Actions",
+        "name": "Name",
+        "location": "Location"
+      },
+      "locations": {
+        "compendium": "Compendium",
+        "world": "World"
+      },
+      "homePage": {
+        "createWorld": "Create Setting",
+        "createCampaign": "Create Campaign",
+        "createCharacter": "Create Character",
+        "createLocation": "Create Location",
+        "createOrganization": "Create Organization"
+      },
       "fields": {
         "type": "Type",
         "parent": "Parent",
+        "campaign": "Campaign",
         "sessionNumber": "Number",
         "sessionDate": "Session Date",
         "playerName": "Player Name",
@@ -118,14 +205,17 @@
         "otherPlotPoints": "Other Plot Points",
         "desiredMagicItems": "Desired Magic Items",
         "name": "Name",
+        "topic": "Topic",
         "species": "Species",
         "worldGenre": "Genre",
-        "worldFeeling": "World Feeling",
-        "campaignDescription": "Campaign description, notes, ideas, etc...",
-        "briefDescription": "Brief description",
+        "settingFeeling": "Setting Feeling",
+        "campaignDescription": "Campaign description",
+        "campaignHouseRules": "House rules",
+        "startingDescription": "Starting description",
         "description": "Description",
         "longDescriptions": "Generate long descriptions",
-        "generateImage": "Generate Image"
+        "generateImage": "Generate Image",
+        "addToCurrentSession": "Add to current session"
       },
       "addTopic": {
         "character": "Add Character",
@@ -142,7 +232,8 @@
       "entry": {
         "topic": "TopicFolder",
         "type": "Type",
-        "relationships": "Relationships"
+        "relationships": "Relationships",
+        "sessions": "Sessions"
       },
       "session": {
         "session": "Session",
@@ -161,14 +252,31 @@
         "addActor": "Add actor",
         "addActorDrag": "(or drag/drop an actor)",
         "addScene": "Add scene",
-        "addSceneDrag": "(or drag/drop a scene)"
+        "addSceneDrag": "(or drag/drop a scene)",
+        "loreHelpText": "Tweet-sized bits of useful and interesting information. Click to read more from Lazy DM.",
+        "itemHelpText": "Magic items that fit your PCs and the plot. Click to read more from Lazy DM.",
+        "npcHelpText": "NPCs likely to be encountered in the session.",
+        "monsterHelpText": "Monsters that fit the situation and location. Click to read more from Lazy DM.",
+        "vignetteHelpText": "Scenes that bring resolution, open new paths, shift the story.  1 per 45 minutes. Click to read more from Lazy DM.",
+        "locationHelpText": "Detailed, memorable, fantastic locations the characters can explore. Click to read more from Lazy DM.",
+        "strongStart": "Strong Start",
+        "strongStartHelpText": "A strong start is a short, impactful event that sets the tone for the session. Click to read more from Lazy DM."
       },
       "campaign": {
         "addPC": "Add PC",
-        "addPCDrag": "(or drag/drop an actor)"
+        "addPCDrag": "(or drag/drop an actor)",
+        "description": "Description",
+        "pcs": "PCs",
+        "lore": "Lore",
+        "loreHelpText": "Track big campaign-level secrets and smaller ones that you aren't ready to deliver. Click to read more from Lazy DM.",
+        "todo": "To-Do",
+        "addToDo": "Add To-do Item",
+        "ideas": "Ideas",
+        "addIdea": "Add idea"
       },
       "pc": {
-        "linkToNewActor": "Link to new actor"
+        "linkToNewActor": "Link to new actor",
+        "pc": "PC"
       },
       "groupTree": "Group tree by type",
       "tabs": {
@@ -181,12 +289,15 @@
           "organizations": "Organizations",
           "organizationChildren": "Sub-organizations",
           "scenes": "Scenes",
-          "actors": "Actors"
+          "actors": "Actors",
+          "sessions": "Sessions"
         },
         "campaign": {
           "description": "Description",
           "pcs": "PCs",
-          "lore": "Lore"
+          "lore": "Lore",
+          "toDo": "To-Do",
+          "ideas": "Ideas"
         },
         "session": {
           "notes": "Notes",
@@ -197,7 +308,8 @@
           "locations": "Locations",
           "npcs": "NPCs",
           "monsters": "Monsters",
-          "magic": "Magic Items"
+          "magic": "Magic Items",
+          "todo": "To-Do"
         }
       },
       "noResults": "Nothing here",
@@ -211,7 +323,7 @@
       "locationName": "Location Name",
       "organizationName": "Organization Name",
       "campaignName": "Campaign Name",
-      "worldName": "World Name",
+      "worldName": "Setting Name",
       "sessionName": "Session Name",
       "sessionDate": "Date",
       "sessionNumber": "Session Number",
@@ -235,13 +347,21 @@
       "backend": {
         "successfulConnection": "Successfully connected to Campaign Builder backend.",
         "failedConnection": "Failed to connect to backend - check your \"advanced\" settings to make sure they properly match the backend server you deployed.  You'll be unable to used advanced features in the meantime.",
-        "versionMismatch": "The version of your World & Campaign Builder backend ($1) doesn't match the version required by the module version you have installed ($2).  Please update one or the other (or both).  You'll be unable to use advanced features in the meantime."
+        "versionMismatch": "The version of your World & Campaign Builder backend ($1) doesn't match the version required by the module version you have installed ($2).  Please update one or the other (or both).  You'll be unable to use advanced features in the meantime.",
+        "emailSettingsNotSet": "You have enabled the email idea list feature, but you haven't set a default Setting or Campaign.  Please set these in the advanced settings.",
+        "rollTablesNotAvailable": "Backend is not available. Automatic RollTables will not be refreshed. Configure the backend in Advanced Settings to enable AI-generated names that match your world's theme."
       },
+      "todoReferenceNotFound": "The linked reference for this to-do item no longer exists.",
       "addedToSession": "added to session",
       "changesSaved": "changes saved"
     },
     "dialogs": {
       "generateNameDialog": {
+        "errorMessage": "There was an error:"
+      },
+      "configureNames": {
+        "title": "Configure Name Styles",
+        "description": "Select the naming styles you'd like to use for AI-generated names in this setting. You can preview examples of each style below, based on this setting's genre and feeling.",
         "errorMessage": "There was an error:"
       },
       "generateOptions": {
@@ -253,7 +373,11 @@
       },
       "confirmDeletePC": {
         "title": "Delete PC?",
-        "message": "Are you sure you want to delete this PC from the campaign?"
+        "message": "Are you sure you want to delete this PC from the campaign?  This will remove all details of the PC, including background, plot points, and any listed magic items."
+      },
+      "saveSessionNotes": {
+        "title": "Save changes?",
+        "message": "Do you want to save the current session notes before closing?"
       },
       "createEntry": {
         "generatedName": "Generated name",
@@ -274,17 +398,71 @@
         "sessionName": "Session Name"
       },
       "createWorld": {
-        "title": "Create World",
-        "worldName": "World Name"
+        "title": "Create Setting",
+        "worldName": "Setting Name"
+      },
+      "deleteEntry": {
+        "title": "Delete entry?",
+        "message": "Are you sure you want to delete this entry?  It will be removed from all relationships and sessions.  Any references to it in editors will become broken."
+      },
+      "addToDo": {
+        "title": "Add To-do",
+        "text": "Enter to-do text:"
+      },
+      "relatedItems": {
+        "additionalInformation": "Additional Information",
+        "allItemsConnected": "All possible related items are already connected.",
+        "character": {
+          "title": "Add a character",
+          "editTitle": "Edit character",
+          "createButtonTitle": "Create character",
+          "buttonTitle": "Add relationship",
+          "editButtonTitle": "Save character"
+        },
+        "location": {
+          "title": "Add a location",
+          "editTitle": "Edit location",
+          "createButtonTitle": "Create location",
+          "buttonTitle": "Add relationship",
+          "editButtonTitle": "Save location"
+        },
+        "organization": {
+          "title": "Add an organization",
+          "editTitle": "Edit organization",
+          "createButtonTitle": "Create organization",
+          "buttonTitle": "Add relationship",
+          "editButtonTitle": "Save organization"
+        },
+        "addToSession": "Add to session"
+      },
+      "relatedDocuments": {
+        "selectActors": "Select Actors",
+        "selectItems": "Select Items",
+        "addActor": "Add Actor",
+        "addItem": "Add Item"
+      },
+      "relatedEntriesManagement": {
+        "title": "Manage Related Entries",
+        "addedItems": "Add relationships to these?",
+        "removedItems": "Remove relationships from these?"
+      },
+      "contextMenus": {
+        "cannotActivateFromCompendium": "Cannot activate from compendium",
+        "cannotToggleNavigationFromCompendium": "Cannot toggle navigation from scene in a compendium",
+        "cannotToggleNavigationWhileActive": "Cannot toggle navigation while scene is active"
       }
     },
     "contextMenus": {
+      "tabs": {
+        "closeAll": "Close All Tabs",
+        "closeOther": "Close Other Tabs"
+      },
       "bookmarks": {
         "openNewTab": "Open in new Tab",
         "delete": "Delete bookmark"
       },
-      "worldFolder": {
-        "delete": "Delete world",
+      "settingFolder": {
+        "delete": "Delete Setting",
         "createCampaign": "Create campaign"
       },
       "campaignsHeader": {
@@ -300,9 +478,11 @@
       "image": {
         "viewImage": "View Image",
         "changeImage": "Change Image",
+        "addImage": "Add Image",
         "removeImage": "Remove Image",
         "postToChat": "Post To Chat",
-        "createScene": "Create Scene"
+        "createScene": "Create Scene",
+        "generateImage": "Generate image"
       },
       "topicFolder": {
         "create": {
@@ -321,12 +501,13 @@
       "generate":  {
         "description": "Generate description",
         "image": "Generate image",
-        "inProgress": "in progress"
+        "inProgress": "in progress",
+        "configureNames": "Configure names"
       }
     },
     "tooltips": {
       "mainButton": "Launch Campaign Builder",
-      "createWorld": "Create world",
+      "createWorld": "Create Setting",
       "expandDirectory": "Expand directory",
       "collapseDirectory": "Collapse directory",
       "collapseAllTopics": "Collapse all",
@@ -339,9 +520,12 @@
       "deleteNPC": "Delete NPC",
       "deleteItem": "Delete item",
       "deleteMonster": "Delete monster",
+      "editRow": "Edit this item. Press enter to save changes.",
       "deleteScene": "Delete scene",
       "deleteVignette": "Delete vignette",
       "deleteLore": "Delete lore",
+      "deleteToDo": "Complete to-do item",
+      "deleteIdea": "Delete idea",
       "markAsDelivered": "Mark as delivered",
       "unmarkAsDelivered": "Unmark as delivered",
       "moveToNextSession": "Move to next session",
@@ -350,6 +534,7 @@
       "addToASession": "Add to a session",
       "sessionUnavailable": "No campaigns with an active session, or this entry is already attached to them all",
       "generateContent": "Generate content",
+      "settingGenerateContent": "Manage setting generation configuration",
       "backendNotAvailable": "Backend not available",
       "playModeNoCampaigns": "You need to have at least one campaign with a session in order to use Play mode",
       "dragMonsterFromSession": "Drag to scene",
@@ -365,14 +550,14 @@
         "2": "Campaign",
         "3": "Session",
         "4": "PC",
-        "5": "World"
+        "5": "Setting"
       },
       "createEntry": {
         "name": "If left blank, a name will be generated automatically",
         "type": "If you create a new type, it will be added to the master list",
         "description": "Optional. Use to specify physical features or personality traits you want included",
         "parent": "May influence generated text in some cases",
-        "species": "If blank, a random species from your world will be used for AI generation. Custom entries will be passed to the AI but not added to your species list",
+        "species": "If blank, a random species from your Setting will be used for AI generation. Custom entries will be passed to the AI but not added to your species list",
         "longDescriptions": "Generate detailed description or a short summary?",
         "generateImage": "Generate a new image in the background after creating"
       }

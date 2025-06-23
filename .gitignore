@@ -4,4 +4,6 @@ dist/
 coverage/
 .tscout/
 .npmrc
+.cursor
 tsconfig.tsbuildinfo
+docs/.vitepress/cache

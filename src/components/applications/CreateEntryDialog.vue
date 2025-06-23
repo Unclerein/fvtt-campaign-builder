@@ -90,7 +90,7 @@
         </div>
 
         <h6>
-          {{ Backend.available ? localize('labels.fields.briefDescription') : localize('labels.fields.description') }}
+          {{ Backend.available ? localize('labels.fields.startingDescription') : localize('labels.fields.description') }}
           <i
             v-if="Backend.available" 
             class="fas fa-info-circle tooltip-icon" 
@@ -98,14 +98,14 @@
           ></i>
         </h6>
         <Textarea
-          v-model="briefDescription"
+          v-model="startingDescription"
           :pt="{ root: { 
             style: { 
               'font-size': 'var(--font-size-14)', 
               'color': 'var(--input-text-color)',
               'min-height': '6rem',
               'max-height': '6rem',
-              'background': !props.generateMode || !generateComplete ? 'rgba(255, 228, 196, .3)' : '',
+              'background': !generateComplete ? 'rgba(255, 228, 196, .3)' : '',
             }
           }}"
         />
@@ -136,6 +136,25 @@
             </label>
           </div>
         </div>
+
+        <!-- Add new checkbox for adding to current session -->
+        <div 
+          v-if="isInPlayMode"
+          class="generation-option"
+        >
+          <div class="generation-option-wrapper">
+            <Checkbox 
+              v-model="addToCurrentSession" 
+              :binary="true"
+              inputId="add-to-session-checkbox"
+            />
+            <label for="add-to-session-checkbox" class="generation-label">
+              {{ localize('labels.fields.addToCurrentSession') }}
+              <i class="fas fa-info-circle tooltip-icon" :data-tooltip="localize('tooltips.createEntry.addToCurrentSession')"></i>
+            </label>
+          </div>
+        </div>
+
         <hr 
           v-if="Backend.available"
           style="background-image: none; border: 1px solid #aaa"          
@@ -169,16 +188,17 @@
 
 <script setup lang="ts">
   // library imports
-  import { ref, onMounted, PropType, watch } from 'vue';
+  import { ref, onMounted, PropType, watch, computed } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
-  import { useMainStore } from '@/applications/stores';
+  import { useMainStore, useSessionStore } from '@/applications/stores';
   import { localize } from '@/utils/game';
   import { ModuleSettings, SettingKey } from '@/settings';
   import { Backend } from '@/classes';
-  import { generatedTextToHTML, htmlToPlainText } from '@/utils/misc';
+  import { generatedTextToHTML, htmlToPlainText } from '@/utils/sanitizeHtml';
   import { hasHierarchy, } from '@/utils/hierarchy';
+  import { nameStyles } from '@/utils/nameStyles';
   
   // library components
   import InputText from 'primevue/inputtext';
@@ -244,7 +264,7 @@
       default: '',
     },
     callback: {
-      type: Function as PropType<(details: CharacterDetails | LocationDetails | OrganizationDetails | null) => void>,
+      type: Function as PropType<(details: CharacterDetails | LocationDetails | OrganizationDetails | null) => Promise<Entry | null>>,
       required: false,
     },
   });
@@ -256,13 +276,14 @@
   ////////////////////////////////
   // store
   const mainStore = useMainStore();
-  const { currentWorld } = storeToRefs(mainStore);
+  const sessionStore = useSessionStore();
+  const { currentSetting, isInPlayMode } = storeToRefs(mainStore);
 
   ////////////////////////////////
   // data
   const name = ref<string>(props.initialName);
   const type = ref<string>(props.initialType);
-  const briefDescription = ref<string>('');
+  const startingDescription = ref<string>('');
   const generatedName = ref<string>('');
   const generatedDescription = ref<string>('');
   const generateComplete = ref<boolean>(false);
@@ -280,8 +301,20 @@
   const parentId = ref<string>(props.initialParentId);
   const parentName = ref<string>('');
 
+  // Add new checkbox for adding to current session
+  const addToCurrentSession = ref<boolean>(ModuleSettings.get(SettingKey.defaultAddToSession));
+
   ////////////////////////////////
   // computed data
+  const selectedNameStyles = computed((): string[] => {
+    if (!currentSetting.value) return [];
+    
+    return currentSetting.value.nameStyles.map(index => {
+      const style = nameStyles[index];
+      if (!style) return '';
+      return style.prompt.replace('{genre}', currentSetting.value?.genre || '');
+    }).filter(style => style !== '');
+  });
 
   ////////////////////////////////
   // methods
@@ -308,7 +341,7 @@
   };
 
   const onGenerateClick = async function() {
-    if (!currentWorld.value) 
+    if (!currentSetting.value) 
       return;
 
     loading.value = true;
@@ -338,21 +371,25 @@
         let result: Awaited<ReturnType<typeof Backend.api.apiCharacterGeneratePost>>;
 
         result = await Backend.api.apiCharacterGeneratePost({
-          genre: currentWorld.value.genre,
-          worldFeeling: currentWorld.value.worldFeeling,
+          genre: currentSetting.value.genre,
+          settingFeeling: currentSetting.value.settingFeeling,
           type: type.value,
           species: speciesName.value,
           speciesDescription: speciesDescription,
           name: name.value,
-          briefDescription: briefDescription.value,
+          briefDescription: startingDescription.value,
           createLongDescription: longDescriptions.value,
+          longDescriptionParagraphs: ModuleSettings.get(SettingKey.longDescriptionParagraphs),
+          nameStyles: selectedNameStyles.value,
         });
 
         generatedName.value = result.data.name;
         generatedDescription.value = result.data.description;
         
-        // also fill into the name block
-        name.value = result.data.name;
+        // only fill into the name block if user hasn't entered a name
+        if (!name.value || name.value.trim() === '') {
+          name.value = result.data.name;
+        }
 
         // apply the species here if needed - we don't do it above because it makes the species show up before the
         //    generation happens, which looks weird
@@ -382,8 +419,8 @@
       // pull the other things we need  
       try {
         const options = {
-          genre: currentWorld.value.genre,
-          worldFeeling: currentWorld.value.worldFeeling,
+          genre: currentSetting.value.genre,
+          settingFeeling: currentSetting.value.settingFeeling,
           type: type.value,
           parentName: parent?.name || '',
           parentType: parent?.type || '',
@@ -392,8 +429,10 @@
           grandparentType: grandparent?.type || '',
           grandparentDescription: grandparent?.description || '',
           name: name.value,
-          briefDescription: briefDescription.value,
+          briefDescription: startingDescription.value,
           createLongDescription: longDescriptions.value,
+          longDescriptionParagraphs: ModuleSettings.get(SettingKey.longDescriptionParagraphs),
+          nameStyles: selectedNameStyles.value,
         };
 
         let result: Awaited<ReturnType<typeof Backend.api.apiOrganizationGeneratePost | typeof Backend.api.apiLocationGeneratePost>>;
@@ -405,8 +444,10 @@
         generatedName.value = result.data.name;
         generatedDescription.value = result.data.description;
 
-        // also fill into the name block
-        name.value = result.data.name;
+        // only fill into the name block if user hasn't entered a name
+        if (!name.value || name.value.trim() === '') {
+          name.value = result.data.name;
+        }
       } catch (error) {
         generateError.value = (error as Error).message;
         generateComplete.value = true;
@@ -424,20 +465,21 @@
   }
 
   const onUseClick = async function() {
-    if (!currentWorld.value)
+    if (!currentSetting.value)
       return;
 
     // create the entry and kick off image generation if needed
     // if we haven't generated a description, use whatever's in brief description
     // the idea is that - especially when we're dealing with a rolltable name - user can use this form as a sort of quick create
-    let details: CharacterDetails | LocationDetails | OrganizationDetails | null = null;if (props.topic === Topics.Character) {
+    let details: CharacterDetails | LocationDetails | OrganizationDetails | null = null;
+    if (props.topic === Topics.Character) {
       // see if speciesId was made up or is an existing one
       const validSpecies = ModuleSettings.get(SettingKey.speciesList).map((s) => s.id);
 
       details = {
         name: generateComplete.value ? generatedName.value : name.value,
         type: type.value,
-        description: generateComplete.value ? generatedTextToHTML(generatedDescription.value) : briefDescription.value,
+        description: generateComplete.value ? generatedTextToHTML(generatedDescription.value) : startingDescription.value,
         speciesId: validSpecies.includes(speciesId.value) ? speciesId.value : '',
         generateImage: generateImageAfterAccept.value
       }
@@ -446,14 +488,26 @@
         name: generateComplete.value ? generatedName.value : name.value,
         type: type.value,
         parentId: parentId.value,
-        description: generateComplete.value ? generatedTextToHTML(generatedDescription.value) : briefDescription.value,
+        description: generateComplete.value ? generatedTextToHTML(generatedDescription.value) : startingDescription.value,
         generateImage: generateImageAfterAccept.value
       }
     }
 
     // Call the callback with the created entry if it exists
     if (props.callback) {
-      props.callback(details);
+      const entry = await props.callback(details);
+
+      // If we're in play mode and the checkbox is checked, add to current session
+      if (isInPlayMode.value && addToCurrentSession.value && entry) {
+        if (props.topic === Topics.Character) {
+          await sessionStore.addNPCToPlayedSession(entry.uuid, true);
+        } else if (props.topic === Topics.Location) {
+          await sessionStore.addLocationToPlayedSession(entry.uuid, true);
+        } else if (props.topic === Topics.Organization) {
+          // For organizations, do nothing for now 
+          // TODO: maybe add to the notes; have to figure out how to deal with open editors
+        }
+      }
     }
   };
   
@@ -496,7 +550,7 @@
     }
   });
   watch(() => props.initialDescription, (newValue) => {
-    briefDescription.value = htmlToPlainText(newValue);
+    startingDescription.value = htmlToPlainText(newValue);
   });
 
   ////////////////////////////////
@@ -524,7 +578,7 @@
     }
 
     longDescriptions.value = ModuleSettings.get(SettingKey.defaultToLongDescriptions);
-    briefDescription.value = htmlToPlainText(props.initialDescription);
+    startingDescription.value = htmlToPlainText(props.initialDescription);
     generateComplete.value = false;
     generateError.value = '';
     loading.value = false;
@@ -555,9 +609,7 @@
       display: flex;
       align-items: center;
       flex-direction: row;
-      margin-top: 16px;
-      padding: 8px 0 8px 0;
-      // border-top: 1px solid rgba(0, 0, 0, 0.1);
+      padding: 8px 0 0 0;
 
       .generation-option-wrapper {
         width: 50%;
@@ -596,6 +648,10 @@
         .error-label {
           font-weight: bold;
         }
+      }
+
+      .generated-content {
+        white-space: pre-wrap;
       }
 
       .prompt-message {

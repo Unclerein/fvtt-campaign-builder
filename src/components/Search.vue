@@ -38,7 +38,7 @@
         <div class="fcb-search-result-header">
           <!-- If there's a type use that, otherwise, use the topic -->
           <span class="fcb-search-result-name">
-            {{ result.name }} ({{ result.isEntry ? (result.type ? result.type : result.topic) : 'Session' }})
+            {{ result.name }} ({{ result.resultType === 'entry' ? (result.type ? result.type : result.topic) : result.resultType === 'session' ? localize('labels.session.session') : localize('labels.pc.pc') }})
           </span>
         </div>
       </div>
@@ -77,7 +77,7 @@
   // store
   const mainStore = useMainStore();
   const navigationStore = useNavigationStore();
-  const { currentWorld } = storeToRefs(mainStore);
+  const { currentSetting } = storeToRefs(mainStore);
   
   ////////////////////////////////
   // data
@@ -180,7 +180,7 @@
    */
   const selectResult = (_event: MouseEvent | null,result: FCBSearchResult) => {
     // Close the results panel
-    showResults.value = false;
+    manuallyHiddenResults.value = true;
     
     // Clear the search input
     searchQuery.value = '';
@@ -196,9 +196,9 @@
    * Initializes the search index when the component is mounted
    */
   const initializeSearch = async () => {
-    if (currentWorld.value) {
+    if (currentSetting.value) {
       isSearching.value = true;
-      await searchService.buildIndex(currentWorld.value);
+      await searchService.buildIndex(currentSetting.value);
       isSearching.value = false;
     }
   };
@@ -211,7 +211,7 @@
     const searchContainer = document.querySelector('.fcb-search-container');
     
     if (searchContainer && !searchContainer.contains(target)) {
-      showResults.value = false;
+      manuallyHiddenResults.value = true;
     }
   };
   
@@ -219,7 +219,7 @@
   // watchers
   
   // Rebuild the search index when the current world changes
-  watch(() => currentWorld.value, async (newWorld) => {
+  watch(() => currentSetting.value, async (newWorld) => {
     if (newWorld) {
       await initializeSearch();
     }

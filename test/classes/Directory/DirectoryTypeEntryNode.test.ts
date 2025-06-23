@@ -4,7 +4,7 @@ import { DirectoryTypeNode } from '@/classes/Directory/DirectoryTypeNode';
 import { CollapsibleNode } from '@/classes/Directory/CollapsibleNode';
 import { Entry } from '@/classes/Entry';
 import { TopicFolder } from '@/classes/TopicFolder';
-import { WBWorld } from '@/classes/WBWorld';
+import { Setting } from '@/classes/Setting';
 import { Topics } from '@/types';
 import { NO_NAME_STRING } from '@/utils/hierarchy';
 import * as sinon from 'sinon';
@@ -16,7 +16,7 @@ export const registerDirectoryTypeEntryNodeTests = () => {
       const { describe, it, expect, beforeEach, afterEach } = context;
 
       describe('DirectoryTypeEntryNode', () => {
-        let mockWorld: WBWorld;
+        let mockWorld: Setting;
         let mockTopicFolder: TopicFolder;
         let mockEntry: Entry;
         let mockTypeNode: DirectoryTypeNode;
@@ -31,7 +31,7 @@ export const registerDirectoryTypeEntryNodeTests = () => {
             expandedIds: {
               'entry-uuid': true
             }
-          } as unknown as WBWorld;
+          } as unknown as Setting;
 
           // Create a mock topic folder
           mockTopicFolder = {
@@ -55,7 +55,7 @@ export const registerDirectoryTypeEntryNodeTests = () => {
           } as unknown as DirectoryTypeNode;
 
           // Set the current world
-          CollapsibleNode.currentWorld = mockWorld;
+          CollapsibleNode.currentSetting = mockWorld;
 
           // Create a type entry node
           typeEntryNode = new DirectoryTypeEntryNode(
@@ -67,7 +67,7 @@ export const registerDirectoryTypeEntryNodeTests = () => {
 
         afterEach(() => {
           sinon.restore();
-          CollapsibleNode.currentWorld = null;
+          CollapsibleNode.currentSetting = null;
         });
 
         describe('constructor', () => {

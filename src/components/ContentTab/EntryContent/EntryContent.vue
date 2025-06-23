@@ -42,118 +42,141 @@
           @tag-removed="onTagChange"
         />
       </div>
-      <nav class="fcb-sheet-navigation flexrow tabs" data-group="primary">
-        <a class="item" data-tab="description">{{ localize('labels.tabs.entry.description') }}</a>
-        <a 
-          v-for="relationship in relationships"
-          :key="relationship.label"
-          class="item" 
-          :data-tab="relationship.tab"
-        >
-          {{ localize(relationship.label) }}
-        </a>
-        <a 
-          v-if="topic===Topics.Character"
-          class="item" 
-          data-tab="actors"
-        >
-          {{ localize('labels.tabs.entry.actors') }}
-        </a>
-        <a 
-          v-if="topic===Topics.Location"
-          class="item" 
-          data-tab="scenes"
-        >
-          {{ localize('labels.tabs.entry.scenes') }}
-        </a>
-      </nav>
-      <div class="fcb-tab-body flexrow">
-        <DescriptionTab 
-          :name="currentEntry?.name || 'Entry'"
-          :image-url="currentEntry?.img"
-          :window-type="WindowTabType.Entry"
-          :topic="topic as ValidTopic"
-          @image-change="onImageChange"
-        >
-          <div class="flexrow form-group">
-            <LabelWithHelp
-              label-text="labels.fields.type"
-            />
-            <TypeSelect
-              :initial-value="currentEntry?.type || ''"
+      <div class="fcb-sheet-subtab-container flexrow">
+        <div class="fcb-subtab-wrapper">
+          <nav class="fcb-sheet-navigation flexrow tabs" data-group="primary">
+            <a class="item" data-tab="description">{{ localize('labels.tabs.entry.description') }}</a>
+            <a 
+              v-for="relationship in relationships"
+              :key="relationship.label"
+              class="item" 
+              :data-tab="relationship.tab"
+            >
+              {{ localize(relationship.label) }}
+            </a>
+            <a 
+              v-if="topic===Topics.Character"
+              class="item" 
+              data-tab="actors"
+            >
+              {{ localize('labels.tabs.entry.actors') }}
+            </a>
+            <a 
+              v-if="topic===Topics.Location"
+              class="item" 
+              data-tab="scenes"
+            >
+              {{ localize('labels.tabs.entry.scenes') }}
+            </a>
+            <a 
+              class="item" 
+              data-tab="sessions"
+            >
+              {{ localize('labels.tabs.entry.sessions') }}
+            </a>
+          </nav>
+          <div class="fcb-tab-body flexrow">
+            <DescriptionTab 
+              :name="currentEntry?.name || 'Entry'"
+              :image-url="currentEntry?.img"
+              :window-type="WindowTabType.Entry"
               :topic="topic as ValidTopic"
-              @type-selection-made="onTypeSelectionMade"
-            />
-          </div>
+              @image-change="onImageChange"
+            >
+              <div class="flexrow form-group">
+                <LabelWithHelp
+                  label-text="labels.fields.type"
+                />
+                <TypeSelect
+                  :initial-value="currentEntry?.type || ''"
+                  :topic="topic as ValidTopic"
+                  @type-selection-made="onTypeSelectionMade"
+                />
+              </div>
 
-          <!-- show the species for characters -->
-          <div 
-            v-if="topic===Topics.Character"
-            class="flexrow form-group"
-          >
-            <LabelWithHelp
-              label-text="labels.fields.species"
-            />
-            <SpeciesSelect
-              :initial-value="currentEntry?.speciesId || ''"
-              :allow-new-items="false"
-              @species-selection-made="onSpeciesSelectionMade"
-            />
-          </div>
+              <!-- show the species for characters -->
+              <div 
+                v-if="topic===Topics.Character"
+                class="flexrow form-group"
+              >
+                <LabelWithHelp
+                  label-text="labels.fields.species"
+                />
+                <SpeciesSelect
+                  :initial-value="currentEntry?.speciesId || ''"
+                  :allow-new-items="false"
+                  @species-selection-made="onSpeciesSelectionMade"
+                />
+              </div>
 
-          <div 
-            v-if="showHierarchy"
-            class="flexrow form-group"
-          >
-            <LabelWithHelp
-              label-text="labels.fields.parent"
-            />
-            <TypeAhead 
-              :initial-list="validParents"
-              :initial-value="parentId || ''"
-              @selection-made="onParentSelectionMade"
-            />
-          </div>
+              <div 
+                v-if="showHierarchy"
+                class="flexrow form-group"
+              >
+                <LabelWithHelp
+                  label-text="labels.fields.parent"
+                />
+                <TypeAhead 
+                  :initial-list="validParents"
+                  :initial-value="parentId || ''"
+                  @selection-made="onParentSelectionMade"
+                />
+              </div>
 
-          <div class="flexrow form-group description">
-            <Editor
-              :initial-content="currentEntry?.description || ''"
-              :has-button="true"
-              @editor-saved="onDescriptionEditorSaved"
-            />
-          </div>
-        </DescriptionTab>
-        <div class="tab flexcol" data-group="primary" data-tab="characters">
-          <div class="tab-inner">
-            <RelatedItemTable :topic="Topics.Character" />
-          </div>
-        </div> 
-        <div class="tab flexcol" data-group="primary" data-tab="locations">
-          <div class="tab-inner">
-            <RelatedItemTable :topic="Topics.Location" />
-          </div>
-        </div>
-        <div class="tab flexcol" data-group="primary" data-tab="organizations">
-          <div class="tab-inner">
-            <RelatedItemTable :topic="Topics.Organization" />
-          </div>
-        </div>
-        <div class="tab flexcol" data-group="primary" data-tab="scenes">
-          <div class="tab-inner">
-            <RelatedDocumentTable 
-              :document-link-type="DocumentLinkType.Scenes"
-            />
-          </div>
-        </div>
-        <div class="tab flexcol" data-group="primary" data-tab="actors">
-          <div class="tab-inner">
-            <RelatedDocumentTable 
-              :document-link-type="DocumentLinkType.Actors"
-            />
+              <div class="flexrow form-group description">
+                <Editor
+                  :initial-content="currentEntry?.description || ''"
+                  :current-entity-uuid="currentEntry?.uuid"
+                  :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
+                  @editor-saved="onDescriptionEditorSaved"
+                  @related-entries-changed="onRelatedEntriesChanged"
+                />
+              </div>
+            </DescriptionTab>
+            <div class="tab flexcol" data-group="primary" data-tab="characters">
+              <div class="tab-inner">
+                <RelatedItemTable :topic="Topics.Character" />
+              </div>
+            </div> 
+            <div class="tab flexcol" data-group="primary" data-tab="locations">
+              <div class="tab-inner">
+                <RelatedItemTable :topic="Topics.Location" />
+              </div>
+            </div>
+            <div class="tab flexcol" data-group="primary" data-tab="organizations">
+              <div class="tab-inner">
+                <RelatedItemTable :topic="Topics.Organization" />
+              </div>
+            </div>
+            <div class="tab flexcol" data-group="primary" data-tab="scenes">
+              <div class="tab-inner">
+                <RelatedDocumentTable 
+                  :document-link-type="DocumentLinkType.Scenes"
+                />
+              </div>
+            </div>
+            <div class="tab flexcol" data-group="primary" data-tab="actors">
+              <div class="tab-inner">
+                <RelatedDocumentTable 
+                  :document-link-type="DocumentLinkType.Actors"
+                />
+              </div>
+            </div>
+            <div class="tab flexcol" data-group="primary" data-tab="sessions">
+              <SessionsTab />
+            </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Related Items Management Dialog -->
+    <RelatedEntriesManagementDialog
+      v-model="showRelatedEntriesDialog"
+      :added-ids="pendingAddedUUIDs"
+      :removed-ids="pendingRemovedUUIDs"
+      @update="onRelatedEntriesDialogUpdate"
+    />
   </form>
 </template>
 
@@ -166,10 +189,10 @@
   // local imports
   import { getTopicIcon, } from '@/utils/misc';
   import { localize } from '@/utils/game';
-  import { useTopicDirectoryStore, useMainStore, useNavigationStore, useRelationshipStore, useCampaignStore, } from '@/applications/stores';
+  import { useSettingDirectoryStore, useMainStore, useNavigationStore, useRelationshipStore, usePlayingStore, } from '@/applications/stores';
   import { hasHierarchy, validParentItems, } from '@/utils/hierarchy';
   import { generateImage } from '@/utils/generation';
-  import { SettingKey } from '@/settings';
+  import { ModuleSettings, SettingKey } from '@/settings';
   import { notifyInfo } from '@/utils/notifications';  
 
   // library components
@@ -180,18 +203,21 @@
   import DescriptionTab from '@/components/ContentTab/DescriptionTab.vue';
   import RelatedItemTable from '@/components/Tables/RelatedItemTable.vue';
   import RelatedDocumentTable from '@/components/Tables/RelatedDocumentTable.vue';
-  
+  import { updateEntryDialog } from '@/dialogs/createEntry';
+
   import Editor from '@/components/Editor.vue';
   import TypeAhead from '@/components/TypeAhead.vue';
   import SpeciesSelect from '@/components/ContentTab/EntryContent/SpeciesSelect.vue';
   import TypeSelect from '@/components/ContentTab/EntryContent/TypeSelect.vue';
   import LabelWithHelp from '@/components/LabelWithHelp.vue';
   import Tags from '@/components/Tags.vue';
+  import SessionsTab from '@/components/ContentTab/EntryContent/SessionsTab.vue';
+  import RelatedEntriesManagementDialog from '@/components/RelatedEntriesManagementDialog.vue';
+  import { getRelatedEntries } from '@/utils/uuidExtraction';
 
   // types
   import { DocumentLinkType, Topics, ValidTopic, WindowTabType } from '@/types';
-  import { WBWorld, TopicFolder, Backend, } from '@/classes';
-  import { updateEntryDialog } from '@/dialogs/createEntry';
+  import { Setting, TopicFolder, Backend, Entry } from '@/classes';
 
 
   ////////////////////////////////
@@ -203,12 +229,12 @@
   ////////////////////////////////
   // store
   const mainStore = useMainStore();
-  const topicDirectoryStore = useTopicDirectoryStore();
+  const settingDirectoryStore = useSettingDirectoryStore();
   const navigationStore = useNavigationStore();
   const relationshipStore = useRelationshipStore();
-  const campaignStore = useCampaignStore();
-  const { currentEntry, currentWorld, currentContentTab, refreshCurrentEntry, isInPlayMode } = storeToRefs(mainStore);
-  const { currentPlayedCampaign } = storeToRefs(campaignStore);
+  const playingStore = usePlayingStore();
+  const { currentEntry, currentSetting, currentContentTab, refreshCurrentEntry, } = storeToRefs(mainStore);
+  const { currentPlayedCampaign } = storeToRefs(playingStore);
 
   ////////////////////////////////
   // data
@@ -234,6 +260,9 @@
   const isGeneratingImage = reactive<Record<string, boolean>>({}); // Flag to track whether image generation is in progress - only one per id at a time
   const pushButtonTitle = ref<string>('');
   const pushButtonDisabled = ref<boolean>(false);
+  const showRelatedEntriesDialog = ref<boolean>(false);
+  const pendingAddedUUIDs = ref<string[]>([]);
+  const pendingRemovedUUIDs = ref<string[]>([]);
 
   ////////////////////////////////
   // computed data
@@ -266,10 +295,10 @@
       name.value = currentEntry.value.name || '';
 
       // set the parent and valid parents
-      if (currentWorld.value) {    
+      if (currentSetting.value) {    
         parentId.value = await currentEntry.value.getParentId();
 
-        validParents.value = validParentItems(currentWorld.value as WBWorld, currentEntry.value).map((e)=> ({
+        validParents.value = validParentItems(currentSetting.value as Setting, currentEntry.value).map((e)=> ({
           id: e.id,
           label: e.name || '',
         }));
@@ -279,13 +308,13 @@
 
     /** how many campaigns have available sessions */
     const numAvailableSessions = (): number => {
-    if (!currentWorld.value)
+    if (!currentSetting.value)
       return 0;
 
     let num = 0;
     // otherwise check all campaigns until we find one with sessions that don't have it
-    for (const campaignId of Object.keys(currentWorld.value?.campaigns || {})) {
-      if (currentWorld.value?.campaigns[campaignId].currentSession && !currentWorld.value.campaigns[campaignId].currentSession.npcs.find((npc) => npc.uuid===currentEntry.value?.uuid)) {
+    for (const campaignId of Object.keys(currentSetting.value?.campaigns || {})) {
+      if (currentSetting.value?.campaigns[campaignId].currentSession && !currentSetting.value.campaigns[campaignId].currentSession.npcs.find((npc) => npc.uuid===currentEntry.value?.uuid)) {
         num++;
       }
     }
@@ -324,7 +353,7 @@
         currentEntry.value.name = newValue;
         await currentEntry.value.save();
 
-        await topicDirectoryStore.refreshTopicDirectoryTree([currentEntry.value.uuid]);
+        await settingDirectoryStore.refreshSettingDirectoryTree([currentEntry.value.uuid]);
         await navigationStore.propagateNameChange(currentEntry.value.uuid, newValue);
         await relationshipStore.propagateFieldChange(currentEntry.value, 'name');
       }
@@ -336,15 +365,15 @@
     event.preventDefault();
     event.stopPropagation();
 
-    if (!currentWorld.value)
+    if (!currentSetting.value)
       return;
 
     // find all the campaigns with an active session
     let campaignsWithSessions = [] as { uuid: string; name: string}[];
 
-    for (const campaignId of Object.keys(currentWorld.value.campaigns)) {
-      if (currentWorld.value?.campaigns[campaignId].currentSession && !currentWorld.value.campaigns[campaignId].currentSession.npcs.find((npc) => npc.uuid===currentEntry.value?.uuid)) {
-        campaignsWithSessions.push({ uuid: campaignId, name: currentWorld.value.campaigns[campaignId].name });
+    for (const campaignId of Object.keys(currentSetting.value.campaigns)) {
+      if (currentSetting.value?.campaigns[campaignId].currentSession && !currentSetting.value.campaigns[campaignId].currentSession.npcs.find((npc) => npc.uuid===currentEntry.value?.uuid)) {
+        campaignsWithSessions.push({ uuid: campaignId, name: currentSetting.value.campaigns[campaignId].name });
       }
     }
 
@@ -354,7 +383,7 @@
     }
 
     // if there's more than one, we need the menu
-    const campaigns = currentWorld.value.campaigns;
+    const campaigns = currentSetting.value.campaigns;
 
     type MenuItem = {
       label: string;
@@ -412,7 +441,7 @@
 
   const selectCampaignForPush = async (campaignUuid: string): Promise<void> => {
     // get the campaign
-    const campaign = await currentWorld.value?.campaigns[campaignUuid];
+    const campaign = await currentSetting.value?.campaigns[campaignUuid];
     if (!campaign)
       return;
 
@@ -435,7 +464,7 @@
 
     notifyInfo(`${currentEntry.value.name} ${localize('notifications.addedToSession')}`);
     updatePushButton();// # of available changed
-   }
+  };
 
   const onGenerateButtonClick = (event: MouseEvent): void => {
     // Prevent default behavior
@@ -463,13 +492,13 @@
         label: `${localize('contextMenus.generate.image')} ${isGeneratingImage[currentEntry.value?.uuid as string] ? ` - ${localize('contextMenus.generate.inProgress')}` : ''}`,
         disabled: isGeneratingImage[currentEntry.value?.uuid as string],
         onClick: async () => {
-          if (!isGeneratingImage[currentEntry.value?.uuid as string] && currentWorld.value && currentEntry.value) {
+          if (!isGeneratingImage[currentEntry.value?.uuid as string] && currentSetting.value && currentEntry.value) {
             // save entry because it could change before generation is done
             const entryGenerated = currentEntry.value.uuid;
 
             isGeneratingImage[entryGenerated] = true;
 
-            await generateImage(currentWorld.value, currentEntry.value);
+            await generateImage(currentSetting.value, currentEntry.value);
 
             if (entryGenerated===currentEntry.value.uuid)
               mainStore.refreshEntry();
@@ -512,7 +541,7 @@
       await currentEntry.value.save();
 
       // Update the type in the directory tree
-      await topicDirectoryStore.updateEntryType(currentEntry.value, oldType);
+      await settingDirectoryStore.updateEntryType(currentEntry.value, oldType);
 
       // Propagate the type change to all related entries
       await relationshipStore.propagateFieldChange(currentEntry.value, 'type');
@@ -526,7 +555,7 @@
     if (!currentEntry.value.topicFolder)
       throw new Error('Invalid topic in EntryContent.onParentSelectionMade()');
 
-    await topicDirectoryStore.setNodeParent(currentEntry.value.topicFolder, currentEntry.value.uuid, selection || null);
+    await settingDirectoryStore.setNodeParent(currentEntry.value.topicFolder, currentEntry.value.uuid, selection || null);
   };
 
   const onDescriptionEditorSaved = async (newContent: string) => {
@@ -535,6 +564,37 @@
 
     currentEntry.value.description = newContent;
     await currentEntry.value.save();
+  };
+
+  const onRelatedEntriesChanged = async (addedUUIDs: string[], removedUUIDs: string[]) => {
+    if (!currentEntry.value || !ModuleSettings.get(SettingKey.autoRelationships)) {
+      return;
+    }
+
+    // check against current relationships
+    const { added, removed } = await getRelatedEntries(addedUUIDs, removedUUIDs, currentEntry.value);
+
+    // Store the pending changes and show dialog if there are any changes
+    if (added.length > 0 || removed.length > 0) {
+      pendingAddedUUIDs.value = added;
+      pendingRemovedUUIDs.value = removed;
+      showRelatedEntriesDialog.value = true;
+    }
+  };
+
+  const onRelatedEntriesDialogUpdate = async (addedEntries: Entry[], removedEntries: Entry[]) => {
+    if (!currentEntry.value) 
+      return;
+
+    // Handle added relationships
+    for (const entry of addedEntries) {
+      await relationshipStore.addRelationship(entry, {});
+    }
+
+    // Handle removed relationships
+    for (const entry of removedEntries) {
+      await relationshipStore.deleteRelationship(entry.topic, entry.uuid);
+    }
   };
 
   const onSpeciesSelectionMade = async (species: {id: string; label: string}): Promise<void> => {
@@ -549,8 +609,9 @@
   // watchers
   // in case the tab is changed externally
   watch(currentContentTab, async (newTab: string | null, oldTab: string | null): Promise<void> => {
-    if (newTab!==oldTab)
-      tabs.value?.activate(newTab || 'description');    
+    if (newTab !== oldTab && tabs.value) {
+      tabs.value.activate(newTab || 'description');    
+    }
   });
 
   // see if we want to force a full refresh (ex. when parent changes externally)
@@ -564,10 +625,13 @@
   watch(currentEntry, async (): Promise<void> => {
     await refreshEntry();
 
-    if (!currentContentTab.value)
+    if (!currentContentTab.value) {
       currentContentTab.value = 'description';
+    }
 
-    tabs.value?.activate(currentContentTab.value); 
+    if (tabs.value) {
+      tabs.value.activate(currentContentTab.value); 
+    }
   });
 
   ////////////////////////////////

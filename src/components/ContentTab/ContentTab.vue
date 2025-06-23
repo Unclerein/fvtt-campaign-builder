@@ -1,7 +1,7 @@
 <template>
   <div 
     ref="contentRef"
-    class="sheet fcb-journal-sheet"
+    class="fcb-journal-sheet sheet"
   >      
     <div 
       v-if="currentContentType===WindowTabType.Entry"
@@ -13,7 +13,7 @@
       v-else-if="currentContentType===WindowTabType.World"
       class="fcb-content-wrapper"
     >
-      <WorldContent />
+      <SettingContent />
     </div>
     <div 
       v-else-if="currentContentType===WindowTabType.Session"
@@ -60,7 +60,7 @@
   import PCContent from '@/components/ContentTab/PCContent.vue';
   import CampaignContent from '@/components/ContentTab/CampaignContent/CampaignContent.vue';
   import HomePage from '@/components/ContentTab/HomePage.vue';
-  import WorldContent from '@/components/ContentTab/WorldContent.vue';
+  import SettingContent from '@/components/ContentTab/SettingContent.vue';
   
   // types
   import { WindowTabType } from '@/types';
@@ -95,13 +95,15 @@
     &.sheet {
       height: 100%;
     }
-    
+  
     & > form {
       padding: 0px;
       overflow: hidden;
     }
     
     &.sheet {
+      height: 100%;
+
       form {
         height: 100%;
       }
@@ -131,11 +133,15 @@
         
         .fcb-input-name {
           background: none;
+          font-family: var(--fcb-name-font-family);
           color: var(--color-text-primary);
           margin-left: 3px;
           margin-right: 8px;
           font-size: 32px;
           height: 36px;
+
+          // the box shadow when we're not focused makes the box look like the wrong background color
+          box-shadow: none;
 
           &:not(:focus){
             border-bottom: 1px solid #777;
@@ -194,39 +200,64 @@
         }
       }
 
-      // Nav
-      .fcb-sheet-navigation {
-        flex-grow: 0;
-        flex: 0 0 30px !important;
-        padding: 0px 4px 5px 4px;
-        border-bottom: 2px groove var(--fcb-sheet-tab-bottom-border);
-        font-family: var(--fcb-font-family);
-        font-size: 18px;
-        font-weight: 700;
+      // Subtabs
+      .fcb-sheet-subtab-container {
+          flex: 1;
+          align-content: start;
+          background: var(--fcb-tab-body-background);
+          box-shadow: 0px -2px 4px rgba(0, 0, 0, 0.3);
 
-        &.tabs {
-          flex-wrap: wrap;
-          justify-content: flex-start;
-          
-          .item {
-            flex: 0 0 auto;
-            height: 30px !important;
-            line-height: 32px;
-            margin: 0 12px;
-            border-bottom: var(--fcb-sheet-tab-border);
-            max-width: 150px;
+        .fcb-subtab-wrapper {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          height: 100%;
+        }
 
-            &.first-child {
-              margin-left: 0;
+        .fcb-sheet-navigation {
+          flex-grow: 0;
+          flex: 0 0 30px !important;
+          padding: 0px 4px 5px 4px;
+          border-bottom: 2px groove var(--fcb-sheet-tab-bottom-border);
+          font-family: var(--fcb-font-family);
+          font-size: 15px;
+          font-weight: 700;
+
+
+          &.tabs {
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            
+            .item {
+              flex: 0 0 auto;
+              height: 30px !important;
+              line-height: 32px;
+              margin: 0 12px;
+              border-bottom: var(--fcb-sheet-tab-border);
+              max-width: 150px;
+
+              &.first-child {
+                margin-left: 0;
+              }
+            }
+
+            .item.active {
+              border-bottom-color: var(--fcb-sheet-tab-border-active);
+            }
+
+            .tab {
+              flex: 1;
             }
           }
+        }
 
-          .item.active {
-            border-bottom-color: var(--fcb-sheet-tab-border-active);
-          }
+        // the tab content
+      .fcb-tab-body {
+          flex: 1;
+          padding: 4px;
 
-          .tab {
-            flex: 1;
+          h6 {
+            margin-top: 1rem;
           }
         }
       }
@@ -234,16 +265,6 @@
       /* Dialog */
       .dialog-content {
         margin-bottom: 8px;
-      }
-
-      // the tab content
-      .fcb-tab-body {
-        flex: 1;
-        padding: 4px;
-
-        h6 {
-          margin-top: 1rem;
-        }
       }
 
       .fcb-sheet-container a[disabled] {
@@ -296,38 +317,6 @@
         &.flexcol {
           flex:1;
         }
-      }
-
-      /* Editor */
-      .editor {
-        overflow: visible;
-        height: 100%;
-        width: 100%;
-        min-height: 100%;
-        position: relative;
-
-        .editor-content {
-          overflow-y: visible;
-          height: unset;
-          min-height: calc(100% - 8px);
-          padding: 2px;
-        }
-      }
-    }
-      
-
-    // the button to open the editor
-    .editor-edit {
-      position: absolute;
-      z-index: 1;
-      right: 4px;
-      top: 3px;
-      color: coral;
-
-      &:hover {
-        color: green;
-        background: orange;
-        box-shadow: 0 0 5px red;
       }
     }
 
