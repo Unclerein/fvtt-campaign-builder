@@ -2,7 +2,7 @@
 
 [![Supported Foundry Versions](https://img.shields.io/endpoint?url=https://foundryshields.com/version?url=https://github.com/dovrosenberg/fvtt-campaign-builder/raw/master/static/module.json)](https://github.com/dovrosenberg/fvtt-campaign-builder)
 
-World & Campaign Builder is designed to streamline every part of your TTRPG prep and gameplay—from deep worldbuilding to session planning and live play tracking. Whether you're building a sprawling lore-rich universe or following the Lazy DM approach to lightweight prep, this tool lets you create interconnected characters, locations, organizations, and events with ease, all inside Foundry. It’s fast enough to use in real time during a session, and flexible enough to evolve as your world grows. Optional AI-assisted content and image generation offer powerful creative boosts, but the module is fully usable without them. 
+World & Campaign Builder is designed to streamline every part of your TTRPG prep and gameplay—from deep worldbuilding to session planning and live play tracking. Whether you're building a sprawling lore-rich universe or following the Lazy DM approach to lightweight prep, this tool lets you create interconnected characters, locations, organizations, and events with ease, all inside Foundry. It’s fast enough to use in real time during a session, and flexible enough to evolve as your world grows. Optional AI-assisted content and image generation offer powerful creative boosts, but the module is fully usable without them. 
 
 See the [user documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/) for full details.
 
@@ -11,7 +11,7 @@ You'll see lots of references to AI capabilities in the [documentation](https://
 
 So if you're in the anti-AI crowd, know that the module is *fully functional and useful without any use of AI*, and all of the AI features/functions are disabled by default.  
 
-That said, full details on features, costs, and setup are in the [documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/backend).  Any description of AI features in the documentation is clearly denoted as an "Advanced Feature".
+That said, full details on features, costs, and setup are in the [documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/reference/backend).  Any description of AI features in the documentation is clearly denoted as an "Advanced Feature".
 
 
 ## Play style notes
