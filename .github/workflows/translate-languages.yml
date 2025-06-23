@@ -31,7 +31,7 @@ jobs:
       - name: Translate to all languages
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: node .scripts/translate.js
+        run: node .scripts/translate.cjs
           
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
