@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
   // library imports
-  import { computed, PropType, ref, defineAsyncComponent } from 'vue';
+  import { computed, PropType, ref } from 'vue';
   import { storeToRefs } from 'pinia';
   import ContextMenu from '@imengyu/vue3-context-menu';
 
@@ -42,8 +42,8 @@
   import { DataTableRowContextMenuEvent } from 'primevue/datatable';
 
   // local components
-  import BaseTable from '@/components/BaseTable/BaseTable.vue';
-  const RelatedDocumentsDialog = defineAsyncComponent(() => import('@/components/Tables/RelatedDocumentsDialog.vue'));
+  import BaseTable from '@/components/tables/BaseTable.vue';
+  import RelatedDocumentsDialog from '@/components/tables/RelatedDocumentsDialog.vue';
 
   // types
   import { RelatedDocumentDetails, DocumentLinkType } from '@/types';

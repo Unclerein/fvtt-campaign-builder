@@ -28,8 +28,7 @@
 
 <script setup lang="ts">
   // library imports
-  // library imports
-  import { defineAsyncComponent, ref } from 'vue';
+  import { ref } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
@@ -40,8 +39,8 @@
   // library components
 	
   // local components
-  import SessionTable from '@/components/Tables/SessionTable.vue';
-  const RelatedDocumentsDialog = defineAsyncComponent(() => import('@/components/Tables/RelatedDocumentsDialog.vue'));
+  import SessionTable from '@/components/tables/SessionTable.vue';
+  import RelatedDocumentsDialog from '@/components/tables/RelatedDocumentsDialog.vue';
 
   // types
   

@@ -183,7 +183,7 @@
 <script setup lang="ts">
 
   // library imports
-  import { computed, nextTick, onMounted, ref, watch, reactive, defineAsyncComponent } from 'vue';
+  import { computed, nextTick, onMounted, ref, watch, reactive, } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
@@ -201,8 +201,8 @@
 
   // local components
   import DescriptionTab from '@/components/ContentTab/DescriptionTab.vue';
-  import RelatedItemTable from '@/components/Tables/RelatedItemTable.vue';
-  import RelatedDocumentTable from '@/components/Tables/RelatedDocumentTable.vue';
+  import RelatedItemTable from '@/components/tables/RelatedItemTable.vue';
+  import RelatedDocumentTable from '@/components/tables/RelatedDocumentTable.vue';
   import { updateEntryDialog } from '@/dialogs/createEntry';
 
   import Editor from '@/components/Editor.vue';
@@ -212,7 +212,7 @@
   import LabelWithHelp from '@/components/LabelWithHelp.vue';
   import Tags from '@/components/Tags.vue';
   import SessionsTab from '@/components/ContentTab/EntryContent/SessionsTab.vue';
-  const RelatedEntriesManagementDialog = defineAsyncComponent(() => import('@/components/RelatedEntriesManagementDialog.vue'));
+  import RelatedEntriesManagementDialog from '@/components/RelatedEntriesManagementDialog.vue';
   import { getRelatedEntries } from '@/utils/uuidExtraction';
 
   // types
