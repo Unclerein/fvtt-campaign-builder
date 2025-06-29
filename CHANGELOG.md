@@ -8,6 +8,7 @@
 - Made campaign ideas and todos hold a fixed order and enabled the ability to drag and drop to reorder them
 - Removed pagination from all tables; it took up extra room and was a nuisance
 - Fixed bug where bookmarks weren't deleted when the underlying content was
+- Added keybindings for moving forward/back across the tab bar; changed default for closing the tab
 - Minor UI cleanup 
 
 ## v1.0.0 - Coming out of beta!
