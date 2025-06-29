@@ -50,7 +50,9 @@
         "moveLeftHelp": "Zum vorherigen Tab wechseln",
         "moveRight": "Nach rechts bewegen",
         "moveRightHelp": "Zum nächsten Tab wechseln"
-      }
+      },
+      "showTypesInTree": "Typen im Einstellungsbaum anzeigen",
+      "showTypesInTreeHelp": "Wenn wahr, zeigt es den Typ jedes Eintrags im Baum an, wenn das Einstellungsverzeichnis nicht nach Typ gruppiert ist."
     },
     "applications": {
       "sessionNotes": {
