@@ -1,5 +1,13 @@
 # Change Log
 
+## v1.1.0 - AI options, quality of life improvements
+
+- Added support for Anthropic (Claude 3) for text generation (see module settings)
+- Added ability to choose from multiple image generation models
+- Made campaign ideas and todos hold a fixed order and enabled the ability to drag and drop to reorder them
+- Removed pagination from all tables; it took up extra room and was a nuisance
+- Fixed bug where bookmarks weren't deleted when the underlying content was
+
 ## v1.0.0 - Coming out of beta!
 
 ![](https://img.shields.io/badge/release%20date-June%2023%2C%202025-blue)
