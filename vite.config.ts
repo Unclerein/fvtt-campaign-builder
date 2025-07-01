@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
   const isDevelopment = mode === 'development'; 
 
   return {
-    base: './',
+    // base: './',
     resolve: {
       alias: [
         {
