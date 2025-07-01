@@ -155,7 +155,6 @@
 
     .fcb-description-content {
       flex: 1;
-      height: 100%;
 
       .form-group {
         margin: 4px 8px 0px 0px;

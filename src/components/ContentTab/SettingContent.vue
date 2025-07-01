@@ -62,6 +62,12 @@
                   @update:model-value="onWorldFeelingSaved"
                 />
               </div>
+              <div class="flexrow form-group">
+                <LabelWithHelp
+                  label-text="labels.fields.settingDescription"
+                  top-label
+                />
+              </div>
               <div class="flexrow form-group description">
                 <Editor
                     :initial-content="currentSetting.description || ''"

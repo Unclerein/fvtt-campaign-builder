@@ -5,7 +5,7 @@
 
   "compatibility": {
     "minimum": "13",
-    "verified": "13.345"
+    "verified": "13.346"
   },
 
   "esmodules": [
@@ -26,10 +26,10 @@
 
    "documentTypes": {
     "JournalEntryPage": {
-      "entry": {},
-      "session": {
-        "htmlFields": [ "description" ]
+      "entry": {
+        "htmlFields": [ "rolePlayingNotes" ]
       },
+      "session": {},
       "pc": {
         "htmlFields": [ "background", "plotPoints", "magicItems" ]
       }

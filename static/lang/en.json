@@ -52,7 +52,9 @@
       "autoRelationships": "Auto-suggest relationships",
       "autoRelationshipsHelp": "If enabled, the editor will automatically suggest changes to relationships between entries based changes made to the description.",
       "showTypesInTree": "Show types in Setting tree",
-      "showTypesInTreeHelp": "When true, if the Setting directory is not grouped by type, it will show the type of each Entry in the tree." 
+      "showTypesInTreeHelp": "When true, if the Setting directory is not grouped by type, it will show the type of each Entry in the tree.",
+      "showRolePlayingNotes": "Show role playing notes on entries",
+      "showRolePlayingNotesHelp": "When true, a separate field for role playing notes will be shown separately from the Entry description."
     },
     "applications": {
       "sessionNotes": {
@@ -216,9 +218,12 @@
         "topic": "Topic",
         "species": "Species",
         "worldGenre": "Genre",
+        "entryDescription": "Description",
+        "entryRolePlayingNotes": "Role-playing Notes",
         "settingFeeling": "Setting Feeling",
         "campaignDescription": "Campaign description",
         "campaignHouseRules": "House rules",
+        "settingDescription": "Setting description",
         "startingDescription": "Starting description",
         "description": "Description",
         "longDescriptions": "Generate long descriptions",

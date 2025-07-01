@@ -124,11 +124,37 @@
                 />
               </div>
 
+              <div 
+                v-if="ModuleSettings.get(SettingKey.showRolePlayingNotes)"
+                class="flexrow form-group"
+              >
+                <LabelWithHelp
+                  label-text="labels.fields.entryRolePlayingNotes"
+                  top-label
+                />
+              </div>
+              <div 
+                v-if="ModuleSettings.get(SettingKey.showRolePlayingNotes)"
+                class="flexrow form-group"
+              >
+                <Editor
+                    :initial-content="currentEntry?.rolePlayingNotes || ''"
+                    :style="{ 'height': '240px', 'margin-bottom': '6px'}"
+                    @editor-saved="onRolePlayingNotesSaved"
+                  />
+              </div>
+              <div class="flexrow form-group">
+                <LabelWithHelp
+                  label-text="labels.fields.entryDescription"
+                  top-label
+                />
+              </div>
               <div class="flexrow form-group description">
                 <Editor
                   :initial-content="currentEntry?.description || ''"
                   :current-entity-uuid="currentEntry?.uuid"
                   :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
+                  :style="{ 'height': '240px', 'margin-bottom': '6px'}"
                   @editor-saved="onDescriptionEditorSaved"
                   @related-entries-changed="onRelatedEntriesChanged"
                 />
@@ -581,6 +607,15 @@
       return;
 
     currentEntry.value.description = newContent;
+    await currentEntry.value.save();
+  };
+
+
+  const onRolePlayingNotesSaved = async (newContent: string) => {
+    if (!currentEntry.value)
+      return;
+
+    currentEntry.value.rolePlayingNotes = newContent;
     await currentEntry.value.save();
   };
 

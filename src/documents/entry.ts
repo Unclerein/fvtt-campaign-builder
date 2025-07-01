@@ -33,10 +33,7 @@ const entrySchema = {
   // Image for the entry
   img: new fields.FilePathField({blank: true, required: false, nullable: true, initial: '', categories: ['IMAGE']}),
 
-  // description: new fields.SchemaField({
-  //   short: new fields.HTMLField({required: false, blank: true})
-  // }),
-  // steps: new fields.ArrayField(new fields.StringField({blank: true}))
+  rolePlayingNotes: new fields.HTMLField({required: false, blank: true}),
 };
 
 type EntrySchemaType = typeof entrySchema;
@@ -81,6 +78,7 @@ export interface EntryDoc extends JournalEntryPage {
   __type: 'EntryDoc';
 
   system: {
+    rolePlayingNotes: string;
     topic: ValidTopic;
     type: string;
     tags: TagInfo[];
