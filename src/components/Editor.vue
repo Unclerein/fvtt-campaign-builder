@@ -64,6 +64,15 @@
   // types
   const TextEditor = foundry.applications.ux.TextEditor;
 
+  // type EditorOptions = {
+  //   document: Document<any>,
+  //   fieldName: string,
+  //   height: number, 
+  //   engine: 'tinymce' | 'prosemirror', 
+  //   collaborate: boolean,
+  //   plugins?: any,
+  // };
+
   ////////////////////////////////
   // props
   const props = defineProps({
@@ -136,8 +145,7 @@
   // data
   const editorId = ref<string>();
   const enrichedInitialContent = ref<string>('');
-  const rawInitialContent = ref<string>('');
-  const editor = ref<any>(null);
+  const editor = ref<TextEditor | null>(null);
   const buttonDisplay = ref<string>('');   // is button currently visible
   const editorVisible = ref<boolean>(true);
   const lastSavedContent = ref<string>('');   // the parsemirror serialized content last saved, to see if any changes were made
@@ -146,17 +154,21 @@
   const coreEditorRef = ref<HTMLDivElement>();
   const editorRef = ref<HTMLDivElement>();
   const wrapperRef = ref<HTMLDivElement>();
-  const buttonRef = ref<HTMLAnchorElement>();
+  const buttonRef = ref<HTMLElement>();
+  
+  //
+  ////////////////////////////////
+  // computed data
+  const datasetProperties = computed((): Record<string, string> => {
+    const dataset = {
+      engine: 'prosemirror',
+      collaborate: props.collaborate.toString(),
+    } as Record<string, string>;
 
-  const datasetProperties = computed(() => {
-    const result: { [key: string]: any } = {};
-    if (props.currentEntityUuid) {
-      result['data-entity-uuid'] = props.currentEntityUuid;
-    }
-    return result;
+    return dataset;
   });
 
-  const safeEnrichedContent = computed(() => sanitizeHTML(enrichedInitialContent.value));
+  const safeEnrichedContent = computed((): string => (sanitizeHTML(enrichedInitialContent.value)));
 
   const wrapperStyle = computed((): string => (props.fixedHeight ? `height: ${props.fixedHeight + 'px'}` : ''));
   const innerStyle = computed((): string => (props.height ? `height: ${props.height + 'px'}` : ''));
@@ -165,117 +177,137 @@
   // methods
   // shouldn't be called unless there's already a document
   // this creates the Editor class that converts the div into a functional editor
-  async function activateEditor(): Promise<void> {
-    if (!coreEditorRef.value || !currentSetting.value)
+  const activateEditor = async (): Promise<void> => {
+    if (!coreEditorRef.value)
       return;
 
-    // Get the initial content
-    const content = rawInitialContent.value || '';
-    lastSavedContent.value = content;
+    const fitToSize = false;
 
-    // if there's an editor already, we need to destroy it first
-    if (editor.value) {
-      await editor.value.destroy();
-      editor.value = null;
-    }
+    // if the window content is shorter, we want to handle that case (rare)
+    const wc = coreEditorRef.value.closest('.window-content') as HTMLElement;
 
-    // make the button invisible
+    if (!wrapperRef.value)
+      throw new Error('Missing name in activateEditor()');
+
+    // Determine the preferred editor height
+    const heights = [wrapperRef.value.offsetHeight].concat(wc ? [wc.offsetHeight] : []);
+    const height = Math.min(...heights.filter(h => Number.isFinite(h)));
+
+    // Get initial content
+    const options = {
+      // document: props.document,
+      target: coreEditorRef.value,
+      height, 
+      engine: 'prosemirror', 
+      collaborate: props.collaborate,
+      plugins: undefined as { menu: any; keyMaps: any } | undefined,
+    };
+
+    options.plugins = configureProseMirrorPlugins();
+
+    if (!fitToSize && options.target.offsetHeight) 
+      options.height = options.target.offsetHeight;
+    
     buttonDisplay.value = 'none';
+    
+    editor.value = await TextEditor.create(options, props.initialContent);
 
-    // this is a trick to get the DOM to reset, so that the ProseMirror classes can be properly
-    //    applied to a fresh div
-    editorVisible.value = false;
-    await nextTick();
-    editorVisible.value = true;
-    await nextTick();
+    // we have to do this whole thing with lastSavedContent and sessionStore.lastSavedNotes because Foundry cleans the html in a different
+    //   way than prosemirror (see https://github.com/foundryvtt/foundryvtt/issues/11021)
+    lastSavedContent.value = ProseMirror.dom.serializeString(toRaw(editor.value).view.state.doc.content);
+    emit('editorLoaded', lastSavedContent.value);
+   
+    options.target.closest('.editor')?.classList.add('prosemirror');
+  };
 
-    // create the editor
-    if (coreEditorRef.value) {
-      const proseMirrorPlugins = configureProseMirrorPlugins();
-
-      editor.value = await TextEditor.create({
-        target: coreEditorRef.value,
-        height: props.height,
-        engine: 'prosemirror' as const,
-        collaborate: props.collaborate,
-        content,
-        plugins: {
-          prosemirror: proseMirrorPlugins,
-        },
-      });
-
-      emit('editorLoaded', content);
-    }
-  }
-
-  function configureProseMirrorPlugins() {
+  const configureProseMirrorPlugins = () => {
     return {
       menu: ProseMirror.ProseMirrorMenu.build(ProseMirror.defaultSchema, {
-        destroy: true,
-        onSave: () => {
-          saveEditor({remove:false});
-        },
+        // In edit-only mode, we want to keep the editor open after saving
+        destroyOnSave: !props.editOnlyMode,  // Controls whether the save button or save & close button is shown
+        onSave: () => saveEditor({ remove: !props.editOnlyMode })
       }),
-      save: {
-        onSave: () => saveEditor(),
-      },
-      keyMaps: ProseMirror.ProseMirrorKeyMaps.build(ProseMirror.defaultSchema),
+      keyMaps: ProseMirror.ProseMirrorKeyMaps.build(ProseMirror.defaultSchema, {
+        onSave: () => saveEditor({ remove: !props.editOnlyMode })
+      })
     };
-  }
+  };
 
-  async function saveEditor({remove}={remove:true}) {
+  const saveEditor = async ({remove}={remove:true}) => {
     if (!editor.value)
       return;
-    
-    // get the latest content
-    const latestContent = await editor.value.getData();
-    
-    // if we are tracking related entries, see if there are any changes
-    if (props.enableRelatedEntriesTracking) {
-      const latestUUIDs = extractUUIDs(latestContent);
-      const { added, removed } = compareUUIDs(initialUUIDs.value, latestUUIDs);
-      if (added.length > 0 || removed.length > 0) {
-        emit('relatedEntriesChanged', added, removed);
-        initialUUIDs.value = latestUUIDs;
+
+    // get the new content
+    let content;
+    // @ts-ignore 
+    content = ProseMirror.dom.serializeString(toRaw(editor.value).view.state.doc.content);
+
+    // see if dirty
+    const dirty = isDirty();
+
+    // Apply entity linking if enabled and content is dirty
+    if (dirty && props.enableEntityLinking && currentSetting.value) {
+      try {
+        content = await replaceEntityReferences(content, currentSetting.value, {
+          currentEntityUuid: props.currentEntityUuid
+        });
+      } catch (error) {
+        console.error('Failed to apply entity linking:', error);
+        // Continue with original content if entity linking fails
       }
     }
-    
-    // if we are doing entity linking, do that now
-    const finalContent = props.enableEntityLinking ? await replaceEntityReferences(latestContent) : latestContent;
 
-    // only emit if there are changes
-    if (finalContent !== lastSavedContent.value) {
-      emit('editorSaved', finalContent);
-      lastSavedContent.value = finalContent;
+    // Check for UUID changes if related items tracking is enabled
+    if (dirty && props.enableRelatedEntriesTracking) {
+      const currentUUIDs = extractUUIDs(content);
+      const { added, removed } = compareUUIDs(initialUUIDs.value, currentUUIDs);
+      
+      if (added.length > 0 || removed.length > 0) {
+        // Emit the UUID changes for the parent component to handle
+        emit('relatedEntriesChanged', added, removed);
+      }
     }
 
-    // destroy the editor
-    if (remove) {
-      await editor.value.destroy();
+    // For edit-only mode (like in SessionNotes), don't destroy the editor
+    if (remove && !props.editOnlyMode) {
+      // this also blows up the DOM... don't think we actually need it
+      toRaw(editor.value)?.destroy();  
       editor.value = null;
 
-      // show the button again
-      buttonDisplay.value = 'block';
+      buttonDisplay.value = '';   // brings the button back
 
-      // show the pretty text
-      if (currentSetting.value) {
-        enrichedInitialContent.value = await enrichFcbHTML(currentSetting.value.uuid, finalContent);
-      }
+      // bring back the deleted div by resetting 
+      editorVisible.value = false;
+      await nextTick();
+      editorVisible.value = true;
+    } else if (dirty) {
+      // if we're not removing it, then do a ui confirmation
+      notifyInfo(localize('notifications.changesSaved'));
     }
-  }
+    
+    if (dirty) {
+      lastSavedContent.value = content;
+      
+      if (props.enableRelatedEntriesTracking) {
+        initialUUIDs.value = [];
+      }
+      
+      emit('editorSaved', content);
+    }
+  };
 
-  function isDirty(): boolean {
+  const isDirty = (): boolean => {
     if (!editor.value)
       return false;
     
-    return toRaw(editor.value).isDirty;
+    return lastSavedContent.value !== getContent();
   }
 
-  function getContent(): string {
+  const getContent = (): string => {
     if (!editor.value)
       return '';
     
-    return toRaw(editor.value).getContent();
+    return ProseMirror.dom.serializeString(toRaw(editor.value).view.state.doc.content);
   }
 
   // expose methods
@@ -283,121 +315,109 @@
 
   ////////////////////////////////
   // event handlers
-  function onDragover(event: DragEvent) {
-    // allow dropping of text
-    if (event.dataTransfer && event.dataTransfer.types.includes('text/plain')) {
-      event.preventDefault();
-    }
+  const onDragover = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (event.dataTransfer && !event.dataTransfer?.types.includes('text/plain'))
+      event.dataTransfer.dropEffect = 'none';
   }
 
-  async function onDrop(event: DragEvent) {
-    if (!editor.value || !event.dataTransfer)
-      return;
+  const onDrop = async (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
 
+    // If the editor is not active, activate it first
+    if (!editor.value && props.editable) {
+      await activateEditor();
+      // Give the editor time to initialize
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // If editor is still not active or not editable, return
+    if (!editor.value || !props.editable) return;
+
+    // Parse the data using the utility function
     const data = getValidatedData(event);
-    if (!data)
-      return;
+    if (!data) return;
 
-    let link;
-    let contentToInsert;
+    let entryUuid: string | null = null;
+    let entryName: string | null = null;
 
-    switch (data.type) {
-      case 'Actor': {
-        const actor = await fromUuid(data.uuid) as Actor;
-        if (!actor)
-          return;
-        
-        link = actor.link;
-        break;
-      }
-      case 'JournalEntry': {
-        const entry = await fromUuid(data.uuid) as JournalEntry;
-        if (!entry)
-          return;
-        
-        link = entry.link;
-        break;
-      }
-      case 'JournalEntryPage': {
-        const page = await fromUuid(data.uuid) as JournalEntryPage;
-        if (!page)
-          return;
-
-        link = page.link;
-        break;
-      }
-      case 'RollTable': {
-        const table = await fromUuid(data.uuid) as RollTable;
-        if (!table)
-          return;
-        
-        link = table.link;
-        break;
-      }
-      case 'Item': {
-        const item = await fromUuid(data.uuid) as Item;
-        if (!item)
-          return;
-        
-        link = item.link;
-        break;
-      }
-      case 'Scene': {
-        const scene = await fromUuid(data.uuid) as Scene;
-        if (!scene)
-          return;
-        
-        link = scene.link;
-        break;
-      }
-      case 'Campaign': {
-        const campaign = await fromUuid(data.uuid) as Campaign;
-        if (!campaign)
-          return;
-
-        contentToInsert = `<h2>${campaign.name}</h2><p>${campaign.description}</p>`;
-        break;
-      }
-      case 'Session': {
-        const session = await fromUuid(data.uuid) as Session;
-        if (!session)
-          return;
-        
-        contentToInsert = `<h2>${session.name}</h2><p>${session.notes}</p>`;
-        break;
-      }
-      case 'FcbEntry': {
-        const entry = await fromUuid(data.uuid) as Entry;
-        if (!entry)
-          return;
-
-        link = entry.link;
-        break;
-      }
-      case 'Setting': {
-        const setting = await fromUuid(data.uuid) as Setting;
-        if (!setting)
-          return;
-
-        notifyInfo(localize('notifications.warnDroppingSettings'));
-        break;
-      }
+    // Handle different data structures from various drag sources
+    if (data.entryNode) {
+      // From SettingDirectoryNodeWithChildren or SettingDirectoryNode
+      entryUuid = data.childId;
+      entryName = data.name;
+    } else if (data.campaignNode) {
+      // From DirectoryCampaignNode
+      entryUuid = data.campaignId;
+      entryName = data.name;
+    } else if (data.settingNode) {
+      // From SettingDirectory setting
+      entryUuid = data.settingId;
+      entryName = data.name;
+    } else if (data.sessionNode) {
+      // From SessionDirectoryNode
+      entryUuid = data.sessionId;
+      entryName = data.name;
+    } else {
+      return;  // nothing we can handle
     }
 
-    if (link) {
-      // Create a UUID link in the format @UUID[uuid]{label}
-      contentToInsert = `<a class="content-link" data-uuid="${data.uuid}" data-id="" data-type="${data.type}" data-pack="" data-tooltip="${data.type}">${link}</a>`;
-    }
+    // If we found a valid UUID, create and insert the link
+    if (entryUuid) {
+      // We should already have the name from the drag data, but if not, try to get it
+      if (!entryName) {
+        try {
+          // Try to get the name based on the type of entity
+          if (data.campaignNode) {
+            // It's a campaign
+            const campaign = await Campaign.fromUuid(entryUuid);
+            if (campaign) {
+              entryName = campaign.name;
+            }
+          } else if (data.sessionNode) {
+            // It's a session
+            const session = await Session.fromUuid(entryUuid);
+            if (session) {
+              entryName = session.name;
+            }
+          } else if (data.settingNode) {
+            // It's a setting
+            const setting = await Setting.fromUuid(entryUuid);
+            if (setting) {
+              entryName = setting.name;
+            }
+          } else {
+            // Try as a regular entry
+            const entry = await Entry.fromUuid(entryUuid);
+            if (entry) {
+              entryName = entry.name;
+            }
+          }
+        } catch (e) {
+          // If we can't get the name, use a generic one
+          entryName = 'Link to ???';
+        }
+      }
 
-    if (contentToInsert) {
+      // Fallback if name is still not available
+      if (!entryName) {
+        entryName = 'Link to ???';
+      }
+
+      // Create a UUID link in the format @UUID[entryUuid]{entryName}
+      const linkText = `@UUID[${entryUuid}]{${entryName}}`;
+
       // Insert the link at the current cursor position
       // For ProseMirror
       const view = toRaw(editor.value).view;
       const { state, dispatch } = view;
-      const tr = state.tr.insertText(contentToInsert);
+      const tr = state.tr.insertText(linkText);
       dispatch(tr);
     }
-  }
+  };
 
   ////////////////////////////////
   // watchers
@@ -406,7 +426,6 @@
       return;
 
     const content = newContent || '';
-    rawInitialContent.value = content;
       
     // Initialize UUIDs for tracking if enabled
     if (props.enableRelatedEntriesTracking) {
@@ -450,6 +469,7 @@
     }
   });
 
+  
   ////////////////////////////////
   // lifecycle events
   onMounted(async () => {
@@ -466,8 +486,7 @@
     editor.value = null;
 
     // show the pretty text - but only if we have a button... otherwise we're in permananent edit mode and shouldn't be enriching the text
-    rawInitialContent.value = props.initialContent || '';
-    enrichedInitialContent.value = !props.editOnlyMode ? await enrichFcbHTML(currentSetting.value.uuid, rawInitialContent.value) : rawInitialContent.value;
+    enrichedInitialContent.value = !props.editOnlyMode ? await enrichFcbHTML(currentSetting.value.uuid, props.initialContent || '') : props.initialContent || '';
 
     // Initialize UUIDs for tracking if enabled
     if (props.enableRelatedEntriesTracking) {
