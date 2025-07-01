@@ -8,14 +8,14 @@ import { moduleId } from '@/settings';
 import { Campaign } from '@/classes/Campaign';
 import { expect } from 'chai';
 
-export const registerWBWorldTests = () => {
+export const registerSettingTests = () => {
   quench.registerBatch(
     'campaign-builder.classes.Setting',
     (context: QuenchBatchContext) => {
       const { describe, it, expect, beforeEach, afterEach } = context;
 
       describe('Setting', () => {
-        let mockWorldDoc: SettingDoc;
+        let mockSettingDoc: SettingDoc;
         let mockCompendium: any;
         let setting: Setting;
         let fromUuidStub;
@@ -41,7 +41,7 @@ export const registerWBWorldTests = () => {
           
           // Stub getFlag, setFlag, and unsetFlag
           getFlag = sinon.stub(Folder.prototype, 'getFlag');
-          getFlag.withArgs(sinon.match.any, SettingFlagKey.isWorld).returns(true);
+          getFlag.withArgs(sinon.match.any, SettingFlagKey.isSetting).returns(true);
           getFlag.withArgs(sinon.match.any, SettingFlagKey.campaignNames).returns({
             'campaign1-uuid': 'Campaign 1',
             'campaign2-uuid': 'Campaign 2'
@@ -91,12 +91,12 @@ export const registerWBWorldTests = () => {
           sinon.stub(game.packs, 'get').returns(mockCompendium);
 
           // Create a mock SettingDoc
-          mockWorldDoc = {
+          mockSettingDoc = {
             documentName: 'Folder',
             uuid: 'test-setting-uuid',
             name: 'Test Setting',
             getFlag: function(moduleId, key) {
-              if (key === SettingFlagKey.isWorld) return true;
+              if (key === SettingFlagKey.isSetting) return true;
               return null;
             },
             update: sinon.stub().resolves({}),
@@ -104,7 +104,7 @@ export const registerWBWorldTests = () => {
           } as unknown as SettingDoc;
 
           // Create a Setting instance
-          setting = new Setting(mockWorldDoc);
+          setting = new Setting(mockSettingDoc);
           
           // Mock internal properties set up during constructor or validate
           setting['_compendium'] = mockCompendium as any;
@@ -142,13 +142,13 @@ export const registerWBWorldTests = () => {
         describe('constructor', () => {
           it('should throw an error if document type is invalid', () => {
             // Create an invalid document
-            const invalidDoc = { ...mockWorldDoc, documentName: 'Actor' };
+            const invalidDoc = { ...mockSettingDoc, documentName: 'Actor' };
             
             expect(() => new Setting(invalidDoc as any)).to.throw('Invalid document type in Setting constructor');
           });
 
           it('should initialize with the provided document', () => {
-            expect(setting.raw).not.to.equal(mockWorldDoc); // Should be a clone
+            expect(setting.raw).not.to.equal(mockSettingDoc); // Should be a clone
             expect(setting.uuid).to.equal('test-setting-uuid');
             expect(setting.name).to.equal('Test Setting');
             expect(setting.compendiumId).to.equal('test-compendium-id');
@@ -163,7 +163,7 @@ export const registerWBWorldTests = () => {
           });
 
           it('should return a new Setting instance if document is valid', async () => {
-            fromUuidStub.resolves(mockWorldDoc);
+            fromUuidStub.resolves(mockSettingDoc);
             
             // Stub validate method
             sinon.stub(Setting.prototype, 'validate').resolves();
@@ -178,10 +178,10 @@ export const registerWBWorldTests = () => {
           it('should throw an error if topicIds is not loaded', async () => {
             // Create a setting with no topicIds
             getFlag.withArgs(sinon.match.any, SettingFlagKey.topicIds).returns(null);
-            const worldWithoutTopicIds = new Setting(mockWorldDoc);
+            const settingWithoutTopicIds = new Setting(mockSettingDoc);
             
             try {
-              await worldWithoutTopicIds.loadTopics();
+              await settingWithoutTopicIds.loadTopics();
               expect.fail('Should have thrown an error');
             } catch (error) {
               expect(error.message).to.equal('Invalid Setting.loadTopics() called before IDs loaded');
@@ -223,10 +223,10 @@ export const registerWBWorldTests = () => {
           it('should throw an error if campaignNames is not loaded', async () => {
             // Create a setting with no campaignNames
             getFlag.withArgs(sinon.match.any, SettingFlagKey.campaignNames).returns(null);
-            const worldWithoutCampaignNames = new Setting(mockWorldDoc);
+            const settingWithoutCampaignNames = new Setting(mockSettingDoc);
             
             try {
-              await worldWithoutCampaignNames.loadCampaigns();
+              await settingWithoutCampaignNames.loadCampaigns();
               expect.fail('Should have thrown an error');
             } catch (error) {
               expect(error.message).to.equal('Invalid Setting.loadCampaigns() called before IDs loaded');
@@ -490,7 +490,7 @@ export const registerWBWorldTests = () => {
           });
 
           it('should delete campaign from setting', async () => {
-            await setting.deleteCampaignFromWorld('campaign1-uuid');
+            await setting.deleteCampaignFromSetting('campaign1-uuid');
             
             expect(unsetFlag.calledWith(setting.raw, SettingFlagKey.campaignNames, 'campaign1-uuid')).to.equal(true);
             expect(unsetFlag.calledWith(setting.raw, SettingFlagKey.expandedIds, 'campaign1-uuid')).to.equal(true);
@@ -509,7 +509,7 @@ export const registerWBWorldTests = () => {
             // Stub cleanTrees
             const cleanTreesStub = sinon.stub(globalThis, 'cleanTrees').resolves();
             
-            await setting.deleteEntryFromWorld(mockTopicFolder as any, 'entry1-uuid');
+            await setting.deleteEntryFromSetting(mockTopicFolder as any, 'entry1-uuid');
             
             expect(cleanTreesStub.called).to.equal(true);
             expect(unsetFlag.calledWith(setting.raw, SettingFlagKey.expandedIds, 'entry1-uuid')).to.equal(true);
@@ -531,14 +531,14 @@ export const registerWBWorldTests = () => {
               [Topics.Character]: mockTopicFolder
             } as any;
             
-            await setting.deleteEntryFromWorld(mockTopicFolder as any, 'entry3-uuid');
+            await setting.deleteEntryFromSetting(mockTopicFolder as any, 'entry3-uuid');
             
             expect(mockTopicFolder.save.called).to.equal(true);
             expect(unsetFlag.calledWith(setting.raw, SettingFlagKey.expandedIds, 'entry3-uuid')).to.equal(true);
           });
 
           it('should delete session from setting', async () => {
-            await setting.deleteSessionFromWorld('session1-uuid');
+            await setting.deleteSessionFromSetting('session1-uuid');
             
             expect(unsetFlag.calledWith(setting.raw, SettingFlagKey.expandedIds, 'session1-uuid')).to.equal(true);
           });
@@ -553,7 +553,7 @@ export const registerWBWorldTests = () => {
           });
         });
 
-        describe('deleteActorFromWorld', () => {
+        describe('deleteActorFromSetting', () => {
           const actorIdToDelete = 'mock-actor-to-delete';
           const otherActorId = 'mock-other-actor';
 
@@ -569,7 +569,7 @@ export const registerWBWorldTests = () => {
               [pc3].filter(pc => filterFn(pc))
             );
             
-            await setting.deleteActorFromWorld(actorIdToDelete);
+            await setting.deleteActorFromSetting(actorIdToDelete);
 
             expect(mockCampaign1.filterPCs).toHaveBeenCalled();
             expect(mockCampaign2.filterPCs).toHaveBeenCalled();
@@ -592,7 +592,7 @@ export const registerWBWorldTests = () => {
             (mockCampaign1 as any).sessions = [session1];
             (mockCampaign2 as any).sessions = [session2];
 
-            await setting.deleteActorFromWorld(actorIdToDelete);
+            await setting.deleteActorFromSetting(actorIdToDelete);
 
             expect(session1.deleteMonster).toHaveBeenCalledWith(actorIdToDelete);
             expect(session1.deleteMonster).not.toHaveBeenCalledWith(otherActorId);
@@ -607,7 +607,7 @@ export const registerWBWorldTests = () => {
 
             (mockCharacterTopicFolder.allEntries as jest.Mock).mockReturnValue([charEntry1, charEntry2, charEntry3]);
 
-            await setting.deleteActorFromWorld(actorIdToDelete);
+            await setting.deleteActorFromSetting(actorIdToDelete);
 
             expect(charEntry1.actors).toEqual([otherActorId]);
             expect(charEntry1.save).toHaveBeenCalledTimes(1);
@@ -625,7 +625,7 @@ export const registerWBWorldTests = () => {
             (mockCampaign1 as any).sessions = [];
             (mockCampaign2 as any).sessions = [];
 
-            await setting.deleteActorFromWorld(nonExistentActorId);
+            await setting.deleteActorFromSetting(nonExistentActorId);
 
             expect(mockPCSave).not.toHaveBeenCalled();
             expect(mockSessionDeleteMonster).not.toHaveBeenCalled();
@@ -639,7 +639,7 @@ export const registerWBWorldTests = () => {
             (mockCampaign2.filterPCs as jest.Mock).mockResolvedValue([]);
             (mockCharacterTopicFolder.allEntries as jest.Mock).mockReturnValue([]);
 
-            await setting.deleteActorFromWorld(actorIdToDelete);
+            await setting.deleteActorFromSetting(actorIdToDelete);
             expect(pc1.save).toHaveBeenCalledTimes(1);
             expect(pc2.save).toHaveBeenCalledTimes(1);
             expect(mockPCSave).toHaveBeenCalledTimes(2);
@@ -652,7 +652,7 @@ export const registerWBWorldTests = () => {
             (mockCampaign2.filterPCs as jest.Mock).mockResolvedValue([]);
             (mockCharacterTopicFolder.allEntries as jest.Mock).mockReturnValue([charEntry1, charEntry2]);
 
-            await setting.deleteActorFromWorld(actorIdToDelete);
+            await setting.deleteActorFromSetting(actorIdToDelete);
             expect(charEntry1.save).toHaveBeenCalledTimes(1);
             expect(charEntry2.save).toHaveBeenCalledTimes(1);
             expect(mockCharacterSave).toHaveBeenCalledTimes(2);
