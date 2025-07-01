@@ -39,7 +39,7 @@ export async function scrollToActiveEntry(): Promise<void> {
     case WindowTabType.PC:
       // don't have tree entries
       break;
-    case WindowTabType.World:
+    case WindowTabType.Setting:
       await scrollToWorld(contentId);
       break;
     default:
@@ -172,7 +172,7 @@ async function scrollToCampaign(): Promise<void> {
 }
 
 /**
- * Scrolls to a world in the campaign directory tree.  Just scrolls to the open one.
+ * Scrolls to a setting in the campaign directory tree.  Just scrolls to the open one.
  * 
  * @returns A promise that resolves when the scroll operation is complete
  */

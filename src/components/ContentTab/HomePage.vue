@@ -142,7 +142,7 @@
 
   const onCreateEntry = async (topic: Topics) => {
     if (!currentSetting.value)
-      throw new Error('No current world in HomePage.onCreateEntry()');
+      throw new Error('No current setting in HomePage.onCreateEntry()');
 
     const topicFolder = currentSetting.value.topicFolders[topic];
 
@@ -175,7 +175,7 @@
           await navigationStore.openEntry(item.uuid, { newTab: false });
           break;
 
-        case getTabTypeIcon(WindowTabType.World):
+        case getTabTypeIcon(WindowTabType.Setting):
           await navigationStore.openSetting(item.uuid, { newTab: false });
           break;
 
