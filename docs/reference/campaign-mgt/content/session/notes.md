@@ -4,8 +4,8 @@ prev:
   text: 'Session Details'
   link: '/reference/campaign-mgt/content/session'
 next: 
-  text: 'Session Start Tab'
-  link: '/reference/campaign-mgt/content/session/start'
+  text: 'Lore Tab'
+  link: '/reference/campaign-mgt/content/session/lore'
 ---
 # Session Notes Tab
 ![Session Notes Tab](/assets/images/session-content.webp)
@@ -26,6 +26,9 @@ Only one session can have any given number. If you change the number to one that
 
 ## Session date
 The session date is the date of the session.  It is only used for your reference and for displaying in the [Campaign Directory] (depending on your setting for "Session display format" in the [Configuration](/reference/configuration/)).
+
+## Strong start { #start }
+This is where you enter your "Strong Start", fleshing out how you intend to begin the session.  This text is only used for your reference.
 
 ## Session notes area
 This is where you enter the Session notes. Click the orange pencil to start editing, and the save button (or Control-S) to save.
