@@ -1,4 +1,4 @@
-// this store handles the main state (current world, entry, etc.)
+// this store handles the main state (current setting, entry, etc.)
 
 // library imports
 import { defineStore, } from 'pinia';
@@ -8,12 +8,12 @@ import { computed, ref, watch } from 'vue';
 import { UserFlagKey, UserFlags, ModuleSettings, SettingKey, moduleId } from '@/settings';
 import { updateWindowTitle } from '@/utils/titleUpdater';
 import { useNavigationStore } from '@/applications/stores/navigationStore';
-import { updateWorldRollTableNames } from '@/utils/nameGenerators';
+import { updateSettingRollTableNames } from '@/utils/nameGenerators';
 
 // types
 import { Topics, WindowTabType, DocumentLinkType } from '@/types';
 import { TopicFolder, Setting, WindowTab, Entry, Campaign, Session, PC, CollapsibleNode, } from '@/classes';
-import { EntryDoc, SessionDoc, CampaignDoc, PCDoc, WorldDoc, WorldFlagKey } from '@/documents';
+import { EntryDoc, SessionDoc, CampaignDoc, PCDoc, SettingDoc, SettingFlagKey } from '@/documents';
 import { getDefaultFolders } from '@/compendia';
 import { SessionNotesApplication } from '@/applications/SessionNotes';
 
@@ -42,13 +42,13 @@ export const useMainStore = defineStore('main', () => {
   /** prep/play mode toggle - true for play mode, false for prep mode */
   const isInPlayMode = ref<boolean>(ModuleSettings.get(SettingKey.isInPlayMode));
 
-  const currentWorldCompendium = computed((): CompendiumCollection<any> => {
+  const currentSettingCompendium = computed((): CompendiumCollection<any> => {
     if (!currentSetting.value)
-      throw new Error('No currentSetting in mainStore.currentWorldCompendium()');
+      throw new Error('No currentSetting in mainStore.currentSettingCompendium()');
 
     const pack = currentSetting.value?.compendium || null;
     if (!pack)
-      throw new Error('Bad compendia in mainStore.currentWorldCompendium()');
+      throw new Error('Bad compendia in mainStore.currentSettingCompendium()');
 
     return pack as CompendiumCollection<any>;
   });
@@ -110,8 +110,8 @@ export const useMainStore = defineStore('main', () => {
           _currentEntry.value.topicFolder = currentSetting.value.topicFolders[_currentEntry.value.topic];
         }
         break;
-      case WindowTabType.World:
-        // we can only set tabs within a world, so we don't actually need to do anything here
+      case WindowTabType.Setting:
+        // we can only set tabs within a setting, so we don't actually need to do anything here
         // if (tab.header.uuid) {
         //   _currentEntry.value = null;
         //   _currentSetting.value = await Setting.fromUuid(tab.header.uuid);
@@ -174,7 +174,7 @@ export const useMainStore = defineStore('main', () => {
       return;
 
     // just force all reactivity to update
-    _currentSetting.value = new Setting(_currentSetting.value.raw as WorldDoc);
+    _currentSetting.value = new Setting(_currentSetting.value.raw as SettingDoc);
 
     // have to load the topic folders
     await _currentSetting.value?.loadTopics();
@@ -215,7 +215,7 @@ export const useMainStore = defineStore('main', () => {
       case WindowTabType.PC:
         await refreshPC();
         break;
-      case WindowTabType.World:
+      case WindowTabType.Setting:
         await refreshSetting();
         break;
       default:
@@ -223,46 +223,46 @@ export const useMainStore = defineStore('main', () => {
   }
 
   /**
-   * Get all worlds from the root folder
+   * Get all settings from the root folder
    * @returns Array of Setting instances
    */
-  const getAllWorlds = async function (): Promise<Setting[]> {
+  const getAllSettings = async function (): Promise<Setting[]> {
     if (!rootFolder.value) {
       const defaultFolders = await getDefaultFolders();
       rootFolder.value = defaultFolders.rootFolder;
       if (!rootFolder.value) {
-        throw new Error('Couldn\'t get root folder in mainStore.getAllWorlds()');
+        throw new Error('Couldn\'t get root folder in mainStore.getAllSettings()');
       }
     }
 
-    const worlds: Setting[] = [];
+    const settings: Setting[] = [];
     
     for (const child of rootFolder.value.children) {
-      if (child.folder && child.folder.getFlag(moduleId, WorldFlagKey.isWorld)) {
+      if (child.folder && child.folder.getFlag(moduleId, SettingFlagKey.isSetting)) {
         try {
-          const world = await Setting.fromUuid(child.folder.uuid);
-          if (world) {
-            worlds.push(world);
+          const setting = await Setting.fromUuid(child.folder.uuid);
+          if (setting) {
+            settings.push(setting);
           }
         } catch (error) {
-          console.error(`Error loading world ${child.folder.name}:`, error);
+          console.error(`Error loading setting ${child.folder.name}:`, error);
         }
       }
     }
 
-    return worlds;
+    return settings;
   }
 
   /**
-   * Propagate world name changes to related entities (roll tables, etc.)
-   * This should be called after the world name has been changed and saved
-   * @param world The world whose name changed
+   * Propagate setting name changes to related entities (roll tables, etc.)
+   * This should be called after the setting name has been changed and saved
+   * @param setting The setting whose name changed
    */
-  const propagateWorldNameChange = async function (world: Setting): Promise<void> {
+  const propagateSettingNameChange = async function (setting: Setting): Promise<void> {
     // Update roll table names if roll tables are configured
-    if (world.rollTableConfig) {
+    if (setting.rollTableConfig) {
       try {
-        await updateWorldRollTableNames(world);
+        await updateSettingRollTableNames(setting);
       } catch (error) {
         console.error('Error updating roll table names:', error);
       }
@@ -322,18 +322,18 @@ export const useMainStore = defineStore('main', () => {
   });
 
   /**
-  * Updates the main window title to include the current world name
+  * Updates the main window title to include the current setting name
   */
-  watch(currentSetting, (newWorld, oldWorld) => {
+  watch(currentSetting, (newSetting, oldSetting) => {
     // make sure we're actually changing
-    if (newWorld?.uuid === oldWorld?.uuid) {
+    if (newSetting?.uuid === oldSetting?.uuid) {
       return;
     }
 
-    updateWindowTitle(newWorld?.name ?? null);
+    updateWindowTitle(newSetting?.name ?? null);
 
-    // if we're really changing worlds, turn play mode off
-    if (oldWorld) {
+    // if we're really changing settings, turn play mode off
+    if (oldSetting) {
       isInPlayMode.value = false;
     }
   });
@@ -355,7 +355,7 @@ export const useMainStore = defineStore('main', () => {
     currentTab,
     currentContentType,
     rootFolder,
-    currentWorldCompendium,
+    currentSettingCompendium,
     refreshCurrentEntry,
     isInPlayMode,
     hasMultipleCampaigns,
@@ -368,7 +368,7 @@ export const useMainStore = defineStore('main', () => {
     refreshPC,
     refreshSetting,
     refreshCurrentContent,
-    getAllWorlds,
-    propagateWorldNameChange,
+    getAllSettings,
+    propagateSettingNameChange,
   };
 });

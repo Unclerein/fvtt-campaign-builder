@@ -12,14 +12,14 @@ export const registerDirectorySessionNodeTests = () => {
       const { describe, it, expect, beforeEach, afterEach } = context;
 
       describe('DirectorySessionNode', () => {
-        let mockWorld: Setting;
+        let mockSetting: Setting;
         let mockSession: Session;
         let sessionNode: DirectorySessionNode;
 
         beforeEach(() => {
-          // Create a mock world
-          mockWorld = {
-            uuid: 'world-uuid',
+          // Create a mock setting
+          mockSetting = {
+            uuid: 'setting-uuid',
             expandNode: sinon.stub().resolves(),
             collapseNode: sinon.stub().resolves(),
             expandedIds: {
@@ -35,8 +35,8 @@ export const registerDirectorySessionNodeTests = () => {
             date: new Date('2023-01-01')
           } as unknown as Session;
 
-          // Set the current world
-          CollapsibleNode.currentSetting = mockWorld;
+          // Set the current setting
+          CollapsibleNode.currentSetting = mockSetting;
 
           // Create a session node
           sessionNode = new DirectorySessionNode(

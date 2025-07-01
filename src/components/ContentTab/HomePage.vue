@@ -14,10 +14,10 @@
       <div class="flexrow">
         <div 
           class="new-link"
-          @click="onCreateWorld"
+          @click="onCreateSetting"
         >
           <div><i class="fas fa-globe"></i></div>
-          {{ localize('labels.homePage.createWorld') }}
+          {{ localize('labels.homePage.createSetting') }}
         </div>
         <div 
           class="new-link"
@@ -120,8 +120,8 @@
 
   ////////////////////////////////
   // methods
-  const onCreateWorld = async () => {
-    await settingDirectoryStore.createWorld();
+  const onCreateSetting = async () => {
+    await settingDirectoryStore.createSetting();
   };
 
   const onCreateCampaign = async () => {
@@ -142,7 +142,7 @@
 
   const onCreateEntry = async (topic: Topics) => {
     if (!currentSetting.value)
-      throw new Error('No current world in HomePage.onCreateEntry()');
+      throw new Error('No current setting in HomePage.onCreateEntry()');
 
     const topicFolder = currentSetting.value.topicFolders[topic];
 
@@ -175,7 +175,7 @@
           await navigationStore.openEntry(item.uuid, { newTab: false });
           break;
 
-        case getTabTypeIcon(WindowTabType.World):
+        case getTabTypeIcon(WindowTabType.Setting):
           await navigationStore.openSetting(item.uuid, { newTab: false });
           break;
 
