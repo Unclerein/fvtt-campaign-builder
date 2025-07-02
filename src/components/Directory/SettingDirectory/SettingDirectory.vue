@@ -182,8 +182,7 @@
               const setting = await Setting.fromUuid(settingId);
 
               if (setting) {
-                await Campaign.create(setting);
-                await campaignDirectoryStore.refreshCampaignDirectoryTree();
+                await campaignDirectoryStore.createCampaign(setting);
               }
             }
           }

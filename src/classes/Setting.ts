@@ -418,6 +418,12 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
 
         await newSetting.validate();
 
+        // If auto-refresh is enabled, populate tables in background
+        const autoRefresh = ModuleSettings.get(SettingKey.autoRefreshRollTables);
+        if (autoRefresh && Backend.available && Backend.api) {
+          void refreshSettingRollTables(newSetting);
+        }
+
         return newSetting;
       }
     } while (name==='');  // if hit ok, must have a value
@@ -446,19 +452,12 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
     if (!this._compendium)
       throw new Error('Failed to create compendium in Setting.validate()');
 
-    // load the journal entries... we populate any missing topics, but can't reconstruct
-    //    campaigns
+    // load the topics and campaigns
     await this.populateTopics();
     await this.loadCampaigns();
     
     // Initialize roll tables for this setting if they don't exist - but don't wait for the generation
-    await initializeSettingRollTables(this);
-      
-    // If auto-refresh is enabled, populate tables in background
-    const autoRefresh = ModuleSettings.get(SettingKey.autoRefreshRollTables);
-    if (autoRefresh && Backend.available && Backend.api) {
-      void refreshSettingRollTables(this);
-    }
+    await initializeSettingRollTables(this);      
   }
 
   private async populateTopics() {

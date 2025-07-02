@@ -163,16 +163,32 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
     }
   };
 
-  const createCampaign = async (): Promise<Campaign | null> => {
+  /**
+   * Creates a new campaign in the current setting and opens it
+   * @param setting The setting to create the campaign in; defaults to the current setting if there is one
+   * @returns The created campaign, or null if the setting is not found
+   */
+  const createCampaign = async (setting?: Setting): Promise<Campaign | null> => {
     let campaign: Campaign | null = null;
 
-    if (currentSetting.value) {
-      campaign = await Campaign.create(currentSetting.value as Setting);
-      await refreshCampaignDirectoryTree();
-    }
+    let settingToUse: Setting | null;
+    
+    if (!setting || setting.uuid === currentSetting.value?.uuid)
+      settingToUse = currentSetting.value;
+    else
+      settingToUse = setting;
+
+    if (!settingToUse)
+      throw new Error('No setting in campaignDirectoryStore.createCampaign()');
+
+    campaign = await Campaign.create(settingToUse);
 
     if (campaign) {
-      await navigationStore.openCampaign(campaign.uuid, {newTab: true});
+      // if we're working on the current setting, refresh the tree and open the campaign
+      if (setting.uuid === currentSetting.value?.uuid) {
+        await refreshCampaignDirectoryTree();
+        await navigationStore.openCampaign(campaign.uuid, {newTab: true});
+      }
     }
 
     return campaign;

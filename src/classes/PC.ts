@@ -226,6 +226,21 @@ export class PC {
     };
   }
 
+  get journals(): RelatedJournal[] {
+    return this._pcDoc.system.journals;
+  }
+
+  set journals(value: RelatedJournal[]) {
+    this._pcDoc.system.journals = value;
+    this._cumulativeUpdate = {
+      ...this._cumulativeUpdate,
+      system: {
+        ...this._cumulativeUpdate.system,
+        journals: value,
+      }
+    };
+  } 
+
   get actorId(): string {
     return this._pcDoc.system.actorId || '';
   }
