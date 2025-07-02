@@ -7,10 +7,11 @@
 - Added ability to choose from multiple image generation models
 - Made campaign ideas and todos hold a fixed order and enabled the ability to drag and drop to reorder them
 - Removed pagination from all tables; it took up extra room and was a nuisance
-- Fixed bug where bookmarks weren't deleted when the underlying content was
 - Added keybindings for moving forward/back across the tab bar; changed default for closing the tab
 - Added module setting to show the type of each node in the Setting tree in hierarchy mode.
 - Minor UI cleanup 
+- Fixed bug where bookmarks weren't deleted when the underlying content was
+- Fixed bug where newly created campaigns didn't immediately show up in the campaign directory
 
 ## v1.0.0 - Coming out of beta!
 
