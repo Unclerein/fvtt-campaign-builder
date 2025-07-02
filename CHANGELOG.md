@@ -2,7 +2,7 @@
 
 ## v1.1.0 - AI options, quality of life improvements
 
-- Added ability to link Entries, Settings, and Campaigns to Journal Entries - great for attaching maps, multiple iamges of the same thing, and various other info you want to store and/or share with your players
+- Added ability to link Foundry journals to Entries, Settings, Campaigns, and PCs - great for attaching maps, multiple iamges of the same character, and various other info you want to store and/or share with your players
 - Added support for Anthropic (Claude 3) for text generation (see module settings)
 - Added ability to choose from multiple image generation models
 - Made campaign ideas and todos hold a fixed order and enabled the ability to drag and drop to reorder them
@@ -11,7 +11,8 @@
 - Added module setting to show the type of each node in the Setting tree in hierarchy mode.
 - Minor UI cleanup 
 - Fixed bug where bookmarks weren't deleted when the underlying content was
-- Fixed bug where newly created campaigns didn't immediately show up in the campaign directory
+- Fixed bug where campaigns created by right-clicking in the Setting directory didn't immediately show up in the Campaign directory
+- Eliminated inaccurate notifications about rolltables being repopulated
 
 ## v1.0.0 - Coming out of beta!
 

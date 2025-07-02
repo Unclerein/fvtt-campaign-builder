@@ -18,6 +18,7 @@
         <div class="fcb-subtab-wrapper">
           <nav class="fcb-sheet-navigation flexrow tabs" data-group="primary">
             <a class="item" data-tab="description">{{ localize('labels.tabs.entry.description') }}</a>
+            <a class="item" data-tab="journals">{{ localize('labels.tabs.entry.journals') }}</a>
           </nav>
           <div class="fcb-tab-body flexrow">
             <div class="tab flexcol" data-group="primary" data-tab="description" style="height:100%">
@@ -96,6 +97,11 @@
                 </div>
               </div>
             </div>
+            <JournalTab
+              v-if="currentPC"
+              :initial-journals="currentPC.journals"
+              @journals-updated="onJournalsUpdate"
+            />
           </div>
         </div>
       </div>
@@ -122,6 +128,7 @@
   // local components
   import Editor from '@/components/Editor.vue';
   import LabelWithHelp from '@/components/LabelWithHelp.vue';
+  import JournalTab from '@/components/ContentTab/JournalTab.vue';
 
   // types
   import { PC } from '@/classes';
@@ -238,6 +245,14 @@
     currentPC.value.magicItems = content;
     await currentPC.value.save();
   }
+
+  const onJournalsUpdate = async (newJournals: RelatedJournal[]) => {
+    if (currentPC.value) {
+      currentPC.value.journals = newJournals;
+      await currentPC.value.save();
+    }
+  };
+
   ////////////////////////////////
   // watchers
   watch(currentContentTab, async (newTab: string | null, oldTab: string | null): Promise<void> => {
