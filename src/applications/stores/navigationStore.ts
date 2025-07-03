@@ -388,6 +388,27 @@ export const useNavigationStore = defineStore('navigation', () => {
     await activateTab(tabs.value[newIdx].id);
 };
 
+  // moves forward/back through the history "move" spaces (or less if not possible); negative numbers move back
+  const navigateHistory = async function (move: number) {
+    const tab = getActiveTab();
+
+    if (!tab) return;
+
+    const newSpot = Math.clamp(tab.historyIdx + move, 0, tab.history.length-1);
+
+    // if we didn't move, return
+    if (newSpot === tab.historyIdx)
+      return;
+
+    tab.historyIdx = newSpot;
+    await openContent(tab.history[tab.historyIdx].contentId, tab.history[tab.historyIdx].tabType, { activate: false, newTab: false, updateHistory: false});  // will also save the tab and update recent
+
+    // Restore the content tab from history
+    if (tab.history[tab.historyIdx].contentTab) {
+      mainStore.currentContentTab = tab.history[tab.historyIdx].contentTab;
+    }
+  };
+
   /**
    * Used after deleting an entry/campaign/session to make sure that no current tab or tab history includes 
    * the deleted item.
@@ -663,5 +684,6 @@ export const useNavigationStore = defineStore('navigation', () => {
     cleanupDeletedEntry,
     clearTabsAndBookmarks,
     traverseTabs,
+    navigateHistory
   };
 });
