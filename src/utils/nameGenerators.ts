@@ -1,10 +1,11 @@
-import { moduleId, ModuleSettings, SettingKey } from '@/settings';
+import { moduleId, } from '@/settings';
 import { localize } from '@/utils/game';
 import { Backend } from '@/classes';
 import { nameStyles } from '@/utils/nameStyles';
 
 import { GeneratorType, SettingGeneratorConfig } from '@/types';
 import { Setting } from '@/classes';
+import { RollTableFlagKey } from '@/documents';
 
 /**
  * The number of items to generate for each roll table.
@@ -55,7 +56,7 @@ export async function initializeSettingRollTables(setting: Setting): Promise<voi
     if (settingGeneratorConfig.rollTables[type]) {
       // Verify the table still exists and is the right type
       const table = await fromUuid<RollTable>(settingGeneratorConfig.rollTables[type]);
-      if (table && table.getFlag(moduleId, 'type') === type) {
+      if (table && table.getFlag(moduleId, RollTableFlagKey.type) === type) {
         continue; // Table exists and is valid, skip to next type
       }
     }
@@ -119,7 +120,7 @@ const getOrCreateSettingRollTableFolder = async(setting: Setting): Promise<strin
 const generateSettingTableResults = async (type: GeneratorType, count: number, setting: Setting): Promise<string[]> => {
   // If backend is not available, just return
   if (!Backend.available || !Backend.api) {
-    return;
+    return [];
   }
 
   try {
@@ -194,8 +195,8 @@ async function createSettingRollTable(type: GeneratorType, folderId: string, set
   });
   
   if (table) {
-    await table.setFlag(moduleId, 'type', type);
-    await table.setFlag(moduleId, 'settingId', setting.uuid);
+    await table.setFlag(moduleId, RollTableFlagKey.type, type);
+    await table.setFlag(moduleId, RollTableFlagKey.settingId, setting.uuid);
     return table;
   } else {
     return null;
@@ -218,7 +219,7 @@ export const refreshSettingRollTable = async (rollTable: RollTable, setting: Set
   }
 
   // get the type
-  const type = rollTable.getFlag(moduleId, 'type');
+  const type = rollTable.getFlag(moduleId, RollTableFlagKey.type);
 
   if (!type) {
     throw new Error(`Roll table ${rollTable.name} is missing type flag`);

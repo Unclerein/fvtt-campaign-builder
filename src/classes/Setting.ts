@@ -418,6 +418,9 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
 
         await newSetting.validate();
 
+        // create the rolltables
+        await initializeSettingRollTables(newSetting);
+
         // If auto-refresh is enabled, populate tables in background
         const autoRefresh = ModuleSettings.get(SettingKey.autoRefreshRollTables);
         if (autoRefresh && Backend.available && Backend.api) {

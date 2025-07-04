@@ -192,10 +192,10 @@
 
   async function onCellClick({ data, field }: { data: any, field: string }) {
     if (field === 'journalName' && data.journalUuid) {
-      const doc = await fromUuid(data.journalUuid);
+      const doc = await foundry.utils.fromUuid(data.journalUuid) as JournalEntry;
       doc?.sheet?.render(true);
     } else if (field === 'pageName' && data.pageUuid) {
-      const doc = await fromUuid(data.pageUuid);
+      const doc = await foundry.utils.fromUuid(data.pageUuid) as JournalEntryPage;
       doc?.sheet?.render(true);
     }
   }

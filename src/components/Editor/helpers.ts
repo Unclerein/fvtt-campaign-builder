@@ -239,7 +239,8 @@ const customEnrichContentLinks = async (match: RegExpMatchArray, options?: {sett
   let broken = false;
   if ( type === 'UUID' ) {
     Object.assign(data.dataset, {link: '', uuid: target});
-    unknownItem = await fromUuid(target) as unknown as InternalClientDocument;
+    // @ts-ignore
+    unknownItem = await foundry.utils.fromUuid(target) as unknown as InternalClientDocument;
   }
   else {
     broken = createLegacyContentLink(type as WORLD_DOCUMENT_TYPES, target, name, data);

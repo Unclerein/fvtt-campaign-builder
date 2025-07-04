@@ -13,6 +13,7 @@
 - Minor UI cleanup 
 - Fixed bug where bookmarks weren't deleted when the underlying content was
 - Fixed bug where campaigns created by right-clicking in the Setting directory didn't immediately show up in the Campaign directory
+- Fixed bug where search index wasn't being populated if you closed and reopened the main window
 - Eliminated inaccurate notifications about rolltables being repopulated
 
 ## v1.0.0 - Coming out of beta!

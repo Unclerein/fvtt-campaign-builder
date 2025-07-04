@@ -1,6 +1,6 @@
 import { id } from '@module';
 import { SettingKey, SettingKeyType } from './ModuleSettings';
-import { CampaignFlagKey, CampaignFlagType, SettingFlagKey, SettingFlagType, } from '@/documents';
+import { CampaignFlagKey, CampaignFlagType, RollTableFlagKey, RollTableFlagType, SettingFlagKey, SettingFlagType, } from '@/documents';
 
 export * from './UserFlags';
 export * from './ModuleSettings';
@@ -31,6 +31,11 @@ type CampaignFlags = {
 
 type FolderFlags = SettingFolderFlags;
 type JournalEntryFlags = CampaignFlags;
+type RollTableFlags = {
+  [M in ModuleId]: {
+    [K in RollTableFlagKey]: RollTableFlagType<K>; 
+  };
+}
 
 // settings
 type WBSettings = {
@@ -41,6 +46,7 @@ declare global {
   interface FlagConfig {
     JournalEntry: JournalEntryFlags;
     Folder: FolderFlags;
+    RollTable: RollTableFlags;
   }
 
   interface SettingConfig extends WBSettings {}

@@ -399,7 +399,7 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
 
     // populate the setting names, and find the current one
     let currentSettingFound = false;
-    tree = (toRaw(rootFolder.value) as Folder)?.children?.map((setting: Folder): DirectorySetting => {
+    tree = (toRaw(rootFolder.value) as Folder)?.children?.map((setting): DirectorySetting => {
       if (!setting.folder)
         throw new Error('Setting without folder in refreshSettingDirectoryTree()');
 

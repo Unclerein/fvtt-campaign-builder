@@ -79,7 +79,7 @@
 
   // types
   import { WindowTabType, DirectorySetting } from '@/types';
-  import { DirectoryTopicNode, Campaign, Setting, TopicFolder, } from '@/classes';
+  import { DirectoryTopicNode, Setting, TopicFolder, } from '@/classes';
   
   ////////////////////////////////
   // props
