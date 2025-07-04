@@ -4,8 +4,8 @@ import { useNavigationStore } from '@/applications/stores/navigationStore';
 
 export enum KeyBindingKeys {
   closeTab = 'closeTab',   // close the current tab
-  moveLeft = 'moveLeft',   // move left one tab
-  moveRight = 'moveRight',   // move right one tab
+  historyBack = 'historyBack',   // move back in tab history
+  historyForward = 'historyForward',   // move forward in tab history
 }
 
 export class KeyBindings {
@@ -39,14 +39,14 @@ export class KeyBindings {
         ],
       },
       {
-        bindingId: KeyBindingKeys.moveLeft,
-        name: 'fcb.settings.keybindings.moveLeft',  
-        hint: 'fcb.settings.keybindings.moveLeftHelp',
+        bindingId: KeyBindingKeys.historyBack,
+        name: 'fcb.settings.keybindings.historyBack',  
+        hint: 'fcb.settings.keybindings.historyBackHelp',
         onDown: async () => { 
           // only trap this when the window is open
           if (wbApp?.rendered) {
             const store = useNavigationStore();
-            await store.traverseTabs(-1);
+            await store.navigateHistory(-1);
           }
         },
         editable: [
@@ -60,14 +60,14 @@ export class KeyBindings {
         ],
       },
       {
-        bindingId: KeyBindingKeys.moveRight,
-        name: 'fcb.settings.keybindings.moveRight',
-        hint: 'fcb.settings.keybindings.moveRightHelp',
+        bindingId: KeyBindingKeys.historyForward,
+        name: 'fcb.settings.keybindings.historyForward',
+        hint: 'fcb.settings.keybindings.historyForwardHelp',
         onDown: async () => { 
           // only trap this when the window is open
           if (wbApp?.rendered) {
             const store = useNavigationStore();
-            await store.traverseTabs(1);
+            await store.navigateHistory(1);
           }
         },
         editable: [

@@ -19,10 +19,10 @@
       "keybindings": {
         "closeTab": "Close tab",
         "closeTabHelp": "Close the current tab",
-        "moveLeft": "Move left",
-        "moveLeftHelp": "Move to the previous tab",
-        "moveRight": "Move right",
-        "moveRightHelp": "Move to the next tab"
+        "historyBack": "Move back in tab history",
+        "historyBackHelp": "Move \"back\" in the history of the current tab",
+        "historyForward": "Move forward in tab history",
+        "historyForwardHelp": "Move \"forward\" in the history of the current tab"
       },
       "autoRefreshRollTables": "Automatically refresh RollTables",
       "autoRefreshRollTablesHelp": "When enabled, generator roll tables will be automatically refreshed with new values when the module loads",
