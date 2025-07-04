@@ -46,10 +46,10 @@
       "keybindings": {
         "closeTab": "Tab schließen",
         "closeTabHelp": "Den aktuellen Tab schließen",
-        "moveLeft": "Nach links bewegen",
-        "moveLeftHelp": "Zum vorherigen Tab wechseln",
-        "moveRight": "Nach rechts bewegen",
-        "moveRightHelp": "Zum nächsten Tab wechseln"
+        "historyBack": "In der Tab-Historie zurückgehen",
+        "historyBackHelp": "In der Historie des aktuellen Tabs \"zurück\" gehen",
+        "historyForward": "In der Tab-Historie vorwärts gehen",
+        "historyForwardHelp": "In der Historie des aktuellen Tabs \"vorwärts\" gehen"
       },
       "showTypesInTree": "Typen im Einstellungsbaum anzeigen",
       "showTypesInTreeHelp": "Wenn wahr, zeigt es den Typ jedes Eintrags im Baum an, wenn das Einstellungsverzeichnis nicht nach Typ gruppiert ist."
