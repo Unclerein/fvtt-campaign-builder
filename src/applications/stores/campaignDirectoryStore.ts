@@ -51,7 +51,7 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
  
   // refreshes the campaign tree 
   const refreshCampaignDirectoryTree = async (updateIds: string[] = []): Promise<void> => {
-    // need to have a current world and journals loaded
+    // need to have a current setting and journals loaded
     if (!currentSetting.value)
       return;
 
@@ -163,23 +163,39 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
     }
   };
 
-  const createCampaign = async (): Promise<Campaign | null> => {
+  /**
+   * Creates a new campaign in the current setting and opens it
+   * @param setting The setting to create the campaign in; defaults to the current setting if there is one
+   * @returns The created campaign, or null if the setting is not found
+   */
+  const createCampaign = async (setting?: Setting): Promise<Campaign | null> => {
     let campaign: Campaign | null = null;
 
-    if (currentSetting.value) {
-      campaign = await Campaign.create(currentSetting.value as Setting);
-      await refreshCampaignDirectoryTree();
-    }
+    let settingToUse: Setting | null;
+    
+    if (!setting || setting.uuid === currentSetting.value?.uuid)
+      settingToUse = currentSetting.value;
+    else
+      settingToUse = setting;
+
+    if (!settingToUse)
+      throw new Error('No setting in campaignDirectoryStore.createCampaign()');
+
+    campaign = await Campaign.create(settingToUse);
 
     if (campaign) {
-      await navigationStore.openCampaign(campaign.uuid, {newTab: true});
+      // if we're working on the current setting, refresh the tree and open the campaign
+      if (setting.uuid === currentSetting.value?.uuid) {
+        await refreshCampaignDirectoryTree();
+        await navigationStore.openCampaign(campaign.uuid, {newTab: true});
+      }
     }
 
     return campaign;
   };
 
   /**
-   * Gets all campaigns in the current world
+   * Gets all campaigns in the current setting
    * @returns Array of Campaign objects
    */
   const getCampaigns = async (): Promise<Campaign[]> => {
@@ -209,9 +225,9 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
   ///////////////////////////////
   // watchers
 
-  // when the world changes, clean out the cache of loaded items
-  watch(currentSetting, async (newWorld: Setting | null): Promise<void> => {
-    if (!newWorld) {
+  // when the setting changes, clean out the cache of loaded items
+  watch(currentSetting, async (newSetting: Setting | null): Promise<void> => {
+    if (!newSetting) {
       currentCampaignTree.value = [];
       return;
     }

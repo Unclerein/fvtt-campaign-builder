@@ -12,7 +12,7 @@ export interface EntityLinkingOptions {
 /**
  * Replaces entity references in text with @UUID links
  * @param content The HTML content to process
- * @param world The current world for entity lookup
+ * @param setting The current setting for entity lookup
  * @param options Configuration options for the replacement
  * @returns The processed content with entity references replaced
  */
@@ -24,7 +24,7 @@ export async function replaceEntityReferences(
   const { currentEntityUuid } = options;
 
   // Get all entities from the search index
-  const allEntities = searchService.getAllEntities();
+  const allEntities = searchService.getAllEntities(true);
   
   if (allEntities.length === 0) {
     return content;

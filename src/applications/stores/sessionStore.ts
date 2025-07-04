@@ -780,7 +780,7 @@ export const useSessionStore = defineStore('session', () => {
           delivered: location.delivered,
           name: entry.name, 
           type: entry.type,
-          parent: parent?.name || '-',
+          parent: parent?.name || '',
           parentId: parent?.uuid || null,
           description: cleanDescription.substring(0, 99) + (cleanDescription.length>100 ? '...' : ''),
         });

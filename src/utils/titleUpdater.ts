@@ -1,8 +1,8 @@
 /**
- * Updates the main window title to include the current world name
- * @param worldName The name of the current world
+ * Updates the main window title to include the current setting name
+ * @param settingName The name of the current setting
  */
-export function updateWindowTitle(worldName: string | null): void {
+export function updateWindowTitle(settingName: string | null): void {
   // Find the application window header
   const appId = 'app-fcb-CampaignBuilder';
   const appElement = document.getElementById(appId);
@@ -11,9 +11,9 @@ export function updateWindowTitle(worldName: string | null): void {
   const titleElement = appElement.querySelector('header .window-title');
   if (!titleElement) return;
 
-  // Set the title based on whether we have a world name
-  if (worldName) {
-    titleElement.textContent = `Campaign Builder - ${worldName}`;
+  // Set the title based on whether we have a setting name
+  if (settingName) {
+    titleElement.textContent = `Campaign Builder - ${settingName}`;
   } else {
     titleElement.textContent = 'Campaign Builder';
   }

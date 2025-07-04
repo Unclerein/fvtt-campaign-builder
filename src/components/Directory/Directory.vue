@@ -21,9 +21,9 @@
           }"
         />
         <a
-          class="fcb-header-control create-world create-button"
-          :data-tooltip="localize('tooltips.createWorld')"
-          @click="onCreateWorldClick"
+          class="fcb-header-control create-button"
+          :data-tooltip="localize('tooltips.createSetting')"
+          @click="onCreateSettingClick"
         >
           <i class="fas fa-globe"></i>
           <i
@@ -133,8 +133,8 @@
     void settingDirectoryStore.collapseAll();
   };
 
-  // create a world
-  const onCreateWorldClick = async (event: MouseEvent) => {
+  // create a setting
+  const onCreateSettingClick = async (event: MouseEvent) => {
     event.stopPropagation();
 
     // // add 400 entries
@@ -145,7 +145,7 @@
     //   }
     // }
 
-    await settingDirectoryStore.createWorld();
+    await settingDirectoryStore.createSetting();
   };
 
   // save grouping to settings
@@ -175,17 +175,17 @@
       background: rgba(255, 255, 255, 0.5);
 
       .fcb-directory-panel-wrapper {
-        flex: 1;
+        /* This inner container handles vertical scrolling, which allows position:sticky to work correctly. */
         overflow-y: auto;
         height: 100%;
-      } 
+      }
 
       .fcb-directory-panel {
+        /* This outer container (the SplitterPanel) handles horizontal scrolling. */
+        overflow-x: auto;
+        height: 100%;
         display: flex;
         flex-direction: column;
-        overflow: hidden; 
-        height: 100%; 
-        padding-bottom: 10px;
       }
     }
 
