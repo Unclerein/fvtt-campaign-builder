@@ -17,76 +17,90 @@
 /**
  * 
  * @export
- * @interface ApiCharacterGeneratePostRequest
+ * @interface ApiCharacterGenerateImagePostRequest
  */
-export interface ApiCharacterGeneratePostRequest {
+export interface ApiCharacterGenerateImagePostRequest {
     /**
      * Genre of the world (ex. \"fantasy\" or \"science fiction\")
      * @type {string}
-     * @memberof ApiCharacterGeneratePostRequest
+     * @memberof ApiCharacterGenerateImagePostRequest
      */
     'genre': string;
     /**
      * The feeling of the setting (ex. \"humorous\" or \"apocalyptic\")
      * @type {string}
-     * @memberof ApiCharacterGeneratePostRequest
+     * @memberof ApiCharacterGenerateImagePostRequest
      */
     'settingFeeling'?: string;
     /**
      * The type of character (ex. a trade or a title)
      * @type {string}
-     * @memberof ApiCharacterGeneratePostRequest
+     * @memberof ApiCharacterGenerateImagePostRequest
      */
     'type'?: string;
     /**
      * The species of the character
      * @type {string}
-     * @memberof ApiCharacterGeneratePostRequest
+     * @memberof ApiCharacterGenerateImagePostRequest
      */
     'species'?: string;
     /**
      * A brief description of the species
      * @type {string}
-     * @memberof ApiCharacterGeneratePostRequest
+     * @memberof ApiCharacterGenerateImagePostRequest
      */
     'speciesDescription'?: string;
     /**
      * The generated character\'s name.  If blank, one will be generated (text gen only)
      * @type {string}
-     * @memberof ApiCharacterGeneratePostRequest
+     * @memberof ApiCharacterGenerateImagePostRequest
      */
     'name'?: string;
     /**
      * A brief description of the character to factor into the produced text
      * @type {string}
-     * @memberof ApiCharacterGeneratePostRequest
+     * @memberof ApiCharacterGenerateImagePostRequest
      */
     'briefDescription'?: string;
     /**
      * The number of paragraphs to produce in the output when using a long description
      * @type {number}
-     * @memberof ApiCharacterGeneratePostRequest
+     * @memberof ApiCharacterGenerateImagePostRequest
      */
     'longDescriptionParagraphs'?: number;
     /**
      * The styles of names to use
      * @type {Array<string>}
-     * @memberof ApiCharacterGeneratePostRequest
+     * @memberof ApiCharacterGenerateImagePostRequest
      */
     'nameStyles'?: Array<string>;
     /**
      * The text generation model to use
      * @type {string}
-     * @memberof ApiCharacterGeneratePostRequest
+     * @memberof ApiCharacterGenerateImagePostRequest
      */
-    'textModel'?: ApiCharacterGeneratePostRequestTextModelEnum;
+    'textModel'?: ApiCharacterGenerateImagePostRequestTextModelEnum;
+    /**
+     * The image generation model to use
+     * @type {string}
+     * @memberof ApiCharacterGenerateImagePostRequest
+     */
+    'imageModel'?: ApiCharacterGenerateImagePostRequestImageModelEnum;
 }
 
-export const ApiCharacterGeneratePostRequestTextModelEnum = {
+export const ApiCharacterGenerateImagePostRequestTextModelEnum = {
     Gpt4oMini: 'GPT_4o_mini',
     Claude3Haiku: 'Claude_3_haiku'
 } as const;
 
-export type ApiCharacterGeneratePostRequestTextModelEnum = typeof ApiCharacterGeneratePostRequestTextModelEnum[keyof typeof ApiCharacterGeneratePostRequestTextModelEnum];
+export type ApiCharacterGenerateImagePostRequestTextModelEnum = typeof ApiCharacterGenerateImagePostRequestTextModelEnum[keyof typeof ApiCharacterGenerateImagePostRequestTextModelEnum];
+export const ApiCharacterGenerateImagePostRequestImageModelEnum = {
+    MinimaxImage: 'Minimax_Image',
+    Flux11Pro: 'Flux_1_1_Pro',
+    FluxPro: 'Flux_Pro',
+    FluxSchnellLora: 'Flux_Schnell_Lora'
+} as const;
+
+export type ApiCharacterGenerateImagePostRequestImageModelEnum = typeof ApiCharacterGenerateImagePostRequestImageModelEnum[keyof typeof ApiCharacterGenerateImagePostRequestImageModelEnum];
 
 
