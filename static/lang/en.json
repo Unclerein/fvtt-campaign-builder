@@ -114,7 +114,7 @@
           "APIToken": "API Token",
           "APITokenHint": "Output from script to deploy the backend.",
           "defaultToLong": "Default to long descriptions",
-          "defaultToLongHint": "Controls the default setting for creating a long vs short description when doing AI generation.",
+          "defaultToLongHint": "Controls the default setting for creating a long vs short description when doing AI generation.  It doesn't apply when using role-play notes.",
           "longDescriptionParagraphs": "Long description paragraphs",
           "longDescriptionParagraphsHint": "Number of paragraphs to generate for long descriptions (1-4).",
           "useGmailIdeas": "Use Gmail for Ideas",
@@ -227,6 +227,12 @@
         "startingDescription": "Starting description",
         "description": "Description",
         "longDescriptions": "Generate long descriptions",
+        "generateText": "What to generate",
+        "generateChoice": {
+          "description": "Description",
+          "roleplay": "Role-playing Notes",
+          "both": "Both"
+        },
         "generateImage": "Generate Image",
         "addToCurrentSession": "Add to current session"
       },
@@ -405,6 +411,7 @@
       "createEntry": {
         "generatedName": "Generated name",
         "generatedDescription": "Generated description",
+        "generatedRoleplayNotes": "Generated role-playing notes",
         "generatePrompt": "Press generate for results",
         "generatePrompt2": "Otherwise, \"Brief Description\" will be used as the new Entry description."
       },

@@ -22,7 +22,7 @@
           label: localize('labels.use'),
           default: false,
           close: true,
-          disable: !name || (props.generateMode && !generatedDescription),
+          disable: !name || (props.generateMode && !generatedDescription && !generatedRoleplayNotes),
           callback: onUseClick
         },
       ]"
@@ -113,7 +113,10 @@
           v-if="Backend.available"
           class="generation-option"
         >
-          <div class="generation-option-wrapper">
+          <div 
+            v-if="!useRoleplayNotes"
+            class="generation-option-wrapper"
+          >
             <Checkbox 
               v-model="longDescriptions" 
               :binary="true"
@@ -123,6 +126,21 @@
               {{ localize('labels.fields.longDescriptions') }}
               <i class="fas fa-info-circle tooltip-icon" :data-tooltip="localize('tooltips.createEntry.longDescriptions')"></i>
             </label>
+          </div>
+          <div 
+            v-else
+            class="generation-option-wrapper" style="margin-left: 20px"
+          >
+            <label for="generate-choices-select" class="generation-label">
+                {{ localize('labels.fields.generateText') }}:
+            </label>
+            <Select 
+              id="generate-choices-select"
+              v-model="generateChoice"
+              :options="generateChoiceOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
           </div>
           <div class="generation-option-wrapper" style="margin-left: 20px">
             <Checkbox 
@@ -136,7 +154,7 @@
             </label>
           </div>
         </div>
-
+        
         <!-- Add new checkbox for adding to current session -->
         <div 
           v-if="isInPlayMode"
@@ -166,13 +184,23 @@
           <div v-if="generateError" class="error-message">
             <span class="error-label">{{ localize('dialogs.generateNameDialog.errorMessage') }}</span> {{ generateError }}
           </div>
-          <div v-else-if="generateComplete" class="generated-content" style="background: rgba(255, 228, 196, .3)">
-            <div><span class="label">{{ localize('dialogs.createEntry.generatedName')}}:</span> {{ generatedName }}</div>
-            <div class="description">
-              <p><span class="label">{{ localize('dialogs.createEntry.generatedDescription')}}:</span></p>
-              {{ generatedDescription }}
+          <template v-else-if="generateComplete">
+            <div v-if="!name && (generatedDescription || generatedRoleplayNotes)" class="generated-content" style="background: rgba(255, 228, 196, .3)">
+              <div><span class="label">{{ localize('dialogs.createEntry.generatedName')}}:</span> {{ generatedName }}</div>
             </div>
-          </div>
+            <div v-if="generatedDescription" class="generated-content" style="background: rgba(255, 228, 196, .3)">
+              <div class="description">
+                <p><span class="label">{{ localize('dialogs.createEntry.generatedDescription')}}:</span></p>
+                {{ generatedDescription }}
+              </div>
+            </div>
+            <div v-if="generatedRoleplayNotes" class="generated-content" style="background: rgba(255, 228, 196, .3)">
+              <div class="description">
+                <p><span class="label">{{ localize('dialogs.createEntry.generatedRoleplayNotes')}}</span></p>
+                {{ generatedRoleplayNotes }}
+              </div>
+            </div>
+          </template>
           <div v-else-if="loading" class="loading-container">
             <ProgressSpinner />
           </div>
@@ -205,6 +233,7 @@
   import ProgressSpinner from 'primevue/progressspinner';
   import Textarea from 'primevue/textarea';
   import Checkbox from 'primevue/checkbox';
+  import Select from 'primevue/select';
   
   // local components
   import TypeSelect from '@/components/ContentTab/EntryContent/TypeSelect.vue';
@@ -286,12 +315,20 @@
   const startingDescription = ref<string>('');
   const generatedName = ref<string>('');
   const generatedDescription = ref<string>('');
+  const generatedRoleplayNotes = ref<string>('');
   const generateComplete = ref<boolean>(false);
   const loading = ref<boolean>(false);
   const generateError = ref<string>('');
   const generateImageAfterAccept = ref<boolean>(false);
   const longDescriptions = ref<boolean>(true);
   const show = ref<boolean>(true);
+  const generateChoice = ref<string>('both');
+
+  const generateChoiceOptions = ref<{label: string; value: string}[]>([
+    {label: localize('labels.fields.generateChoice.description'), value: 'description'},
+    {label: localize('labels.fields.generateChoice.roleplay'), value: 'roleplay'},
+    {label: localize('labels.fields.generateChoice.both'), value: 'both'},
+  ]);
   
   // for characters
   const speciesId = ref<string>(props.initialSpeciesId);
@@ -314,6 +351,10 @@
       if (!style) return '';
       return style.prompt.replace('{genre}', currentSetting.value?.genre || '');
     }).filter(style => style !== '');
+  });
+
+  const useRoleplayNotes = computed((): boolean => {
+    return ModuleSettings.get(SettingKey.showRolePlayingNotes);
   });
 
   ////////////////////////////////
@@ -347,28 +388,38 @@
     loading.value = true;
     generateComplete.value = false;
     generateError.value = '';
+    generatedRoleplayNotes.value = '';
 
-    if (props.topic === Topics.Character) {
-      let speciesDescription = '';
-      const speciesList = ModuleSettings.get(SettingKey.speciesList);
+    const choice = generateChoice.value || 'both';
 
-      // randomize species if needed
-      let randomSpecies: Species | null = null;
-      if (speciesName.value === '') {
-        randomSpecies = speciesList[Math.floor(Math.random() * speciesList.length)];
-        speciesName.value = randomSpecies.name;
-      }
-      
-      if (speciesName.value === '') {
-        // didn't find it - must be a custom name
-        speciesDescription = '';
-      } else {
-        const speciesToUse = speciesList.find(s => s.id === speciesId.value);
-        speciesDescription = speciesToUse?.description || '';  // might not be there because could be just added
-      }
+    try {
+      if (!currentSetting.value) 
+        return;
 
-      try {
-        let result: Awaited<ReturnType<typeof Backend.api.apiCharacterGeneratePost>>;
+      loading.value = true;
+      generateComplete.value = false;
+      generateError.value = '';
+
+      let result: Awaited<ReturnType<typeof Backend.api.apiOrganizationGeneratePost | typeof Backend.api.apiLocationGeneratePost | typeof Backend.api.apiCharacterGeneratePost>>;
+
+      if (props.topic === Topics.Character) {
+        let speciesDescription = '';
+        const speciesList = ModuleSettings.get(SettingKey.speciesList);
+
+        // randomize species if needed
+        let randomSpecies: Species | null = null;
+        if (speciesName.value === '') {
+          randomSpecies = speciesList[Math.floor(Math.random() * speciesList.length)];
+          speciesName.value = randomSpecies.name;
+        }
+        
+        if (speciesName.value === '') {
+          // didn't find it - must be a custom name
+          speciesDescription = '';
+        } else {
+          const speciesToUse = speciesList.find(s => s.id === speciesId.value);
+          speciesDescription = speciesToUse?.description || '';  // might not be there because could be just added
+        }
 
         result = await Backend.api.apiCharacterGeneratePost({
           genre: currentSetting.value.genre,
@@ -378,46 +429,25 @@
           speciesDescription: speciesDescription,
           name: name.value,
           briefDescription: startingDescription.value,
-          createLongDescription: longDescriptions.value,
           longDescriptionParagraphs: ModuleSettings.get(SettingKey.longDescriptionParagraphs),
           nameStyles: selectedNameStyles.value,
         });
+      } else if (props.topic === Topics.Location || props.topic === Topics.Organization) {
+        let parent: Entry | null = null;
+        let grandparent: Entry | null = null;
 
-        generatedName.value = result.data.name;
-        generatedDescription.value = result.data.description;
-        
-        // only fill into the name block if user hasn't entered a name
-        if (!name.value || name.value.trim() === '') {
-          name.value = result.data.name;
-        }
+        if (parentId.value) {
+          parent = await Entry.fromUuid(parentId.value);
 
-        // apply the species here if needed - we don't do it above because it makes the species show up before the
-        //    generation happens, which looks weird
-        if (randomSpecies)
-          speciesId.value = randomSpecies.id;
-      } catch (error) {
-        generateError.value = (error as Error).message;
-        generateComplete.value = true;
-        loading.value = false;
-        return;
-      }
-    } else if (props.topic === Topics.Location || props.topic === Topics.Organization) {
-      let parent: Entry | null = null;
-      let grandparent: Entry | null = null;
-
-      if (parentId.value) {
-        parent = await Entry.fromUuid(parentId.value);
-
-        if (parent) {
-          const grandparentId = await parent.getParentId();
-          if (grandparentId) {
-            grandparent = await Entry.fromUuid(grandparentId);
+          if (parent) {
+            const grandparentId = await parent.getParentId();
+            if (grandparentId) {
+              grandparent = await Entry.fromUuid(grandparentId);
+            }
           }
         }
-      }
-      
-      // pull the other things we need  
-      try {
+        
+        // pull the other things we need  
         const options = {
           genre: currentSetting.value.genre,
           settingFeeling: currentSetting.value.settingFeeling,
@@ -430,41 +460,41 @@
           grandparentDescription: grandparent?.description || '',
           name: name.value,
           briefDescription: startingDescription.value,
-          createLongDescription: longDescriptions.value,
           longDescriptionParagraphs: ModuleSettings.get(SettingKey.longDescriptionParagraphs),
           nameStyles: selectedNameStyles.value,
         };
 
-        let result: Awaited<ReturnType<typeof Backend.api.apiOrganizationGeneratePost | typeof Backend.api.apiLocationGeneratePost>>;
-        if (props.topic === Topics.Location)
-          result = await Backend.api.apiLocationGeneratePost(options);
-        else
-          result = await Backend.api.apiOrganizationGeneratePost(options);
-          
-        generatedName.value = result.data.name;
-        generatedDescription.value = result.data.description;
+        result = await Backend.api.apiLocationGeneratePost(options);
+      } else {
+        throw new Error('Invalid topic in createEntryDialog.onGenerateClick():' + props.topic);
+      }
+      
+      // pull off name and descriptions
+      generatedName.value = result.data.name;
+      if (!name.value || name.value.trim() === '') {
+        name.value = result.data.name;
+      }
 
-        // only fill into the name block if user hasn't entered a name
-        if (!name.value || name.value.trim() === '') {
-          name.value = result.data.name;
-        }
-      } catch (error) {
-        generateError.value = (error as Error).message;
-        generateComplete.value = true;
-        loading.value = false;
-        return;
-      }    
-    } else {
+      if (useRoleplayNotes.value) {        
+        generatedDescription.value = ['description', 'both'].includes(choice) ? result.data.description.long : '';
+        generatedRoleplayNotes.value = ['roleplay', 'both'].includes(choice) ? result.data.description.roleplayNotes : '';
+      } else {
+        generatedDescription.value = longDescriptions.value ? result.data.description.long : result.data.description.roleplayNotes;
+        generatedRoleplayNotes.value = '';
+      }
+    } catch (error) {
+      generateError.value = (error as Error).message;
+    } finally {
       generateComplete.value = true;
       loading.value = false;
-      return;
-    }
-    
-    generateComplete.value = true;
-    loading.value = false;
+    }    
   }
 
   const onUseClick = async function() {
+    if (!currentSetting.value)
+      return;
+
+    const choice = generateChoice.value || 'both';
     if (!currentSetting.value)
       return;
 
@@ -472,6 +502,25 @@
     // if we haven't generated a description, use whatever's in brief description
     // the idea is that - especially when we're dealing with a rolltable name - user can use this form as a sort of quick create
     let details: CharacterDetails | LocationDetails | OrganizationDetails | null = null;
+    let descriptionToUse = '';
+    let roleplayToUse = '';
+
+    if (!useRoleplayNotes.value) {
+      descriptionToUse = generatedTextToHTML(longDescriptions.value ? generatedDescription.value : generatedRoleplayNotes.value);
+      roleplayToUse = ''      
+    } else {
+      if (choice === 'description') {
+        descriptionToUse = generateComplete.value ? generatedTextToHTML(generatedDescription.value) : startingDescription.value;
+        roleplayToUse = '';
+      } else if (choice === 'roleplay') {
+        descriptionToUse = startingDescription.value;
+        roleplayToUse = generateComplete.value ? generatedTextToHTML(generatedRoleplayNotes.value) : '';
+      } else if (choice === 'both') {
+        descriptionToUse = generateComplete.value ? generatedTextToHTML(generatedDescription.value) : startingDescription.value;
+        roleplayToUse = generateComplete.value ? generatedTextToHTML(generatedRoleplayNotes.value) : '';
+      }
+    }
+
     if (props.topic === Topics.Character) {
       // see if speciesId was made up or is an existing one
       const validSpecies = ModuleSettings.get(SettingKey.speciesList).map((s) => s.id);
@@ -479,7 +528,8 @@
       details = {
         name: generateComplete.value ? generatedName.value : name.value,
         type: type.value,
-        description: generateComplete.value ? generatedTextToHTML(generatedDescription.value) : startingDescription.value,
+        description: descriptionToUse,
+        rolePlayingNotes: roleplayToUse,
         speciesId: validSpecies.includes(speciesId.value) ? speciesId.value : '',
         generateImage: generateImageAfterAccept.value
       }
@@ -488,7 +538,8 @@
         name: generateComplete.value ? generatedName.value : name.value,
         type: type.value,
         parentId: parentId.value,
-        description: generateComplete.value ? generatedTextToHTML(generatedDescription.value) : startingDescription.value,
+        description: descriptionToUse,
+        rolePlayingNotes: roleplayToUse,
         generateImage: generateImageAfterAccept.value
       }
     }
@@ -594,7 +645,7 @@
   
   // Ensure dialog is always on top of Foundry UI
   body > .fcb-dialog {
-    z-index: 9999 !important;
+    // z-index: 9999 !important;
   }
 
   .create-entry-dialog-content {

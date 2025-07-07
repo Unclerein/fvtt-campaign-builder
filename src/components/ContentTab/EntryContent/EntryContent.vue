@@ -124,8 +124,9 @@
                 />
               </div>
 
+              <!-- Above description if we're in play mode -->
               <div 
-                v-if="ModuleSettings.get(SettingKey.showRolePlayingNotes)"
+                v-if="roleplayAboveDescription"
                 class="flexrow form-group"
               >
                 <LabelWithHelp
@@ -134,15 +135,16 @@
                 />
               </div>
               <div 
-                v-if="ModuleSettings.get(SettingKey.showRolePlayingNotes)"
+                v-if="roleplayAboveDescription"
                 class="flexrow form-group"
               >
                 <Editor
                     :initial-content="currentEntry?.rolePlayingNotes || ''"
-                    :style="{ 'height': '240px', 'margin-bottom': '6px'}"
+                    :style="{ 'height': '180px', 'margin-bottom': '6px'}"
                     @editor-saved="onRolePlayingNotesSaved"
                   />
               </div>
+
               <div class="flexrow form-group">
                 <LabelWithHelp
                   label-text="labels.fields.entryDescription"
@@ -159,6 +161,28 @@
                   @related-entries-changed="onRelatedEntriesChanged"
                 />
               </div>
+
+              <!-- Below description if we're in prep mode -->
+              <div 
+                v-if="roleplayBelowDescription"
+                class="flexrow form-group"
+              >
+                <LabelWithHelp
+                  label-text="labels.fields.entryRolePlayingNotes"
+                  top-label
+                />
+              </div>
+              <div 
+                v-if="roleplayBelowDescription"
+                class="flexrow form-group"
+              >
+                <Editor
+                    :initial-content="currentEntry?.rolePlayingNotes || ''"
+                    :style="{ 'height': '180px', 'margin-bottom': '6px'}"
+                    @editor-saved="onRolePlayingNotesSaved"
+                  />
+              </div>
+
             </DescriptionTab>
             <JournalTab
               v-if="currentEntry"
@@ -268,6 +292,7 @@
   const playingStore = usePlayingStore();
   const { currentEntry, currentSetting, currentContentTab, refreshCurrentEntry, } = storeToRefs(mainStore);
   const { currentPlayedCampaign } = storeToRefs(playingStore);
+  const { isInPlayMode } = storeToRefs(mainStore);
 
   ////////////////////////////////
   // data
@@ -305,7 +330,8 @@
   const canGenerate = computed(() => topic.value && [Topics.Character, Topics.Location, Topics.Organization].includes(topic.value));
   const generateDisabled = computed(() => !Backend.available);
   const showHierarchy = computed((): boolean => (topic.value===null ? false : hasHierarchy(topic.value)));
-
+  const roleplayAboveDescription = computed(() => ModuleSettings.get(SettingKey.showRolePlayingNotes) && isInPlayMode.value);
+  const roleplayBelowDescription = computed(() => ModuleSettings.get(SettingKey.showRolePlayingNotes) && !isInPlayMode.value);
   ////////////////////////////////
   // methods
   const refreshEntry = async () => {

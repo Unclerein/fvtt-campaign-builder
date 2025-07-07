@@ -33,7 +33,7 @@ export type GeneratedDetails =
  * @returns A promise that resolves to the created entry, or undefined if creation failed
  */
 export const handleGeneratedEntry = async (details: GeneratedDetails, topicFolder: TopicFolder): Promise<Entry | undefined> => {
-  const { name, description, type } = details;
+  const { name, description, type, rolePlayingNotes } = details;
   const settingDirectoryStore = useSettingDirectoryStore();
   
   if (!topicFolder)
@@ -45,7 +45,11 @@ export const handleGeneratedEntry = async (details: GeneratedDetails, topicFolde
   if (!entry)
     throw new Error('Failed to create entry in generation.handleGeneratedEntry()');
 
-  entry.description = description;
+  // if they return empty string then don't set it
+  if (description)
+    entry.description = description;
+  if (rolePlayingNotes)
+    entry.rolePlayingNotes = details.rolePlayingNotes;
 
   // add the other things based on topic
   switch (topicFolder.topic) {
