@@ -129,9 +129,9 @@
           </div>
           <div 
             v-else
-            class="generation-option-wrapper" style="margin-left: 20px"
+            class="generation-option-wrapper"
           >
-            <label for="generate-choices-select" class="generation-label">
+            <label for="generate-choices-select" class="generation-label" style="margin-right: 8px">
                 {{ localize('labels.fields.generateText') }}:
             </label>
             <Select 
@@ -140,42 +140,14 @@
               :options="generateChoiceOptions"
               optionLabel="label"
               optionValue="value"
+              :pt="{ root: { style: { width: '200px' }}}"
             />
-          </div>
-          <div class="generation-option-wrapper" style="margin-left: 20px">
-            <Checkbox 
-              v-model="generateImageAfterAccept" 
-              :binary="true"
-              inputId="generate-image-checkbox"
-            />
-            <label for="generate-image-checkbox" class="generation-label">
-              {{ localize('labels.fields.generateImage') }}
-              <i class="fas fa-info-circle tooltip-icon" :data-tooltip="localize('tooltips.createEntry.generateImage')"></i>
-            </label>
           </div>
         </div>
         
-        <!-- Add new checkbox for adding to current session -->
-        <div 
-          v-if="isInPlayMode"
-          class="generation-option"
-        >
-          <div class="generation-option-wrapper">
-            <Checkbox 
-              v-model="addToCurrentSession" 
-              :binary="true"
-              inputId="add-to-session-checkbox"
-            />
-            <label for="add-to-session-checkbox" class="generation-label">
-              {{ localize('labels.fields.addToCurrentSession') }}
-              <i class="fas fa-info-circle tooltip-icon" :data-tooltip="localize('tooltips.createEntry.addToCurrentSession')"></i>
-            </label>
-          </div>
-        </div>
-
         <hr 
           v-if="Backend.available"
-          style="background-image: none; border: 1px solid #aaa"          
+          style="background-image: none; border: 1px solid #aaa; margin: 1rem 0 0.5rem 0"          
         >
         <div 
           v-if="Backend.available"
@@ -207,6 +179,38 @@
           <div v-else class="prompt-message">
             {{ localize('dialogs.createEntry.generatePrompt')}}...<br/><br/>
             {{ props.generateMode ? '' : localize('dialogs.createEntry.generatePrompt2')}}
+          </div>
+        </div>
+
+        <hr 
+          v-if="Backend.available"
+          style="background-image: none; border: 1px solid #aaa; margin: 1rem 0 0 0"          
+        >
+
+        <!-- checkboxes at bottom -->
+        <div class="generation-option">
+          <div v-if="isInPlayMode"class="generation-option-wrapper">
+            <Checkbox 
+              v-model="addToCurrentSession" 
+              :binary="true"
+              inputId="add-to-session-checkbox"
+            />
+            <label for="add-to-session-checkbox" class="generation-label">
+              {{ localize('labels.fields.addToCurrentSession') }}
+              <i class="fas fa-info-circle tooltip-icon" :data-tooltip="localize('tooltips.createEntry.addToCurrentSession')"></i>
+            </label>
+          </div>
+          <div v-else class="generation-option-wrapper">&nbsp;</div>
+          <div v-if="Backend.available" class="generation-option-wrapper right-align">
+            <Checkbox 
+              v-model="generateImageAfterAccept" 
+              :binary="true"
+              inputId="generate-image-checkbox"
+            />
+            <label for="generate-image-checkbox" class="generation-label">
+              {{ localize('labels.fields.generateImage') }}
+              <i class="fas fa-info-circle tooltip-icon" :data-tooltip="localize('tooltips.createEntry.generateImage')"></i>
+            </label>
           </div>
         </div>
       </div>
@@ -663,8 +667,15 @@
       padding: 8px 0 0 0;
 
       .generation-option-wrapper {
-        width: 50%;
+        flex: 1;
         display: flex;
+        align-items: center;
+
+        &.right-align {
+          justify-content: flex-end;
+          flex: 1;
+          margin-left: 0;
+        }
 
         .generation-label {
           margin-left: 8px;
@@ -691,7 +702,6 @@
       height: 250px;
       min-height: 250px;
       max-height: 250px;
-      margin-top: 4px;
 
       .error-message {
         color: red;
