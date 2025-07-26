@@ -52,7 +52,9 @@
       "autoRelationships": "Auto-suggest relationships",
       "autoRelationshipsHelp": "If enabled, the editor will automatically suggest changes to relationships between entries based changes made to the description.",
       "showTypesInTree": "Show types in Setting tree",
-      "showTypesInTreeHelp": "When true, if the Setting directory is not grouped by type, it will show the type of each Entry in the tree." 
+      "showTypesInTreeHelp": "When true, if the Setting directory is not grouped by type, it will show the type of each Entry in the tree.",
+      "showRolePlayingNotes": "Show role playing notes on entries",
+      "showRolePlayingNotesHelp": "When true, a separate field for role playing notes will be shown separately from the Entry description."
     },
     "applications": {
       "sessionNotes": {
@@ -112,7 +114,7 @@
           "APIToken": "API Token",
           "APITokenHint": "Output from script to deploy the backend.",
           "defaultToLong": "Default to long descriptions",
-          "defaultToLongHint": "Controls the default setting for creating a long vs short description when doing AI generation.",
+          "defaultToLongHint": "Controls the default setting for creating a long vs short description when doing AI generation.  It doesn't apply when using role-play notes.",
           "longDescriptionParagraphs": "Long description paragraphs",
           "longDescriptionParagraphsHint": "Number of paragraphs to generate for long descriptions (1-4).",
           "useGmailIdeas": "Use Gmail for Ideas",
@@ -122,7 +124,17 @@
           "emailDefaultCampaign": "Default Campaign for email",
           "emailDefaultCampaignHint": "The campaign to use by default for email features (ex. emailing idea items)",
           "selectSetting": "Select a setting...",
-          "selectCampaign": "Select a campaign..."
+          "selectCampaign": "Select a campaign...",
+          "textModel": "Text Generation Model",
+          "textModelHint": "Select the AI model to use for text generation",
+          "imageModel": "Image Generation Model",
+          "imageModelHint": "Select the AI model to use for image generation"
+        },
+        "tabs":{
+          "backend": "Backend",
+          "models": "AI Models",
+          "content": "AI Content",
+          "email": "Email"
         }
       },
       "rollTableSettings": {
@@ -215,13 +227,22 @@
         "name": "Name",
         "topic": "Topic",
         "species": "Species",
+        "entryDescription": "Description",
+        "entryRolePlayingNotes": "Role-playing Notes",
         "settingGenre": "Genre",
         "settingFeeling": "Setting Feeling",
         "campaignDescription": "Campaign description",
         "campaignHouseRules": "House rules",
+        "settingDescription": "Setting description",
         "startingDescription": "Starting description",
         "description": "Description",
         "longDescriptions": "Generate long descriptions",
+        "generateText": "What to generate",
+        "generateChoice": {
+          "description": "Description",
+          "roleplay": "Role-playing Notes",
+          "both": "Both"
+        },
         "generateImage": "Generate Image",
         "addToCurrentSession": "Add to current session"
       },
@@ -400,6 +421,7 @@
       "createEntry": {
         "generatedName": "Generated name",
         "generatedDescription": "Generated description",
+        "generatedRoleplayNotes": "Generated role-playing notes",
         "generatePrompt": "Press generate for results",
         "generatePrompt2": "Otherwise, \"Brief Description\" will be used as the new Entry description."
       },

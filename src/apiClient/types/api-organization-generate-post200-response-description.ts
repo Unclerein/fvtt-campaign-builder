@@ -17,20 +17,20 @@
 /**
  * 
  * @export
- * @interface ApiPollEmailTodoGet200ResponseItemsInner
+ * @interface ApiOrganizationGeneratePost200ResponseDescription
  */
-export interface ApiPollEmailTodoGet200ResponseItemsInner {
+export interface ApiOrganizationGeneratePost200ResponseDescription {
     /**
-     * ISO timestamp of when the email was received
+     * Quick notes useful during game sessions
      * @type {string}
-     * @memberof ApiPollEmailTodoGet200ResponseItemsInner
+     * @memberof ApiOrganizationGeneratePost200ResponseDescription
      */
-    'timestamp': string;
+    'roleplayNotes': string;
     /**
-     * The content of the email
+     * A long, detailed description of the organization.
      * @type {string}
-     * @memberof ApiPollEmailTodoGet200ResponseItemsInner
+     * @memberof ApiOrganizationGeneratePost200ResponseDescription
      */
-    'text': string;
+    'long': string;
 }
 

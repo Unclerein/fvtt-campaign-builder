@@ -399,7 +399,7 @@ export const useRelationshipStore = defineStore('relationship', () => {
 
         const sceneList = [] as RelatedDocumentDetails[];
         for (let i=0; i<currentEntry.value.scenes.length; i++) {
-          const scene = (await fromUuid<Scene>(currentEntry.value.scenes[i]));
+          const scene = await foundry.utils.fromUuid(currentEntry.value.scenes[i] as `Scene.${string}`) as Scene;
 
           if (!scene)
             continue;

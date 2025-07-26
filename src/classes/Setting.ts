@@ -10,7 +10,7 @@ import { initializeSettingRollTables, refreshSettingRollTables } from '@/utils/n
 import { Backend } from '@/classes';
 import { ApiNamePreviewPost200ResponsePreviewInner } from '@/apiClient';
 
-type SettingCompendium = CompendiumCollection<CompendiumCollection.Metadata>;
+type SettingCompendium = CompendiumCollection<'JournalEntry'>;
 
 // represents a campaign setting
 export class Setting extends DocumentWithFlags<SettingDoc>{
@@ -64,7 +64,7 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
     this._journals = this.getFlag(SettingFlagKey.journals) || [];
     this._name = this._doc.name;
     if (this._compendiumId) {
-      const compendium = game.packs?.get(this._compendiumId);
+      const compendium = game.packs?.get(this._compendiumId) as SettingCompendium;
       
       if (!compendium) {
         // it didn't exist, so we pretend we don't have one - this will get cleaned up in validate()
@@ -418,6 +418,9 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
 
         await newSetting.validate();
 
+        // create the rolltables
+        await initializeSettingRollTables(newSetting);
+
         // If auto-refresh is enabled, populate tables in background
         const autoRefresh = ModuleSettings.get(SettingKey.autoRefreshRollTables);
         if (autoRefresh && Backend.available && Backend.api) {
@@ -436,7 +439,7 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
   // also loads all the topics
   public async validate() {
     if (this._compendiumId) {
-      const compendium = game.packs?.get(this._compendiumId);
+      const compendium = game.packs?.get(this._compendiumId) as SettingCompendium;
       if (!compendium) 
         throw new Error('Invalid compendiumId in Setting.validate()');
       
@@ -517,7 +520,7 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
       type: 'JournalEntry' as const, 
     };
 
-    const pack = await CompendiumCollection.createCompendium(metadata) as SettingCompendium;
+    const pack = await foundry.documents.collections.CompendiumCollection.createCompendium(metadata) as SettingCompendium;
     await pack.setFolder(this._doc as Folder);
     await pack.configure({ locked:true });
 

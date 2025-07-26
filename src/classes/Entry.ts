@@ -210,6 +210,21 @@ export class Entry {
     };
   }
 
+  get rolePlayingNotes(): string {
+    return this._entryDoc.system.rolePlayingNotes || '';
+  }
+
+  set rolePlayingNotes(value: string) {
+    this._entryDoc.system.rolePlayingNotes = value;
+    this._cumulativeUpdate = {
+      ...this._cumulativeUpdate,
+      system: {
+        ...this._cumulativeUpdate.system,
+        rolePlayingNotes: value,
+      }
+    };
+  }
+
   get img(): string | undefined {
     return this._entryDoc.system.img || undefined;
   }

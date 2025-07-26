@@ -164,6 +164,7 @@ class SearchService {
 
     
     // Add all items to the index at once for better performance
+    this._searchIndex.removeAll();      
     this._searchIndex.addAll(items);
   }
 

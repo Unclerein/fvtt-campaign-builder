@@ -4,6 +4,7 @@ import { AdvancedSettingsApplication } from '@/applications/settings/AdvancedSet
 import { SpeciesListApplication } from '@/applications/settings/SpeciesListApplication';
 import { RollTableSettingsApplication } from '@/applications/settings/RollTableSettingsApplication';
 import { SessionDisplayMode, Species, TagList, GeneratorType } from '@/types';
+import type { ApiLocationGenerateImagePostRequestImageModelEnum, ApiLocationGenerateImagePostRequestTextModelEnum } from 'src/apiClient';
 
 export enum SettingKey {
   // displayed in main settings window
@@ -15,7 +16,8 @@ export enum SettingKey {
   enableToDoList = 'enableToDoList', // whether the to-do list feature is enabled
   autoRelationships = 'autoRelationships', // whether to automatically suggest relationship changes based on editor
   showTypesInTree = 'showTypesInTree', // show the type of the entry in the hierarchy tree
-  
+  showRolePlayingNotes = 'showRolePlayingNotes',  // whether to show role playing notes on entries
+
   // internal only
   rootFolderId = 'rootFolderId',  // uuid of the root folder
   groupTreeByType = 'groupTreeByType',  // should the directory be grouped by type?
@@ -27,6 +29,8 @@ export enum SettingKey {
   advancedSettingsMenu = 'advancedSettingsMenu',  // display the advanced setting menu
   APIURL = 'APIURL',   // URL of backend
   APIToken = 'APIToken',
+  selectedTextModel = 'selectedTextModel', // selected text generation model
+  selectedImageModel = 'selectedImageModel', // selected image generation model
   defaultToLongDescriptions = 'defaultToLongDescriptions',
   longDescriptionParagraphs = 'longDescriptionParagraphs', // number of paragraphs for long descriptions (1-4)
   useGmailToDos = 'useGmailToDos', // whether to use Gmail for todos
@@ -50,9 +54,12 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.isInPlayMode ? boolean :
     K extends SettingKey.autoRelationships ? boolean :
     K extends SettingKey.showTypesInTree ? boolean :
+    K extends SettingKey.showRolePlayingNotes ? boolean :
     K extends SettingKey.advancedSettingsMenu ? never :
     K extends SettingKey.APIURL ? string :
     K extends SettingKey.APIToken ? string :
+    K extends SettingKey.selectedTextModel ? ApiLocationGenerateImagePostRequestTextModelEnum :
+    K extends SettingKey.selectedImageModel ? ApiLocationGenerateImagePostRequestImageModelEnum :
     K extends SettingKey.defaultToLongDescriptions ? boolean :
     K extends SettingKey.longDescriptionParagraphs ? number :
     K extends SettingKey.defaultAddToSession ? boolean :
@@ -148,6 +155,13 @@ export class ModuleSettings {
       name: 'settings.showTypesInTree',
       hint: 'settings.showTypesInTreeHelp',
       default: false,
+      type: Boolean,
+    },
+    {
+      settingID: SettingKey.showRolePlayingNotes,
+      name: 'settings.showRolePlayingNotes',
+      hint: 'settings.showRolePlayingNotesHelp',
+      default: true,
       type: Boolean,
     },
     {
@@ -247,6 +261,16 @@ export class ModuleSettings {
       settingID: SettingKey.APIToken,
       default: '',
       requiresReload: true,
+      type: String,
+    },
+    {
+      settingID: SettingKey.selectedTextModel,
+      default: '',
+      type: String,
+    },
+    {
+      settingID: SettingKey.selectedImageModel,
+      default: '',
       type: String,
     },
     {

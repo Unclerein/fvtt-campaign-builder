@@ -2,6 +2,8 @@ import { setupEnricher } from '@/components/Editor/helpers';
 import { ModuleSettings, SettingKey } from '@/settings';
 import { getCampaignBuilderApp } from '@/applications/CampaignBuilder';
 import { localize } from '@/utils/game';
+import { refreshAllSettingRollTables } from '@/utils/nameGenerators';
+import { Backend } from '@/classes';
 
 export function registerForReadyHook() {
   Hooks.once('ready', ready);
@@ -21,6 +23,12 @@ async function ready(): Promise<void> {
   }
 
   await addMainButton();
+
+  // If auto-refresh is enabled, populate tables in background
+  const autoRefresh = ModuleSettings.get(SettingKey.autoRefreshRollTables);
+  if (autoRefresh && Backend.available && Backend.api) {
+    void refreshAllSettingRollTables();
+  }
 }
 
 const loadDefaultSpecies = async () => {

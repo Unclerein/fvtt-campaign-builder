@@ -15,19 +15,19 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { ApiPollEmailTodoGet200ResponseItemsInner } from './api-poll-email-todo-get200-response-items-inner';
+import type { ApiModelsTextGet200ResponseModelsInner } from './api-models-text-get200-response-models-inner';
 
 /**
  * 
  * @export
- * @interface ApiPollEmailTodoGet200Response
+ * @interface ApiModelsTextGet200Response
  */
-export interface ApiPollEmailTodoGet200Response {
+export interface ApiModelsTextGet200Response {
     /**
      * 
-     * @type {Array<ApiPollEmailTodoGet200ResponseItemsInner>}
-     * @memberof ApiPollEmailTodoGet200Response
+     * @type {Array<ApiModelsTextGet200ResponseModelsInner>}
+     * @memberof ApiModelsTextGet200Response
      */
-    'items': Array<ApiPollEmailTodoGet200ResponseItemsInner>;
+    'models': Array<ApiModelsTextGet200ResponseModelsInner>;
 }
 

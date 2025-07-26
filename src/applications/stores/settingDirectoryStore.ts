@@ -339,7 +339,7 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
     const setting = await Setting.fromUuid(settingId);
 
     if (!setting)
-    return;
+      return;
 
     // confirm
     if (!(await FCBDialog.confirmDialog('Delete setting?', 'Are you sure you want to delete this setting?')))
@@ -399,7 +399,7 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
 
     // populate the setting names, and find the current one
     let currentSettingFound = false;
-    tree = (toRaw(rootFolder.value) as Folder)?.children?.map((setting: Folder): DirectorySetting => {
+    tree = (toRaw(rootFolder.value) as Folder)?.children?.map((setting): DirectorySetting => {
       if (!setting.folder)
         throw new Error('Setting without folder in refreshSettingDirectoryTree()');
 

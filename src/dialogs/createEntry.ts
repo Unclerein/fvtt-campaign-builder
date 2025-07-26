@@ -172,6 +172,8 @@ async function updateEntryDialog(entry: Entry): Promise<Entry | null> {
 }
 
 const updatedCallback = async (entry: Entry, details: AnyDetails | null): Promise<Entry | null> => {
+  const { name, type, description, rolePlayingNotes } = details ?? {};
+  
   const currentSetting = useMainStore().currentSetting;
   
   if (!currentSetting || !details || !entry) 
@@ -183,9 +185,13 @@ const updatedCallback = async (entry: Entry, details: AnyDetails | null): Promis
   const mainStore = useMainStore();
 
   // Update the entry with the generated content
-  entry.name = details.name;
-  entry.description = details.description;
-  entry.type = details.type;
+  entry.name = name || entry.name;
+  entry.type = type || entry.type;
+
+  if (description)
+    entry.description = description;
+  if (rolePlayingNotes)
+    entry.rolePlayingNotes = rolePlayingNotes;
 
   if (entry.topic===Topics.Character) {
     entry.speciesId = (details as CharacterDetails).speciesId;
