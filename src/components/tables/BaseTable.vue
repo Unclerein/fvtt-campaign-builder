@@ -649,6 +649,10 @@
   ////////////////////////////////
   // lifecycle events
 
+  // Expose the setEditingRow method to parent components
+  defineExpose({
+    setEditingRow
+  });
 
 </script>
 
