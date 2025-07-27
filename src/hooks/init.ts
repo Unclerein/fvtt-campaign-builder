@@ -1,7 +1,6 @@
 import { moduleId, ModuleSettings, } from '@/settings';
 import { KeyBindings } from '@/settings/KeyBindings';
 import { DOCUMENT_TYPES, EntryDataModel, SessionDataModel, PCDataModel } from '@/documents';
-import { Backend, ExternalAPI } from '@/classes';
 
 export function registerForInitHook() {
   Hooks.once('init', init);
@@ -18,13 +17,6 @@ async function init(): Promise<void> {
 
   // put in place the key bindings
   KeyBindings.register();
-
-  // check the backend
-  await Backend.configure();
-  
-  // Mount the external API
-  const module = game.modules.get(moduleId);
-  module.api = new ExternalAPI();
 
   // register the data models
   Object.assign(CONFIG.JournalEntryPage.dataModels, {

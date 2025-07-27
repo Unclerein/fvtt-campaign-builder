@@ -10,6 +10,7 @@
 - Added keybindings for moving forward/back across the tab bar; changed default for closing the tab
 - Added module setting to show the type of each node in the Setting tree in hierarchy mode.
 - Consolidated "strong start" onto the Session notes tab
+- Added ability to link PCs to entries - makes tracking backstory relationships to the world way simpler
 - Minor UI cleanup 
 - Fixed bug where bookmarks weren't deleted when the underlying content was
 - Fixed bug where campaigns created by right-clicking in the Setting directory didn't immediately show up in the Campaign directory
