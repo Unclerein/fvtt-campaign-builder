@@ -466,7 +466,7 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
   private async populateTopics() {
     let updated = false;
 
-    const topics = [Topics.Character, Topics.Location, Topics.Organization] as ValidTopic[];
+    const topics = [Topics.Character, Topics.Location, Topics.Organization, Topics.PC] as ValidTopic[];
     let topicIds = this._topicIds;
     const topicObjects = {} as Record<ValidTopic, TopicFolder>;
 
@@ -732,15 +732,15 @@ private async deleteRollTables() : Promise<void> {
   }
 }
 
-  public async deleteActorFromSetting(actorId: string) {
+  public async deleteActorFromSetting(actorId: string)
+   {
     // remove from any PCs that are linked to it
-    for (let campaign of Object.values(this.campaigns)) {
-      const pcs = (await campaign.filterPCs(pc => pc.actorId === actorId));
-      for (const pc of pcs) {
-        pc.actorId = '';
-        await pc.save();
-      }
+    for (let pc of this.topicFolders[Topics.PC].filterEntries((e)=>e.actorId === actorId)) {
+      pc.actorId = '';
+      await pc.save();
+    }
 
+    for (let campaign of Object.values(this.campaigns)) {
       // remove from any monsters that are linked to it
       for (let session of campaign.sessions) {
         const monsters = session.monsters.map(m=>m.uuid);

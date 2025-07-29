@@ -1,5 +1,7 @@
 <template>
-  <form>
+  <!-- PCs use their own thing because their image works differently -->
+  <PCContent v-if="topic===Topics.PC" />
+  <form v-else>
     <div ref="contentRef" class="fcb-sheet-container flexcol">
       <header class="fcb-name-header flexrow">
         <i :class="`fas ${icon} sheet-icon`"></i>
@@ -47,9 +49,10 @@
           <nav class="fcb-sheet-navigation flexrow tabs" data-group="primary">
             <a class="item" data-tab="description">{{ localize('labels.tabs.entry.description') }}</a>
             <a class="item" data-tab="journals">{{ localize('labels.tabs.entry.journals') }}</a>
+            <!-- TODO-PC - only show the PC tab if there's already a connection... rare that we'd need to add from here -->
             <a 
               v-for="relationship in relationships"
-              :key="relationship.label"
+              :key="relationship.tab"
               class="item" 
               :data-tab="relationship.tab"
             >
@@ -70,7 +73,8 @@
               {{ localize('labels.tabs.entry.scenes') }}
             </a>
             <a 
-              class="item" 
+            v-if="topic!==Topics.PC"
+            class="item" 
               data-tab="sessions"
             >
               {{ localize('labels.tabs.entry.sessions') }}
@@ -189,29 +193,35 @@
               :initial-journals="currentEntry.journals"
               @journals-updated="onJournalsUpdate"
             />
-            <div class="tab flexcol" data-group="primary" data-tab="characters">
+            <div 
+              v-for="relationship in relationships"
+              :key="relationship.tab"
+              class="tab flexcol" 
+              data-group="primary" 
+              :data-tab="relationship.tab"
+            >
               <div class="tab-inner">
-                <RelatedItemTable :topic="Topics.Character" />
-              </div>
-            </div> 
-            <div class="tab flexcol" data-group="primary" data-tab="locations">
-              <div class="tab-inner">
-                <RelatedItemTable :topic="Topics.Location" />
-              </div>
-            </div>
-            <div class="tab flexcol" data-group="primary" data-tab="organizations">
-              <div class="tab-inner">
-                <RelatedItemTable :topic="Topics.Organization" />
+                <RelatedItemTable :topic="relationship.topic" />
               </div>
             </div>
-            <div class="tab flexcol" data-group="primary" data-tab="scenes">
+            <div 
+              v-if="topic===Topics.Location"
+              class="tab flexcol" 
+              data-group="primary" 
+              data-tab="scenes"
+            >
               <div class="tab-inner">
                 <RelatedDocumentTable 
                   :document-link-type="DocumentLinkType.Scenes"
                 />
               </div>
             </div>
-            <div class="tab flexcol" data-group="primary" data-tab="actors">
+            <div 
+              v-if="topic===Topics.Character"
+              class="tab flexcol" 
+              data-group="primary" 
+              data-tab="actors"
+            >
               <div class="tab-inner">
                 <RelatedDocumentTable 
                   :document-link-type="DocumentLinkType.Actors"
@@ -250,6 +260,7 @@
   import { generateImage } from '@/utils/generation';
   import { ModuleSettings, SettingKey } from '@/settings';
   import { notifyInfo } from '@/utils/notifications';  
+  import { updateEntryDialog } from '@/dialogs/createEntry';
 
   // library components
   import InputText from 'primevue/inputtext';
@@ -258,10 +269,9 @@
   // local components
   import DescriptionTab from '@/components/ContentTab/DescriptionTab.vue';
   import JournalTab from '@/components/ContentTab/JournalTab.vue';
+  import PCContent from '@/components/ContentTab/PCContent.vue';
   import RelatedItemTable from '@/components/tables/RelatedItemTable.vue';
   import RelatedDocumentTable from '@/components/tables/RelatedDocumentTable.vue';
-  import { updateEntryDialog } from '@/dialogs/createEntry';
-
   import Editor from '@/components/Editor.vue';
   import TypeAhead from '@/components/TypeAhead.vue';
   import SpeciesSelect from '@/components/ContentTab/EntryContent/SpeciesSelect.vue';
@@ -298,15 +308,16 @@
   // data
   const topicData = {
     [Topics.Character]: { namePlaceholder: 'placeholders.characterName', },
-    [Topics.Location]: { namePlaceholder: 'placeholders.characterName', },
-    [Topics.Organization]: { namePlaceholder: 'placeholders.characterName', },
+    [Topics.Location]: { namePlaceholder: 'placeholders.locationName', },
+    [Topics.Organization]: { namePlaceholder: 'placeholders.organizationName', },
   };
 
   const relationships = [
-    { tab: 'characters', label: 'labels.tabs.entry.characters', },
-    { tab: 'locations', label: 'labels.tabs.entry.locations',},
-    { tab: 'organizations', label: 'labels.tabs.entry.organizations', },
-  ] as { tab: string; label: string }[];
+    { tab: 'characters', label: 'labels.tabs.entry.characters', topic: Topics.Character },
+    { tab: 'locations', label: 'labels.tabs.entry.locations', topic: Topics.Location },
+    { tab: 'organizations', label: 'labels.tabs.entry.organizations', topic: Topics.Organization },
+    { tab: 'pcs', label: 'labels.tabs.entry.pcs', topic: Topics.PC },
+  ] as { tab: string; label: string; topic: Topics }[];
 
   const tabs = ref<foundry.applications.ux.Tabs>();
   const topic = ref<Topics | null>(null);
@@ -327,7 +338,7 @@
     
   const icon = computed((): string => (!topic.value ? '' : getTopicIcon(topic.value)));
   const namePlaceholder = computed((): string => (topic.value===null ? '' : (localize(topicData[topic.value]?.namePlaceholder || '') || '')));
-  const canGenerate = computed(() => topic.value && [Topics.Character, Topics.Location, Topics.Organization].includes(topic.value));
+  const canGenerate = computed(() => topic.value && [Topics.Character, Topics.Location, Topics.Organization, Topics.PC].includes(topic.value));
   const generateDisabled = computed(() => !Backend.available);
   const showHierarchy = computed((): boolean => (topic.value===null ? false : hasHierarchy(topic.value)));
   const roleplayAboveDescription = computed(() => ModuleSettings.get(SettingKey.showRolePlayingNotes) && isInPlayMode.value);
@@ -345,7 +356,7 @@
 
       newTopicFolder = currentEntry.value.topicFolder;
       if (!newTopicFolder) 
-        throw new Error('Invalid entry topic in EntryContent.watch-currentEntry');
+        throw new Error('Invalid entry topic in EntryContent.refreshEntry');
 
       // we're going to show a content page
       topic.value = newTopicFolder.topic;
@@ -365,8 +376,8 @@
     }
   };
 
-    /** how many campaigns have available sessions */
-    const numAvailableSessions = (): number => {
+  /** how many campaigns have available sessions */
+  const numAvailableSessions = (): number => {
     if (!currentSetting.value)
       return 0;
 
@@ -541,7 +552,7 @@
     event.preventDefault();
     event.stopPropagation();
 
-    if (topic.value != null && ![Topics.Character, Topics.Location, Topics.Organization].includes(topic.value)) {
+    if (topic.value != null && ![Topics.Character, Topics.Location, Topics.Organization, Topics.PC].includes(topic.value)) {
       return;
     }
 
@@ -556,7 +567,11 @@
             await updateEntryDialog(currentEntry.value);
         }
       },
-      {
+    ];
+
+    // PC images always tie to actor
+    if (topic.value!==Topics.PC) {
+      menuItems.push({
         icon: 'fa-image',
         iconFontClass: 'fas',
         label: `${localize('contextMenus.generate.image')} ${isGeneratingImage[currentEntry.value?.uuid as string] ? ` - ${localize('contextMenus.generate.inProgress')}` : ''}`,
@@ -576,8 +591,8 @@
             isGeneratingImage[entryGenerated] = false;
           }
         }
-      },
-    ];
+      });
+    }
 
     ContextMenu.showContextMenu({
       customClass: 'fcb',
@@ -723,19 +738,23 @@
   ////////////////////////////////
   // lifecycle events
   onMounted(async () => {
-    tabs.value = new foundry.applications.ux.Tabs({ navSelector: '.tabs', contentSelector: '.fcb-tab-body', initial: 'description', /*callback: null*/ });
+    // Ensure DOM is fully ready before initializing tabs
+    await nextTick();
+    
+    tabs.value = new foundry.applications.ux.Tabs({ 
+      navSelector: '.tabs', 
+      contentSelector: '.fcb-tab-body', 
+      initial: 'description'
+    });
 
     // update the store when tab changes
     tabs.value.callback = () => {
       currentContentTab.value = tabs.value?.active || null;
     };
 
-    // have to wait until they render
-    await nextTick();
     if (contentRef.value) 
       tabs.value.bind(contentRef.value);
   });
-
 
 </script>
 

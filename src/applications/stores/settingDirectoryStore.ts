@@ -7,7 +7,7 @@ import { reactive, onMounted, ref, toRaw, watch, } from 'vue';
 // local imports
 import { ModuleSettings, SettingKey, } from '@/settings';
 import { hasHierarchy, NO_TYPE_STRING } from '@/utils/hierarchy';
-import { useMainStore, useNavigationStore,} from '@/applications/stores';
+import { useMainStore, useNavigationStore } from '@/applications/stores';
 import { getTopicTextPlural, } from '@/compendia';
 import { localize } from '@/utils/game';
 import { FCBDialog } from '@/dialogs';
@@ -394,6 +394,10 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
 
     isTopicTreeRefreshing.value = true;
 
+    // Preserve scroll position before refresh
+    const scrollContainer = document.querySelector('.fcb-directory-panel-wrapper') as HTMLElement;
+    const originalScrollTop = scrollContainer?.scrollTop || 0;
+
     // we put in the topics only for the current setting
     let tree = [] as DirectorySetting[];
 
@@ -421,7 +425,7 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
       const topicFolders = await currentSetting.value.loadTopics();
       const expandedNodes = currentSetting.value.expandedIds;
 
-      const topics = [Topics.Character, Topics.Location, Topics.Organization] as ValidTopic[];
+      const topics = [Topics.Character, Topics.Location, Topics.Organization, Topics.PC] as ValidTopic[];
       currentSettingBlock.topicNodes = topics.map((topic: ValidTopic): DirectoryTopicNode => {
         const id = `${(currentSetting.value as Setting).uuid}.topic.${topic}`;
         const topicObj = topicFolders[topic] as TopicFolder;
@@ -458,6 +462,13 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
     updateFilterNodes();
 
     isTopicTreeRefreshing.value = false;
+
+    // Restore scroll position after DOM updates
+    if (scrollContainer) {
+      // Wait for next tick to ensure DOM is updated
+      await new Promise(resolve => setTimeout(resolve, 0));
+      scrollContainer.scrollTop = originalScrollTop;
+    }
   };
 
   const getTopicNodeContextMenuItems = (topic: ValidTopic, entryId: string): MenuItem[] => {
@@ -523,10 +534,20 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
         if (!settingFolder || !topicFolder)
           throw new Error('Invalid header in Directory.onTopicContextMenu.onClick');
 
-        const entry = await FCBDialog.createEntryDialog(topicFolder.topic, { } );
+        if (topicFolder.topic===Topics.PC) {
+          // TODO-PC - just get the player name and create
 
-        if (entry) {
-          await navigationStore.openEntry(entry.uuid, { newTab: true, activate: true, }); 
+          const entry = await createEntry(topicFolder, {});
+            
+          if (entry) {
+            await navigationStore.openEntry(entry.uuid, { newTab: true, activate: true, });
+          }
+        } else {
+          const entry = await FCBDialog.createEntryDialog(topicFolder.topic, { } );
+
+          if (entry) {
+            await navigationStore.openEntry(entry.uuid, { newTab: true, activate: true, }); 
+          }
         }
       }
     }];
@@ -550,12 +571,13 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
       [Topics.Character]: [],
       [Topics.Location]: [],
       [Topics.Organization]: [],
+      [Topics.PC]: [],
     };
 
     const hierarchies = currentSetting.value.hierarchies;
 
     const regex = new RegExp( filterText.value, 'i');  // do case insensitive search
-    const topics = [Topics.Character, Topics.Location, Topics.Organization] as ValidTopic[];
+    const topics = [Topics.Character, Topics.Location, Topics.Organization, Topics.PC] as ValidTopic[];
 
     for (let i=0; i<topics.length; i++) {
       const topicObj = currentSetting.value.topicFolders[topics[i]];

@@ -1,8 +1,8 @@
 import { toRaw } from 'vue';
 import { moduleId, ModuleSettings, SettingKey, } from '@/settings'; 
-import { CampaignDoc, CampaignFlagKey, campaignFlagSettings, DOCUMENT_TYPES, PCDoc, SessionDoc, CampaignLore } from '@/documents';
-import { RelatedJournal } from '@/types';
-import { DocumentWithFlags, Entry, PC, Session, Setting } from '@/classes';
+import { CampaignDoc, CampaignFlagKey, campaignFlagSettings, DOCUMENT_TYPES, SessionDoc, CampaignLore } from '@/documents';
+import { RelatedPCDetails, RelatedJournal } from '@/types';
+import { DocumentWithFlags, Entry, Session, Setting } from '@/classes';
 import { FCBDialog } from '@/dialogs';
 import { localize } from '@/utils/game';
 import { SessionLore } from '@/documents/session';
@@ -25,6 +25,7 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
   private _img: string;
   private _todoItems: ToDoItem[];
   private _ideas: Idea[];
+  private _pcs: RelatedPCDetails[];
   private _journals: RelatedJournal[];
 
   /**
@@ -44,6 +45,7 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
     this._name = campaignDoc.name;
     this._todoItems = this.getFlag(CampaignFlagKey.todoItems) || [];
     this._ideas = this.getFlag(CampaignFlagKey.ideas) || [];
+    this._pcs = this.getFlag(CampaignFlagKey.pcs) || [];
     this._journals = this.getFlag(CampaignFlagKey.journals) || [];
   }
 
@@ -367,6 +369,15 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
     this.updateCumulative(CampaignFlagKey.ideas, this._ideas);
   }
 
+  get pcs(): readonly RelatedPCDetails[] {
+    return this._pcs;
+  }
+
+  set pcs(value: RelatedPCDetails[] | readonly RelatedPCDetails[]) {
+    this._pcs = value.slice();     // we clone it so it can't be edited outside
+    this.updateCumulative(CampaignFlagKey.pcs, this._pcs);
+  }
+
   /** Creates a new idea item and adds to the campaign*/
   /** returns the uuid */
   async addIdea(text: string): Promise<string | null> {
@@ -459,14 +470,33 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
    * @todo   At some point, may need to make reactive (i.e. filter by what's been entered so far) or use algolia if lists are too long; 
    *            might also consider making every topic a different subtype and then using DocumentIndex.lookup  -- that might give performance
    *            improvements in lots of places
-   * @param campaignId the campaign to search
    * @returns a list of Entries
    */
-  public async getPCs(): Promise<PC[]> {
+  public async getPCs(): Promise<Entry[]> {
     // we find all journal entries with this topic
     return await this.filterPCs(()=>true);
   }
 
+    /**
+   * Given a filter function, returns all the matching Sessions
+   * inside this campaign
+   * 
+   * @param {(e: RelatedPCDetails) => boolean} filterFn - The filter function
+   * @returns {Entry[]} The entries that pass the filter
+   */
+    public async filterPCs(filterFn: (e: RelatedPCDetails) => boolean): Promise<Entry[]> { 
+      let retval = [] as Entry[];
+      for (let i=0; i<this._pcs.length; i++) {
+        if (filterFn(this._pcs[i])) {
+          const entry = await Entry.fromUuid(this._pcs[i].uuid);
+          if (entry)
+            retval.push(entry);
+        }
+      }
+
+      return retval;
+    }
+  
   /**
    * Given a filter function, returns all the matching Sessions
    * inside this campaign
@@ -481,24 +511,6 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
       .filter((s: Session)=> filterFn(s)) || [];
   }
 
-  /**
-   * Given a filter function, returns all the matching Sessions
-   * inside this campaign
-   * 
-   * @param {(e: PC) => boolean} filterFn - The filter function
-   * @returns {PC[]} The entries that pass the filter
-   */
-  public async filterPCs(filterFn: (e: PC) => boolean): Promise<PC[]> { 
-    const retval = (toRaw(this._doc).pages.contents as unknown as PCDoc[])
-      .filter((p) => p.type===DOCUMENT_TYPES.PC)
-      .map((s: PCDoc)=> new PC(s, this))
-      .filter((s: PC)=> filterFn(s));
-
-    // load all the actors
-    await Promise.all(retval.map((pc) => pc.getActor()));
-
-    return retval;
-  }
   
   /**
    * Updates a campaign in the database 

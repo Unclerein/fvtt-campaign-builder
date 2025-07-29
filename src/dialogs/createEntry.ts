@@ -18,11 +18,13 @@ const createTitles = {
   [Topics.Character]: 'applications.createEntry.titles.create.character',
   [Topics.Location]: 'applications.createEntry.titles.create.location',
   [Topics.Organization]: 'applications.createEntry.titles.create.organization',
+  [Topics.PC]: 'applications.createEntry.titles.create.pc',
 }
 const updateTitles = {
   [Topics.Character]: 'applications.createEntry.titles.update.character',
   [Topics.Location]: 'applications.createEntry.titles.update.location',
   [Topics.Organization]: 'applications.createEntry.titles.update.organization',
+  [Topics.PC]: 'applications.createEntry.titles.update.pc',
 }
 
 class CreateEntryApplication extends VueApplicationMixin(ApplicationV2) {

@@ -157,6 +157,13 @@
       buttonTitle: localize('dialogs.relatedItems.organization.buttonTitle'),
       // editButtonTitle: localize('dialogs.relatedItems.organization.editButtonTitle'),
     },
+    [Topics.PC]: {
+      title: localize('dialogs.relatedItems.pc.title'),
+      // editTitle: localize('dialogs.relatedItems.pc.editTitle'),
+      createButtonTitle: localize('dialogs.relatedItems.pc.createButtonTitle'),
+      buttonTitle: localize('dialogs.relatedItems.pc.buttonTitle'),
+      // editButtonTitle: localize('dialogs.relatedItems.pc.editButtonTitle'),
+    },
   } as Record<ValidTopic, { 
     title: string; 
     // editTitle: string; 
@@ -171,7 +178,7 @@
     // if (props.mode === RelatedItemDialogModes.Edit) {
     //   return `${topicDetails[props.topic].editTitle}: ${props.itemName}`;
     // } else {
-      return topicDetails[props.topic].title;
+      return (props.topic && topicDetails[props.topic].title) || '';
     // }
   });
 
