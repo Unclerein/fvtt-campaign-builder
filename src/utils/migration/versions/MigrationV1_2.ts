@@ -253,11 +253,14 @@ export class MigrationV1_2 implements Migration {
             continue;
           }
 
-          await oldPage.delete();
+          await setting.executeUnlocked(async () => {
+            await oldPage.delete();
+          });
+          
           console.log(`Deleted old PC entry: ${oldPage.name}`);
         }
       } catch (error) {
-        console.error(`Cleanup error for PC "${oldPage.name}":`, error);
+        console.error(`Cleanup error for PC:`, error);
       }
     }
   }
