@@ -58,12 +58,12 @@
         <div v-if="isTopicTreeRefreshing" class="fcb-loading-container">
           <ProgressSpinner v-if="isTopicTreeRefreshing" />
         </div>
-        <div v-else class="fcb-directory-panel-wrapper">
+        <div v-else class="fcb-directory-panel-wrapper fcb-setting-directory">
           <SettingDirectory />
         </div>
       </SplitterPanel>
       <SplitterPanel :size="40" class="fcb-directory-panel">
-        <div class="fcb-directory-panel-wrapper">
+        <div class="fcb-directory-panel-wrapper fcb-campaign-directory">
           <CampaignDirectory />
         </div>
       </SplitterPanel>
