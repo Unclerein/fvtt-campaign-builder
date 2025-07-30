@@ -2,7 +2,7 @@
 
 // library imports
 import { defineStore, storeToRefs, } from 'pinia';
-import { reactive, onMounted, ref, toRaw, watch, } from 'vue';
+import { reactive, onMounted, ref, toRaw, watch, nextTick } from 'vue';
 
 // local imports
 import { ModuleSettings, SettingKey, } from '@/settings';
@@ -395,7 +395,7 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
     isTopicTreeRefreshing.value = true;
 
     // Preserve scroll position before refresh
-    const scrollContainer = document.querySelector('.fcb-directory-panel-wrapper') as HTMLElement;
+    let scrollContainer: HTMLElement | null = document.querySelector('.fcb-setting-directory') as HTMLElement;
     const originalScrollTop = scrollContainer?.scrollTop || 0;
 
     // we put in the topics only for the current setting
@@ -463,10 +463,13 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
 
     isTopicTreeRefreshing.value = false;
 
-    // Restore scroll position after DOM updates
-    if (scrollContainer) {
-      // Wait for next tick to ensure DOM is updated
-      await new Promise(resolve => setTimeout(resolve, 0));
+    // Wait for next tick to ensure DOM is updated
+    await nextTick();
+
+    // Perform scroll restoration once after DOM updates
+    // We get the container again because it was unmounted and remounted
+    scrollContainer = document.querySelector<HTMLElement>('.fcb-setting-directory');
+    if (scrollContainer && originalScrollTop) {
       scrollContainer.scrollTop = originalScrollTop;
     }
   };
