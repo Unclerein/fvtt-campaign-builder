@@ -16,7 +16,7 @@ Regardless of Topic, each Entry has a similar layout in the main window.  At the
 The Entry header has these main components:
   1. Name - This is where you edit the Entry's name.
   
-  2. Push to Session Button (for Characters and Locations) [[Advanced Feature]] - This allows you to add the Character or Location to the [^Current Session] (as an NPC or Location, respectively). If you have more than one campaign with valid sessions, you'll be prompted to select the campaign to push to.
+  2. Push to Session Button (for Characters and Locations) [[Advanced Feature]] - This allows you to add the Character or Location to the [^Current Session] (as an NPC or Location, respectively). If you have more than one campaign, you'll be prompted to select the campaign to push to.  
   
   ![Push to session button](/assets/images/push-to-session.webp)
   
@@ -41,6 +41,7 @@ You cannot currently delete Types.
 ## Tabs
 There are several tabs on the Entry details screen:
   - [Description tab](./description) - overview information about the Entry
+  - [Journals tab](./journals) - a place to track Foundry journal entries that relate to the Entry.  Good for tracking extra images or any other content that you want to keep track of and/or share with the player(s)
   - [Relationship tabs](./relationships) - show the connections between this entry and others
   - Foundry document tabs: After the Entry relationship tabs, you'll find an [Actors tab](/reference/world-building/content/character/#actors) when looking at a Character and a [Scenes tab](/reference/world-building/content/location/#scenes) when looking at a Location.  
   - [Sessions tab](./sessions) - a quick way to find game session notes that mention this entry

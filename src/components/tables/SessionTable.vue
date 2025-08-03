@@ -1,42 +1,40 @@
 <template>
   <!-- a table for use in sessions - handles items that can be moved to the next session, marked done, etc. -->
-  <div class="primevue-only">
-    <BaseTable
-      ref="baseTableRef"
-      :show-add-button="props.showAddButton"
-      :show-filter="false"
-      :filter-fields="[]"
-      :add-button-label="props.addButtonLabel"
-      :track-delivery="true"
-      :extra-add-text="props.extraAddText"
-      :allow-drop-row="props.allowDropRow"
-      :rows="props.rows"
-      :columns="columns"
-      :allow-edit="props.allowEdit"
-      :edit-item-label="props.editItemLabel"
-      :allow-delete="props.allowDelete"
-      :delete-item-label="props.deleteItemLabel"
-      :show-move-to-campaign="props.showMoveToCampaign"
-      :draggable-rows="props.draggableRows"
-      :help-text="props.helpText"
-      :help-link="props.helpLink"
-      @row-select="(event) => emit('rowContextMenu', event)"
-      @edit-item="(data) => emit('editItem', data)"
-      @delete-item="(uuid) => emit('deleteItem', uuid)"
-      @add-item="() => emit('addItem')"
-      @row-contextmenu="(event) => emit('rowContextMenu', event)"
-      @cell-edit-complete="(event) => emit('cellEditComplete', event)"
-      @mark-item-delivered="(uuid) => emit('markItemDelivered', uuid)"
-      @unmark-item-delivered="(uuid) => emit('unmarkItemDelivered', uuid)"
-      @move-to-next-session="(uuid) => emit('moveToNextSession', uuid)"
-      @move-to-campaign="(uuid) => emit('moveToCampaign', uuid)"
-      @dragstart="(event, uuid) => emit('dragstart', event, uuid)"
-      @drop-row="(event, uuid) => emit('dropRow', event, uuid)"
-      @drop-new="(event) => emit('dropNew', event)"
-      @set-editing-row="(uuid) => emit('setEditingRow', uuid)"
-    >
-    </BaseTable>
-  </div>
+  <BaseTable
+    ref="baseTableRef"
+    :show-add-button="props.showAddButton"
+    :show-filter="false"
+    :filter-fields="[]"
+    :add-button-label="props.addButtonLabel"
+    :track-delivery="true"
+    :extra-add-text="props.extraAddText"
+    :allow-drop-row="props.allowDropRow"
+    :rows="props.rows"
+    :columns="columns"
+    :allow-edit="props.allowEdit"
+    :edit-item-label="props.editItemLabel"
+    :allow-delete="props.allowDelete"
+    :delete-item-label="props.deleteItemLabel"
+    :show-move-to-campaign="props.showMoveToCampaign"
+    :draggable-rows="props.draggableRows"
+    :help-text="props.helpText"
+    :help-link="props.helpLink"
+    @row-select="(event) => emit('rowContextMenu', event)"
+    @edit-item="(data) => emit('editItem', data)"
+    @delete-item="(uuid) => emit('deleteItem', uuid)"
+    @add-item="() => emit('addItem')"
+    @row-contextmenu="(event) => emit('rowContextMenu', event)"
+    @cell-edit-complete="(event) => emit('cellEditComplete', event)"
+    @mark-item-delivered="(uuid) => emit('markItemDelivered', uuid)"
+    @unmark-item-delivered="(uuid) => emit('unmarkItemDelivered', uuid)"
+    @move-to-next-session="(uuid) => emit('moveToNextSession', uuid)"
+    @move-to-campaign="(uuid) => emit('moveToCampaign', uuid)"
+    @dragstart="(event, uuid) => emit('dragstart', event, uuid)"
+    @drop-row="(event, uuid) => emit('dropRow', event, uuid)"
+    @drop-new="(event) => emit('dropNew', event)"
+    @set-editing-row="(uuid) => emit('setEditingRow', uuid)"
+  >
+  </BaseTable>
 </template>
 
 <script setup lang="ts">
@@ -49,7 +47,7 @@
   import  { DataTableCellEditCompleteEvent, DataTableRowContextMenuEvent, DataTableRowSelectEvent } from 'primevue/datatable';
   
   // local components
-  import BaseTable from '@/components/BaseTable/BaseTable.vue';
+  import BaseTable from '@/components/tables/BaseTable.vue';
 
   // types
   type SessionTableGridRow = { uuid: string; delivered: boolean } & Record<string, any>;

@@ -31,7 +31,7 @@
       </SplitterPanel>
       <SplitterPanel :size="directoryCollapsed ? 1 :24" :min-size="directoryCollapsed ? 1 : 18" class=""> 
         <div id="fcb-directory-sidebar" class="flexcol" :style="{display: directoryCollapsed ? 'none' : ''}">
-          <Directory @world-selected="onDirectoryWorldSelected" />
+          <Directory  />
         </div> 
       </SplitterPanel>
     </Splitter>
@@ -95,9 +95,9 @@
 
   ////////////////////////////////
   // event handlers
-  const onDirectoryWorldSelected = async (worldId: string) => {
-    await mainStore.setNewSetting(worldId);
-  };
+  // const onDirectorySettingSelected = async (settingId: string) => {
+  //   await mainStore.setNewSetting(settingId);
+  // };
 
   const onSidebarToggleClick = async () => { 
     directoryCollapsed.value = !directoryCollapsed.value;
@@ -107,7 +107,7 @@
   };
 
   // whenever we click on a link inside the application that is a link to a document (these are inserted by TextEditor.enrichHTML)
-  //    if it's a document in world builder, open in here instead of the default functionality
+  //    if it's a document in setting builder, open in here instead of the default functionality
   const onClickApplication = (event: MouseEvent) => {
     const target = event.target as HTMLElement;
 
@@ -128,7 +128,7 @@
     // cancel any other actions
     event.stopPropagation();
     
-    // the only things tagged fcb-content-link are ones for the world we're looking at, so just need to open it
+    // the only things tagged fcb-content-link are ones for the setting we're looking at, so just need to open it
     switch (parseInt(target.dataset.linkType ?? '-1')) {
       case WindowTabType.Entry:
         void navigationStore.openEntry(target.dataset.uuid, { newTab: event.ctrlKey});
@@ -139,10 +139,7 @@
       case WindowTabType.Session:
         void navigationStore.openSession(target.dataset.uuid, { newTab: event.ctrlKey});
         break;
-      case WindowTabType.PC:
-        void navigationStore.openPC(target.dataset.uuid, { newTab: event.ctrlKey});
-        break;
-      case WindowTabType.World:
+      case WindowTabType.Setting:
         void navigationStore.openSetting(target.dataset.uuid, { newTab: event.ctrlKey});
         break;
     }  
@@ -150,26 +147,27 @@
 
   ////////////////////////////////
   // watchers
-  watch(currentSetting, async (newWorld: Setting | null, oldWorld: Setting | null) => {
-    // Update the window title when the world changes
-    updateWindowTitle(newWorld?.name || null);
+  watch(currentSetting, async (newSetting: Setting | null, oldSetting: Setting | null) => {
+    // Update the window title when the setting changes
+    updateWindowTitle(newSetting?.name || null);
     
-    if (currentSetting.value && currentSetting.value.topicIds && newWorld?.uuid!==oldWorld?.uuid) {
+    if (currentSetting.value && currentSetting.value.topicIds && newSetting?.uuid!==oldSetting?.uuid) {
       // this will force a refresh of the directory; before we do that make sure all the static variables are setup
-      const worldId = currentSetting.value.uuid;
+      const settingId = currentSetting.value.uuid;
 
       const settingCompendium = currentSetting.value.compendium || null;
 
       if (!settingCompendium)
-        throw new Error(`Could not find compendium for world ${worldId} in CampaignBuilder.currentSetting watch`);
+        throw new Error(`Could not find compendium for setting ${settingId} in CampaignBuilder.currentSetting watch`);
 
       const topicIds = currentSetting.value.topicIds;
       const campaignNames = currentSetting.value.campaignNames;
-      const topics = [ Topics.Character, Topics.Location, Topics.Organization ] as ValidTopic[];
+      const topics = [ Topics.Character, Topics.Location, Topics.Organization, Topics.PC ] as ValidTopic[];
       const topicJournals = {
         [Topics.Character]: null,
         [Topics.Location]: null,
         [Topics.Organization]: null,
+        [Topics.PC]: null,
       } as Record<ValidTopic, JournalEntry | null>;
       const campaignJournals = {} as Record<string, CampaignDoc>;
 
@@ -180,7 +178,7 @@
         topicJournals[t] = await fromUuid<JournalEntry>(topicIds[t]);
 
         if (!topicJournals[t])
-          throw new Error(`Could not find journal for topic ${t} in world ${worldId}`);
+          throw new Error(`Could not find journal for topic ${t} in setting ${settingId}`);
       }
 
       for (const campaignId in campaignNames) {
@@ -273,15 +271,16 @@
     const settingCompendium = folders.setting?.compendium || null;
 
     if (!setting || !settingId || !settingCompendium)
-        throw new Error(`Could not find world/compendium for world ${settingId} in CampaignBuilder.onMounted()`);
+        throw new Error(`Could not find setting/compendium for setting ${settingId} in CampaignBuilder.onMounted()`);
 
     if (setting.topicIds) {
       // this will force a refresh of the directory; before we do that make sure all the static variables are setup
-      const topics = [ Topics.Character, Topics.Location, Topics.Organization ] as ValidTopic[];
+      const topics = [ Topics.Character, Topics.Location, Topics.Organization, Topics.PC ] as ValidTopic[];
       const topicJournals = {
         [Topics.Character]: null,
         [Topics.Location]: null,
         [Topics.Organization]: null,
+        [Topics.PC]: null,
       } as Record<ValidTopic, JournalEntry | null>;
       const campaignJournals = {} as Record<string, CampaignDoc>;
 
@@ -292,7 +291,7 @@
         topicJournals[t] = await fromUuid<JournalEntry>(setting.topicIds[t]);
 
         if (!topicJournals[t])
-          throw new Error(`Could not find journal for topic ${t} in world ${settingId}`);
+          throw new Error(`Could not find journal for topic ${t} in setting ${settingId}`);
       }
 
       for (const campaignId in setting.campaignNames) {
@@ -328,7 +327,7 @@
       // Use setTimeout to ensure the DOM is fully rendered
       setTimeout(() => {
         createTitleBarComponents();
-        // Initialize the window title with the current world name
+        // Initialize the window title with the current setting name
         updateWindowTitle(currentSetting.value?.name || null);
       }, 100);
     } else {
@@ -381,6 +380,7 @@
       margin-top: 0px;
       flex-wrap: nowrap;
       padding: 0.1rem;
+      user-select: text;  // enable most text to be able to be highlighted for copy/paste - critical for things like editors that aren't open
 
       // Sidebar 
       #fcb-directory-sidebar {

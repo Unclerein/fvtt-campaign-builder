@@ -14,7 +14,7 @@ import { scrollToActiveEntry } from '@/utils/directoryScroll';
 
 // types
 import { Bookmark, TabHeader, WindowTabType, } from '@/types';
-import { WindowTab, Entry, Campaign, Session, PC, Setting } from '@/classes';
+import { WindowTab, Entry, Campaign, Session, Setting } from '@/classes';
 
 // the store definition
 export const useNavigationStore = defineStore('navigation', () => {
@@ -61,18 +61,18 @@ export const useNavigationStore = defineStore('navigation', () => {
   };
 
   /**
-   * Open a new tab to the given world. If no entry is given, a blank "New Tab" is opened.  if not !newTab and contentId is the same as currently active tab, then does nothing
+   * Open a new tab to the given setting. If no entry is given, a blank "New Tab" is opened.  if not !newTab and contentId is the same as currently active tab, then does nothing
    * 
-   * @param contentId The uuid of the world to open in the tab. If null, a blank tab is opened.
+   * @param settingId The uuid of the setting to open in the tab. If null, a blank tab is opened.
    * @param options Options for the tab.
    * @param options.activate Should we switch to the tab after creating? Defaults to true.
    * @param options.newTab Should the entry open in a new tab? Defaults to true.
-   * @param options.updateHistory Should the world be added to the history of the tab? Defaults to true.
+   * @param options.updateHistory Should the setting be added to the history of the tab? Defaults to true.
    * @param options.contentTabId The id of the content tab to open. If null, defaults to the default content tab for the type.
    * @returns The newly opened tab.
    */
-  const openSetting = async function(worldId = null as string | null, options?: OpenContentOptions) {
-    await openContent(worldId, WindowTabType.World, options );
+  const openSetting = async function(settingId = null as string | null, options?: OpenContentOptions) {
+    await openContent(settingId, WindowTabType.Setting, options );
   };
 
   /**
@@ -88,21 +88,6 @@ export const useNavigationStore = defineStore('navigation', () => {
    */
   const openCampaign = async function(campaignId = null as string | null, options?: OpenContentOptions) {
     await openContent(campaignId, WindowTabType.Campaign, options);
-  };
-
-  /**
-   * Open a new tab to the given PC. If no PC is given, a blank "New Tab" is opened.  if not !newTab and contentId is the same as currently active tab, then does nothing
-   * 
-   * @param pcId The uuid of the PC to open in the tab. If null, a blank tab is opened.
-   * @param options Options for the tab.
-   * @param options.activate Should we switch to the tab after creating? Defaults to true.
-   * @param options.newTab Should the PC open in a new tab? Defaults to true.
-   * @param options.updateHistory Should the PC be added to the history of the tab? Defaults to true.
-   * @param options.contentTabId The id of the content tab to open. If null, defaults to the default content tab for the type.
-   * @returns The newly opened tab.
-   */
-  const openPC = async function(pcId = null as string | null, options?: OpenContentOptions) {
-    await openContent(pcId, WindowTabType.PC, options);
   };
 
   /**
@@ -149,10 +134,9 @@ export const useNavigationStore = defineStore('navigation', () => {
     // these are the default content tabs to open to
     const defaultContentTab = {
       [WindowTabType.Entry]: 'description',
-      [WindowTabType.World]: 'description',
+      [WindowTabType.Setting]: 'description',
       [WindowTabType.Campaign]: 'description',
       [WindowTabType.Session]: 'notes',
-      [WindowTabType.PC]: '',  // no tabs
       [WindowTabType.NewTab]: '',  // no tabs
     } as Record<WindowTabType, string>;
 
@@ -169,13 +153,13 @@ export const useNavigationStore = defineStore('navigation', () => {
           icon = getTopicIcon(entry.topic);
         }
       } break;
-      case WindowTabType.World: {
-        const world = contentId ? await Setting.fromUuid(contentId) : null;
-        if (!world) {
+      case WindowTabType.Setting: {
+        const setting = contentId ? await Setting.fromUuid(contentId) : null;
+        if (!setting) {
           badId = true;
         } else {
-          name = world.name;
-          icon = getTabTypeIcon(WindowTabType.World);
+          name = setting.name;
+          icon = getTabTypeIcon(WindowTabType.Setting);
         }
       } break;
       case WindowTabType.Campaign: {
@@ -195,15 +179,6 @@ export const useNavigationStore = defineStore('navigation', () => {
         } else {
           name = `${localize('labels.session.session')} ${session.number}`;
           icon = getTabTypeIcon(WindowTabType.Session);
-        }
-      } break;
-      case WindowTabType.PC: {
-        const pc = contentId ? await PC.fromUuid(contentId) : null;
-        if (!pc) {
-          badId = true;
-        } else {
-          name = pc.name;
-          icon = getTabTypeIcon(WindowTabType.PC);
         }
       } break;
       case WindowTabType.NewTab: 
@@ -318,7 +293,7 @@ export const useNavigationStore = defineStore('navigation', () => {
 
 /**
  * Closes all open tabs and removes all bookmarks. Should be used only when there is no
- * world available.
+ * setting available.
  */
   const clearTabsAndBookmarks = async function () {
     tabs.value = [];
@@ -371,6 +346,43 @@ export const useNavigationStore = defineStore('navigation', () => {
     
     await _saveTabs();
   }
+
+  /** Move forward/back across tab bar 
+   * @param numberOfTabs The number of tabs to move forward/back
+   */
+  const traverseTabs = async function (numberOfTabs: number): Promise<void> {
+    const currentTab = getActiveTab(false);
+    
+    if (!currentTab) 
+      return;
+
+    const newIdx = tabs.value.findIndex((t)=>(t.id===currentTab.id)) + numberOfTabs;
+    if (newIdx < 0 || newIdx >= tabs.value.length) 
+      return;
+
+    await activateTab(tabs.value[newIdx].id);
+};
+
+  // moves forward/back through the history "move" spaces (or less if not possible); negative numbers move back
+  const navigateHistory = async function (move: number) {
+    const tab = getActiveTab();
+
+    if (!tab) return;
+
+    const newSpot = Math.clamp(tab.historyIdx + move, 0, tab.history.length-1);
+
+    // if we didn't move, return
+    if (newSpot === tab.historyIdx)
+      return;
+
+    tab.historyIdx = newSpot;
+    await openContent(tab.history[tab.historyIdx].contentId, tab.history[tab.historyIdx].tabType, { activate: false, newTab: false, updateHistory: false});  // will also save the tab and update recent
+
+    // Restore the content tab from history
+    if (tab.history[tab.historyIdx].contentTab) {
+      mainStore.currentContentTab = tab.history[tab.historyIdx].contentTab;
+    }
+  };
 
   /**
    * Used after deleting an entry/campaign/session to make sure that no current tab or tab history includes 
@@ -476,7 +488,7 @@ export const useNavigationStore = defineStore('navigation', () => {
     }
 
     // now remove from bookmarks
-    bookmarks.value = bookmarks.value.filter(b => b.id !== contentId);
+    bookmarks.value = bookmarks.value.filter(b => b.header.uuid !== contentId);
     await _saveBookmarks();
 
     // remove from recent items list
@@ -633,7 +645,6 @@ export const useNavigationStore = defineStore('navigation', () => {
     openSession,
     openCampaign,
     openSetting,
-    openPC,
     openContent,
     updateContentTab,
     getActiveTab,
@@ -646,5 +657,7 @@ export const useNavigationStore = defineStore('navigation', () => {
     propagateNameChange,
     cleanupDeletedEntry,
     clearTabsAndBookmarks,
+    traverseTabs,
+    navigateHistory
   };
 });

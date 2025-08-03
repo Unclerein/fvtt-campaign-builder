@@ -1,8 +1,8 @@
 ---
 title: Main Display
 prev: 
-  text: 'Directory Sidebar'
-  link: './sidebar'
+  text: 'Editors'
+  link: './editors'
 next: 
   text: 'Main Tabs'
   link: './tabs'
@@ -19,8 +19,8 @@ There are 4 types of content you can see, and each has its own set of functional
 - [Sessions](/reference/campaign-mgt/content/session/)
 
 
-## Autocomplete Mentions {#autocomplete-mentions}
-There is a separate module - [Autocomplete Mentions](https://github.com/dovrosenberg/fvtt-autocomplete-mentions) that is not needed but can be highly useful for campaign and world building.  It enables you to type '@' and easily search for the characters, locations, and organizations in your campaign and then insert them as a link in any editor field.  This can be doubly helpful, because (for example) if you insert one of these links in the description of an [^Entry], you will [automatically be asked](/reference/world-building/content/entry/description#managing-relationships) if you'd like to create a relationship.  So this allows you to connect two entries or mention an entry in a session note (which will then also add it to the campaign [To-do list](/reference/campaign-mgt/content/campaign/todos)) with just a couple keystrokes.
+## Editors
+Throughout the application, there are fields that are displayed as a large Foundry editor box.  In addition to Foundry capabilities (ex. formatting), Campaign Builder editors have additional capabilities. See [Editors] for more information.
 
 ## Images {#images}
 
@@ -51,6 +51,9 @@ Right-clicking on the image will open a context menu with the following options:
 - "View Image" - Open the zoomed-in view of the image (same as clicking the image).
 - "Change Image" - Open the Foundry image selector to choose a new image.
 - "Remove Image" - Remove the image from the Entry (restoring the placeholder).
+- "Copy to clipboard" - Copy the image to the clipboard.
+- "Copy image source to clipboard" - Copy the image to the clipboard.
+- "Copy link to clipboard" - Copy the image's source link to the clipboard.  Particularly useful if you want to reuse it elsewhere without creating duplicate storage.
 - "Generate Image" (Entries only) - Generate a new image for the Entry, based on the current description. [[Advanced Feature]]
 - "Post to Chat" - Post the image in the Foundry chat for everyone to see.
 - "Create Scene" ([^Locations] only) - Create a new Foundry scene with the image as the background.  Helpful for Theater of the Mind scenes.

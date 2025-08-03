@@ -14,10 +14,10 @@
       <div class="flexrow">
         <div 
           class="new-link"
-          @click="onCreateWorld"
+          @click="onCreateSetting"
         >
           <div><i class="fas fa-globe"></i></div>
-          {{ localize('labels.homePage.createWorld') }}
+          {{ localize('labels.homePage.createSetting') }}
         </div>
         <div 
           class="new-link"
@@ -25,6 +25,13 @@
         >
           <div><i class="fas fa-book"></i></div>
           {{ localize('labels.homePage.createCampaign') }}
+        </div>
+        <div 
+          class="new-link"
+          @click="onCreateEntry(Topics.PC)"
+        >
+          <div><i :class="`fas ${getTopicIcon(Topics.PC)}`"></i></div>
+          {{ localize('labels.homePage.createPC') }}
         </div>
       </div>
 
@@ -34,21 +41,21 @@
       >
         <div 
           class="new-link"
-          @click="onCreateCharacter"
+          @click="onCreateEntry(Topics.Character)"
         >
           <div><i :class="`fas ${getTopicIcon(Topics.Character)}`"></i></div>
           {{ localize('labels.homePage.createCharacter') }}
         </div>
         <div 
           class="new-link"
-          @click="onCreateLocation"
+          @click="onCreateEntry(Topics.Location)"
         >
           <div><i :class="`fas ${getTopicIcon(Topics.Location)}`"></i></div>
           {{ localize('labels.homePage.createLocation') }}
         </div>
         <div 
           class="new-link"
-          @click="onCreateOrganization"
+          @click="onCreateEntry(Topics.Organization)"
         >
           <div><i :class="`fas ${getTopicIcon(Topics.Organization)}`"></i></div>
           {{ localize('labels.homePage.createOrganization') }}
@@ -120,36 +127,24 @@
 
   ////////////////////////////////
   // methods
-  const onCreateWorld = async () => {
-    await settingDirectoryStore.createWorld();
+  const onCreateSetting = async () => {
+    await settingDirectoryStore.createSetting();
   };
 
   const onCreateCampaign = async () => {
     await campaignDirectoryStore.createCampaign();
   };
 
-  const onCreateCharacter = async () => {
-    await onCreateEntry(Topics.Character);
-  };
-
-  const onCreateLocation = async () => {
-    await onCreateEntry(Topics.Location);
-  };
-
-  const onCreateOrganization = async () => {
-    await onCreateEntry(Topics.Organization);
-  };
-
   const onCreateEntry = async (topic: Topics) => {
     if (!currentSetting.value)
-      throw new Error('No current world in HomePage.onCreateEntry()');
+      throw new Error('No current setting in HomePage.onCreateEntry()');
 
     const topicFolder = currentSetting.value.topicFolders[topic];
 
     if (!topicFolder)
       throw new Error('No topic folder in HomePage.onCreateEntry()');
 
-    const entry = await FCBDialog.createEntryDialog(topicFolder.topic, { } );
+    const entry = await FCBDialog.createEntryDialog(topicFolder.topic, { generateMode: true } );
 
     if (entry) {
       await navigationStore.openEntry(entry.uuid, { newTab: true, activate: true, }); 
@@ -172,10 +167,11 @@
         case getTopicIcon(Topics.Character):
         case getTopicIcon(Topics.Location):
         case getTopicIcon(Topics.Organization):
+        case getTopicIcon(Topics.PC):
           await navigationStore.openEntry(item.uuid, { newTab: false });
           break;
 
-        case getTabTypeIcon(WindowTabType.World):
+        case getTabTypeIcon(WindowTabType.Setting):
           await navigationStore.openSetting(item.uuid, { newTab: false });
           break;
 
@@ -187,11 +183,7 @@
           await navigationStore.openSession(item.uuid, { newTab: false });
           break;
 
-        case getTabTypeIcon(WindowTabType.PC):
-          await navigationStore.openPC(item.uuid, { newTab: false });
-          break;
-
-          default:
+        default:
           throw new Error(`Unknown item icon type in HomePage.onRecentClick(): ${item.icon}`);
       }
     }

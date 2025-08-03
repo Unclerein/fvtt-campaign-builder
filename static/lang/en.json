@@ -16,9 +16,15 @@
         "date": "Session Date",
         "name": "Session Name"
       },
-      "Keybindings": {
+      "keybindings": {
         "closeTab": "Close tab",
-        "closeTabHelp": "Close the current tab"
+        "closeTabHelp": "Close the current tab",
+        "historyBack": "Move back in tab history",
+        "historyBackHelp": "Move \"back\" in the history of the current tab",
+        "historyForward": "Move forward in tab history",
+        "historyForwardHelp": "Move \"forward\" in the history of the current tab",
+        "toggleWindow": "Open/Close Main Window",
+        "toggleWindowHelp": "Open/Close the Campaign Builder window"
       },
       "autoRefreshRollTables": "Automatically refresh RollTables",
       "autoRefreshRollTablesHelp": "When enabled, generator roll tables will be automatically refreshed with new values when the module loads",
@@ -46,7 +52,11 @@
       "enableToDoList": "Enable To-do List",
       "enableToDoListHelp": "If disabled, the todo list feature will be turned off.",
       "autoRelationships": "Auto-suggest relationships",
-      "autoRelationshipsHelp": "If enabled, the editor will automatically suggest changes to relationships between entries based changes made to the description."
+      "autoRelationshipsHelp": "If enabled, the editor will automatically suggest changes to relationships between entries based changes made to the description.",
+      "showTypesInTree": "Show types in Setting tree",
+      "showTypesInTreeHelp": "When true, if the Setting directory is not grouped by type, it will show the type of each Entry in the tree.",
+      "showRolePlayingNotes": "Show role playing notes on entries",
+      "showRolePlayingNotesHelp": "When true, a separate field for role playing notes will be shown separately from the Entry description."
     },
     "applications": {
       "sessionNotes": {
@@ -106,17 +116,27 @@
           "APIToken": "API Token",
           "APITokenHint": "Output from script to deploy the backend.",
           "defaultToLong": "Default to long descriptions",
-          "defaultToLongHint": "Controls the default setting for creating a long vs short description when doing AI generation.",
+          "defaultToLongHint": "Controls the default setting for creating a long vs short description when doing AI generation.  It doesn't apply when using role-play notes.",
           "longDescriptionParagraphs": "Long description paragraphs",
           "longDescriptionParagraphsHint": "Number of paragraphs to generate for long descriptions (1-4).",
           "useGmailIdeas": "Use Gmail for Ideas",
           "useGmailIdeasHint": "When enabled, idea items will be created from the Gmail inbox",
-          "emailDefaultWorld": "Default Setting for email",
-          "emailDefaultWorldHint": "The Setting to use by default for email features (ex. emailing idea items)",
+          "emailDefaultSetting": "Default Setting for email",
+          "emailDefaultSettingHint": "The Setting to use by default for email features (ex. emailing idea items)",
           "emailDefaultCampaign": "Default Campaign for email",
           "emailDefaultCampaignHint": "The campaign to use by default for email features (ex. emailing idea items)",
-          "selectWorld": "Select a setting...",
-          "selectCampaign": "Select a campaign..."
+          "selectSetting": "Select a setting...",
+          "selectCampaign": "Select a campaign...",
+          "textModel": "Text Generation Model",
+          "textModelHint": "Select the AI model to use for text generation",
+          "imageModel": "Image Generation Model",
+          "imageModelHint": "Select the AI model to use for image generation"
+        },
+        "tabs":{
+          "backend": "Backend",
+          "models": "AI Models",
+          "content": "AI Content",
+          "email": "Email"
         }
       },
       "rollTableSettings": {
@@ -138,12 +158,14 @@
           "create": {
             "character": "Create Character",
             "location": "Create Location",
-            "organization": "Create Organization"
+            "organization": "Create Organization",
+            "pc": "Create PC"
           },
           "update": {
             "character": "Update Character",
             "location": "Update Location",
-            "organization": "Update Organization"
+            "organization": "Update Organization",
+            "pc": "Update PC"
           }
         },
         "labels": {
@@ -155,7 +177,7 @@
       }
     },
     "help": {
-      "worldGenre": "ex. \"Fantasy\" - Needed for AI generation",
+      "settingGenre": "ex. \"Fantasy\" - Needed for AI generation",
       "settingFeeling": "ex. \"Rugged and dangerous with low level of magic\" - Improves AI generation"
     },
     "labels": {
@@ -169,7 +191,7 @@
       "use": "Use",
       "useOnce": "Use once",
       "tryAgain": "Try Again",
-      "addToWorld": "Add to Setting",
+      "addToSetting": "Add to Setting",
       "prep": "Prep",
       "play": "Play",
       "ok": "OK",
@@ -181,14 +203,16 @@
       "tableHeaders": {
         "actions": "Actions",
         "name": "Name",
-        "location": "Location"
+        "location": "Location",
+        "journalName": "Journal",
+        "pageName": "Journal Page"
       },
       "locations": {
         "compendium": "Compendium",
         "world": "World"
       },
       "homePage": {
-        "createWorld": "Create Setting",
+        "createSetting": "Create Setting",
         "createCampaign": "Create Campaign",
         "createCharacter": "Create Character",
         "createLocation": "Create Location",
@@ -207,27 +231,36 @@
         "name": "Name",
         "topic": "Topic",
         "species": "Species",
-        "worldGenre": "Genre",
+        "entryDescription": "Description",
+        "entryRolePlayingNotes": "Role-playing Notes",
+        "settingGenre": "Genre",
         "settingFeeling": "Setting Feeling",
         "campaignDescription": "Campaign description",
         "campaignHouseRules": "House rules",
+        "settingDescription": "Setting description",
         "startingDescription": "Starting description",
         "description": "Description",
         "longDescriptions": "Generate long descriptions",
+        "generateText": "What to generate",
+        "generateChoice": {
+          "description": "Description",
+          "roleplay": "Role-playing Notes",
+          "both": "Both"
+        },
         "generateImage": "Generate Image",
         "addToCurrentSession": "Add to current session"
       },
       "addTopic": {
         "character": "Add Character",
-        "event": "Add Event",
         "location": "Add Location",
-        "organization": "Add Organization"
+        "organization": "Add Organization",
+        "pc": "Add PC"
       },
       "addTopicDrag": {
         "character": "(or drag/drop a character)",
-        "event": "(or drag/drop an event)",
         "location": "(or drag/drop a location)",
-        "organization": "(or drag/drop an organization)"
+        "organization": "(or drag/drop an organization)",
+        "pc": "(or drag/drop a PC)"
       },
       "entry": {
         "topic": "TopicFolder",
@@ -262,9 +295,13 @@
         "strongStart": "Strong Start",
         "strongStartHelpText": "A strong start is a short, impactful event that sets the tone for the session. Click to read more from Lazy DM."
       },
+      "journals": {
+        "addJournal": "Add Journal",
+        "dropToAdd": "(or drag/drop a journal or journal page)" 
+      },
       "campaign": {
         "addPC": "Add PC",
-        "addPCDrag": "(or drag/drop an actor)",
+        "addPCDrag": "(or drag/drop a PC)",
         "description": "Description",
         "pcs": "PCs",
         "lore": "Lore",
@@ -282,9 +319,10 @@
       "tabs": {
         "entry": {
           "description": "Description",
+          "journals": "Journals",
           "characters": "Characters",
-          "events": "Events",
           "locations": "Locations",
+          "pcs": "PCs",
           "locationChildren": "Child locations",
           "organizations": "Organizations",
           "organizationChildren": "Sub-organizations",
@@ -294,10 +332,15 @@
         },
         "campaign": {
           "description": "Description",
+          "journals": "Journals",
           "pcs": "PCs",
           "lore": "Lore",
           "toDo": "To-Do",
           "ideas": "Ideas"
+        },
+        "setting": {
+          "description": "Description",
+          "journals": "Journals"
         },
         "session": {
           "notes": "Notes",
@@ -319,11 +362,11 @@
       "search": "Search",
       "filter": "Filter",
       "characterName": "Character Name",
-      "eventName": "Event Name",
       "locationName": "Location Name",
       "organizationName": "Organization Name",
+      "pcName": "PC Name",
       "campaignName": "Campaign Name",
-      "worldName": "Setting Name",
+      "settingName": "Setting Name",
       "sessionName": "Session Name",
       "sessionDate": "Date",
       "sessionNumber": "Session Number",
@@ -335,13 +378,13 @@
     },
     "topics": {
       "character": "Character",
-      "event": "Event",
       "location": "Location",
       "organization": "Organization",
+      "pc": "PC",
       "characters": "Characters",
-      "events": "Events",
       "locations": "Locations",
-      "organizations": "Organizations"
+      "organizations": "Organizations",
+      "pcs": "PCs"
     },
     "notifications": {
       "backend": {
@@ -372,8 +415,8 @@
         "message": "Are you sure you want to delete this relationship?"
       },
       "confirmDeletePC": {
-        "title": "Delete PC?",
-        "message": "Are you sure you want to delete this PC from the campaign?  This will remove all details of the PC, including background, plot points, and any listed magic items."
+        "title": "Remove PC?",
+        "message": "Are you sure you want to remove this PC from the campaign?  This will not impact the PC entry itself."
       },
       "saveSessionNotes": {
         "title": "Save changes?",
@@ -382,6 +425,7 @@
       "createEntry": {
         "generatedName": "Generated name",
         "generatedDescription": "Generated description",
+        "generatedRoleplayNotes": "Generated role-playing notes",
         "generatePrompt": "Press generate for results",
         "generatePrompt2": "Otherwise, \"Brief Description\" will be used as the new Entry description."
       },
@@ -397,9 +441,9 @@
         "title": "Create Session",
         "sessionName": "Session Name"
       },
-      "createWorld": {
+      "createSetting": {
         "title": "Create Setting",
-        "worldName": "Setting Name"
+        "settingName": "Setting Name"
       },
       "deleteEntry": {
         "title": "Delete entry?",
@@ -433,13 +477,21 @@
           "buttonTitle": "Add relationship",
           "editButtonTitle": "Save organization"
         },
+        "pc": {
+          "title": "Add a PC",
+          "editTitle": "Edit PC",
+          "createButtonTitle": "Create PC",
+          "buttonTitle": "Add relationship",
+          "editButtonTitle": "Save PC"
+        },
         "addToSession": "Add to session"
       },
       "relatedDocuments": {
         "selectActors": "Select Actors",
         "selectItems": "Select Items",
         "addActor": "Add Actor",
-        "addItem": "Add Item"
+        "addItem": "Add Item",
+        "addJournal": "Add Journal/Page"        
       },
       "relatedEntriesManagement": {
         "title": "Manage Related Entries",
@@ -482,14 +534,16 @@
         "removeImage": "Remove Image",
         "postToChat": "Post To Chat",
         "createScene": "Create Scene",
-        "generateImage": "Generate image"
+        "generateImage": "Generate image",
+        "copyToClipboard": "Copy to clipboard",
+        "copyLinkToClipboard": "Copy link to clipboard"
       },
       "topicFolder": {
         "create": {
           "1": "Create new character",
           "2": "Create new location",
           "3": "Create new organization",
-          "4": "Create new event"
+          "4": "Create new PC"
         }
       },
       "directoryEntry": {
@@ -507,7 +561,7 @@
     },
     "tooltips": {
       "mainButton": "Launch Campaign Builder",
-      "createWorld": "Create Setting",
+      "createSetting": "Create Setting",
       "expandDirectory": "Expand directory",
       "collapseDirectory": "Collapse directory",
       "collapseAllTopics": "Collapse all",
@@ -545,12 +599,11 @@
           "1": "Character",
           "2": "Location",
           "3": "Organization",        
-          "4": "Event"
+          "4": "PC"
         },
         "2": "Campaign",
         "3": "Session",
-        "4": "PC",
-        "5": "Setting"
+        "4": "Setting"
       },
       "createEntry": {
         "name": "If left blank, a name will be generated automatically",

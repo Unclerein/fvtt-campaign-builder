@@ -23,11 +23,11 @@
           callback: onUseClick
         },
         {
-          label: localize('labels.addToWorld'),
+          label: localize('labels.addToSetting'),
           default: false,
           close: true,
           disable: !selectedOption,
-          callback: onAddToWorldClick
+          callback: onAddToSettingClick
         },
       ]"
       @cancel="onCancel"
@@ -62,7 +62,7 @@
 
 <script setup lang="ts">
   // library imports
-  import { ref, computed, PropType, watch, toRaw } from 'vue';
+  import { ref, computed, PropType, watch, toRaw, } from 'vue';
   
   // local imports
   import { localize } from '@/utils/game';
@@ -90,7 +90,7 @@
   const emit = defineEmits<{
     (e: 'update:modelValue', value: boolean): void;
     (e: 'use', value: string): void;
-    (e: 'addToWorld', value: string): void;
+    (e: 'addToSetting', value: string): void;
     (e: 'generate', value: string): void;
   }>();
 
@@ -139,19 +139,19 @@
     selectedOptionIndex.value = null;
     
     try {
-      // Get the current world and its roll table config
+      // Get the current setting and its roll table config
       const mainStore = useMainStore();
       const currentSetting = mainStore.currentSetting;
       
       if (!currentSetting) {
-        throw new Error('No current world selected');
+        throw new Error('No current setting selected');
       }
       
       const config = currentSetting.rollTableConfig;
       const tableUuid = config?.rollTables[props.generatorType];
       
       if (!tableUuid) {
-        throw new Error(`No roll table configured for ${props.generatorType} in current world`);
+        throw new Error(`No roll table configured for ${props.generatorType} in current setting`);
       }
       
       // Load the roll table
@@ -209,10 +209,10 @@
     resetDialog();
   };
 
-  const onAddToWorldClick = async () => {
+  const onAddToSettingClick = async () => {
     if (selectedOption.value) {
       await markUnusedOptionsAsUndrawn();
-      emit('addToWorld', selectedOption.value);
+      emit('addToSetting', selectedOption.value);
     }
     resetDialog();
   };

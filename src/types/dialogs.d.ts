@@ -2,6 +2,7 @@
 export type CharacterDetails = {
   name: string;
   description: string;
+  rolePlayingNotes: string;
   type: string;
   speciesId: string;
   generateImage: boolean;
@@ -10,6 +11,7 @@ export type CharacterDetails = {
 export type LocationDetails = {
   name: string;
   description: string;
+  rolePlayingNotes: string;
   type: string;
   parentId: string;
   generateImage: boolean;

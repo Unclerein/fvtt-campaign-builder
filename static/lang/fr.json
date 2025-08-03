@@ -43,10 +43,20 @@
       "enableToDoListHelp": "Si désactivé, la fonctionnalité de liste de tâches sera désactivée.",
       "autoRelationships": "Suggérer automatiquement des relations",
       "autoRelationshipsHelp": "Si activé, l'éditeur suggérera automatiquement des modifications aux relations entre les entrées en fonction des changements apportés à la description.",
-      "Keybindings": {
+      "keybindings": {
         "closeTab": "Fermer l'onglet",
-        "closeTabHelp": "Fermer l'onglet actuel"
-      }
+        "closeTabHelp": "Fermer l'onglet actuel",
+        "historyBack": "Reculer dans l'historique des onglets",
+        "historyBackHelp": "Reculer dans l'historique de l'onglet actuel",
+        "historyForward": "Avancer dans l'historique des onglets",
+        "historyForwardHelp": "Avancer dans l'historique de l'onglet actuel",
+        "toggleWindow": "Ouvrir/Fermer la fenêtre principale",
+        "toggleWindowHelp": "Ouvrir/Fermer la fenêtre du constructeur de campagne"
+      },
+      "showTypesInTree": "Afficher les types dans l'arborescence des paramètres",
+      "showTypesInTreeHelp": "Lorsque c'est vrai, si le répertoire des paramètres n'est pas groupé par type, il affichera le type de chaque entrée dans l'arborescence.",
+      "showRolePlayingNotes": "Afficher les notes de jeu de rôle sur les entrées",
+      "showRolePlayingNotesHelp": "Lorsque c'est vrai, un champ séparé pour les notes de jeu de rôle sera affiché séparément de la description de l'entrée."
     },
     "applications": {
       "sessionNotes": {
@@ -106,17 +116,27 @@
           "APIToken": "Jeton API",
           "APITokenHint": "Sortie du script pour déployer le backend.",
           "defaultToLong": "Par défaut, utiliser des descriptions longues",
-          "defaultToLongHint": "Contrôle le paramètre par défaut pour créer une description longue ou courte lors de la génération par IA.",
-          "emailDefaultWorld": "Paramètre par défaut pour l'email",
-          "emailDefaultWorldHint": "Le Paramètre à utiliser par défaut pour les fonctionnalités d'email (ex. envoi de tâches par email)",
+          "defaultToLongHint": "Contrôle le paramètre par défaut pour créer une description longue ou courte lors de la génération par IA. Cela ne s'applique pas lors de l'utilisation de notes de jeu de rôle.",
+          "emailDefaultSetting": "Paramètre par défaut pour l'email",
+          "emailDefaultSettingHint": "Le Paramètre à utiliser par défaut pour les fonctionnalités d'email (ex. envoi de tâches par email)",
           "emailDefaultCampaign": "Campagne par défaut pour l'email",
           "emailDefaultCampaignHint": "La campagne à utiliser par défaut pour les fonctionnalités d'email (ex. envoyer des éléments à faire par email)",
-          "selectWorld": "Sélectionnez un paramètre...",
+          "selectSetting": "Sélectionnez un paramètre...",
           "selectCampaign": "Sélectionnez une campagne...",
           "longDescriptionParagraphs": "Paragraphes de longue description",
           "longDescriptionParagraphsHint": "Nombre de paragraphes à générer pour les longues descriptions (1-4).",
           "useGmailIdeas": "Utiliser Gmail pour les idées",
-          "useGmailIdeasHint": "Lorsqu'il est activé, les éléments d'idée seront créés à partir de la boîte de réception Gmail"
+          "useGmailIdeasHint": "Lorsqu'il est activé, les éléments d'idée seront créés à partir de la boîte de réception Gmail",
+          "textModel": "Modèle de génération de texte",
+          "textModelHint": "Sélectionnez le modèle d'IA à utiliser pour la génération de texte",
+          "imageModel": "Modèle de génération d'image",
+          "imageModelHint": "Sélectionnez le modèle d'IA à utiliser pour la génération d'images"
+        },
+        "tabs": {
+          "backend": "Backend",
+          "models": "Modèles IA",
+          "content": "Contenu IA",
+          "email": "Email"
         }
       },
       "rollTableSettings": {
@@ -138,12 +158,14 @@
           "create": {
             "character": "Créer un personnage",
             "location": "Créer un lieu",
-            "organization": "Créer une organisation"
+            "organization": "Créer une organisation",
+            "pc": "Créer un PC"
           },
           "update": {
             "character": "Mettre à jour le personnage",
             "location": "Mettre à jour l'emplacement",
-            "organization": "Mettre à jour l'organisation"
+            "organization": "Mettre à jour l'organisation",
+            "pc": "Mettre à jour le PC"
           }
         },
         "labels": {
@@ -155,7 +177,7 @@
       }
     },
     "help": {
-      "worldGenre": "ex. \"Fantasy\" - Nécessaire pour la génération AI",
+      "settingGenre": "ex. \"Fantasy\" - Nécessaire pour la génération AI",
       "settingFeeling": "ex. \"Rugueux et dangereux avec un faible niveau de magie\" - Améliore la génération IA"
     },
     "labels": {
@@ -168,7 +190,7 @@
       "use": "Utiliser",
       "useOnce": "Utiliser une fois",
       "tryAgain": "Réessayer",
-      "addToWorld": "Ajouter au Paramètre",
+      "addToSetting": "Ajouter au Paramètre",
       "prep": "Préparer",
       "play": "Jouer",
       "fields": {
@@ -181,7 +203,7 @@
         "otherPlotPoints": "Autres Points de Scénario",
         "desiredMagicItems": "Objets Magiques Désirés",
         "species": "Espèces",
-        "worldGenre": "Genre",
+        "settingGenre": "Genre",
         "campaignDescription": "Description de la campagne, notes, idées, etc...",
         "name": "Nom",
         "longDescriptions": "Générer des descriptions longues",
@@ -192,19 +214,28 @@
         "addToCurrentSession": "Ajouter à la session en cours",
         "topic": "Sujet",
         "settingFeeling": "Ambiance du cadre",
-        "startingDescription": "Description de départ"
+        "startingDescription": "Description de départ",
+        "entryDescription": "Description",
+        "entryRolePlayingNotes": "Notes de jeu de rôle",
+        "settingDescription": "Description du paramètre",
+        "generateText": "Que générer",
+        "generateChoice": {
+          "description": "Description",
+          "roleplay": "Notes de jeu de rôle",
+          "both": "Les deux"
+        }
       },
       "addTopic": {
         "character": "Ajouter un Personnage",
-        "event": "Ajouter un Événement",
         "location": "Ajouter un Lieu",
-        "organization": "Ajouter une Organisation"
+        "organization": "Ajouter une Organisation",
+        "pc": "Ajouter un PC"
       },
       "addTopicDrag": {
         "character": "(ou glisser/déposer un personnage)",
-        "event": "(ou glisser/déposer un événement)",
         "location": "(ou glisser/déposer un lieu)",
-        "organization": "(ou glisser/déposer une organisation)"
+        "organization": "(ou glisser/déposer une organisation)",
+        "pc": "(ou glisser/déposer un PC)"
       },
       "entry": {
         "topic": "DossierSujet",
@@ -241,7 +272,7 @@
       },
       "campaign": {
         "addPC": "Ajouter un PJ",
-        "addPCDrag": "(ou glisser/déposer un acteur)",
+        "addPCDrag": "(ou glisser/déposer un PC)",
         "description": "Description",
         "pcs": "PJ",
         "lore": "Tradition",
@@ -260,21 +291,23 @@
         "entry": {
           "description": "Description",
           "characters": "Personnages",
-          "events": "Événements",
           "locations": "Lieux",
           "locationChildren": "Lieux enfants",
           "organizations": "Organisations",
           "organizationChildren": "Sous-organisations",
           "scenes": "Scènes",
           "actors": "Acteurs",
-          "sessions": "Sessions"
+          "sessions": "Sessions",
+          "journals": "Journaux",
+          "pcs": "PCs"
         },
         "campaign": {
           "description": "Description",
           "pcs": "PJs",
           "lore": "Savoir",
           "toDo": "À faire",
-          "ideas": "Idées"
+          "ideas": "Idées",
+          "journals": "Journaux"
         },
         "session": {
           "notes": "Notes",
@@ -287,12 +320,16 @@
           "monsters": "Monstres",
           "magic": "Objets Magiques",
           "todo": "À faire"
+        },
+        "setting": {
+          "description": "Description",
+          "journals": "Journaux"
         }
       },
       "noResults": "Rien ici",
       "loading": "Chargement",
       "homePage": {
-        "createWorld": "Créer un Paramètre",
+        "createSetting": "Créer un Paramètre",
         "createCampaign": "Créer une campagne",
         "createCharacter": "Créer un personnage",
         "createLocation": "Créer un lieu",
@@ -308,26 +345,32 @@
       "tableHeaders": {
         "actions": "Actions",
         "name": "Nom",
-        "location": "Emplacement"
+        "location": "Emplacement",
+        "journalName": "Journal",
+        "pageName": "Page du journal"
       },
       "locations": {
         "compendium": "Compendium",
         "world": "Monde"
+      },
+      "journals": {
+        "addJournal": "Ajouter un journal",
+        "dropToAdd": "(ou glisser/déposer un journal ou une page de journal)"
       }
     },
     "placeholders": {
       "search": "Rechercher",
       "filter": "Filtrer",
       "characterName": "Nom du Personnage",
-      "eventName": "Nom de l'Événement",
       "locationName": "Nom du Lieu",
       "organizationName": "Nom de l'Organisation",
       "campaignName": "Nom de la Campagne",
-      "worldName": "Nom du Paramètre",
+      "settingName": "Nom du Paramètre",
       "sessionName": "Nom de la Session",
       "sessionDate": "Date",
       "sessionNumber": "Numéro de Session",
-      "linkToActor": "Lien vers l'Acteur"
+      "linkToActor": "Lien vers l'Acteur",
+      "pcName": "Nom du PC"
     },
     "compendia": {
       "entry": "Entrées",
@@ -335,13 +378,13 @@
     },
     "topics": {
       "character": "Personnage",
-      "event": "Événement",
       "location": "Lieu",
       "organization": "Organisation",
       "characters": "Personnages",
-      "events": "Événements",
       "locations": "Lieux",
-      "organizations": "Organisations"
+      "organizations": "Organisations",
+      "pc": "PC",
+      "pcs": "PCs"
     },
     "dialogs": {
       "generateNameDialog": {
@@ -355,8 +398,8 @@
         "message": "Êtes-vous sûr de vouloir supprimer cette relation ?"
       },
       "confirmDeletePC": {
-        "title": "Supprimer le PJ ?",
-        "message": "Êtes-vous sûr de vouloir supprimer ce PJ de la campagne ?"
+        "title": "Supprimer le PC ?",
+        "message": "Êtes-vous sûr de vouloir supprimer ce PC de la campagne ? Cela n'affectera pas l'entrée du PC elle-même."
       },
       "createPC": {
         "title": "Créer un PJ",
@@ -370,15 +413,16 @@
         "title": "Créer une Session",
         "sessionName": "Nom de la Session"
       },
-      "createWorld": {
+      "createSetting": {
         "title": "Créer un Paramètre",
-        "worldName": "Nom du Paramètre"
+        "settingName": "Nom du Paramètre"
       },
       "createEntry": {
         "generatedName": "Nom généré",
         "generatedDescription": "Description générée",
         "generatePrompt": "Appuyez sur générer pour obtenir des résultats",
-        "generatePrompt2": "Sinon, \"Brève Description\" sera utilisée comme nouvelle description de l'entrée."
+        "generatePrompt2": "Sinon, \"Brève Description\" sera utilisée comme nouvelle description de l'entrée.",
+        "generatedRoleplayNotes": "Notes de jeu de rôle générées"
       },
       "addToDo": {
         "title": "Ajouter une tâche",
@@ -413,13 +457,21 @@
           "buttonTitle": "Ajouter une relation",
           "editButtonTitle": "Enregistrer l'organisation"
         },
-        "addToSession": "Ajouter à la session"
+        "addToSession": "Ajouter à la session",
+        "pc": {
+          "title": "Ajouter un PC",
+          "editTitle": "Modifier le PC",
+          "createButtonTitle": "Créer un PC",
+          "buttonTitle": "Ajouter une relation",
+          "editButtonTitle": "Enregistrer le PC"
+        }
       },
       "relatedDocuments": {
         "selectActors": "Sélectionner les acteurs",
         "selectItems": "Sélectionner les éléments",
         "addActor": "Ajouter un acteur",
-        "addItem": "Ajouter un élément"
+        "addItem": "Ajouter un élément",
+        "addJournal": "Ajouter un journal/page"
       },
       "relatedEntriesManagement": {
         "title": "Gérer les entrées liées",
@@ -462,14 +514,16 @@
         "postToChat": "Publier dans le Chat",
         "createScene": "Créer une scène",
         "addImage": "Ajouter une image",
-        "generateImage": "Générer une image"
+        "generateImage": "Générer une image",
+        "copyToClipboard": "Copier dans le presse-papiers",
+        "copyLinkToClipboard": "Copier le lien dans le presse-papiers"
       },
       "topicFolder": {
         "create": {
           "1": "Créer un nouveau personnage",
           "2": "Créer un nouveau lieu",
           "3": "Créer une nouvelle organisation",
-          "4": "Créer un nouvel événement"
+          "4": "Créer un nouveau PC"
         }
       },
       "directoryEntry": {
@@ -495,7 +549,7 @@
     },
     "tooltips": {
       "mainButton": "Lancer le Créateur de Campagne",
-      "createWorld": "Créer un Paramètre",
+      "createSetting": "Créer un Paramètre",
       "expandDirectory": "Développer le répertoire",
       "collapseDirectory": "Réduire le répertoire",
       "collapseAllTopics": "Réduire tout",
@@ -524,12 +578,11 @@
           "1": "Personnage",
           "2": "Lieu",
           "3": "Organisation",
-          "4": "Événement"
+          "4": "PC"
         },
         "2": "Campagne",
         "3": "Session",
-        "4": "PJ",
-        "5": "Paramètre"
+        "4": "Paramètre"
       },
       "dragActorFromEntry": "Glisser vers la scène",
       "addToASession": "Ajouter à une session",
@@ -565,6 +618,5 @@
       "changesSaved": "modifications enregistrées",
       "todoReferenceNotFound": "La référence liée pour cet élément à faire n'existe plus."
     }
-  },
-  "temp": "temp"
+  }
 }

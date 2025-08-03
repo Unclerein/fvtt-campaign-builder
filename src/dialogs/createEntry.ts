@@ -18,11 +18,13 @@ const createTitles = {
   [Topics.Character]: 'applications.createEntry.titles.create.character',
   [Topics.Location]: 'applications.createEntry.titles.create.location',
   [Topics.Organization]: 'applications.createEntry.titles.create.organization',
+  [Topics.PC]: 'applications.createEntry.titles.create.pc',
 }
 const updateTitles = {
   [Topics.Character]: 'applications.createEntry.titles.update.character',
   [Topics.Location]: 'applications.createEntry.titles.update.location',
   [Topics.Organization]: 'applications.createEntry.titles.update.organization',
+  [Topics.PC]: 'applications.createEntry.titles.update.pc',
 }
 
 class CreateEntryApplication extends VueApplicationMixin(ApplicationV2) {
@@ -68,14 +70,17 @@ class CreateEntryApplication extends VueApplicationMixin(ApplicationV2) {
   };
 }
 
+/** options.generateMode defaults to false */
 async function createEntryDialog(topic: ValidTopic, 
-  options?: { name?: string; type?: string; parentId?: string }): Promise<Entry | null> {
+  options?: { name?: string; type?: string; parentId?: string; generateMode?: boolean }): Promise<Entry | null> {
   const currentSetting = useMainStore().currentSetting;
 
   if (!currentSetting) 
     return null;
 
-  const { name, type, parentId } = options ?? {};
+  const { name, type, parentId, generateMode } = options ?? { 
+    generateMode: false 
+  };
 
   // get the valid parents
   let validParents = [] as { id: string; label: string }[];
@@ -97,6 +102,7 @@ async function createEntryDialog(topic: ValidTopic,
       validParents: validParents,
       initialParentId: parentId || '',
       initialType: type || '',
+      generateMode: generateMode,
       callback: async (details: AnyDetails | null) => {
         dialog.close(); 
 
@@ -172,6 +178,8 @@ async function updateEntryDialog(entry: Entry): Promise<Entry | null> {
 }
 
 const updatedCallback = async (entry: Entry, details: AnyDetails | null): Promise<Entry | null> => {
+  const { name, type, description, rolePlayingNotes } = details ?? {};
+  
   const currentSetting = useMainStore().currentSetting;
   
   if (!currentSetting || !details || !entry) 
@@ -183,9 +191,13 @@ const updatedCallback = async (entry: Entry, details: AnyDetails | null): Promis
   const mainStore = useMainStore();
 
   // Update the entry with the generated content
-  entry.name = details.name;
-  entry.description = details.description;
-  entry.type = details.type;
+  entry.name = name || entry.name;
+  entry.type = type || entry.type;
+
+  if (description)
+    entry.description = description;
+  if (rolePlayingNotes)
+    entry.rolePlayingNotes = rolePlayingNotes;
 
   if (entry.topic===Topics.Character) {
     entry.speciesId = (details as CharacterDetails).speciesId;

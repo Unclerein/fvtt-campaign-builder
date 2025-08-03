@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => {
   const isDevelopment = mode === 'development'; 
 
   return {
+    // base: './',
     resolve: {
       alias: [
         {
@@ -98,8 +99,10 @@ export default defineConfig(({ mode }) => {
             else
               throw 'Asset missing name';
           },        
-          entryFileNames: (assetInfo): string => 'scripts/index.js',
+          entryFileNames: 'scripts/index.js',
+          // chunkFileNames: 'scripts/[name].js',
           format: 'es',
+          // inlineDynamicImports: true,
         },
       },
     }

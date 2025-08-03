@@ -1,9 +1,11 @@
-import { useNavigationStore, useMainStore } from '@/applications/stores';
+import { useNavigationStore, useMainStore, useSettingDirectoryStore } from '@/applications/stores';
+import { Topics } from '@/types';
 
 export function registerForUpdateHooks() {
   registerForActorHooks();
   registerForItemHooks();
   registerForSceneHooks();
+  registerForJournalHooks();
 }
 
 /**
@@ -13,22 +15,34 @@ function registerForActorHooks() {
   Hooks.on('updateActor', async (actor, changes, _options, _userId) => {
     const mainStore = useMainStore();
     const navigationStore = useNavigationStore();
+    const settingDirectoryStore = useSettingDirectoryStore();
 
     // Check if the name was changed
     if (changes.name) {
-      // find all the PCs that need to be updated
-      let pcsToUpdate = new Set<string>();
-      for (let campaignId in mainStore.currentSetting?.campaigns) {
-        const pcs = (await mainStore.currentSetting.campaigns[campaignId].filterPCs(pc => pc.actorId === actor.uuid))
-          .map(pc => pc.uuid);
+      // iterate over all settings then all PCs and campaigns within the setting
+      const settings = await mainStore.getAllSettings();
+      for (const setting of settings) {
+        const folder = setting?.topicFolders[Topics.PC];
+        if (!folder)
+          continue;
 
-        pcsToUpdate = new Set([...pcsToUpdate, ...pcs]);
+        const pcs = await folder.filterEntries(e => e.actorId === actor.uuid);
+        for (const pc of pcs) {
+          pc.name = actor.name;
+          await pc.save();
+          await navigationStore.propagateNameChange(pc.uuid, actor.name);
+          await settingDirectoryStore.refreshSettingDirectoryTree([pc.uuid]);
+        }
+
+        // also need to update the details on campaigns
+        for (let campaign of Object.values(setting.campaigns)) {
+          const pc = campaign.pcs.find(pc => pc.uuid === actor.uuid);
+          if (pc) {
+            pc.name = actor.name;
+            await campaign.save();
+          }
+        }
       }
-
-      // propagate all of them through all the headers 
-      pcsToUpdate.forEach(async (uuid: string) => {
-        await navigationStore.propagateNameChange(uuid, actor.name);
-      });      
 
       // refresh the content window in case it's showing in a table
       await mainStore.refreshCurrentContent();
@@ -42,10 +56,10 @@ function registerForActorHooks() {
     const mainStore = useMainStore();
 
     // need to remove from any PCs that are linked to it
-    const worlds = await mainStore.getAllWorlds();
+    const settings = await mainStore.getAllSettings();
     
-    for (let world of worlds) {
-      await world.deleteActorFromWorld(_actor.uuid);
+    for (let setting of settings) {
+      await setting.deleteActorFromSetting(_actor.uuid);
     }
 
     // refresh the content window in case it's showing in a table
@@ -70,9 +84,9 @@ function registerForItemHooks() {
   Hooks.on('deleteItem', async (_item, _options, _userId) => {
     const mainStore = useMainStore();
 
-    const worlds = await mainStore.getAllWorlds();
-    for (let world of worlds) {
-      await world.deleteItemFromWorld(_item.uuid);
+    const settings = await mainStore.getAllSettings();
+    for (let setting of settings) {
+      await setting.deleteItemFromSetting(_item.uuid);
     }
 
     // refresh the content window in case it's showing in a table
@@ -97,9 +111,38 @@ function registerForSceneHooks() {
   Hooks.on('deleteScene', async (_scene, _options, _userId) => {
     const mainStore = useMainStore();
 
-    const worlds = await mainStore.getAllWorlds();
-    for (let world of worlds) {
-      await world.deleteSceneFromWorld(_scene.uuid);
+    const settings = await mainStore.getAllSettings();
+    for (let setting of settings) {
+      await setting.deleteSceneFromSetting(_scene.uuid);
+    }
+
+    // refresh the content window in case it's showing in a table
+    await mainStore.refreshCurrentContent();
+  });
+}
+
+/**
+ * For journals and pages, just need to delete from any lists they are in
+ */
+function registerForJournalHooks() {
+  Hooks.on('deleteJournalEntry', async (_journal, _options, _userId) => {
+    const mainStore = useMainStore();
+
+    const settings = await mainStore.getAllSettings();
+    for (let setting of settings) {
+      await setting.deleteJournalEntryFromSetting(_journal.uuid);
+    }
+
+    // refresh the content window in case it's showing in a table
+    await mainStore.refreshCurrentContent();
+  });
+
+  Hooks.on('deleteJournalEntryPage', async (_journal, _options, _userId) => {
+    const mainStore = useMainStore();
+
+    const settings = await mainStore.getAllSettings();
+    for (let setting of settings) {
+      await setting.deleteJournalEntryPageFromSetting(_journal.uuid);
     }
 
     // refresh the content window in case it's showing in a table

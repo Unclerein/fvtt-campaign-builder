@@ -1,13 +1,26 @@
 import { setupEnricher } from '@/components/Editor/helpers';
-import { ModuleSettings, SettingKey } from '@/settings';
+import { moduleId, ModuleSettings, SettingKey } from '@/settings';
 import { getCampaignBuilderApp } from '@/applications/CampaignBuilder';
-import { localize } from '@/utils/game';
+import { isClientGM, localize } from '@/utils/game';
+import { refreshAllSettingRollTables } from '@/utils/nameGenerators';
+import { Backend, ExternalAPI } from '@/classes';
+import { MigrationManager } from '@/utils/migration';
 
 export function registerForReadyHook() {
   Hooks.once('ready', ready);
 }
 
 async function ready(): Promise<void> {
+  if (!isClientGM())
+    return;
+  
+  // check the backend
+  await Backend.configure();
+  
+  // Mount the external API
+  const module = game.modules.get(moduleId);
+  module.api = new ExternalAPI();
+
   // register handlebars helpers
   await foundry.applications.handlebars.loadTemplates([]);
 
@@ -21,6 +34,15 @@ async function ready(): Promise<void> {
   }
 
   await addMainButton();
+
+  // If auto-refresh is enabled, populate tables in background
+  const autoRefresh = ModuleSettings.get(SettingKey.autoRefreshRollTables);
+  if (autoRefresh && Backend.available && Backend.api) {
+    void refreshAllSettingRollTables();
+  }
+
+  // Handle version checking and migration
+  await MigrationManager.performMigration();
 }
 
 const loadDefaultSpecies = async () => {

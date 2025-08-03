@@ -33,7 +33,7 @@ export type GeneratedDetails =
  * @returns A promise that resolves to the created entry, or undefined if creation failed
  */
 export const handleGeneratedEntry = async (details: GeneratedDetails, topicFolder: TopicFolder): Promise<Entry | undefined> => {
-  const { name, description, type } = details;
+  const { name, description, type, rolePlayingNotes } = details;
   const settingDirectoryStore = useSettingDirectoryStore();
   
   if (!topicFolder)
@@ -45,11 +45,16 @@ export const handleGeneratedEntry = async (details: GeneratedDetails, topicFolde
   if (!entry)
     throw new Error('Failed to create entry in generation.handleGeneratedEntry()');
 
-  entry.description = description;
+  // if they return empty string then don't set it
+  if (description)
+    entry.description = description;
+  if (rolePlayingNotes)
+    entry.rolePlayingNotes = details.rolePlayingNotes;
 
   // add the other things based on topic
   switch (topicFolder.topic) {
     case Topics.Character:
+    case Topics.PC:
       // For character entries
       // @ts-ignore
       entry.speciesId = details.speciesId || undefined;
@@ -66,17 +71,17 @@ export const handleGeneratedEntry = async (details: GeneratedDetails, topicFolde
   await entry.save();
   
   if (details.generateImage)
-    void generateImage(await topicFolder.getWorld(), entry);
+    void generateImage(await topicFolder.getSetting(), entry);
 
   return entry;
 };
 
 /**
- * Generates an AI image for an entry based on its type, description, and world context.
+ * Generates an AI image for an entry based on its type, description, and setting context.
  * Handles different generation logic for characters, locations, and organizations.
  * Shows user notifications during the generation process and updates the entry with the result.
  * 
- * @param forSetting - The setting containing the entry (used for genre and world feeling)
+ * @param forSetting - The setting containing the entry (used for genre and setting feeling)
  * @param entry - The entry to generate an image for
  * @returns A promise that resolves when image generation is complete
  * @throws {Error} If image generation fails or the entry type is not supported
@@ -85,6 +90,13 @@ export const generateImage = async (forSetting: Setting, entry: Entry): Promise<
   if (!entry || !forSetting || ![Topics.Character, Topics.Location, Topics.Organization].includes(entry.topic)) {
     return;
   }
+
+  if (Backend.isGeneratingImage[entry.uuid]) {
+    return;
+  }
+
+  const entryGenerated = entry.uuid;
+  Backend.isGeneratingImage[entryGenerated] = true;
 
   try {
     // Show a notification that we're generating an image
@@ -108,6 +120,8 @@ export const generateImage = async (forSetting: Setting, entry: Entry): Promise<
           species: species?.name || '',
           speciesDescription: species?.description || '',
           briefDescription: entry.description,
+          textModel: ModuleSettings.get(SettingKey.selectedTextModel),
+          imageModel: ModuleSettings.get(SettingKey.selectedImageModel),
         });
         break;
       case Topics.Location:
@@ -141,6 +155,8 @@ export const generateImage = async (forSetting: Setting, entry: Entry): Promise<
           grandparentType: grandparent?.type,
           grandparentDescription: grandparent?.description,
           briefDescription: entry.description,
+          textModel: ModuleSettings.get(SettingKey.selectedTextModel),
+          imageModel: ModuleSettings.get(SettingKey.selectedImageModel),
         };
 
         if (entry.topic === Topics.Location)  {
@@ -166,5 +182,7 @@ export const generateImage = async (forSetting: Setting, entry: Entry): Promise<
     const message = `Failed to generate image: ${(error as Error).message}.`;
     ui.notifications?.error(message);
     throw new Error(message);
-  } 
+  } finally {
+    Backend.isGeneratingImage[entryGenerated] = false;
+  }
 };

@@ -1,11 +1,11 @@
 import { 
   CampaignDoc, 
-  WorldDoc, 
+  SettingDoc, 
   TopicDoc,
-  WorldFlagKey,
+  SettingFlagKey,
   CampaignFlagKey,
   TopicFlagKey,
-  WorldFlagType,
+  SettingFlagType,
   CampaignFlagType,
   TopicFlagType, 
 } from '@/documents';
@@ -32,20 +32,20 @@ type FlagsObject<
 /** 
  * The allowed types to use flags (our types)
  */
-type ValidDocTypes = WorldDoc | CampaignDoc | TopicDoc;
+type ValidDocTypes = SettingDoc | CampaignDoc | TopicDoc;
 
 
 /**
  * Map each ValidDocType to its configuration
  */
 type FlagKey<T extends ValidDocTypes> = 
-  T extends WorldDoc ? WorldFlagKey :
+  T extends SettingDoc ? SettingFlagKey :
   T extends CampaignDoc ? CampaignFlagKey :
   T extends TopicDoc ? TopicFlagKey :
   never;
 
 type FlagType<T extends ValidDocTypes, K extends FlagKey<T>=FlagKey<T>> = 
-  T extends WorldDoc ? (K extends WorldFlagKey ? WorldFlagType<K> : never) :
+  T extends SettingDoc ? (K extends SettingFlagKey ? SettingFlagType<K> : never) :
   T extends CampaignDoc ? (K extends CampaignFlagKey ? CampaignFlagType<K> : never) :
   T extends TopicDoc ? (K extends TopicFlagKey ? TopicFlagType<K> : never) :
   never;
@@ -81,8 +81,8 @@ export class DocumentWithFlags<DocType extends ValidDocTypes> {
   }
   
   /** needed so we can unlock it if needed */
-  protected async _getWorld(): Promise<Setting> {
-    throw new Error('Failed to implement DocumentWithFlags._getWorld');
+  protected async _getSetting(): Promise<Setting> {
+    throw new Error('Failed to implement DocumentWithFlags._getSetting');
   }
 
   /** some classes - specifically Setting - don't need to be unlocked to modify flags */
@@ -140,8 +140,8 @@ export class DocumentWithFlags<DocType extends ValidDocTypes> {
     };
 
     if (this.requiresUnlock) {
-      const world = await this._getWorld();
-      await world.executeUnlocked(setFunction);
+      const setting = await this._getSetting();
+      await setting.executeUnlocked(setFunction);
     } else {
       await setFunction();
     }
@@ -158,18 +158,21 @@ export class DocumentWithFlags<DocType extends ValidDocTypes> {
 
     const unsetFunction = async () => {
       if (config.keyedByUUID && key) {
+        // @ts-ignore - not sure how to fix the typing
         await this._doc.unsetFlag(moduleId, `${flag}.${swapString(key, true)}`);
       } else if (!config.keyedByUUID && key){
+        // @ts-ignore - not sure how to fix the typing
         await this._doc.unsetFlag(moduleId, `${flag}${key ? '.' + key : ''}`);
       } else {
         // try to unset the whole flag
+        // @ts-ignore - not sure how to fix the typing
         await this._doc.unsetFlag(moduleId, flag);
       }
     }
 
     if (this.requiresUnlock) {
-      const world = await this._getWorld();
-      await world.executeUnlocked(unsetFunction);
+      const setting = await this._getSetting();
+      await setting.executeUnlocked(unsetFunction);
     } else {
       await unsetFunction();
     }
@@ -243,8 +246,8 @@ export class DocumentWithFlags<DocType extends ValidDocTypes> {
     }
     
     if (this.requiresUnlock) {
-      const world = await this._getWorld();
-      await world.executeUnlocked(setFunction);
+      const setting = await this._getSetting();
+      await setting.executeUnlocked(setFunction);
     } else {
       await setFunction();
     }

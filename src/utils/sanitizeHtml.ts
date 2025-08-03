@@ -122,7 +122,7 @@ const replaceUUID = async (uuid: string): Promise<string> => {
     return entry.name || '';
 
   // then check foundry docs
-  const doc = await fromUuid(uuid as any);
+  const doc = await foundry.utils.fromUuid(uuid as any);
   return doc?.name ?? '??';
 };
 

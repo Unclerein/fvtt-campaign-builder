@@ -16,16 +16,16 @@ export const registerDirectoryTypeEntryNodeTests = () => {
       const { describe, it, expect, beforeEach, afterEach } = context;
 
       describe('DirectoryTypeEntryNode', () => {
-        let mockWorld: Setting;
+        let mockSetting: Setting;
         let mockTopicFolder: TopicFolder;
         let mockEntry: Entry;
         let mockTypeNode: DirectoryTypeNode;
         let typeEntryNode: DirectoryTypeEntryNode;
 
         beforeEach(() => {
-          // Create a mock world
-          mockWorld = {
-            uuid: 'world-uuid',
+          // Create a mock setting
+          mockSetting = {
+            uuid: 'setting-uuid',
             expandNode: sinon.stub().resolves(),
             collapseNode: sinon.stub().resolves(),
             expandedIds: {
@@ -54,8 +54,8 @@ export const registerDirectoryTypeEntryNodeTests = () => {
             topicId: 'topic-folder-uuid'
           } as unknown as DirectoryTypeNode;
 
-          // Set the current world
-          CollapsibleNode.currentSetting = mockWorld;
+          // Set the current setting
+          CollapsibleNode.currentSetting = mockSetting;
 
           // Create a type entry node
           typeEntryNode = new DirectoryTypeEntryNode(
@@ -106,7 +106,7 @@ export const registerDirectoryTypeEntryNodeTests = () => {
             expect(result.name).to.equal(NO_NAME_STRING);
           });
 
-          it('should set expanded state based on world expandedIds', () => {
+          it('should set expanded state based on setting expandedIds', () => {
             // Call fromEntry
             const result = DirectoryTypeEntryNode.fromEntry(mockEntry, mockTypeNode);
             
@@ -114,7 +114,7 @@ export const registerDirectoryTypeEntryNodeTests = () => {
             expect(result.expanded).to.be.true;
             
             // Change expandedIds
-            mockWorld.expandedIds = {};
+            mockSetting.expandedIds = {};
             
             // Call fromEntry again
             const result2 = DirectoryTypeEntryNode.fromEntry(mockEntry, mockTypeNode);

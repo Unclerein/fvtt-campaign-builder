@@ -4,6 +4,7 @@ import { AdvancedSettingsApplication } from '@/applications/settings/AdvancedSet
 import { SpeciesListApplication } from '@/applications/settings/SpeciesListApplication';
 import { RollTableSettingsApplication } from '@/applications/settings/RollTableSettingsApplication';
 import { SessionDisplayMode, Species, TagList, GeneratorType } from '@/types';
+import type { ApiLocationGenerateImagePostRequestImageModelEnum, ApiLocationGenerateImagePostRequestTextModelEnum } from '@/apiClient';
 
 export enum SettingKey {
   // displayed in main settings window
@@ -14,22 +15,27 @@ export enum SettingKey {
   defaultAddToSession = 'defaultAddToSession', // default state of "Add to current session" checkbox
   enableToDoList = 'enableToDoList', // whether the to-do list feature is enabled
   autoRelationships = 'autoRelationships', // whether to automatically suggest relationship changes based on editor
-  
+  showTypesInTree = 'showTypesInTree', // show the type of the entry in the hierarchy tree
+  showRolePlayingNotes = 'showRolePlayingNotes',  // whether to show role playing notes on entries
+
   // internal only
   rootFolderId = 'rootFolderId',  // uuid of the root folder
   groupTreeByType = 'groupTreeByType',  // should the directory be grouped by type?
   isInPlayMode = 'isInPlayMode',  // stores the prep/play mode state
   entryTags = 'entryTags',
   sessionTags = 'sessionTags',
+  lastKnownVersion = 'lastKnownVersion',  // tracks the last known module version - used for tracking migrations
 
   // menus
   advancedSettingsMenu = 'advancedSettingsMenu',  // display the advanced setting menu
   APIURL = 'APIURL',   // URL of backend
   APIToken = 'APIToken',
+  selectedTextModel = 'selectedTextModel', // selected text generation model
+  selectedImageModel = 'selectedImageModel', // selected image generation model
   defaultToLongDescriptions = 'defaultToLongDescriptions',
   longDescriptionParagraphs = 'longDescriptionParagraphs', // number of paragraphs for long descriptions (1-4)
   useGmailToDos = 'useGmailToDos', // whether to use Gmail for todos
-  emailDefaultWorld = 'emailDefaultWorld', // default world for email features
+  emailDefaultSetting = 'emailDefaultWorld', // default setting for email features
   emailDefaultCampaign = 'emailDefaultCampaign', // default campaign for email features
 
   rollTableSettingsMenu = 'rollTableSettingsMenu',  // display the roll table settings menu
@@ -48,9 +54,13 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.groupTreeByType ? boolean :
     K extends SettingKey.isInPlayMode ? boolean :
     K extends SettingKey.autoRelationships ? boolean :
+    K extends SettingKey.showTypesInTree ? boolean :
+    K extends SettingKey.showRolePlayingNotes ? boolean :
     K extends SettingKey.advancedSettingsMenu ? never :
     K extends SettingKey.APIURL ? string :
     K extends SettingKey.APIToken ? string :
+    K extends SettingKey.selectedTextModel ? ApiLocationGenerateImagePostRequestTextModelEnum :
+    K extends SettingKey.selectedImageModel ? ApiLocationGenerateImagePostRequestImageModelEnum :
     K extends SettingKey.defaultToLongDescriptions ? boolean :
     K extends SettingKey.longDescriptionParagraphs ? number :
     K extends SettingKey.defaultAddToSession ? boolean :
@@ -63,7 +73,7 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.hideBackendWarning ? boolean :
     K extends SettingKey.enableToDoList ? boolean :
     K extends SettingKey.useGmailToDos ? boolean :
-    K extends SettingKey.emailDefaultWorld ? string :
+    K extends SettingKey.emailDefaultSetting ? string :
     K extends SettingKey.emailDefaultCampaign ? string :
     never;  
 
@@ -141,6 +151,20 @@ export class ModuleSettings {
 
   // these are client-specific and displayed in settings
   private static localDisplayParams: (Partial<ClientSettings.SettingConfig> & { settingID: SettingKey })[] = [
+    {
+      settingID: SettingKey.showTypesInTree,
+      name: 'settings.showTypesInTree',
+      hint: 'settings.showTypesInTreeHelp',
+      default: false,
+      type: Boolean,
+    },
+    {
+      settingID: SettingKey.showRolePlayingNotes,
+      name: 'settings.showRolePlayingNotes',
+      hint: 'settings.showRolePlayingNotesHelp',
+      default: true,
+      type: Boolean,
+    },
     {
       settingID: SettingKey.startCollapsed,
       name: 'settings.startCollapsed',
@@ -229,6 +253,11 @@ export class ModuleSettings {
       type: Object,
     },
     {
+      settingID: SettingKey.lastKnownVersion,
+      default: '1.0.0',
+      type: String,
+    },
+    {
       settingID: SettingKey.APIURL,
       default: '',
       requiresReload: true,
@@ -241,12 +270,22 @@ export class ModuleSettings {
       type: String,
     },
     {
+      settingID: SettingKey.selectedTextModel,
+      default: '',
+      type: String,
+    },
+    {
+      settingID: SettingKey.selectedImageModel,
+      default: '',
+      type: String,
+    },
+    {
       settingID: SettingKey.useGmailToDos,
       default: false,
       type: Boolean,
     },
     {
-      settingID: SettingKey.emailDefaultWorld,
+      settingID: SettingKey.emailDefaultSetting,
       default: '',
       type: String,
     },

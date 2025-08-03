@@ -67,7 +67,7 @@ export async function createRootFolder(name?: string): Promise<Folder> {
  */
 export async function getDefaultFolders(): Promise<{ rootFolder: Folder; setting: Setting}> {
   const rootFolder = await getRootFolder(); // will create if needed
-  const settingId = UserFlags.get(UserFlagKey.currentSetting);  // this isn't world-specific (obviously)
+  const settingId = UserFlags.get(UserFlagKey.currentSetting);  // this isn't setting-specific (obviously)
 
   // make sure we have a default and it exists
   let setting = null as Setting | null;
@@ -105,6 +105,7 @@ export function getTopicText(topic: Topics): string {
     case Topics.Character: return localize('topics.character') || ''; 
     case Topics.Location: return localize('topics.location') || ''; 
     case Topics.Organization: return localize('topics.organization') || ''; 
+    case Topics.PC: return localize('topics.pc') || ''; 
     case Topics.None:
     default: 
       throw new Error('Invalid topic in getTopicText()');
@@ -123,6 +124,7 @@ export function getTopicTextPlural(topic: Topics): string {
     case Topics.Character: return localize('topics.characters') || ''; 
     case Topics.Location: return localize('topics.locations') || ''; 
     case Topics.Organization: return localize('topics.organizations') || ''; 
+    case Topics.PC: return localize('topics.pcs') || ''; 
     case Topics.None:
     default: 
       throw new Error('Invalid topic in getTopicTextPlural()');

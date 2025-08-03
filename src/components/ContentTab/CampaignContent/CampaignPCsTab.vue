@@ -7,20 +7,28 @@
     :extra-add-text="localize('labels.campaign.addPCDrag')"
     :showFilter="false"
     :allowEdit="false"
-    :allow-drop-row="true"
+    :allow-drop-row="false"
     :delete-item-label="localize('tooltips.deleteRelationship')"
     :add-button-label="localize('labels.campaign.addPC')"
     @add-item="onAddItemClick"
     @delete-item="onDeleteItemClick"
     @drop-new="onDropNew"
-    @drop-row="onDropRow"
     @dragover="onDragover"
+  />
+
+  <RelatedItemDialog
+    v-model="addDialogShow"
+    :topic="Topics.PC"
+    :item-id="editItem.itemId"
+    :item-name="editItem.itemName"
+    :mode="RelatedItemDialogModes.Add"
+    :allow-create="false"
   />
 </template>
 
 <script setup lang="ts">
   // library imports
-  import { computed, } from 'vue';
+  import { computed, ref } from 'vue';
   import { storeToRefs } from 'pinia';
   
   // local imports
@@ -31,11 +39,12 @@
   // library components
 
   // local components
-  import BaseTable from '@/components/BaseTable/BaseTable.vue';
-
+  import BaseTable from '@/components/tables/BaseTable.vue';
+  import RelatedItemDialog from '@/components/tables/RelatedItemDialog.vue';
+  
   // types
-  import { PCDetails, } from '@/types';
-  import { PC } from '@/classes';
+  import { RelatedPCDetails, RelatedItemDialogModes, Topics } from '@/types';
+  import { Entry } from '@/classes';
   
   ////////////////////////////////
   // props
@@ -52,14 +61,21 @@
 
   ////////////////////////////////
   // data
+  const addDialogShow = ref(false);
+  const editItem = ref({
+    itemId: '',
+    itemName: '',
+    extraFields: [],
+  } as { itemId: string; itemName: string; extraFields: {field: string; header: string; value: string}[] });
 
   ////////////////////////////////
   // computed data
   type CampaignPCsGridRow = { uuid: string; name: string, actor: string };
 
   const rows = computed((): CampaignPCsGridRow[] => (
-    relatedPCRows.value.map((pc: PCDetails) => ({
+    relatedPCRows.value.map((pc: RelatedPCDetails) => ({
       uuid: pc.uuid, 
+      type: 'PC',
       name: `${pc.name} (${pc.playerName})`, 
       actor: pc.name,
     }))
@@ -78,11 +94,11 @@
   ////////////////////////////////
   // methods
   const onNameClick = async function (event: MouseEvent, uuid: string) { 
-    await navigationStore.openPC(uuid, { newTab: event.ctrlKey });
+    await navigationStore.openEntry(uuid, { newTab: event.ctrlKey });
   };
 
   const onActorClick = async function (_event: MouseEvent, uuid: string) { 
-    const pc = await PC.fromUuid(uuid);
+    const pc = await Entry.fromUuid(uuid);
 
     if (!pc)
       return;
@@ -95,10 +111,7 @@
   ////////////////////////////////
   // event handlers
   const onAddItemClick = async () => {
-    const newPC = await campaignStore.addPC();
-
-    if (newPC)
-      await navigationStore.openPC(newPC.uuid, { newTab: true });
+    addDialogShow.value = true;
   };
 
   // call mutation to remove item from relationship
@@ -123,39 +136,24 @@
       return;
 
     // make sure it's the right format
-    // if it's an actor, create a new PC and link it
-    if (data.type==='Actor' && data.uuid) {
-      const newPC = await campaignStore.addPC();
-
-      if (newPC) {
-        newPC.actorId = data.uuid;
-        await newPC.save();
-        await navigationStore.openPC(newPC.uuid, { newTab: true });
-      }
+    if (data.topic !== Topics.PC || !data.childId) {
+      return;
     }
-  };
-  
-  // handle actor dropped on existing PC
-  const onDropRow = async(event: DragEvent, uuid: string) => {
-    event.preventDefault();  
 
-    // parse the data 
-    let data = getValidatedData(event);
-    if (!data)
+    const entry = await Entry.fromUuid(data.childId);
+    if (!entry)
       return;
 
-    // make sure it's the right format
-    // if it's an actor, connect to the PC
-    if (data.type==='Actor' && data.uuid) {
-      const pc = await PC.fromUuid(uuid);
-
-      if (pc) {
-        pc.actorId = data.uuid;
-        await pc.save();
-        await mainStore.refreshCampaign();
-      }
-    }
+    const details: RelatedPCDetails = {
+      uuid: data.childId,
+      name: entry.name,
+      type: 'PC',
+      playerName: entry.playerName,
+      actorId: entry.actorId,
+    };
+    await campaignStore.addPC(details);      
   };
+  
 
   ////////////////////////////////
   // watchers

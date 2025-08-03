@@ -1,8 +1,8 @@
 ---
 title: Session Details
 prev: 
-  text: 'Campaign To-Do Tab'
-  link: '/reference/campaign-mgt/content/campaign/todos'
+  text: 'PC journals tab'
+  link: '/reference/campaign-mgt/content/pc/journals'
 next: 
   text: 'Session Notes Tab'
   link: '/reference/campaign-mgt/content/session/notes'
@@ -21,8 +21,7 @@ The Session window provides tools for preparing for and running your sessions, a
 
 ## Tabs
 Session have the following tabs where you can manage their details:
-* [Notes](./notes) - what happened during the session
-* [Start](./start) - your idea for a strong start to the session
+* [Notes](./notes) - your "strong start" and notes of what happened during the session
 * [Lore](./lore) - the secrets and clues available to disburse during the session
 * [Vignettes](./vignettes) - the potential scenes that might come up
 * [Locations](./locations) - the fantastic locations where the scenes might happen

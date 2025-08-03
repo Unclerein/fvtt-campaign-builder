@@ -9,7 +9,6 @@
       <div class="add-related-items-content flexcol">
         <div v-if="selectItems.length > 0">
           <TypeAhead 
-            v-if="isEitherAddMode"
             ref="nameSelectRef"
             :initial-value="props.itemId || ''"
             :initial-list="selectItems" 
@@ -50,7 +49,7 @@
 
 <script setup lang="ts">
   // library imports
-  import { ref, computed, PropType, watch, nextTick } from 'vue';
+  import { ref, computed, PropType, watch, nextTick, } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
@@ -113,6 +112,10 @@
       required: false,
       default: [],
     },
+    allowCreate: {
+      type: Boolean,
+      default: true,
+    },
   });
 
   ////////////////////////////////
@@ -157,6 +160,13 @@
       buttonTitle: localize('dialogs.relatedItems.organization.buttonTitle'),
       // editButtonTitle: localize('dialogs.relatedItems.organization.editButtonTitle'),
     },
+    [Topics.PC]: {
+      title: localize('dialogs.relatedItems.pc.title'),
+      // editTitle: localize('dialogs.relatedItems.pc.editTitle'),
+      createButtonTitle: localize('dialogs.relatedItems.pc.createButtonTitle'),
+      buttonTitle: localize('dialogs.relatedItems.pc.buttonTitle'),
+      // editButtonTitle: localize('dialogs.relatedItems.pc.editButtonTitle'),
+    },
   } as Record<ValidTopic, { 
     title: string; 
     // editTitle: string; 
@@ -171,7 +181,7 @@
     // if (props.mode === RelatedItemDialogModes.Edit) {
     //   return `${topicDetails[props.topic].editTitle}: ${props.itemName}`;
     // } else {
-      return topicDetails[props.topic].title;
+      return (props.topic && topicDetails[props.topic].title) || '';
     // }
   });
 
@@ -187,8 +197,6 @@
   });
 
   // add mode or session mode
-  const isEitherAddMode = ref<true>(true);  // computed(()=> ([RelatedItemDialogModes.Session, RelatedItemDialogModes.Add].includes(props.mode))); 
-
   const createButtonLabel = computed(() => {
     return topicDetails[props.topic].createButtonTitle;
   });
@@ -207,7 +215,7 @@
       callback: () => { show.value=false;}
     });
 
-    if (isEitherAddMode.value) {
+    if (props.allowCreate) {
       buttons.push({
         label: createButtonLabel.value,
         default: false,
@@ -219,7 +227,7 @@
 
     buttons.push({
       label: actionButtonLabel.value,
-      disable: isEitherAddMode.value && !isAddFormValid.value,
+      disable: props.allowCreate && !isAddFormValid.value,
       default: true,
       close: true,
       callback: onActionClick,
@@ -295,7 +303,7 @@
   
   const onCreateClick = async function() {
     // the simplest way to do this is do the create box first and then just pretend like we added it
-    const newEntry = await FCBDialog.createEntryDialog(props.topic);
+    const newEntry = await FCBDialog.createEntryDialog(props.topic, { generateMode: true } );
 
     if (newEntry) {
       entryToAdd.value = newEntry.uuid;
@@ -329,27 +337,25 @@
       
         selectItems.value = (await Entry.getEntriesForTopic(currentSetting.value.topicFolders[props.topic] as TopicFolder, currentEntry.value || undefined)).map(mapEntryToOption);
       
-      if (isEitherAddMode.value) {
+      extraFields.value = currentSession.value ? [] : relationshipStore.extraFields[currentEntryTopic.value][props.topic];
+      extraFieldValuesObj.value = {};
+      if (props.itemId)
+        entryToAdd.value = props.itemId;  // assign starting value, if any
 
-        extraFields.value = currentSession.value ? [] : relationshipStore.extraFields[currentEntryTopic.value][props.topic];
-        extraFieldValuesObj.value = {};
-        if (props.itemId)
-          entryToAdd.value = props.itemId;  // assign starting value, if any
+      // focus on the input
+      await nextTick();
+      // @ts-ignore - not sure why $el isn't found
+      nameSelectRef.value?.$el?.querySelector('input')?.focus();
+      // } else {
+      //   // Edit mode initialization
+      //   extraFields.value = relationshipStore.extraFields[currentEntryTopic.value][props.topic];
 
-        // focus on the input
-        await nextTick();
-        // @ts-ignore - not sure why $el isn't found
-        nameSelectRef.value?.$el?.querySelector('input')?.focus();
-      } else {
-        // Edit mode initialization
-        extraFields.value = relationshipStore.extraFields[currentEntryTopic.value][props.topic];
-
-        // map the prop to the obj
-        extraFieldValuesObj.value = props.extraFieldValues.reduce((acc, extraFieldValue)=> ({
-          ...acc,
-          [extraFieldValue.field]: extraFieldValue.value
-        }), {} as Record<string, string>);
-      }
+      //   // map the prop to the obj
+      //   extraFieldValuesObj.value = props.extraFieldValues.reduce((acc, extraFieldValue)=> ({
+      //     ...acc,
+      //     [extraFieldValue.field]: extraFieldValue.value
+      //   }), {} as Record<string, string>);
+      // }
     }
   });
 

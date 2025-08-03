@@ -1,5 +1,5 @@
 import MiniSearch from 'minisearch';
-import { Entry, PC, Session, Setting } from '@/classes';
+import { Entry, Session, Setting } from '@/classes';
 import { Topics, ValidTopic, } from '@/types';
 import { ModuleSettings, SettingKey } from '@/settings';
 import { SessionLore, SessionRelatedItem, SessionVignette } from '@/documents';
@@ -11,8 +11,8 @@ import { SessionLore, SessionRelatedItem, SessionVignette } from '@/documents';
 export interface SearchableItem {
   /** Unique identifier for the item */
   uuid: string;
-  /** Type of result: entry, session, or PC */
-  resultType: 'entry' | 'session' | 'pc';
+  /** Type of result: entry, session */
+  resultType: 'entry' | 'session';
   /** Display name of the item */
   name: string;
   /** Comma-separated list of tags associated with the item */
@@ -39,8 +39,8 @@ export interface FCBSearchResult {
   uuid: string;
   /** Display name of the result */
   name: string;
-  /** Type of result: entry, session, or PC */
-  resultType: 'entry' | 'session' | 'pc';
+  /** Type of result: entry, session */
+  resultType: 'entry' | 'session';
   /** Topic/category the result belongs to */
   topic: string;
 
@@ -126,8 +126,8 @@ class SearchService {
     if (!this._searchIndex)
       throw new Error('Unable to create _searchIndex in SearchService.buildIndex()');
 
-    // Process each topic
-    const topics = [Topics.Character, Topics.Location, Topics.Organization] as ValidTopic[];
+    // Process each topic 
+    const topics = [Topics.Character, Topics.Location, Topics.Organization, Topics.PC] as ValidTopic[];
     
     // Collect all items first
     const items = [] as SearchableItem[];
@@ -142,12 +142,11 @@ class SearchService {
       
       for (const entry of entries) {
         // Create a searchable item for each entry
-        const item = await this.createSearchableItemFromEntry(entry, setting);
-        items.push(item);
+        items.push(await this.createSearchableItemFromEntry(entry, setting));
       }
     }
 
-    // add all the sessions & PCs, by campaign
+    // add all the sessions, by campaign
     for (const campaignId in setting.campaigns) {
       const campaign = setting.campaigns[campaignId];
       for (const session of campaign.sessions) { 
@@ -155,15 +154,11 @@ class SearchService {
         const item = await this.createSearchableItemFromSession(session);
         items.push(item);
       }
-
-      for (const pc of (await campaign.getPCs())) {
-        const item = await this.createSearchableItemFromPC(pc);
-        items.push(item);
-      }
     }
 
     
     // Add all items to the index at once for better performance
+    this._searchIndex.removeAll();      
     this._searchIndex.addAll(items);
   }
 
@@ -187,6 +182,13 @@ class SearchService {
     type = entry.type;
     topic = Topics[entry.topic];
 
+    // pcs have some extra fields - we put them in snippets
+    if (entry.topic===Topics.PC) {
+      snippets.push(entry.playerName ?? '');
+      snippets.push(entry.background ?? '');
+      snippets.push(entry.plotPoints ?? '');
+      snippets.push(entry.magicItems ?? '');
+    }
 
     // Add relationship snippets
     const relationships = entry.relationships;
@@ -414,30 +416,6 @@ class SearchService {
   }
 
   /**
-   * Adds or updates an entry in the search index.
-   * If the item already exists, it will be replaced with the updated version.
-   * 
-   * @param pc - The PC to add or update
-   * @returns A promise that resolves when the operation is complete
-   */
-  public async addOrUpdatePCIndex(pc: PC): Promise<void> {
-    if (!this._initialized || !this._searchIndex) {
-      await this.initIndex();
-    }
-    
-    if (!this._searchIndex)
-      throw new Error('Couldn\'t create search index in search.addOrUpdatePCIndex()');
-
-    // Create and add the new searchable item
-    // @ts-ignore - can't get item to type right, but this should always work
-    const searchableItem = await this.createSearchableItemFromPC(pc);
-    if (this._searchIndex.has(searchableItem.uuid))
-      this._searchIndex.replace(searchableItem);
-    else
-      this._searchIndex.add(searchableItem);
-  }
-
-  /**
    * Removes an item from the search index by UUID.
    * Safe to call even if the item doesn't exist in the index.
    * 
@@ -453,17 +431,23 @@ class SearchService {
       this._searchIndex.discard(uuid);
   }
 
-  /**
-   * Retrieves all entities from the search index, filtering out duplicates by name.
-   * When multiple entities have the same name, entries are preferred over sessions.
+/**
+   * Retrieves all entities from the search index, filtering out duplicates by name if unique is true.
+   * 
    * Used for entity linking and autocomplete functionality.
    * 
+   * @param unique - If true, only "unique" entities are returned. That is names that are unique across all 
+   * entries, pcs, sessions.  Why is it like this?  This is intended to be used for automatically 
+   * linking entities in editors. If we can't distinguish which one it is, we don't want to assume - instead the 
+   * user should insert the link manually.
    * @returns Array of unique entities with their basic information
    */
-  public getAllEntities(): {name: string, uuid: string, resultType: 'entry' | 'session' | 'pc'}[] {
+  public getAllEntities(unique = false): {name: string, uuid: string, resultType: 'entry' | 'session' | 'pc'}[] {
     if (!this._initialized || !this._searchIndex) {
       return [];
     }
+
+    const retval: {name: string, uuid: string, resultType: 'entry' | 'session' | 'pc'}[] = [];
 
     // Get all documents from the search index using MiniSearch wildcard
     const MiniSearch = this._searchIndex.constructor as any;
@@ -473,7 +457,6 @@ class SearchService {
 
     // Track names to detect duplicates
     const nameCount = new Map<string, number>();
-    const entityMap = new Map<string, {name: string, uuid: string, resultType: 'entry' | 'session' | 'pc'}>();
     
     // First pass: count occurrences of each name
     for (const doc of allDocuments) {
@@ -481,27 +464,22 @@ class SearchService {
       nameCount.set(doc.name, count + 1);
     }
     
-    // Second pass: only include entities with unique names
+    // Second pass: only include entities with unique names if unique is true
     for (const doc of allDocuments) {
       // Skip if there are multiple entities with the same name
-      if (nameCount.get(doc.name)! > 1) {
+      if (unique && nameCount.get(doc.name)! > 1) {
         continue;
       }
       
-      const existing = entityMap.get(doc.name);
-      
-      // Add if not exists, or replace if current is an entry and existing is not
-      if (!existing || (doc.resultType === 'entry' && existing.resultType !== 'entry')) {
-        entityMap.set(doc.name, {
-          uuid: doc.id,
-          name: doc.name,
-          resultType: doc.resultType,
-        });
-      }
+      // Otherwise, add it
+      retval.push({
+        uuid: doc.id,
+        name: doc.name,
+        resultType: doc.resultType,
+      });
     }
 
-    // Convert Map values to array
-    return Array.from(entityMap.values());
+    return retval;
   }
 }
 

@@ -1,27 +1,27 @@
 import { moduleId, UserFlags, UserFlagKey, ModuleSettings, SettingKey } from '@/settings'; 
-import { WorldDoc, WorldFlagKey, worldFlagSettings } from '@/documents';
-import { Hierarchy, Topics, ValidTopic, WorldGeneratorConfig } from '@/types';
+import { SettingDoc, SettingFlagKey, settingFlagSettings } from '@/documents';
+import { Hierarchy, Topics, ValidTopic, SettingGeneratorConfig, RelatedJournal } from '@/types';
 import { getRootFolder,  } from '@/compendia';
 import { FCBDialog } from '@/dialogs';
 import { DocumentWithFlags, Campaign, TopicFolder } from '@/classes';
 import { cleanTrees } from '@/utils/hierarchy';
 import { localize } from '@/utils/game';
-import { initializeWorldRollTables, refreshWorldRollTables } from '@/utils/nameGenerators';
+import { initializeSettingRollTables, refreshSettingRollTables } from '@/utils/nameGenerators';
 import { Backend } from '@/classes';
 import { ApiNamePreviewPost200ResponsePreviewInner } from '@/apiClient';
 
-type WBWorldCompendium = CompendiumCollection<CompendiumCollection.Metadata>;
+type SettingCompendium = CompendiumCollection<'JournalEntry'>;
 
 // represents a campaign setting
-export class Setting extends DocumentWithFlags<WorldDoc>{
+export class Setting extends DocumentWithFlags<SettingDoc>{
   static override _documentName = 'Folder';
-  static override _flagSettings = worldFlagSettings;
+  static override _flagSettings = settingFlagSettings;
 
-  private _compendium: WBWorldCompendium;   // this is the main compendium
+  private _compendium: SettingCompendium;   // this is the main compendium
 
   // JournalEntries
   public campaigns: Record<string, Campaign>;   // Campaigns keyed by uuid 
-  public topicFolders: Record<ValidTopic, TopicFolder>;  // we load them when we load the world (using validate()), so we assume it's never empty
+  public topicFolders: Record<ValidTopic, TopicFolder>;  // we load them when we load the setting (using validate()), so we assume it's never empty
 
   // saved on Folder
   private _name;
@@ -31,38 +31,40 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
   private _expandedIds: Record<string, boolean | null>;  // ids of nodes that are expanded in the tree (could be compendia or entries or subentries) - handles topic tree
   private _hierarchies: Record<string, Hierarchy>;  // the full tree hierarchy or null for topics without hierarchy
   private _topicIds: Record<ValidTopic, string> | null;  // the uuid for each topic
-  private _compendiumId: string;  // the uuid for the world compendium 
+  private _compendiumId: string;  // the uuid for the setting compendium 
   private _description: string;
   private _genre: string;
   private _settingFeeling: string;
   private _img: string;
   private _nameStyles: number[];
-  private _rollTableConfig: WorldGeneratorConfig | null;
+  private _rollTableConfig: SettingGeneratorConfig | null;
   private _nameStyleExamples: { genre: string; settingFeeling: string; examples: ApiNamePreviewPost200ResponsePreviewInner[] } | null;
+  private _journals: RelatedJournal[];
 
   /**
    * Note: you should always call validate() after creating a new Setting - this ensures the 
    * compendium exists and is properly used
-   * @param {WorldDoc} worldDoc - The Setting Foundry document
+   * @param {SettingDoc} settingDoc - The Setting Foundry document
    */
-  constructor(worldDoc: WorldDoc) {
-    super(worldDoc, WorldFlagKey.isWorld);
+  constructor(settingDoc: SettingDoc) {
+    super(settingDoc, SettingFlagKey.isSetting);
 
-    this._campaignNames = this.getFlag(WorldFlagKey.campaignNames);
-    this._expandedIds = this.getFlag(WorldFlagKey.expandedIds);
-    this._hierarchies = this.getFlag(WorldFlagKey.hierarchies);
-    this._topicIds = this.getFlag(WorldFlagKey.topicIds);
-    this._compendiumId = this.getFlag(WorldFlagKey.compendiumId);
-    this._description = this.getFlag(WorldFlagKey.description) || '';
-    this._genre = this.getFlag(WorldFlagKey.genre) || '';
-    this._settingFeeling = this.getFlag(WorldFlagKey.settingFeeling) || '';
-    this._img = this.getFlag(WorldFlagKey.img) || '';
-    this._nameStyles = this.getFlag(WorldFlagKey.nameStyles) || [0];
-    this._rollTableConfig = this.getFlag(WorldFlagKey.rollTableConfig);
-    this._nameStyleExamples = this.getFlag(WorldFlagKey.nameStyleExamples);
+    this._campaignNames = this.getFlag(SettingFlagKey.campaignNames);
+    this._expandedIds = this.getFlag(SettingFlagKey.expandedIds);
+    this._hierarchies = this.getFlag(SettingFlagKey.hierarchies);
+    this._topicIds = this.getFlag(SettingFlagKey.topicIds);
+    this._compendiumId = this.getFlag(SettingFlagKey.compendiumId);
+    this._description = this.getFlag(SettingFlagKey.description) || '';
+    this._genre = this.getFlag(SettingFlagKey.genre) || '';
+    this._settingFeeling = this.getFlag(SettingFlagKey.settingFeeling) || '';
+    this._img = this.getFlag(SettingFlagKey.img) || '';
+    this._nameStyles = this.getFlag(SettingFlagKey.nameStyles) || [0];
+    this._rollTableConfig = this.getFlag(SettingFlagKey.rollTableConfig);
+    this._nameStyleExamples = this.getFlag(SettingFlagKey.nameStyleExamples);
+    this._journals = this.getFlag(SettingFlagKey.journals) || [];
     this._name = this._doc.name;
     if (this._compendiumId) {
-      const compendium = game.packs?.get(this._compendiumId);
+      const compendium = game.packs?.get(this._compendiumId) as SettingCompendium;
       
       if (!compendium) {
         // it didn't exist, so we pretend we don't have one - this will get cleaned up in validate()
@@ -76,7 +78,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
     this.topicFolders = {} as Record<ValidTopic, TopicFolder>;
   }
 
-  override async _getWorld(): Promise<Setting> {
+  override async _getSetting(): Promise<Setting> {
     return this;
   };
 
@@ -85,25 +87,25 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
     return false;
   };
 
-  static async fromUuid(worldId: string, options?: Record<string, any>): Promise<Setting | null> {
-    const worldDoc = await fromUuid<WorldDoc>(worldId, options);
+  static async fromUuid(settingId: string, options?: Record<string, any>): Promise<Setting | null> {
+    const settingDoc = await fromUuid<SettingDoc>(settingId, options);
 
-    if (!worldDoc)
+    if (!settingDoc)
       return null;
     else {
-      const newWorld = new Setting(worldDoc);
-      await newWorld.validate();  // will also load topic folders
-      return newWorld;
+      const newSetting = new Setting(settingDoc);
+      await newSetting.validate();  // will also load topic folders
+      return newSetting;
     }
   }
 
   // get direct access to the document (ex. to hook to foundry's editor)
-  get raw(): WorldDoc {
+  get raw(): SettingDoc {
     return this._doc;
   }
 
   /**
-  * Gets the Topics associated with the world. If the topics are already loaded, the promise resolves
+  * Gets the Topics associated with the setting. If the topics are already loaded, the promise resolves
   * to the existing ones; otherwise, it loads the topics and then resolves to the set.
   * @returns {Promise<Record<ValidTopic, TopicFolder>>} A promise to the topics
   */
@@ -118,7 +120,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
         if (!topicObj)
           throw new Error('Invalid topic uuid in Setting.loadTopics()');
 
-        topicObj.world = this;
+        topicObj.setting = this;
         this.topicFolders[topic] = topicObj;
       }
     }
@@ -128,7 +130,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
   
 
   /**
-  * Gets the Campaigns associated with the world. If the campaigns are already loaded, the promise resolves
+  * Gets the Campaigns associated with the setting. If the campaigns are already loaded, the promise resolves
   * to the existing ones; otherwise, it loads the campaigns and then resolves to the set.
   * @returns {Promise<Record<string, Campaign>>} A promise to the campaigns 
   */
@@ -153,7 +155,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
 
         await this.save();
       } else {
-        campaignObj.world = this;
+        campaignObj.setting = this;
         this.campaigns[id] = campaignObj;
       }
     }
@@ -169,7 +171,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
   }
 
   /** 
-   * The world name 
+   * The setting name 
    */
   public get name(): string {
     return this._name;
@@ -185,16 +187,16 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
 
   
   /** 
-   * The uuid for the world compendium   
+   * The uuid for the setting compendium   
    */
   public get compendiumId(): string {
     return this._compendiumId;
   }
 
   /** 
-   * The actual compendium (used to be called worldCompendium)
+   * The actual compendium 
    */
-  public get compendium(): WBWorldCompendium {
+  public get compendium(): SettingCompendium {
     return this._compendium;
   }
 
@@ -233,7 +235,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
 
   set description(value: string) {
     this._description = value;
-    this.updateCumulative(WorldFlagKey.description, value);
+    this.updateCumulative(SettingFlagKey.description, value);
   }
 
   public get genre(): string {
@@ -242,7 +244,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
 
   public set genre(value: string) {
     this._genre = value;
-    this.updateCumulative(WorldFlagKey.genre, value);
+    this.updateCumulative(SettingFlagKey.genre, value);
   }
 
   public get settingFeeling(): string {
@@ -251,7 +253,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
 
   public set settingFeeling(value: string) {
     this._settingFeeling = value;
-    this.updateCumulative(WorldFlagKey.settingFeeling, value);
+    this.updateCumulative(SettingFlagKey.settingFeeling, value);
   }
 
   public get img(): string {
@@ -260,7 +262,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
 
   public set img(value: string) {
     this._img = value;
-    this.updateCumulative(WorldFlagKey.img, value);
+    this.updateCumulative(SettingFlagKey.img, value);
   }
   
   public get nameStyles(): readonly number[] {
@@ -269,16 +271,16 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
 
   public set nameStyles(value: number[] | readonly number[] ) {
     this._nameStyles = value.slice();     // we clone it so it can't be edited outside
-    this.updateCumulative(WorldFlagKey.nameStyles, this._nameStyles);
+    this.updateCumulative(SettingFlagKey.nameStyles, this._nameStyles);
   }
 
-  public get rollTableConfig(): WorldGeneratorConfig | null {
+  public get rollTableConfig(): SettingGeneratorConfig | null {
     return this._rollTableConfig;
   }
 
-  public set rollTableConfig(value: WorldGeneratorConfig | null) {
+  public set rollTableConfig(value: SettingGeneratorConfig | null) {
     this._rollTableConfig = value;
-    this.updateCumulative(WorldFlagKey.rollTableConfig, value);
+    this.updateCumulative(SettingFlagKey.rollTableConfig, value);
   }
   
 
@@ -305,7 +307,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
    */
   public set topicIds(value: Record<ValidTopic, string>) {
     this._topicIds = value;
-    this.updateCumulative(WorldFlagKey.topicIds, value);
+    this.updateCumulative(SettingFlagKey.topicIds, value);
   }
 
   /**
@@ -313,7 +315,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
    */
   public set campaignNames(value: Record<string, string>) {
     this._campaignNames = value;
-    this.updateCumulative(WorldFlagKey.campaignNames, value);
+    this.updateCumulative(SettingFlagKey.campaignNames, value);
   }
 
   /**
@@ -322,7 +324,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
    */
   public set expandedIds(value: Record<string, boolean | null>) {
     this._expandedIds = value;
-    this.updateCumulative(WorldFlagKey.expandedIds, value);
+    this.updateCumulative(SettingFlagKey.expandedIds, value);
   }
 
   public async collapseNode(id: string): Promise<void> {
@@ -330,7 +332,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
     if (expandedIds[id])
       delete expandedIds[id];
     this._expandedIds = expandedIds;
-    await this.unsetFlag(WorldFlagKey.expandedIds, id);
+    await this.unsetFlag(SettingFlagKey.expandedIds, id);
   }
 
   public async expandNode(id: string): Promise<void> {
@@ -346,18 +348,18 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
    */
   public set hierarchies(value: Record<string, Hierarchy>) {
     this._hierarchies = value;
-    this.updateCumulative(WorldFlagKey.hierarchies, value);
+    this.updateCumulative(SettingFlagKey.hierarchies, value);
   }
 
   /**
-   * Updates a world in the database.  Handles locking.
+   * Updates a setting in the database.  Handles locking.
    * 
    * @returns {Promise<Setting | null>} The updated Setting, or null if the update failed.
    */
   public async save(): Promise<Setting | null> {
     let success = false;
 
-    // note: no unlock needed for changes to the world because it's not in
+    // note: no unlock needed for changes to the setting because it's not in
     //    a compendium
 
     const updateData = this._cumulativeUpdate;
@@ -379,9 +381,9 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
   }  
 
   /**
-   * Create a new world.
-   * @param {boolean} [makeCurrent=false] If true, sets the new world as the current world.
-   * @returns The new world, or null if the user cancelled the dialog.
+   * Create a new setting.
+   * @param {boolean} [makeCurrent=false] If true, sets the new setting as the current setting.
+   * @returns The new setting, or null if the user cancelled the dialog.
    */
   public static async create(makeCurrent = false): Promise<Setting | null> {
     const rootFolder = await getRootFolder(); // will create if needed
@@ -390,33 +392,42 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
     let name;
 
     do {
-      name = await FCBDialog.inputDialog(localize('dialogs.createWorld.title'), `${localize('dialogs.createWorld.worldName')}:`); 
+      name = await FCBDialog.inputDialog(localize('dialogs.createSetting.title'), `${localize('dialogs.createSetting.settingName')}:`); 
       
       if (name) {
         // create the setting folder
-        const worldDocs = await Folder.createDocuments([{
+        const settingDocs = await Folder.createDocuments([{
           name,
           type: 'Compendium',
           folder: rootFolder.id,
           sorting: 'a',
-        }]) as unknown as WorldDoc[];
+        }]) as unknown as SettingDoc[];
     
-        if (!worldDocs)
-          throw new Error('Couldn\'t create new folder for world');
+        if (!settingDocs)
+          throw new Error('Couldn\'t create new folder for Setting');
 
-        const worldDoc = worldDocs[0];
+        const settingDoc = settingDocs[0];
 
-        const newWorld = new Setting(worldDoc);
-        await newWorld.setup();
+        const newSetting = new Setting(settingDoc);
+        await newSetting.setup();
 
-        // set as the current world
+        // set as the current setting
         if (makeCurrent) {
-          await UserFlags.set(UserFlagKey.currentSetting, newWorld.uuid);
+          await UserFlags.set(UserFlagKey.currentSetting, newSetting.uuid);
         }
 
-        await newWorld.validate();
+        await newSetting.validate();
 
-        return newWorld;
+        // create the rolltables
+        await initializeSettingRollTables(newSetting);
+
+        // If auto-refresh is enabled, populate tables in background
+        const autoRefresh = ModuleSettings.get(SettingKey.autoRefreshRollTables);
+        if (autoRefresh && Backend.available && Backend.api) {
+          void refreshSettingRollTables(newSetting);
+        }
+
+        return newSetting;
       }
     } while (name==='');  // if hit ok, must have a value
 
@@ -428,7 +439,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
   // also loads all the topics
   public async validate() {
     if (this._compendiumId) {
-      const compendium = game.packs?.get(this._compendiumId);
+      const compendium = game.packs?.get(this._compendiumId) as SettingCompendium;
       if (!compendium) 
         throw new Error('Invalid compendiumId in Setting.validate()');
       
@@ -444,25 +455,18 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
     if (!this._compendium)
       throw new Error('Failed to create compendium in Setting.validate()');
 
-    // load the journal entries... we populate any missing topics, but can't reconstruct
-    //    campaigns
+    // load the topics and campaigns
     await this.populateTopics();
     await this.loadCampaigns();
     
-    // Initialize roll tables for this world if they don't exist - but don't wait for the generation
-    await initializeWorldRollTables(this);
-      
-    // If auto-refresh is enabled, populate tables in background
-    const autoRefresh = ModuleSettings.get(SettingKey.autoRefreshRollTables);
-    if (autoRefresh && Backend.available && Backend.api) {
-      void refreshWorldRollTables(this);
-    }
+    // Initialize roll tables for this setting if they don't exist - but don't wait for the generation
+    await initializeSettingRollTables(this);      
   }
 
   private async populateTopics() {
     let updated = false;
 
-    const topics = [Topics.Character, Topics.Location, Topics.Organization] as ValidTopic[];
+    const topics = [Topics.Character, Topics.Location, Topics.Organization, Topics.PC] as ValidTopic[];
     let topicIds = this._topicIds;
     const topicObjects = {} as Record<ValidTopic, TopicFolder>;
 
@@ -479,7 +483,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
         topicFolder = await TopicFolder.fromUuid(topicIds[t]);
 
         if (topicFolder)
-          topicFolder.world = this;
+          topicFolder.setting = this;
       }
 
       if (!topicFolder) {
@@ -489,7 +493,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
         if (!topicFolder)
           throw new Error('Couldn\'t create topicFolder in Setting.validate()');
 
-        topicFolder.world = this;
+        topicFolder.setting = this;
         topicIds[t] = topicFolder.uuid;
         topicObjects[t] = topicFolder;
 
@@ -516,24 +520,24 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
       type: 'JournalEntry' as const, 
     };
 
-    const pack = await CompendiumCollection.createCompendium(metadata) as WBWorldCompendium;
+    const pack = await foundry.documents.collections.CompendiumCollection.createCompendium(metadata) as SettingCompendium;
     await pack.setFolder(this._doc as Folder);
     await pack.configure({ locked:true });
 
     this._compendium = pack;
     this._compendiumId = pack.metadata.id;
-    await this.setFlag(WorldFlagKey.compendiumId, this._compendiumId);
+    await this.setFlag(SettingFlagKey.compendiumId, this._compendiumId);
   }
   
   /**
-   * Unlock the world compendium to allow edits
+   * Unlock the setting compendium to allow edits
    */
   public async unlock() {
     await this._compendium.configure({locked:false});
   }
 
   /**
-   * Lock the world compendium to stop edits
+   * Lock the setting compendium to stop edits
    */
   public async lock() {
     await this._compendium.configure({locked:true});
@@ -599,12 +603,12 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
   
   public async collapseCampaignDirectory() {
     // we just unset the entire expandedIds flag
-    await this.unsetFlag(WorldFlagKey.expandedIds);
+    await this.unsetFlag(SettingFlagKey.expandedIds);
   }
 
   public async collapseSettingDirectory() {
     // we just unset the entire expandedIds flag
-    await this.unsetFlag(WorldFlagKey.expandedIds);
+    await this.unsetFlag(SettingFlagKey.expandedIds);
 
     // then need to reset it
     this.expandedIds = {};
@@ -612,11 +616,11 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
   }
 
   /**
-   * Remove a campaign from the world metadata.  NOTE: WORLD MUST BE UNLOCKED FIRST
+   * Remove a campaign from the setting metadata.  NOTE: SETTING MUST BE UNLOCKED FIRST
    * @param {string} campaignId - the uuid of the campaign to remove
    */
   // TODO: should delete all the sessions from expanded entries, too
-  public async deleteCampaignFromWorld(campaignId: string) {
+  public async deleteCampaignFromSetting(campaignId: string) {
     const campaigns = this.campaigns;
     if (campaigns[campaignId]) {
       delete campaigns[campaignId];
@@ -638,9 +642,9 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
     await this.save();
   }  
 
-  // remove an entry from the world metadata
-  // note: WORLD MUST BE UNLOCKED FIRST
-  public async deleteEntryFromWorld(topicFolder: TopicFolder, entryId: string) {
+  // remove an entry from the setting metadata
+  // note: SETTING MUST BE UNLOCKED FIRST
+  public async deleteEntryFromSetting(topicFolder: TopicFolder, entryId: string) {
     const hierarchy = this._hierarchies[entryId];
 
     let topNodesCleaned = false;
@@ -668,22 +672,22 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
     }
 
     // remove from the expanded list
-    await this.unsetFlag(WorldFlagKey.expandedIds, entryId);
+    await this.unsetFlag(SettingFlagKey.expandedIds, entryId);
   }  
 
-  // remove a session from the world metadata
-  // note: WORLD MUST BE UNLOCKED FIRST
-  public async deleteSessionFromWorld(sessionId: string) {
-    await this.unsetFlag(WorldFlagKey.expandedIds, sessionId);
+  // remove a session from the setting metadata
+  // note: SETTING MUST BE UNLOCKED FIRST
+  public async deleteSessionFromSetting(sessionId: string) {
+    await this.unsetFlag(SettingFlagKey.expandedIds, sessionId);
   }  
 
-  // change a campaign name inside all the world metadata
-  // note: WORLD MUST BE UNLOCKED FIRST
+  // change a campaign name inside all the setting metadata
+  // note: SETTING MUST BE UNLOCKED FIRST
   public async updateCampaignName(campaignId: string, name: string) {
     this._campaignNames[campaignId] = name;
     
-    await this.setFlag(WorldFlagKey.campaignNames, {
-      ... (this.getFlag(WorldFlagKey.campaignNames) || {}),
+    await this.setFlag(SettingFlagKey.campaignNames, {
+      ... (this.getFlag(SettingFlagKey.campaignNames) || {}),
       [campaignId]: name
     });
   }
@@ -698,17 +702,45 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
     }
     // delete the setting folder
     await this._doc.delete();
+
+    // Delete all associated roll tables.
+    await this.deleteRollTables();
   }
 
-  public async deleteActorFromWorld(actorId: string) {
-    // remove from any PCs that are linked to it
-    for (let campaign of Object.values(this.campaigns)) {
-      const pcs = (await campaign.filterPCs(pc => pc.actorId === actorId));
-      for (const pc of pcs) {
-        pc.actorId = '';
-        await pc.save();
-      }
+/**
+ * Deletes all roll tables and the containing folder for the setting
+ */
+private async deleteRollTables() : Promise<void> {
+  const config = this.rollTableConfig;
 
+  if (!config) {
+    return; // No roll tables configured for this setting
+  }
+
+  // first delete all the rollTables
+  for (const tableUuid of Object.values(config.rollTables)) {
+    const table = await fromUuid<RollTable>(tableUuid);
+    if (table) {
+      await table.delete();
+    }
+  }
+
+  // now remove the folder
+  const folder = game.folders?.get(config.folderId);   
+  if (folder) {
+    await folder.delete();
+  }
+}
+
+  public async deleteActorFromSetting(actorId: string)
+   {
+    // remove from any PCs that are linked to it
+    for (let pc of this.topicFolders[Topics.PC].filterEntries((e)=>e.actorId === actorId)) {
+      pc.actorId = '';
+      await pc.save();
+    }
+
+    for (let campaign of Object.values(this.campaigns)) {
       // remove from any monsters that are linked to it
       for (let session of campaign.sessions) {
         const monsters = session.monsters.map(m=>m.uuid);
@@ -733,7 +765,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
     }
   }
 
-  public async deleteSceneFromWorld(sceneId: string) {
+  public async deleteSceneFromSetting(sceneId: string) {
     // remove from any Locations that are linked to it
     for (let locations of this.topicFolders[Topics.Location].allEntries()) {
       // check the related documents
@@ -748,7 +780,7 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
   }
 
   /** remove from any session item lists */
-  public async deleteItemFromWorld(itemId: string) {
+  public async deleteItemFromSetting(itemId: string) {
     // remove from any Magic Items that are linked to it
     for (let campaign of Object.values(this.campaigns)) {
       for (let session of campaign.sessions) {
@@ -762,12 +794,75 @@ export class Setting extends DocumentWithFlags<WorldDoc>{
     }
   }
 
+  /** remove from the journals tabs -- don't worry about lore for now */
+  public async deleteJournalEntryFromSetting(journalId: string) {
+    // remove from the setting
+    if (this.journals.find(j => j.journalUuid === journalId)) {
+      this.journals = this.journals.filter(j => j.journalUuid !== journalId);
+      await this.save();
+    }
+
+    // remove from any Campaigns that are linked to it
+    for (let campaign of Object.values(this.campaigns)) {
+      if (campaign.journals.find(j => j.journalUuid === journalId)) {  
+        campaign.journals = campaign.journals.filter(j => j.journalUuid !== journalId);
+        await campaign.save();
+      }
+    }
+
+    // remove from any Entries that are linked to it
+    for (let topic of Object.values(this.topicFolders)) {
+      for (let entry of topic.allEntries()) {
+        if (entry.journals.find(j => j.journalUuid === journalId)) {
+          entry.journals = entry.journals.filter(j => j.journalUuid !== journalId);
+          await entry.save();
+        }
+      }
+    }
+  }
+
+  /** remove from the journals tabs -- don't worry about lore for now */
+  public async deleteJournalEntryPageFromSetting(journalId: string) {
+    // remove from the setting
+    if (this.journals.find(j => j.pageUuid === journalId)) {
+      this.journals = this.journals.filter(j => j.pageUuid !== journalId);
+      await this.save();
+    }
+
+    // remove from any Campaigns that are linked to it
+    for (let campaign of Object.values(this.campaigns)) {
+      if (campaign.journals.find(j => j.pageUuid === journalId)) {  
+        campaign.journals = campaign.journals.filter(j => j.pageUuid !== journalId);
+        await campaign.save();
+      }
+    }
+
+    // remove from any Entries that are linked to it
+    for (let topic of Object.values(this.topicFolders)) {
+      for (let entry of topic.allEntries()) {
+        if (entry.journals.find(j => j.pageUuid === journalId)) {
+          entry.journals = entry.journals.filter(j => j.pageUuid !== journalId);
+          await entry.save();
+        }
+      }
+    }
+  }
+
   public get nameStyleExamples(): { genre: string; settingFeeling: string; examples: ApiNamePreviewPost200ResponsePreviewInner[] } | null {
     return this._nameStyleExamples;
   }
 
+  public get journals(): readonly RelatedJournal[] {
+    return this._journals;
+  }
+
+  public set journals(value: RelatedJournal[] | readonly RelatedJournal[]) {
+    this._journals = [...value];
+    this.updateCumulative(SettingFlagKey.journals, this._journals);
+  }
+
   public set nameStyleExamples(value: { genre: string; settingFeeling: string; examples: ApiNamePreviewPost200ResponsePreviewInner[] } | null) {
     this._nameStyleExamples = value;
-    this.updateCumulative(WorldFlagKey.nameStyleExamples, value);
+    this.updateCumulative(SettingFlagKey.nameStyleExamples, value);
   }
 }

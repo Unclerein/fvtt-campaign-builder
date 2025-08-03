@@ -38,16 +38,25 @@ export const useRelationshipStore = defineStore('relationship', () => {
       [Topics.Character]: [],
       [Topics.Location]: [{field:'role', header:'Role'}],
       [Topics.Organization]: [{field:'role', header:'Role'}],
+      [Topics.PC]: [],
     },
     [Topics.Location]: {
       [Topics.Character]: [{field:'role', header:'Role'}],
       [Topics.Location]: [],
       [Topics.Organization]: [],
+      [Topics.PC]: [{field:'role', header:'Role'}],
     },
     [Topics.Organization]: {
       [Topics.Character]: [{field:'role', header:'Role'}],
       [Topics.Location]: [],
       [Topics.Organization]: [],
+      [Topics.PC]: [{field:'role', header:'Role'}],
+    },    
+    [Topics.PC]: {
+      [Topics.Character]: [],
+      [Topics.Location]: [{field:'role', header:'Role'}],
+      [Topics.Organization]: [{field:'role', header:'Role'}],
+      [Topics.PC]: [],
     },    
   } as FieldDataByTopic;
   
@@ -377,6 +386,9 @@ export const useRelationshipStore = defineStore('relationship', () => {
         case 'organizations':
           topic = Topics.Organization;
           break;
+        case 'pcs':
+          topic = Topics.PC;
+          break;
         case 'scenes':
           topic = Topics.None;
           break;
@@ -399,7 +411,7 @@ export const useRelationshipStore = defineStore('relationship', () => {
 
         const sceneList = [] as RelatedDocumentDetails[];
         for (let i=0; i<currentEntry.value.scenes.length; i++) {
-          const scene = (await fromUuid<Scene>(currentEntry.value.scenes[i]));
+          const scene = await foundry.utils.fromUuid(currentEntry.value.scenes[i] as `Scene.${string}`) as Scene;
 
           if (!scene)
             continue;
@@ -437,7 +449,7 @@ export const useRelationshipStore = defineStore('relationship', () => {
   };
 
   // if this ever becomes too slow, we could store a lookup table on each entry - or a global one on the 
-  // world - and refresh it whenever a link is added/removed on the session side.  But for now, this 
+  // setting - and refresh it whenever a link is added/removed on the session side.  But for now, this 
   // seems to be fine.
   const _refreshSessionReferences = async () => {
     if (!currentEntry.value || !currentSetting.value) {
@@ -448,7 +460,7 @@ export const useRelationshipStore = defineStore('relationship', () => {
     const references: SessionReference[] = [];
     const campaigns = Object.values(currentSetting.value.campaigns);
 
-    // Go through all campaigns in the world
+    // Go through all campaigns in the setting
     for (const campaign of campaigns) {
       // Get all sessions in the campaign
       const sessions = campaign.filterSessions(() => true);
@@ -468,6 +480,8 @@ export const useRelationshipStore = defineStore('relationship', () => {
             isReferenced = true;
           }
         }
+
+        // we don't currently track organizations (because they don't fit the Lazy DM model)or PCs (because they're in basically every session)
 
         // Check if entry is referenced in notes
         if (!isReferenced && findReferencesInNotes(session.notes, currentEntry.value.uuid)) {

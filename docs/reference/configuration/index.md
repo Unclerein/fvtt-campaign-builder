@@ -12,6 +12,7 @@ next:
 ## Basic settings
 
 - **Hide missing backend warning**: If you're planning not to use the [Advanced Features], turn this on to avoid being warned about it every time to open the main window.  
+- **Show types in Setting tree**: If set, when the Setting directory isn't grouped by type, it will instead show the type of each Entry in the tree.
 - **Sidebar starts collapsed**: If set, the directory sidebar will be collapsed when you open the main window.  
 - **Display pop-up session notes**: If set, when you enter "Play Mode", a separate session notes window will automatically popup to make it easier to take notes mid-session.
 - **Default 'Add to current session'**: When you're in [^Play Mode] and are creating an [^Entry], there is a checkbox to automatically add it to the current [^Session] (vs. just adding to the [^Setting]).  This checkbox determines whether that checkbox defaults to on or off.
@@ -22,13 +23,17 @@ next:
 ## Sub-Menus
 ### Advanced Settings {#advanced-settings}
 This is where you configure your backend if you are using Advanced Features.
-- **Backend URL**: The URL of the backend server from the [deploy script](/reference/backend/setup#deploy)
-- **API Token**: The security token that the backend deploy script gives you (also from the deploy script)
-- **Default to long descriptions**: If checked, when AI descriptions are generated they will be long paragraphs (number determined by setting below).  If unchecked, they will instead be very brief bullet points more useful for quick roleplaying reference.
-- **Long description paragraphs**: When using long descriptions (see above), this setting determines the number of paragraphs to generate.
-- **Use Gmail for Ideas**: Turn this on to use the ["Email to Ideas List"](/reference/backend/email) feature)
-- **Default Setting for email**: When using the Email to Ideas List, this setting determines which [^Setting] ideas go to (only needed if there's more than one).
-- **Default Campaign for email**: When using the Email to Ideas List, this setting determines which [^Campaign] within the above Setting ideas go to (only needed if there's more than one).
+- **Backend Tab** - This is required to use any backend feature.  
+  - **Backend URL**: The URL of the backend server from the [deploy script](/reference/backend/setup#deploy)
+  - **API Token**: The security token that the backend deploy script gives you (also from the deploy script)
+- **AI Models Tab** - For selecting the AI models you want to use
+- **AI Content** - Settings for how AI generation should be done
+  - **Default to long descriptions**: If checked, when AI descriptions are generated they will be long paragraphs (number determined by setting below).  If unchecked, they will instead be very brief bullet points more useful for quick roleplaying reference.
+  - **Long description paragraphs**: When using long descriptions (see above), this setting determines the number of paragraphs to generate.
+- **Email** - Settings for the [Email to Ideas List](/reference/backend/email).  Note that this feature does not use AI and can be used independently of the others (i.e. without providing AI API Keys).
+  - **Use Gmail for Ideas**: Turn this on to use the ["Email to Ideas List"](/reference/backend/email) feature)
+  - **Default Setting for email**: When using the Email to Ideas List, this setting determines which [^Setting] ideas go to (only needed if there's more than one).
+  - **Default Campaign for email**: When using the Email to Ideas List, this setting determines which [^Campaign] within the above Setting ideas go to (only needed if there's more than one).
 
 ### Species List {#species}
 This lets you manage the list of species in your worlds.  The default species are from the D&D 5E SRD.  This list is important if you want to track what species your Characters are, but mostly it's to facilitate more accurate descriptions/images when doing AI generation [[Advanced Feature]].

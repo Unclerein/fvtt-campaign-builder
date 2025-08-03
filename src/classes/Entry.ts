@@ -1,13 +1,14 @@
 import { toRaw } from 'vue';
 
-import { DOCUMENT_TYPES, EntryDoc, relationshipKeyReplace,  } from '@/documents';
-import { RelatedItemDetails, ValidTopic, Topics, TagInfo, ToDoTypes } from '@/types';
+import { DOCUMENT_TYPES, EntryDoc, relationshipKeyReplace } from '@/documents';
+import { RelatedJournal, RelatedItemDetails, ValidTopic, Topics, TagInfo, ToDoTypes } from '@/types';
 import { FCBDialog } from '@/dialogs';
 import { getTopicText } from '@/compendia';
 import { TopicFolder, Setting } from '@/classes';
 import { getParentId } from '@/utils/hierarchy';
 import { searchService } from '@/utils/search';
 import { useMainStore, usePlayingStore } from '@/applications/stores';
+import { localize } from '@/utils/game';
 
 export type CreateEntryOptions = { name?: string; type?: string; parentId?: string};
 
@@ -16,6 +17,8 @@ export class Entry {
   public topicFolder: TopicFolder | null;
 
   private _entryDoc: EntryDoc;
+  private _actor: Actor | null;  // for pcs
+  
   private _cumulativeUpdate: Record<string, any>;   // tracks the update object based on changes made
 
   /**
@@ -40,10 +43,46 @@ export class Entry {
     if (!entryDoc || entryDoc.type !== DOCUMENT_TYPES.Entry)
       return null;
     else {
-      return new Entry(entryDoc, topicFolder);
+      const entry = new Entry(entryDoc, topicFolder);
+      if (entry.topic === Topics.PC)
+        await entry.getActor();
+
+      return entry;
     }
   }
 
+    /**
+     * Gets the Actor associated with the PC. If the actor is already loaded, the promise resolves
+     * to the existing actor; otherwise, it loads the actor and then resolves to it.
+     * 
+     * @note It's possible the actorId is populated but the actor has been deleted.  In this case, 
+     * will return null and also set the actorId to null.
+     * @returns {Promise<Actor | null>} A promise to the actor associated with the PC.
+     */
+    public async getActor(): Promise<Actor | null> {
+      if (this.topic !== Topics.PC)
+        throw new Error('Attempt to getActor on non-PC entry');
+
+      if (this._actor)
+        return this._actor;
+      else if (!this._entryDoc.system.actorId)
+        return null;
+  
+      this._actor = await fromUuid<Actor>(this._entryDoc.system.actorId);
+  
+      if (!this._actor) {
+        this.actorId = '';  // clean up if the actor is gone
+        await this.save();
+      }
+  
+      return this._actor;
+    }
+  
+    /** note: this should only be used if you know getActor() has already been called */
+    public get actor(): Actor | null {
+      return this._actor;
+    }
+  
   /**
    * Gets the TopicFolder associated with the entry. If the topic  is already loaded, the promise resolves
    * to the existing TopicFolder; otherwise, it loads the TopicFolder and then resolves to it.
@@ -64,16 +103,18 @@ export class Entry {
     return this.topicFolder;
   }
   
-  // creates a new entry in the proper compendium in the given world
+  // creates a new entry in the proper compendium in the given setting
   // if name is populated will skip the dialog
   static async create(topicFolder: TopicFolder, options: CreateEntryOptions): Promise<Entry | null> 
   {
     const topicText = getTopicText(topicFolder.topic);
-    const world = await topicFolder.getWorld();
+    const promptText = topicFolder.topic === Topics.PC ? localize('dialogs.createPC.playerName') : `${topicText} Name:`;
+
+    const setting = await topicFolder.getSetting();
 
     let nameToUse = options.name || '' as string | null;
     while (nameToUse==='') {  // if hit ok, must have a value
-      nameToUse = await FCBDialog.inputDialog(`Create ${topicText}`, `${topicText} Name:`);
+      nameToUse = await FCBDialog.inputDialog(`Create ${topicText}`, promptText);
     }  
     
     // if name is null, then we cancelled the dialog
@@ -82,18 +123,24 @@ export class Entry {
 
     // create the entry
     let entryDoc: EntryDoc[] = [];
-    await world.executeUnlocked(async () => {
+    await setting.executeUnlocked(async () => {
       entryDoc = await JournalEntryPage.createDocuments([{
         // @ts-ignore- we know this type is valid
         type: DOCUMENT_TYPES.Entry,
-        name: nameToUse,
+        name: topicFolder.topic === Topics.PC ? `<${localize('placeholders.linkToActor')}>` : nameToUse,
         system: {
-          type: options.type || '',
+          playerName: topicFolder.topic === Topics.PC ? nameToUse : '',
+          actorId: null,
+          plotPoints: '',
+          background: '',
+          magicItems: '',
+          type: topicFolder.topic === Topics.PC ? 'PC' : options.type || '',
           topic: topicFolder.topic,
           relationships: {
             [Topics.Character]: {},
             [Topics.Location]: {},
             [Topics.Organization]: {},
+            [Topics.PC]: {},
           },
           actors: [],
           scenes: [],
@@ -113,7 +160,7 @@ export class Entry {
       
       // Add to search index
       try {
-        await searchService.addOrUpdateEntryIndex(entry, world);
+        await searchService.addOrUpdateEntryIndex(entry, setting);
       } catch (error) {
         console.error('Failed to add entry to search index:', error);
       }
@@ -128,8 +175,12 @@ export class Entry {
     return this._entryDoc.uuid;
   }
 
+  /** note that you need to load the actor before calling this */
   get name(): string {
-    return this._entryDoc.name;
+    if (this.topic !== Topics.PC || this._entryDoc.name)
+      return this._entryDoc.name;
+    else 
+      return `<${localize('placeholders.linkToActor')}>`;
   }
 
   set name(value: string) {
@@ -155,6 +206,68 @@ export class Entry {
     };
   }
 
+  get playerName(): string {
+    return this._entryDoc.system.playerName || '';
+  }
+
+  set playerName(value: string) {
+    this._entryDoc.system.playerName = value;
+    this._cumulativeUpdate = {
+      ...this._cumulativeUpdate,
+      system: {
+        ...this._cumulativeUpdate.system,
+        playerName: value,
+      }
+    };
+  }
+
+    get plotPoints(): string {
+      return this._entryDoc.system.plotPoints || '';
+    }
+  
+    set plotPoints(value: string) {
+      this._entryDoc.system.plotPoints = value;
+      this._cumulativeUpdate = {
+        ...this._cumulativeUpdate,
+        system: {
+          ...this._cumulativeUpdate.system,
+          plotPoints: value,
+        }
+      };
+    }
+  
+    get background(): string {
+      return this._entryDoc.system.background || '';
+    }
+  
+    set background(value: string) {
+      this._entryDoc.system.background = value;
+      this._cumulativeUpdate = {
+        ...this._cumulativeUpdate,
+        system: {
+          ...this._cumulativeUpdate.system,
+          background: value,
+        }
+      };
+    }
+  
+    get magicItems(): string {
+      return this._entryDoc.system.magicItems || '';
+    }
+  
+    set magicItems(value: string) {
+      this._entryDoc.system.magicItems = value;
+      this._cumulativeUpdate = {
+        ...this._cumulativeUpdate,
+        system: {
+          ...this._cumulativeUpdate.system,
+          magicItems: value,
+        }
+      };
+    }
+  
+  
+
   get speciesId(): string | undefined {
     if (!this._entryDoc.system.speciesId)
       return undefined;
@@ -176,13 +289,39 @@ export class Entry {
     };
   }
 
+  get actorId(): string {
+    if (this.topic !== Topics.PC)
+      throw new Error('Attempt to get actorId on non-PC entry');
+    
+    return this._entryDoc.system.actorId || '';
+  }
+
+  set actorId(value: string) {
+    if (this.topic !== Topics.PC)
+      throw new Error('Attempt to set actorId on non-PC entry');
+    
+    this._entryDoc.system.actorId = value;
+    this.name = value ? this.name : '';
+    this._cumulativeUpdate = {
+      ...this._cumulativeUpdate,
+      name: this.name,
+      system: {
+        ...this._cumulativeUpdate.system,
+        actorId: value,
+      }
+    };
+  }
+
   // topic is read-only
   get topic(): ValidTopic {
     return this._entryDoc.system.topic;
   }
 
   get type(): string {
-    return this._entryDoc.system.type || '';
+    if (this.topic===Topics.PC)
+      return 'PC';
+    else
+      return this._entryDoc.system.type || '';
   }
 
   set type(value: string) {
@@ -206,6 +345,21 @@ export class Entry {
       ...this._cumulativeUpdate,
       text: {
         content: value,
+      }
+    };
+  }
+
+  get rolePlayingNotes(): string {
+    return this._entryDoc.system.rolePlayingNotes || '';
+  }
+
+  set rolePlayingNotes(value: string) {
+    this._entryDoc.system.rolePlayingNotes = value;
+    this._cumulativeUpdate = {
+      ...this._cumulativeUpdate,
+      system: {
+        ...this._cumulativeUpdate.system,
+        rolePlayingNotes: value,
       }
     };
   }
@@ -257,6 +411,7 @@ export class Entry {
     return this._entryDoc.system.scenes;
   }  
 
+  // we don't track cumulative update - save just always saves the arrays
   set scenes(value: string[]) {
     this._entryDoc.system.scenes = value;
   }
@@ -269,26 +424,40 @@ export class Entry {
     return this._entryDoc.system.actors;
   }  
 
+  // we don't track cumulative update - save just always saves the arrays
   set actors(value: string[]) {
     this._entryDoc.system.actors = value;
   }
 
+  public get journals(): RelatedJournal[] {
+    // create the array if it doesn't exist
+    if (!this._entryDoc.system.journals)
+      this._entryDoc.system.journals = [];
+
+    return this._entryDoc.system.journals;
+  }
+
+  // we don't track cumulative update - save just always saves the arrays
+  public set journals(value: RelatedJournal[]) {
+    this._entryDoc.system.journals = value;
+  }
+
   public async getParentId(): Promise<string | null> {
-    const world = await this.getWorld();
-    return getParentId(world, this);
+    const setting = await this.getSetting();
+    return getParentId(setting, this);
   }
 
   /**
-    * Gets the world associated with a entry, loading into the topic
+    * Gets the setting associated with a entry, loading into the topic
     * if needed.
     * 
-    * @returns {Promise<Setting>} A promise to the world associated with the campaign.
+    * @returns {Promise<Setting>} A promise to the setting associated with the entry.
     */
-  public async getWorld(): Promise<Setting> {
+  public async getSetting(): Promise<Setting> {
     if (!this.topicFolder)
       await this.loadTopic();
   
-    return await (this.topicFolder as TopicFolder).getWorld();
+    return await (this.topicFolder as TopicFolder).getSetting();
   }
   
   // used to set arbitrary properties on the entryDoc
@@ -298,7 +467,7 @@ export class Entry {
    * @returns {Promise<Entry | null>} The updated entry, or null if the update failed.
    */
   public async save(): Promise<Entry | null> {
-    const world = await this.getWorld();
+    const setting = await this.getSetting();
 
     // rather than try to monitor all changes to the arrays (which would require saving the originals or a proxy), we just always save them
     const updateData = {
@@ -307,15 +476,16 @@ export class Entry {
         ...this._cumulativeUpdate.system,
         scenes: this.scenes,
         actors: this.actors,
+        journals: this.journals,
       }
     };
 
     let retval: EntryDoc | null = null;
 
-    await world.executeUnlocked(async () => {
+    await setting.executeUnlocked(async () => {
       // add the type to the master list if it was changed and doesn't exist
       if (updateData.system?.type) {
-        const topicFolder = world.topicFolders[this.topic];
+        const topicFolder = setting.topicFolders[this.topic];
 
         await Entry.addTypeIfNeeded(topicFolder, updateData.system?.type);
       }
@@ -345,7 +515,7 @@ export class Entry {
     // Update the search index and to-do list
     try {
       if (retval) {
-        await searchService.addOrUpdateEntryIndex(this, world);
+        await searchService.addOrUpdateEntryIndex(this, setting);
 
         // Update the to-do list if in play mode
         const campaign = usePlayingStore().currentPlayedCampaign;
@@ -361,7 +531,7 @@ export class Entry {
   }
 
   public async delete() {
-    const world = await this.getWorld();
+    const setting = await this.getSetting();
 
     const id = this.uuid;
     const topicFolder = this.topicFolder;
@@ -369,10 +539,10 @@ export class Entry {
     if (!topicFolder)
       throw new Error('Attempting to delete entry without parent TopicFolder in Entry.delete()');
 
-    await world.executeUnlocked(async () => {
+    await setting.executeUnlocked(async () => {
       await this._entryDoc.delete();
 
-      await world.deleteEntryFromWorld(topicFolder, id);
+      await setting.deleteEntryFromSetting(topicFolder, id);
     });
 
     // Remove from search index
@@ -426,7 +596,7 @@ export class Entry {
   }
 
   /** Adds the type to the list on the topic, if it's not there already.
-   *  Requires the world to be unlocked already
+   *  Requires the setting to be unlocked already
    */
   private static async addTypeIfNeeded(topicFolder: TopicFolder, type: string): Promise<void> {
     const currentTypes = topicFolder.types;

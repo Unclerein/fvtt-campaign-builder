@@ -1,7 +1,7 @@
 import { nextTick } from 'vue';
 import { useSettingDirectoryStore, useCampaignDirectoryStore, useMainStore } from '@/applications/stores';
 import { WindowTabType, } from '@/types';
-import { Entry, Campaign, Session, DirectoryTopicNode, DirectoryCampaignNode } from '@/classes';
+import { Entry, Session, DirectoryTopicNode, DirectoryCampaignNode } from '@/classes';
 import { NO_TYPE_STRING } from '@/utils/hierarchy';
 
 /**
@@ -31,16 +31,13 @@ export async function scrollToActiveEntry(): Promise<void> {
       await scrollToEntry(contentId);
       break;
     case WindowTabType.Campaign:
-      await scrollToCampaign(contentId);
+      await scrollToCampaign();
       break;
     case WindowTabType.Session:
       await scrollToSession(contentId);
       break;
-    case WindowTabType.PC:
-      // don't have tree entries
-      break;
-    case WindowTabType.World:
-      await scrollToWorld(contentId);
+    case WindowTabType.Setting:
+      await scrollToSetting();
       break;
     default:
       return;
@@ -74,14 +71,14 @@ async function scrollToEntry(entryId: string): Promise<void> {
   const isGroupedByType = settingDirectoryStore.isGroupedByType;
 
   // Find the topic node in the directory tree
-  const currentWorldTree = settingDirectoryStore.currentWorldTree.value;
-  const worldNode = currentWorldTree.find(w => w.id === currentSetting.uuid);
+  const currentSettingTree = settingDirectoryStore.currentSettingTree.value;
+  const settingNode = currentSettingTree.find(w => w.id === currentSetting.uuid);
   
-  if (!worldNode) {
+  if (!settingNode) {
     return;
   }
 
-  const topicNode = worldNode.topicNodes.find(t => t.topicFolder.topic === entry.topic);
+  const topicNode = settingNode.topicNodes.find(t => t.topicFolder.topic === entry.topic);
   if (!topicNode) {
     return;
   }
@@ -172,11 +169,11 @@ async function scrollToCampaign(): Promise<void> {
 }
 
 /**
- * Scrolls to a world in the campaign directory tree.  Just scrolls to the open one.
+ * Scrolls to a setting in the campaign directory tree.  Just scrolls to the open one.
  * 
  * @returns A promise that resolves when the scroll operation is complete
  */
-async function scrollToWorld(): Promise<void> {
+async function scrollToSetting(): Promise<void> {
   // Find and scroll to the campaign element using the active class
   await scrollToElement('.fcb-setting-folder.folder:not(.collapsed)');
 }
@@ -220,32 +217,61 @@ async function scrollToSession(sessionId: string): Promise<void> {
 }
 
 /**
- * Scrolls to an element in the directory tree
+ * Scrolls to an element in the directory tree if it's not already visible
  */
 async function scrollToElement(selector: string): Promise<void> {
   const element = document.querySelector(selector) as HTMLElement;
   
-  if (element) {
-    // Find the scrollable container (the directory panel)
-    const scrollContainer = element.closest('.fcb-directory-panel-wrapper') as HTMLElement;
-    
-    if (scrollContainer) {
-      // Get the element's position relative to the scroll container
-      const elementRect = element.getBoundingClientRect();
-      const containerRect = scrollContainer.getBoundingClientRect();
-      
-      // Calculate the scroll position to center the element
-      const elementTop = elementRect.top - containerRect.top + scrollContainer.scrollTop;
-      const containerHeight = scrollContainer.clientHeight;
-      const elementHeight = elementRect.height;
-      
-      const targetScrollTop = elementTop - (containerHeight / 2) + (elementHeight / 2);
-      
-      // Smooth scroll to the element
-      scrollContainer.scrollTo({
-        top: Math.max(0, targetScrollTop),
-        behavior: 'smooth'
-      });
-    }
+  if (!element || isActiveEntryVisible(selector)) 
+    return;
+
+  // Find the scrollable container (the directory panel)
+  const scrollContainer = element.closest('.fcb-directory-panel-wrapper') as HTMLElement;
+  
+  if (!scrollContainer) 
+    return;
+
+  // Get the element's position relative to the scroll container
+  const elementRect = element.getBoundingClientRect();
+  const containerRect = scrollContainer.getBoundingClientRect();
+  
+  // Calculate the scroll position to center the element
+  const elementTop = elementRect.top - containerRect.top + scrollContainer.scrollTop;
+  const containerHeight = scrollContainer.clientHeight;
+  const elementHeight = elementRect.height;
+  
+  const targetScrollTop = elementTop - (containerHeight / 2) + (elementHeight / 2);
+  
+  // Smooth scroll to the element
+  scrollContainer.scrollTo({
+    top: Math.max(0, targetScrollTop),
+    behavior: 'smooth'
+  });
+}
+
+/**
+ * Checks if the active entry is already visible in the directory tree
+ * @returns Promise that resolves to true if the entry is visible, false otherwise
+ */
+function isActiveEntryVisible(selector: string): boolean {
+  // Find the currently active/highlighted entry in the directory tree
+  const activeElement = document.querySelector(selector) as HTMLElement;
+  
+  if (!activeElement) {
+    return false;
   }
+  
+  // Find the scrollable container
+  const scrollContainer = activeElement.closest('.fcb-directory-panel-wrapper') as HTMLElement;
+  if (!scrollContainer) {
+    return false;
+  }
+  
+  // Get the element's position relative to the scroll container
+  const elementRect = activeElement.getBoundingClientRect();
+  const containerRect = scrollContainer.getBoundingClientRect();
+  
+  const padding = 20; // Add some padding for better UX
+  
+  return elementRect.top >= (containerRect.top + padding) && elementRect.bottom <= (containerRect.bottom - padding);
 } 

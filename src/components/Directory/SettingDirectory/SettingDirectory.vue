@@ -2,11 +2,11 @@
   <!-- these are the settings -->
   <ol class="fcb-setting-list">
     <li
-      v-for="setting in currentWorldTree.value"
+      v-for="setting in currentSettingTree.value"
       :key="setting.id"
       :class="'fcb-setting-folder folder flexcol ' + (currentSetting?.uuid===setting.id ? '' : 'collapsed')"
       draggable="true"
-      @dragstart="onWorldDragStart($event, setting)"
+      @dragstart="onSettingDragStart($event, setting)"
     >
       <header
         class="folder-header flexrow"
@@ -45,14 +45,14 @@
           </header>
 
           <SettingDirectoryGroupedTree
-            v-if="isGroupedByType" 
+            v-if="isGroupedByType || topicNode.topicFolder.topic === Topics.Character" 
             :topic-node="topicNode as DirectoryTopicNode"
-            :world-id="setting.id"
+            :setting-id="setting.id"
           />
           <SettingDirectoryNestedTree
             v-else 
             :topic-node="topicNode as DirectoryTopicNode"
-            :world-id="setting.id"
+            :setting-id="setting.id"
           />
         </li>
       </ol>
@@ -78,8 +78,8 @@
 
 
   // types
-  import { WindowTabType, DirectorySetting } from '@/types';
-  import { DirectoryTopicNode, Campaign, Setting, TopicFolder, } from '@/classes';
+  import { WindowTabType, DirectorySetting, Topics } from '@/types';
+  import { DirectoryTopicNode, Setting, TopicFolder, } from '@/classes';
   
   ////////////////////////////////
   // props
@@ -94,7 +94,7 @@
   const settingDirectoryStore = useSettingDirectoryStore();
   const campaignDirectoryStore = useCampaignDirectoryStore();
   const { currentSetting } = storeToRefs(mainStore);
-  const { isGroupedByType, currentWorldTree } = storeToRefs(settingDirectoryStore);
+  const { isGroupedByType, currentSettingTree } = storeToRefs(settingDirectoryStore);
 
   ////////////////////////////////
   // data
@@ -113,12 +113,12 @@
    * @param event The drag event
    * @param setting The setting object being dragged
    */
-  const onWorldDragStart = (event: DragEvent, setting: DirectorySetting): void => {
+  const onSettingDragStart = (event: DragEvent, setting: DirectorySetting): void => {
     event.stopPropagation();
 
     const dragData = {
-      worldNode: true,
-      worldId: setting.id,
+      settingNode: true,
+      settingId: setting.id,
       name: setting.name
     };
 
@@ -168,7 +168,7 @@
           label: localize('contextMenus.settingFolder.delete'), 
           onClick: async () => {
             if (settingId) {
-              await settingDirectoryStore.deleteWorld(settingId);
+              await settingDirectoryStore.deleteSetting(settingId);
               await campaignDirectoryStore.refreshCampaignDirectoryTree();
             }
           }
@@ -179,11 +179,10 @@
           label: localize('contextMenus.settingFolder.createCampaign'), 
           onClick: async () => {
             if (settingId) {
-              const world = await Setting.fromUuid(settingId);
+              const setting = await Setting.fromUuid(settingId);
 
-              if (world) {
-                await Campaign.create(world);
-                await campaignDirectoryStore.refreshCampaignDirectoryTree();
+              if (setting) {
+                await campaignDirectoryStore.createCampaign(setting);
               }
             }
           }
@@ -244,12 +243,13 @@
     .fcb-setting-list {
       padding: 0;
       flex-grow: 1;
-      overflow: auto;
       margin-top: 3px;
 
       .fcb-setting-folder {
         align-items: flex-start;
         justify-content: flex-start;
+        min-width: 100%;
+        width: max-content;
 
         &.active {
           background: #cfcdc2;
@@ -270,6 +270,9 @@
       background: var(--fcb-sidebar-setting-background);
       color: var(--fcb-sidebar-setting-color);
       text-shadow: none;
+      position: sticky;
+      top: 0;
+      z-index: 2;
     }
 
     .fcb-setting-folder.collapsed > .folder-header {
@@ -305,8 +308,9 @@
 
     .fcb-setting-contents {
       margin: 0px;
-      width: 100%;
+      /* width: 100%; */
       padding-left: 10px;
+      z-index: 1;  // make sure it stays behind the setting header
     }    
   }
 

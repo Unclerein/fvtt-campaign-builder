@@ -4,8 +4,8 @@ prev:
   text: 'Campaign Ideas Tab'
   link: '/reference/campaign-mgt/content/campaign/ideas'
 next: 
-  text: 'Session Details'
-  link: '/reference/campaign-mgt/content/session'
+  text: 'Play Mode'
+  link: '/reference/play-mode'
 ---
 # Campaign To-Do Tab
 
@@ -47,6 +47,9 @@ This list contains the individual to-dos.  For each item, you can see its descri
 Click the reference name to open the [Entry details](/reference/world-building/content/entry/) page.  Hold control to open in a new tab.
 
 Click on the to-do text to edit it.  Press Enter to save.  You can edit to-do items even if they were automatically created.
+
+### Sorting To-Dos
+To-Dos retain their order.  You can use the tab on the left of each row to reorder them as you desire.
 
 ### To-Do Actions
 The actions column lets you take several actions with the to-do items:

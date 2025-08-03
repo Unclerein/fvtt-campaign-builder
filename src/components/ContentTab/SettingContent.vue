@@ -29,18 +29,19 @@
         <div class="fcb-subtab-wrapper">
           <nav class="fcb-sheet-navigation flexrow tabs" data-group="primary">
             <a class="item" data-tab="description">{{ localize('labels.tabs.campaign.description') }}</a>
+            <a class="item" data-tab="journals">{{ localize('labels.tabs.campaign.journals') }}</a>
           </nav>
           <div class="fcb-tab-body flexrow">
             <DescriptionTab 
               :name="currentSetting.name || 'Setting'"
               :image-url="currentSetting.img"
-              :window-type="WindowTabType.World"
+              :window-type="WindowTabType.Setting"
               @image-change="onImageChange"
             >
               <div class="flexrow form-group">
                 <LabelWithHelp
-                  label-text="labels.fields.worldGenre"
-                  help-text="help.worldGenre" 
+                  label-text="labels.fields.settingGenre"
+                  help-text="help.settingGenre" 
                 />
                 <InputText
                   v-model="currentSetting.genre"
@@ -58,16 +59,27 @@
                   v-model="currentSetting.settingFeeling"
                   rows="3"
                   style="width: calc(100% - 2px); font-family: var(--font-body)"
-                  @update:model-value="onWorldFeelingSaved"
+                  @update:model-value="onSettingFeelingSaved"
+                />
+              </div>
+              <div class="flexrow form-group">
+                <LabelWithHelp
+                  label-text="labels.fields.settingDescription"
+                  top-label
                 />
               </div>
               <div class="flexrow form-group description">
                 <Editor
                     :initial-content="currentSetting.description || ''"
+                    fixed-height="240px"
                     @editor-saved="onDescriptionEditorSaved"
                   />
               </div>
             </DescriptionTab>
+            <JournalTab
+              :initial-journals="currentSetting.journals"
+              @journals-updated="onJournalsUpdate"
+            />
           </div>
         </div>
       </div>
@@ -102,11 +114,12 @@
   // local components
   import Editor from '@/components/Editor.vue';
   import DescriptionTab from '@/components/ContentTab/DescriptionTab.vue';
+  import JournalTab from '@/components/ContentTab/JournalTab.vue';
   import LabelWithHelp from '@/components/LabelWithHelp.vue';
   import ConfigureNamesDialog from '@/components/AIGeneration/ConfigureNamesDialog.vue';
 
   // types
-  import { WindowTabType, } from '@/types';
+  import { RelatedJournal, WindowTabType, } from '@/types';
   
   ////////////////////////////////
   // props
@@ -127,12 +140,12 @@
   const name = ref<string>('');
 
   const contentRef = ref<HTMLElement | null>(null);
-  const icon =  getTabTypeIcon(WindowTabType.Campaign);
+  const icon =  getTabTypeIcon(WindowTabType.Setting);
   const showConfigureNamesDialog = ref<boolean>(false);
 
   ////////////////////////////////
   // computed data
-  const namePlaceholder = computed((): string => (localize('placeholders.worldName') || ''));
+  const namePlaceholder = computed((): string => (localize('placeholders.settingName') || ''));
   const generateDisabled = computed(() => !Backend.available);
   
   ////////////////////////////////
@@ -158,7 +171,7 @@
         updateWindowTitle(newName || null);
         await settingDirectoryStore.refreshSettingDirectoryTree([currentSetting.value.uuid]);
         await navigationStore.propagateNameChange(currentSetting.value.uuid, newValue);
-        await mainStore.propagateWorldNameChange(currentSetting.value);
+        await mainStore.propagateSettingNameChange(currentSetting.value);
       }
     }, debounceTime);
   };
@@ -182,7 +195,7 @@
     }, debounceTime);
   }
 
-  const onWorldFeelingSaved = async () => {
+  const onSettingFeelingSaved = async () => {
     const debounceTime = 500;
   
     clearTimeout(debounceTimer);
@@ -224,6 +237,13 @@
       zIndex: 300,
       items: menuItems,
     });
+  };
+
+  const onJournalsUpdate = async (newJournals: RelatedJournal[]) => {
+    if (currentSetting.value) {
+      currentSetting.value.journals = newJournals;
+      await currentSetting.value.save();
+    }
   };
 
   const onNameStylesSave = async (selectedStyles: number[]) => {

@@ -1,5 +1,7 @@
 <template>
-  <form>
+  <!-- PCs use their own thing because their image works differently -->
+  <PCContent v-if="topic===Topics.PC" />
+  <form v-else>
     <div ref="contentRef" class="fcb-sheet-container flexcol">
       <header class="fcb-name-header flexrow">
         <i :class="`fas ${icon} sheet-icon`"></i>
@@ -46,9 +48,11 @@
         <div class="fcb-subtab-wrapper">
           <nav class="fcb-sheet-navigation flexrow tabs" data-group="primary">
             <a class="item" data-tab="description">{{ localize('labels.tabs.entry.description') }}</a>
+            <a class="item" data-tab="journals">{{ localize('labels.tabs.entry.journals') }}</a>
+            <!-- TODO-PC - only show the PC tab if there's already a connection... rare that we'd need to add from here -->
             <a 
               v-for="relationship in relationships"
-              :key="relationship.label"
+              :key="relationship.tab"
               class="item" 
               :data-tab="relationship.tab"
             >
@@ -69,6 +73,7 @@
               {{ localize('labels.tabs.entry.scenes') }}
             </a>
             <a 
+              v-if="topic!==Topics.PC"
               class="item" 
               data-tab="sessions"
             >
@@ -123,39 +128,100 @@
                 />
               </div>
 
+              <!-- Above description if we're in play mode -->
+              <div 
+                v-if="roleplayAboveDescription"
+                class="flexrow form-group"
+              >
+                <LabelWithHelp
+                  label-text="labels.fields.entryRolePlayingNotes"
+                  top-label
+                />
+              </div>
+              <div 
+                v-if="roleplayAboveDescription"
+                class="flexrow form-group"
+              >
+                <Editor
+                    :initial-content="currentEntry?.rolePlayingNotes || ''"
+                    :style="{ 'height': '180px', 'margin-bottom': '6px'}"
+                    @editor-saved="onRolePlayingNotesSaved"
+                  />
+              </div>
+
+              <div class="flexrow form-group">
+                <LabelWithHelp
+                  label-text="labels.fields.entryDescription"
+                  top-label
+                />
+              </div>
               <div class="flexrow form-group description">
                 <Editor
                   :initial-content="currentEntry?.description || ''"
                   :current-entity-uuid="currentEntry?.uuid"
                   :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
+                  :style="{ 'height': '240px', 'margin-bottom': '6px'}"
                   @editor-saved="onDescriptionEditorSaved"
                   @related-entries-changed="onRelatedEntriesChanged"
                 />
               </div>
+
+              <!-- Below description if we're in prep mode -->
+              <div 
+                v-if="roleplayBelowDescription"
+                class="flexrow form-group"
+              >
+                <LabelWithHelp
+                  label-text="labels.fields.entryRolePlayingNotes"
+                  top-label
+                />
+              </div>
+              <div 
+                v-if="roleplayBelowDescription"
+                class="flexrow form-group"
+              >
+                <Editor
+                    :initial-content="currentEntry?.rolePlayingNotes || ''"
+                    :style="{ 'height': '180px', 'margin-bottom': '6px'}"
+                    @editor-saved="onRolePlayingNotesSaved"
+                  />
+              </div>
+
             </DescriptionTab>
-            <div class="tab flexcol" data-group="primary" data-tab="characters">
+            <JournalTab
+              v-if="currentEntry"
+              :initial-journals="currentEntry.journals"
+              @journals-updated="onJournalsUpdate"
+            />
+            <div 
+              v-for="relationship in relationships"
+              :key="relationship.tab"
+              class="tab flexcol" 
+              data-group="primary" 
+              :data-tab="relationship.tab"
+            >
               <div class="tab-inner">
-                <RelatedItemTable :topic="Topics.Character" />
-              </div>
-            </div> 
-            <div class="tab flexcol" data-group="primary" data-tab="locations">
-              <div class="tab-inner">
-                <RelatedItemTable :topic="Topics.Location" />
+                <RelatedItemTable :topic="relationship.topic as ValidTopic" />
               </div>
             </div>
-            <div class="tab flexcol" data-group="primary" data-tab="organizations">
-              <div class="tab-inner">
-                <RelatedItemTable :topic="Topics.Organization" />
-              </div>
-            </div>
-            <div class="tab flexcol" data-group="primary" data-tab="scenes">
+            <div 
+              v-if="topic===Topics.Location"
+              class="tab flexcol" 
+              data-group="primary" 
+              data-tab="scenes"
+            >
               <div class="tab-inner">
                 <RelatedDocumentTable 
                   :document-link-type="DocumentLinkType.Scenes"
                 />
               </div>
             </div>
-            <div class="tab flexcol" data-group="primary" data-tab="actors">
+            <div 
+              v-if="topic===Topics.Character"
+              class="tab flexcol" 
+              data-group="primary" 
+              data-tab="actors"
+            >
               <div class="tab-inner">
                 <RelatedDocumentTable 
                   :document-link-type="DocumentLinkType.Actors"
@@ -183,7 +249,7 @@
 <script setup lang="ts">
 
   // library imports
-  import { computed, nextTick, onMounted, ref, watch, reactive } from 'vue';
+  import { computed, nextTick, onMounted, ref, watch, } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
@@ -194,6 +260,7 @@
   import { generateImage } from '@/utils/generation';
   import { ModuleSettings, SettingKey } from '@/settings';
   import { notifyInfo } from '@/utils/notifications';  
+  import { updateEntryDialog } from '@/dialogs/createEntry';
 
   // library components
   import InputText from 'primevue/inputtext';
@@ -201,10 +268,10 @@
 
   // local components
   import DescriptionTab from '@/components/ContentTab/DescriptionTab.vue';
-  import RelatedItemTable from '@/components/Tables/RelatedItemTable.vue';
-  import RelatedDocumentTable from '@/components/Tables/RelatedDocumentTable.vue';
-  import { updateEntryDialog } from '@/dialogs/createEntry';
-
+  import JournalTab from '@/components/ContentTab/JournalTab.vue';
+  import PCContent from '@/components/ContentTab/PCContent.vue';
+  import RelatedItemTable from '@/components/tables/RelatedItemTable.vue';
+  import RelatedDocumentTable from '@/components/tables/RelatedDocumentTable.vue';
   import Editor from '@/components/Editor.vue';
   import TypeAhead from '@/components/TypeAhead.vue';
   import SpeciesSelect from '@/components/ContentTab/EntryContent/SpeciesSelect.vue';
@@ -216,7 +283,7 @@
   import { getRelatedEntries } from '@/utils/uuidExtraction';
 
   // types
-  import { DocumentLinkType, Topics, ValidTopic, WindowTabType } from '@/types';
+  import { DocumentLinkType, Topics, ValidTopic, WindowTabType, RelatedJournal } from '@/types';
   import { Setting, TopicFolder, Backend, Entry } from '@/classes';
 
 
@@ -235,20 +302,22 @@
   const playingStore = usePlayingStore();
   const { currentEntry, currentSetting, currentContentTab, refreshCurrentEntry, } = storeToRefs(mainStore);
   const { currentPlayedCampaign } = storeToRefs(playingStore);
+  const { isInPlayMode } = storeToRefs(mainStore);
 
   ////////////////////////////////
   // data
   const topicData = {
     [Topics.Character]: { namePlaceholder: 'placeholders.characterName', },
-    [Topics.Location]: { namePlaceholder: 'placeholders.characterName', },
-    [Topics.Organization]: { namePlaceholder: 'placeholders.characterName', },
+    [Topics.Location]: { namePlaceholder: 'placeholders.locationName', },
+    [Topics.Organization]: { namePlaceholder: 'placeholders.organizationName', },
   };
 
   const relationships = [
-    { tab: 'characters', label: 'labels.tabs.entry.characters', },
-    { tab: 'locations', label: 'labels.tabs.entry.locations',},
-    { tab: 'organizations', label: 'labels.tabs.entry.organizations', },
-  ] as { tab: string; label: string }[];
+    { tab: 'characters', label: 'labels.tabs.entry.characters', topic: Topics.Character },
+    { tab: 'locations', label: 'labels.tabs.entry.locations', topic: Topics.Location },
+    { tab: 'organizations', label: 'labels.tabs.entry.organizations', topic: Topics.Organization },
+    { tab: 'pcs', label: 'labels.tabs.entry.pcs', topic: Topics.PC },
+  ] as { tab: string; label: string; topic: Topics }[];
 
   const tabs = ref<foundry.applications.ux.Tabs>();
   const topic = ref<Topics | null>(null);
@@ -257,7 +326,7 @@
   const contentRef = ref<HTMLElement | null>(null);
   const parentId = ref<string | null>(null);
   const validParents = ref<{id: string; label: string}[]>([]);
-  const isGeneratingImage = reactive<Record<string, boolean>>({}); // Flag to track whether image generation is in progress - only one per id at a time
+
   const pushButtonTitle = ref<string>('');
   const pushButtonDisabled = ref<boolean>(false);
   const showRelatedEntriesDialog = ref<boolean>(false);
@@ -269,9 +338,11 @@
     
   const icon = computed((): string => (!topic.value ? '' : getTopicIcon(topic.value)));
   const namePlaceholder = computed((): string => (topic.value===null ? '' : (localize(topicData[topic.value]?.namePlaceholder || '') || '')));
-  const canGenerate = computed(() => topic.value && [Topics.Character, Topics.Location, Topics.Organization].includes(topic.value));
+  const canGenerate = computed(() => topic.value && [Topics.Character, Topics.Location, Topics.Organization, Topics.PC].includes(topic.value));
   const generateDisabled = computed(() => !Backend.available);
   const showHierarchy = computed((): boolean => (topic.value===null ? false : hasHierarchy(topic.value)));
+  const roleplayAboveDescription = computed(() => ModuleSettings.get(SettingKey.showRolePlayingNotes) && isInPlayMode.value);
+  const roleplayBelowDescription = computed(() => ModuleSettings.get(SettingKey.showRolePlayingNotes) && !isInPlayMode.value);
 
   ////////////////////////////////
   // methods
@@ -286,7 +357,7 @@
 
       newTopicFolder = currentEntry.value.topicFolder;
       if (!newTopicFolder) 
-        throw new Error('Invalid entry topic in EntryContent.watch-currentEntry');
+        throw new Error('Invalid entry topic in EntryContent.refreshEntry');
 
       // we're going to show a content page
       topic.value = newTopicFolder.topic;
@@ -306,8 +377,8 @@
     }
   };
 
-    /** how many campaigns have available sessions */
-    const numAvailableSessions = (): number => {
+  /** how many campaigns have available sessions */
+  const numAvailableSessions = (): number => {
     if (!currentSetting.value)
       return 0;
 
@@ -334,6 +405,31 @@
       pushButtonTitle.value = localize('tooltips.addToASession')
       pushButtonDisabled.value = false;
     }
+  }
+
+  const mountTabs = async () => {
+    // Ensure DOM is fully ready before initializing tabs
+    await nextTick();
+    
+    tabs.value = new foundry.applications.ux.Tabs({ 
+      navSelector: '.tabs', 
+      contentSelector: '.fcb-tab-body', 
+      initial: 'description'
+    });
+
+    // update the store when tab changes
+    tabs.value.callback = () => {
+      currentContentTab.value = tabs.value?.active || null;
+    };
+
+    if (contentRef.value) {
+      tabs.value.bind(contentRef.value);
+    }
+
+    if (tabs.value) {
+      tabs.value.activate(currentContentTab.value || 'description');
+    }
+
   }
 
   ////////////////////////////////
@@ -368,7 +464,18 @@
     if (!currentSetting.value)
       return;
 
-    // find all the campaigns with an active session
+    // if there are no campaigns, exit
+    const numCampaigns = Object.keys(currentSetting.value.campaigns).length;
+    if (numCampaigns===0)
+      return;
+
+    // if there's only one campaign, we can just push it
+    if (numCampaigns===1) {
+      await selectCampaignForPush(Object.keys(currentSetting.value.campaigns)[0]);
+      return;
+    }
+
+    // e have more than one; now find all the campaigns with an active session
     let campaignsWithSessions = [] as { uuid: string; name: string}[];
 
     for (const campaignId of Object.keys(currentSetting.value.campaigns)) {
@@ -471,7 +578,7 @@
     event.preventDefault();
     event.stopPropagation();
 
-    if (topic.value != null && ![Topics.Character, Topics.Location, Topics.Organization].includes(topic.value)) {
+    if (topic.value != null && ![Topics.Character, Topics.Location, Topics.Organization, Topics.PC].includes(topic.value)) {
       return;
     }
 
@@ -486,28 +593,22 @@
             await updateEntryDialog(currentEntry.value);
         }
       },
-      {
+    ];
+
+    // PC images always tie to actor
+    if (topic.value!==Topics.PC) {
+      menuItems.push({
         icon: 'fa-image',
         iconFontClass: 'fas',
-        label: `${localize('contextMenus.generate.image')} ${isGeneratingImage[currentEntry.value?.uuid as string] ? ` - ${localize('contextMenus.generate.inProgress')}` : ''}`,
-        disabled: isGeneratingImage[currentEntry.value?.uuid as string],
+        label: `${localize('contextMenus.generate.image')} ${Backend.isGeneratingImage[currentEntry.value?.uuid as string] ? ` - ${localize('contextMenus.generate.inProgress')}` : ''}`,
+        disabled: Backend.isGeneratingImage[currentEntry.value?.uuid as string],
         onClick: async () => {
-          if (!isGeneratingImage[currentEntry.value?.uuid as string] && currentSetting.value && currentEntry.value) {
-            // save entry because it could change before generation is done
-            const entryGenerated = currentEntry.value.uuid;
-
-            isGeneratingImage[entryGenerated] = true;
-
+          if (currentSetting.value && currentEntry.value) {
             await generateImage(currentSetting.value, currentEntry.value);
-
-            if (entryGenerated===currentEntry.value.uuid)
-              mainStore.refreshEntry();
-
-            isGeneratingImage[entryGenerated] = false;
           }
         }
-      },
-    ];
+      });
+    }
 
     ContextMenu.showContextMenu({
       customClass: 'fcb',
@@ -566,6 +667,15 @@
     await currentEntry.value.save();
   };
 
+
+  const onRolePlayingNotesSaved = async (newContent: string) => {
+    if (!currentEntry.value)
+      return;
+
+    currentEntry.value.rolePlayingNotes = newContent;
+    await currentEntry.value.save();
+  };
+
   const onRelatedEntriesChanged = async (addedUUIDs: string[], removedUUIDs: string[]) => {
     if (!currentEntry.value || !ModuleSettings.get(SettingKey.autoRelationships)) {
       return;
@@ -605,6 +715,13 @@
     await currentEntry.value.save();
   };
 
+  const onJournalsUpdate = async (newJournals: RelatedJournal[]) => {
+    if (currentEntry.value) {
+      currentEntry.value.journals = newJournals;
+      await currentEntry.value.save();
+    }
+  };
+
   ////////////////////////////////
   // watchers
   // in case the tab is changed externally
@@ -629,27 +746,14 @@
       currentContentTab.value = 'description';
     }
 
-    if (tabs.value) {
-      tabs.value.activate(currentContentTab.value); 
-    }
+    await mountTabs(); 
   });
 
   ////////////////////////////////
   // lifecycle events
   onMounted(async () => {
-    tabs.value = new foundry.applications.ux.Tabs({ navSelector: '.tabs', contentSelector: '.fcb-tab-body', initial: 'description', /*callback: null*/ });
-
-    // update the store when tab changes
-    tabs.value.callback = () => {
-      currentContentTab.value = tabs.value?.active || null;
-    };
-
-    // have to wait until they render
-    await nextTick();
-    if (contentRef.value) 
-      tabs.value.bind(contentRef.value);
+    await mountTabs();
   });
-
 
 </script>
 

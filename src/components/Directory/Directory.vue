@@ -21,9 +21,9 @@
           }"
         />
         <a
-          class="fcb-header-control create-world create-button"
-          :data-tooltip="localize('tooltips.createWorld')"
-          @click="onCreateWorldClick"
+          class="fcb-header-control create-button"
+          :data-tooltip="localize('tooltips.createSetting')"
+          @click="onCreateSettingClick"
         >
           <i class="fas fa-globe"></i>
           <i
@@ -58,12 +58,12 @@
         <div v-if="isTopicTreeRefreshing" class="fcb-loading-container">
           <ProgressSpinner v-if="isTopicTreeRefreshing" />
         </div>
-        <div v-else class="fcb-directory-panel-wrapper">
+        <div v-else class="fcb-directory-panel-wrapper fcb-setting-directory">
           <SettingDirectory />
         </div>
       </SplitterPanel>
       <SplitterPanel :size="40" class="fcb-directory-panel">
-        <div class="fcb-directory-panel-wrapper">
+        <div class="fcb-directory-panel-wrapper fcb-campaign-directory">
           <CampaignDirectory />
         </div>
       </SplitterPanel>
@@ -133,19 +133,11 @@
     void settingDirectoryStore.collapseAll();
   };
 
-  // create a world
-  const onCreateWorldClick = async (event: MouseEvent) => {
+  // create a setting
+  const onCreateSettingClick = async (event: MouseEvent) => {
     event.stopPropagation();
 
-    // // add 400 entries
-    // const wf = game.folders?.find((f)=>f.id==='IAAEn25ebbVZXL9V');
-    // if (wf) {
-    //   for (let i=0; i<400; i++) {
-    //     await settingDirectoryStore.createEntry(Topics.Location, { name: foundry.utils.randomID() });
-    //   }
-    // }
-
-    await settingDirectoryStore.createWorld();
+    await settingDirectoryStore.createSetting();
   };
 
   // save grouping to settings
@@ -175,17 +167,17 @@
       background: rgba(255, 255, 255, 0.5);
 
       .fcb-directory-panel-wrapper {
-        flex: 1;
+        /* This inner container handles vertical scrolling, which allows position:sticky to work correctly. */
         overflow-y: auto;
         height: 100%;
-      } 
+      }
 
       .fcb-directory-panel {
+        /* This outer container (the SplitterPanel) handles horizontal scrolling. */
+        overflow-x: auto;
+        height: 100%;
         display: flex;
         flex-direction: column;
-        overflow: hidden; 
-        height: 100%; 
-        padding-bottom: 10px;
       }
     }
 

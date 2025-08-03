@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
   // library imports
-  import { computed, } from 'vue';
+  import { computed } from 'vue';
 
   // library components
   import ContextMenu from '@imengyu/vue3-context-menu';
@@ -28,6 +28,8 @@
   import { Topics, ValidTopic, WindowTabType } from '@/types';
   import { MenuItem } from '@imengyu/vue3-context-menu';
   import { Backend } from '@/classes';
+  import { storeToRefs } from 'pinia';
+  import { useMainStore } from '@/applications/stores';
 
   ////////////////////////////////
   // props
@@ -62,20 +64,27 @@
     (e: 'generate-image'): void; 
   }>();
 
+
+  ////////////////////////////////
+  // data
+  const mainStore = useMainStore();
+  const {currentEntry }= storeToRefs(mainStore);
+
+
   ////////////////////////////////
   // data
   // these don't match the TabTypeIcons or TopicIcons because they need to be files, not icons
   const WINDOW_TYPE_IMAGES = {
-    [WindowTabType.World]: 'icons/svg/castle.svg',
+    [WindowTabType.Setting]: 'icons/svg/castle.svg',
     [WindowTabType.Campaign]: 'icons/svg/ruins.svg',
     [WindowTabType.Session]: 'icons/svg/combat.svg',
-    [WindowTabType.PC]: 'icons/svg/mystery-man.svg',
   };
 
   const TOPIC_IMAGES = {
     [Topics.Character]: 'icons/svg/mystery-man.svg',
     [Topics.Location]: 'icons/svg/oak.svg',
     [Topics.Organization]: 'icons/svg/temple.svg',
+    [Topics.PC]: 'icons/svg/mystery-man.svg',
   };
   
   ////////////////////////////////
@@ -90,8 +99,8 @@
       case WindowTabType.Entry:
         return TOPIC_IMAGES[props.topic];
 
-      case WindowTabType.World:
-        return WINDOW_TYPE_IMAGES[WindowTabType.World];
+      case WindowTabType.Setting:
+        return WINDOW_TYPE_IMAGES[WindowTabType.Setting];
 
       case WindowTabType.Campaign:
         return WINDOW_TYPE_IMAGES[WindowTabType.Campaign];
@@ -140,12 +149,13 @@
         },
       ];
 
-      if (Backend.available && [Topics.Character, Topics.Location, Topics.Organization].includes(props.topic)) {
+      if (Backend.available && [Topics.Character, Topics.Location, Topics.Organization, Topics.PC].includes(props.topic)) {
         items.push({
           icon: 'fa-head-side-virus',
           iconFontClass: 'fas',
           label: localize('contextMenus.image.generateImage'),
-          onClick: () => generateImage()
+          onClick: () => generateImage(),
+          disabled: Backend.isGeneratingImage[currentEntry.value?.uuid as string],
         });
       }
     } else {
@@ -155,6 +165,18 @@
           iconFontClass: 'fas',
           label: localize('contextMenus.image.viewImage'),
           onClick: () => showImagePopout()
+        },
+        {
+          icon: 'fa-copy',
+          iconFontClass: 'fas',
+          label: localize('contextMenus.image.copyToClipboard'),
+          onClick: () => copyImageToClipboard()
+        },
+        {
+          icon: 'fa-copy',
+          iconFontClass: 'fas',
+          label: localize('contextMenus.image.copyLinkToClipboard'),
+          onClick: () => copyImageLinkToClipboard()
         },
         {
           icon: 'fa-edit',
@@ -191,7 +213,8 @@
           icon: 'fa-head-side-virus',
           iconFontClass: 'fas',
           label: localize('contextMenus.image.generateImage'),
-          onClick: () => generateImage()
+          onClick: () => generateImage(),
+          disabled: Backend.isGeneratingImage[currentEntry.value?.uuid as string],
         });
       }
     } 
@@ -263,6 +286,117 @@
   const createScene = () => {
     if (props.modelValue) 
       emit('create-scene', props.modelValue);
+  };
+
+  const copyImageLinkToClipboard = () => {
+    if (!props.modelValue) return;
+    
+    navigator.clipboard.writeText(props.modelValue);
+  };
+
+  const copyImageToClipboard = async () => {
+    if (!props.modelValue) return;
+
+    try {
+      // Check if it's already a PNG or supported format
+      const isPng = props.modelValue.toLowerCase().endsWith('.png');
+      const isWebP = props.modelValue.toLowerCase().endsWith('.webp');
+      const isGif = props.modelValue.toLowerCase().endsWith('.gif');
+      
+      // For supported formats, try direct copy first
+      if (isPng || isWebP || isGif) {
+        try {
+          const response = await fetch(props.modelValue);
+          const blob = await response.blob();
+          const clipboardItem = new ClipboardItem({ [blob.type]: blob });
+          await navigator.clipboard.write([clipboardItem]);
+          ui.notifications?.info('Image copied to clipboard');
+          return;
+        } catch (directError) {
+          console.log('Direct copy failed, trying canvas conversion:', directError);
+          // Fall through to canvas conversion
+        }
+      }
+
+      // For JPG/JPEG or when direct copy fails, use canvas conversion
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = props.modelValue!;
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('Could not get canvas context');
+      }
+      
+      ctx.drawImage(img, 0, 0);
+      
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          throw new Error('Could not convert image to blob');
+        }
+        
+        try {
+          const clipboardItem = new ClipboardItem({ 'image/png': blob });
+          await navigator.clipboard.write([clipboardItem]);
+          ui.notifications?.info('Image copied to clipboard');
+        } catch (clipboardError) {
+          console.error('Clipboard write failed:', clipboardError);
+          fallbackCopyImage(img);
+        }
+      }, 'image/png');
+      
+    } catch (error) {
+      console.error('Failed to copy image to clipboard:', error);
+      ui.notifications?.error('Failed to copy image to clipboard');
+    }
+  };
+
+  const fallbackCopyImage = async (img: HTMLImageElement) => {
+    try {
+      // Fallback: create a temporary canvas and use execCommand
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      
+      ctx.drawImage(img, 0, 0);
+      
+      // Try to select and copy the canvas
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        
+        try {
+          // Create a temporary link for download as fallback
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'image.png';
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          ui.notifications?.info('Image downloaded as fallback (clipboard not available)');
+        } catch (downloadError) {
+          ui.notifications?.error('Failed to copy or download image');
+        }
+      }, 'image/png');
+    } catch (error) {
+      console.error('Fallback copy failed:', error);
+      ui.notifications?.error('Failed to copy image');
+    }
   };
 
   ////////////////////////////////

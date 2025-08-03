@@ -15,9 +15,11 @@
       :delete-item-label="localize('tooltips.deleteToDo')"
       :show-move-to-campaign="false"
       :draggable-rows="false"
+      :can-reorder="true"
       @delete-item="onDeleteToDoItem"
       @add-item="onAddToDoItem"
       @cell-edit-complete="onCellEditComplete"
+      @reorder="onReorder"
     >
     </BaseTable>
   </div>
@@ -35,10 +37,10 @@
   // library components
 
   // local components
-  import BaseTable from '@/components/BaseTable/BaseTable.vue';
+  import BaseTable from '@/components/tables/BaseTable.vue';
   
   // types
-  import { ToDoItem, ToDoTypes } from '@/types';
+  import { ToDoItem, ToDoTypes, BaseTableGridRow } from '@/types';
   import { DataTableCellEditCompleteEvent } from 'primevue';
 
   // store
@@ -123,6 +125,15 @@
         break;
     }  
   }
+
+  const onReorder = async (reorderedRows: BaseTableGridRow[]) => {
+    // Create properly ordered todos with updated sortOrder values
+    const reorderedToDos = reorderedRows.map((row, index) => {
+      const toDo = toDoRows.value.find(toDo => toDo.uuid === row.uuid) as ToDoItem;
+      return { ...toDo, sortOrder: index };
+    });
+    await campaignStore.reorderToDos(reorderedToDos);
+  };
 </script>
 
 <style lang="scss" scoped>

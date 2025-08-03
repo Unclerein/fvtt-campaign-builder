@@ -15,9 +15,11 @@
       :delete-item-label="localize('tooltips.deleteIdea')"
       :show-move-to-campaign="false"
       :draggable-rows="false"
+      :can-reorder="true"
       @delete-item="onDeleteIdea"
       @add-item="onAddIdea"
       @cell-edit-complete="onCellEditComplete"
+      @reorder="onReorder"
     >
     </BaseTable>
   </div>
@@ -35,10 +37,10 @@
   // library components
 
   // local components
-  import BaseTable from '@/components/BaseTable/BaseTable.vue';
+  import BaseTable from '@/components/tables/BaseTable.vue';
   
   // types
-  import { Idea } from '@/types';
+  import { Idea, BaseTableGridRow } from '@/types';
   import { DataTableCellEditCompleteEvent } from 'primevue';
 
   ////////////////////////////////
@@ -59,9 +61,8 @@
   ////////////////////////////////
   // computed data
   const mappedIdeaRows = computed(() => {
-    return ideaRows.value.map((idea: Idea) => ({
-      uuid: idea.uuid,
-      text: idea.text,
+    return ideaRows.value.map((row: Idea) => ({
+      ...row
     }));
   });
 
@@ -108,6 +109,15 @@
     if (field === 'text') {
       await campaignStore.updateIdea(data.uuid, newValue as string);
     }
+  };
+
+  const onReorder = async (reorderedRows: BaseTableGridRow[]) => {
+    // Create properly ordered ideas with updated sortOrder values
+    const reorderedIdeas = reorderedRows.map((row, index) => {
+      const idea = ideaRows.value.find(idea => idea.uuid === row.uuid) as Idea;
+      return { ...idea, sortOrder: index };
+    });
+    await campaignStore.reorderIdeas(reorderedIdeas);
   };
 
   ////////////////////////////////

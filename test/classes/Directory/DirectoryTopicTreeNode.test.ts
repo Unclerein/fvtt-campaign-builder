@@ -43,14 +43,14 @@ export const registerDirectoryTopicTreeNodeTests = () => {
       const { describe, it, expect, beforeEach, afterEach } = context;
 
       describe('DirectoryTopicTreeNode', () => {
-        let mockWorld: Setting;
+        let mockSetting: Setting;
         let mockTopicFolder: TopicFolder;
         let topicTreeNode: TestTopicTreeNode;
 
         beforeEach(() => {
-          // Create a mock world
-          mockWorld = {
-            uuid: 'world-uuid',
+          // Create a mock setting
+          mockSetting = {
+            uuid: 'setting-uuid',
             expandNode: sinon.stub().resolves(),
             collapseNode: sinon.stub().resolves(),
             expandedIds: {
@@ -71,8 +71,8 @@ export const registerDirectoryTopicTreeNodeTests = () => {
             topic: Topics.Character
           } as unknown as TopicFolder;
 
-          // Set the current world
-          CollapsibleNode.currentSetting = mockWorld;
+          // Set the current setting
+          CollapsibleNode.currentSetting = mockSetting;
 
           // Create a topic tree node
           topicTreeNode = new TestTopicTreeNode(
@@ -108,7 +108,7 @@ export const registerDirectoryTopicTreeNodeTests = () => {
         describe('recursivelyLoadNode', () => {
           it('should load child nodes and set their expanded state', async () => {
             // Call recursivelyLoadNode
-            await topicTreeNode.recursivelyLoadNode(mockWorld.expandedIds);
+            await topicTreeNode.recursivelyLoadNode(mockSetting.expandedIds);
             
             // Verify children were loaded
             expect(topicTreeNode.loadedChildren.length).to.equal(2);

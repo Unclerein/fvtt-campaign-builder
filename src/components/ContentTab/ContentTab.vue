@@ -10,7 +10,7 @@
       <EntryContent />
     </div>
     <div 
-      v-else-if="currentContentType===WindowTabType.World"
+      v-else-if="currentContentType===WindowTabType.Setting"
       class="fcb-content-wrapper"
     >
       <SettingContent />
@@ -26,12 +26,6 @@
       class="fcb-content-wrapper"
     >
       <CampaignContent />
-    </div>
-    <div 
-      v-else-if="currentContentType===WindowTabType.PC"
-      class="fcb-content-wrapper"
-    >
-      <PCContent />
     </div>
     <div 
       v-else-if="currentContentType===WindowTabType.NewTab"
@@ -54,10 +48,10 @@
 
   // library components
 
-  // local components
+  // local components 
   import EntryContent from '@/components/ContentTab/EntryContent/EntryContent.vue';
   import SessionContent from '@/components/ContentTab/SessionContent/SessionContent.vue';
-  import PCContent from '@/components/ContentTab/PCContent.vue';
+
   import CampaignContent from '@/components/ContentTab/CampaignContent/CampaignContent.vue';
   import HomePage from '@/components/ContentTab/HomePage.vue';
   import SettingContent from '@/components/ContentTab/SettingContent.vue';
@@ -302,14 +296,13 @@
       /* Tabs */
       &.sheet .fcb-tab-body .tab {
         height: 100% !important;
-        overflow-y: auto !important;
         align-content: flex-start;
         flex: 1;
       }
 
       &.sheet .fcb-tab-body .tab .tab-inner {
         height: 100%;
-        overflow-y: auto !important;
+        display: flex;
         align-content: flex-start;
         position: relative;
         padding-top: 2px;

@@ -24,12 +24,6 @@ export type PaginationResult<T extends AnyRow> = {
 
 export type AnyPaginationResult = PaginationResult<any>;
 
-export type PCDetails = {
-    uuid: string;   // the other item
-    name: string;
-    playerName: string;
-}
-
 export type SessionLocationDetails = {
   uuid: string;   // the location entry
   name: string;
@@ -63,20 +57,16 @@ export type SessionMonsterDetails = {
   dragTooltip?: string;
 }
 
-export type SessionVignetteDetails = {
-  uuid: string;   // the Actor document
-  description: string;
-  delivered: boolean;
-}
 
 export type SessionLoreDetails = {
   uuid: string;   
+  delivered: boolean;
   description: string;
   journalEntryPageId: string | null;  // the JournalEntryPage document
   journalEntryPageName: string | null;  
-  delivered: boolean;
   significant: boolean;
   packId: string | null;  // compendium of the document
+  sortOrder: number;
   onClick?: (event: MouseEvent, uuid: string) => void | Promise<void>;
 }
 

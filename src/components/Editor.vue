@@ -170,8 +170,8 @@
 
   const safeEnrichedContent = computed((): string => (sanitizeHTML(enrichedInitialContent.value)));
 
-  const wrapperStyle = computed((): string => (props.fixedHeight ? `height: ${props.fixedHeight + 'px'}` : ''));
-  const innerStyle = computed((): string => (props.height ? `height: ${props.height + 'px'}` : ''));
+  const wrapperStyle = computed((): string => (props.fixedHeight ? `height: ${props.fixedHeight}; margin-bottom: 6px` : ''));
+  const innerStyle = computed((): string => (props.height ? `height: ${props.height}` : ''));
 
   ////////////////////////////////
   // methods
@@ -191,7 +191,8 @@
 
     // Determine the preferred editor height
     const heights = [wrapperRef.value.offsetHeight].concat(wc ? [wc.offsetHeight] : []);
-    const height = Math.min(...heights.filter(h => Number.isFinite(h)));
+    const validHeights = heights.filter(h => Number.isFinite(h) && h > 0);
+    const height = validHeights.length > 0 ? Math.min(...validHeights) : 240; // fallback to 240px minimum
 
     // Get initial content
     const options = {
@@ -353,9 +354,9 @@
       // From DirectoryCampaignNode
       entryUuid = data.campaignId;
       entryName = data.name;
-    } else if (data.worldNode) {
-      // From SettingDirectory world
-      entryUuid = data.worldId;
+    } else if (data.settingNode) {
+      // From SettingDirectory setting
+      entryUuid = data.settingId;
       entryName = data.name;
     } else if (data.sessionNode) {
       // From SessionDirectoryNode
@@ -383,11 +384,11 @@
             if (session) {
               entryName = session.name;
             }
-          } else if (data.worldNode) {
-            // It's a world
-            const world = await Setting.fromUuid(entryUuid);
-            if (world) {
-              entryName = world.name;
+          } else if (data.settingNode) {
+            // It's a setting
+            const setting = await Setting.fromUuid(entryUuid);
+            if (setting) {
+              entryName = setting.name;
             }
           } else {
             // Try as a regular entry

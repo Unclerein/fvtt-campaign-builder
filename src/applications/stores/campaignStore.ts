@@ -9,8 +9,8 @@ import { useCampaignDirectoryStore, useMainStore, useNavigationStore, } from '@/
 import { FCBDialog } from '@/dialogs';
 
 // types
-import { PCDetails, FieldData, CampaignLoreDetails, ToDoItem, ToDoTypes, Idea} from '@/types';
-import { Campaign, Entry, PC, Session } from '@/classes';
+import { RelatedPCDetails, FieldData, CampaignLoreDetails, ToDoItem, ToDoTypes, Idea} from '@/types';
+import { Campaign, Entry, Session } from '@/classes';
 import { localize } from '@/utils/game';
 import Document from 'node_modules/@types/fvtt-types/src/foundry/common/abstract/document.mjs';
 
@@ -29,7 +29,7 @@ export const useCampaignStore = defineStore('campaign', () => {
   // the state
 
   // used for tables
-  const relatedPCRows = ref<PCDetails[]>([]);
+  const relatedPCRows = ref<RelatedPCDetails[]>([]);
   const allRelatedLoreRows = ref<CampaignLoreDetails[]>([]);  // all the rows - for lookups
   const toDoRows = ref<ToDoItem[]>([]);
   const ideaRows = ref<Idea[]>([]);
@@ -78,46 +78,34 @@ export const useCampaignStore = defineStore('campaign', () => {
   ///////////////////////////////
   // actions
   /** add PC to current campaign */
-  const addPC = async (): Promise<PC | null> => {
+  const addPC = async (pc: RelatedPCDetails): Promise<void> => {
     const campaign = currentCampaign.value || await currentSession.value?.loadCampaign();
 
     if (!campaign)
-      return null;
+      return;
 
-    const pc = await PC.create(campaign);
+    campaign.pcs = [...campaign.pcs, pc];
+    await campaign.save();
 
     await _refreshPCRows();
-
-    if (pc) {
-      await mainStore.refreshCurrentContent();
-      return pc;
-    } else { 
-      return null;
-    }
+    await mainStore.refreshCurrentContent();
   };
 
-  const deletePC = async (pcId: string): Promise<void> => {
+  /** removes from the campaign - not the entry */
+  const deletePC = async (uuid: string): Promise<void> => {
     const campaign = currentCampaign.value || await currentSession.value?.loadCampaign();
     
     if (!campaign)
       return;
 
-    const pc = await PC.fromUuid(pcId);
-
-    if (!pc) 
-      throw new Error('Bad session in campaignDirectoryStore.deletePC()');
-
     // confirm
     if (!(await FCBDialog.confirmDialog(localize('dialogs.confirmDeletePC.title'), localize('dialogs.confirmDeletePC.message'))))
       return;
 
-    await pc.delete();
-
-    // update tabs/bookmarks
-    await navigationStore.cleanupDeletedEntry(pcId);
+    campaign.pcs = campaign.pcs.filter(pc => pc.uuid !== uuid);
+    await campaign.save();
 
     await _refreshPCRows();
-
     await mainStore.refreshCurrentContent();
   };
   
@@ -313,6 +301,40 @@ export const useCampaignStore = defineStore('campaign', () => {
     await _refreshIdeaRows();
   }
 
+  const reorderIdeas = async (reorderedIdeas: Idea[]) => {
+    if (!currentCampaign.value) return;
+
+    currentCampaign.value.ideas = reorderedIdeas;
+    await currentCampaign.value.save();
+    await _refreshIdeaRows();
+  };
+
+  const reorderToDos = async (reorderedToDos: ToDoItem[]) => {
+    if (!currentCampaign.value) return;
+
+    currentCampaign.value.todoItems = reorderedToDos;
+    await currentCampaign.value.save();
+    await _refreshToDoRows();
+  };
+
+  const reorderAvailableLore = async (reorderedLore: CampaignLoreDetails[]) => {
+      if (!currentCampaign.value) return;
+  
+    currentCampaign.value.lore = reorderedLore.map(l => ({ 
+      uuid: l.uuid,
+      delivered: l.delivered,
+      description: l.description,
+      significant: l.significant,
+      journalEntryPageId: l.journalEntryPageId,
+      sortOrder: l.sortOrder,
+      lockedToSessionId: null,
+      lockedToSessionName: null,
+    }));
+    
+    await currentCampaign.value.save();
+    await _refreshLoreRows();
+    };
+  
   ///////////////////////////////
   // computed state
   /** only significant rows from sessions are returned */
@@ -458,22 +480,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     if (!campaign) 
       return;
     
-    const pcs = await campaign.getPCs();
-
-    // we can't just do it in place because of a race condition
-    const retval = [] as PCDetails[];
-
-    if (pcs) {
-      for (let i = 0; i < pcs.length; i++) {
-        retval.push({ 
-          name: pcs[i].name,
-          playerName: pcs[i].playerName,
-          uuid: pcs[i].uuid,
-        });
-      }
-    }
-
-    relatedPCRows.value = retval;
+    relatedPCRows.value = (await campaign.getPCs()) || [];
   };
 
   const _refreshLoreRows = async () => {
@@ -505,6 +512,7 @@ export const useCampaignStore = defineStore('campaign', () => {
           journalEntryPageId: lore.journalEntryPageId,
           journalEntryPageName: entry?.name || null,
           packId: entry?.pack ?? null,
+          sortOrder: lore.sortOrder,
         });
       }
     }
@@ -526,6 +534,7 @@ export const useCampaignStore = defineStore('campaign', () => {
         journalEntryPageId: lore.journalEntryPageId,
         journalEntryPageName: entry?.name || null,
         packId: entry?.pack ??null,
+        sortOrder: lore.sortOrder,
       });
     }
 
@@ -605,6 +614,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     deletePC,
     addLore,
     deleteLore,
+    reorderAvailableLore,    
     updateLoreDescription,
     updateLoreJournalEntry,
     markLoreDelivered,
@@ -616,6 +626,8 @@ export const useCampaignStore = defineStore('campaign', () => {
     addIdea,
     updateIdea,
     deleteIdea,
+    reorderIdeas,
+    reorderToDos,
   };
 });
 

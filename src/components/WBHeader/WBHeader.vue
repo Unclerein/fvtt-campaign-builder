@@ -125,26 +125,6 @@
     return (checkTab.history?.length > 1) && (checkTab.historyIdx < checkTab.history.length-1);
   };
 
-  // moves forward/back through the history "move" spaces (or less if not possible); negative numbers move back
-  const navigateHistory = async function (move: number) {
-    const tab = navigationStore.getActiveTab();
-
-    if (!tab) return;
-
-    const newSpot = Math.clamp(tab.historyIdx + move, 0, tab.history.length-1);
-
-    // if we didn't move, return
-    if (newSpot === tab.historyIdx)
-      return;
-
-    tab.historyIdx = newSpot;
-    await navigationStore.openContent(tab.history[tab.historyIdx].contentId, tab.history[tab.historyIdx].tabType, { activate: false, newTab: false, updateHistory: false});  // will also save the tab and update recent
-
-    // Restore the content tab from history
-    if (tab.history[tab.historyIdx].contentTab) {
-      mainStore.currentContentTab = tab.history[tab.historyIdx].contentTab;
-    }
-  };
 
   ////////////////////////////////
   // event handlers
@@ -182,8 +162,8 @@
 
   const onAddTabClick = async () => { await navigationStore.openEntry(); };
 
-  const onHistoryBackClick = () => { void navigateHistory(-1); };
-  const onHistoryForwardClick = () => { void navigateHistory(1); };
+  const onHistoryBackClick = () => { void navigationStore.navigateHistory(-1); };
+  const onHistoryForwardClick = () => { void navigationStore.navigateHistory(1); };
 
   ////////////////////////////////
   // watchers
