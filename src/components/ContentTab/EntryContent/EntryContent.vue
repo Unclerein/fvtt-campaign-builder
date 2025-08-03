@@ -343,6 +343,7 @@
   const showHierarchy = computed((): boolean => (topic.value===null ? false : hasHierarchy(topic.value)));
   const roleplayAboveDescription = computed(() => ModuleSettings.get(SettingKey.showRolePlayingNotes) && isInPlayMode.value);
   const roleplayBelowDescription = computed(() => ModuleSettings.get(SettingKey.showRolePlayingNotes) && !isInPlayMode.value);
+
   ////////////////////////////////
   // methods
   const refreshEntry = async () => {
@@ -404,6 +405,31 @@
       pushButtonTitle.value = localize('tooltips.addToASession')
       pushButtonDisabled.value = false;
     }
+  }
+
+  const mountTabs = async () => {
+    // Ensure DOM is fully ready before initializing tabs
+    await nextTick();
+    
+    tabs.value = new foundry.applications.ux.Tabs({ 
+      navSelector: '.tabs', 
+      contentSelector: '.fcb-tab-body', 
+      initial: 'description'
+    });
+
+    // update the store when tab changes
+    tabs.value.callback = () => {
+      currentContentTab.value = tabs.value?.active || null;
+    };
+
+    if (contentRef.value) {
+      tabs.value.bind(contentRef.value);
+    }
+
+    if (tabs.value) {
+      tabs.value.activate(currentContentTab.value || 'description');
+    }
+
   }
 
   ////////////////////////////////
@@ -720,30 +746,13 @@
       currentContentTab.value = 'description';
     }
 
-    if (tabs.value) {
-      tabs.value.activate(currentContentTab.value); 
-    }
+    await mountTabs(); 
   });
 
   ////////////////////////////////
   // lifecycle events
   onMounted(async () => {
-    // Ensure DOM is fully ready before initializing tabs
-    await nextTick();
-    
-    tabs.value = new foundry.applications.ux.Tabs({ 
-      navSelector: '.tabs', 
-      contentSelector: '.fcb-tab-body', 
-      initial: 'description'
-    });
-
-    // update the store when tab changes
-    tabs.value.callback = () => {
-      currentContentTab.value = tabs.value?.active || null;
-    };
-
-    if (contentRef.value) 
-      tabs.value.bind(contentRef.value);
+    await mountTabs();
   });
 
 </script>
