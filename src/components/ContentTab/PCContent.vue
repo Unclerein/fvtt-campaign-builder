@@ -144,7 +144,6 @@
 
   // local imports
   import { useMainStore, useNavigationStore, useSettingDirectoryStore, useRelationshipStore } from '@/applications/stores';
-  import { WindowTabType } from '@/types';
   import { getTopicIcon, } from '@/utils/misc';
   import { localize } from '@/utils/game';
   import { getValidatedData } from '@/utils/dragdrop';
@@ -160,7 +159,8 @@
   import RelatedEntriesManagementDialog from '@/components/RelatedEntriesManagementDialog.vue';
   
   // types
-  import { Topics } from '@/types';
+  import { Entry } from '@/classes';
+  import { Topics, RelatedJournal } from '@/types';
 
   ////////////////////////////////
   // props
@@ -201,12 +201,39 @@
   ////////////////////////////////
   // methods
   const refreshEntry = async () => {
+    if (!currentEntry.value)
+      return;
+    
     // load starting data values
     name.value = currentEntry.value.name || '';
     playerName.value = currentEntry.value.playerName || '';
     await currentEntry.value.getActor();
   };
   
+  const mountTabs = async () => {
+    // Ensure DOM is fully ready before initializing tabs
+    await nextTick();
+    
+    tabs.value = new foundry.applications.ux.Tabs({ 
+      navSelector: '.tabs', 
+      contentSelector: '.fcb-tab-body', 
+      initial: 'description'
+    });
+
+    // update the store when tab changes
+    tabs.value.callback = () => {
+      currentContentTab.value = tabs.value?.active || null;
+    };
+
+    if (contentRef.value) {
+      tabs.value.bind(contentRef.value);
+    }
+
+    if (tabs.value) {
+      tabs.value.activate(currentContentTab.value || 'description');
+    }
+
+  }
 
   ////////////////////////////////
   // event handlers
@@ -340,30 +367,13 @@
       currentContentTab.value = 'description';
     }
 
-    if (tabs.value) {
-      tabs.value.activate(currentContentTab.value); 
-    }
+    await mountTabs();
   });
 
   ////////////////////////////////
   // lifecycle events
   onMounted(async () => {
-    // Ensure DOM is fully ready before initializing tabs
-    await nextTick();
-    
-    tabs.value = new foundry.applications.ux.Tabs({ 
-      navSelector: '.tabs', 
-      contentSelector: '.fcb-tab-body', 
-      initial: 'description'
-    });
-
-    // update the store when tab changes
-    tabs.value.callback = () => {
-      currentContentTab.value = tabs.value?.active || null;
-    };
-
-    if (contentRef.value) 
-      tabs.value.bind(contentRef.value);
+    await mountTabs();
 
     if (currentEntry.value) {
       // load starting data values
