@@ -1,37 +1,13 @@
 # Change Log
 
-## v1.2.0 - So many things I skipped a version number!  AI options, better interactions with journal entries, quality of life improvements
-![](https://img.shields.io/badge/release%20date-August%2001%2C%202025-blue)
-![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.2.0/module.zip)
+## v2.0.0 - Ability to give players access
+![](https://img.shields.io/badge/release%20date-August%204%2C%202025-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v2.0.0/module.zip)
 
-**Note!** FOR THOSE USING THE BACKEND, THIS RELEASE REQUIRES AN UPGRADE.  SIMPLY RERUN THE SAME `curl` COMMAND YOU USED TO INSTALL THE PRIOR VERSION (FROM THE DIRECTORY WITH YOUR `.env` FILE) AND IT SHOULD JUST UPDATE IN PLACE.  YOU WILL THEN NEED TO UPDATE YOUR API KEY IN THE SETTINGS WITH THE NEW VALUE.
-
-**Note 2!** You may need to close all your currently open tabs and reopen to avoid issues after upgrading to this version.
-
-**Note 3!** You will see a migration window popup briefly (usually very briefly) the first time you login after upgrading.  
-
-**Note 4!** Due to the extensive changes to PCs, you will need to reconnect your PCs (now found in the Setting tree) to your campaigns.  No PC data should have been lost (see note 2), but you do have to reconnect them.  You do not need to connect them to every session - the session and campaign lists mirror each other.
-
-- Added ability to link Foundry journals to Entries, Settings, Campaigns, and PCs - great for attaching maps, multiple images of the same character, and various other info you want to store and/or share with your players
-- Added support for Anthropic (Claude 3) for text generation (see module settings)
-- Added ability to choose from multiple image generation models
-- Made lore hold a fixed order (like ideas and todos)and enabled the ability to drag and drop to reorder them
-- Removed pagination from all tables; it took up extra room and was a nuisance
-- Added a keybinding (Ctrl-Shift-Z by default) to toggle the main window
-- Added keybindings for moving forward/back across the tab bar; changed default for closing the tab
-- Added module setting to show the type of each node in the Setting tree in hierarchy mode.
-- Characters in setting directory now group by type regardless of whether the overall tree is grouped by type or not.  Since they don't have a hierarchy, this makes it much easier to find them when you have a long list.
-- Consolidated "strong start" onto the Session notes tab; it shows at the top initially, but then once the session has been played (i.e. if there's another session after it already created), it moves below notes for convenience.
-- Added PCs to the setting directory and made the ability to link PCs to entries - makes tracking backstory relationships to the world way simpler
-- Added ability to copy images and image links to the clipboard
-- Minor UI cleanup 
-- Made it possible to highlight text throughout the Campaign Builder window (ex. so you can copy and paste text from an editor that's not currently open)
-- Fixed bug where bookmarks weren't deleted when the underlying content was
-- Fixed bug where campaigns created by right-clicking in the Setting directory didn't immediately show up in the Campaign directory
-- Fixed bug where search index wasn't being populated if you closed and reopened the main window
-- Fixed bug where an error when generating an image prevented you from trying again
-- Eliminated inaccurate notifications about rolltables being repopulated
-- Allowed for numbering a session 0
+- You can now enable non-GM players to access the Campaign Builder:
+  - Specify a player trust level for read, write, and generate (i.e. run AI) permissions
+  - Flag individual entries as visible/not visible
+  - Optionally share session numbers, dates, titles, and notes for past sessions
 
 ## v1.0.0 - Coming out of beta!
 

@@ -63,7 +63,7 @@
 
   // types
   import { DataTableCellEditCompleteEvent } from 'primevue';
-  import { BaseTableGridRow, CampaignLoreDetails } from 'src/types';
+  import { BaseTableGridRow, CampaignLoreDetails } from '@/types';
   
   ////////////////////////////////
   // props

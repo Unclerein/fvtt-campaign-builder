@@ -14,6 +14,7 @@ import {
 import { Entry, TopicFolder, Setting, } from '@/classes';
 import { Backend } from '@/classes';
 import { ModuleSettings, SettingKey } from '@/settings';
+import { notifyError, notifyInfo } from './notifications';
 
 /**
  * Union type representing all possible generated content details.
@@ -100,7 +101,7 @@ export const generateImage = async (forSetting: Setting, entry: Entry): Promise<
 
   try {
     // Show a notification that we're generating an image
-    ui.notifications?.info(`Generating image for ${entry.name}. This may take a minute...`);
+    notifyInfo(`Generating image for ${entry.name}. This may take a minute...`);
 
     // Get species name if this is a character
     let species: Species | undefined;
@@ -171,7 +172,7 @@ export const generateImage = async (forSetting: Setting, entry: Entry): Promise<
     if (result.data.filePath) {
       entry.img = result.data.filePath;
       await entry.save();
-      ui.notifications?.info(`Image completed for ${entry.name}.`);
+      notifyInfo(`Image completed for ${entry.name}.`);
 
       // refresh the current content, just in case
       await useMainStore().refreshCurrentContent();
@@ -180,7 +181,7 @@ export const generateImage = async (forSetting: Setting, entry: Entry): Promise<
     }
   } catch (error) {
     const message = `Failed to generate image: ${(error as Error).message}.`;
-    ui.notifications?.error(message);
+    notifyError(message);
     throw new Error(message);
   } finally {
     Backend.isGeneratingImage[entryGenerated] = false;

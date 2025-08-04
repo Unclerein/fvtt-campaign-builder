@@ -41,6 +41,9 @@
         "defaultTypeTavern": "Default Tavern type",
         "defaultTypeTavernHelp": "Default type to use when creating a tavern location entry"
       },
+      "playerAccess": "Player Access Settings",
+      "playerAccessLabel": "Player Access",
+      "playerAccessHelp": "Configure player permissions for the Campaign Builder",
       "advanced": "Advanced Settings",
       "advancedLabel": "Open Advanced Settings",
       "advancedHelp": "Configure advanced settings (including AI)",

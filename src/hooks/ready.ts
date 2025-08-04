@@ -1,7 +1,8 @@
 import { setupEnricher } from '@/components/Editor/helpers';
 import { moduleId, ModuleSettings, SettingKey } from '@/settings';
+import { validatePermission, PermissionType } from '@/utils/permissions';
 import { getCampaignBuilderApp } from '@/applications/CampaignBuilder';
-import { isClientGM, localize } from '@/utils/game';
+import { localize } from '@/utils/game';
 import { refreshAllSettingRollTables } from '@/utils/nameGenerators';
 import { Backend, ExternalAPI } from '@/classes';
 import { MigrationManager } from '@/utils/migration';
@@ -11,11 +12,13 @@ export function registerForReadyHook() {
 }
 
 async function ready(): Promise<void> {
-  if (!isClientGM())
+  // don't do anything if even the most basic permission doesn't exist
+  if (!validatePermission(PermissionType.EntryRead))
     return;
   
   // check the backend
-  await Backend.configure();
+  if (validatePermission(PermissionType.Generate))
+    await Backend.configure();
   
   // Mount the external API
   const module = game.modules.get(moduleId);

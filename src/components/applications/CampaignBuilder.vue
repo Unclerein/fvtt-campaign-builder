@@ -52,7 +52,8 @@
   import { localize } from '@/utils/game';
   import { updateWindowTitle } from '@/utils/titleUpdater';
   import { theme } from '@/components/styles/primeVue';
-
+  import { notifyWarn } from '@/utils/notifications';
+  
   // library components
   import Splitter from 'primevue/splitter';
   import SplitterPanel from 'primevue/splitterpanel';
@@ -67,6 +68,7 @@
   import { WindowTabType, Topics, ValidTopic } from '@/types';
   import { Backend, Setting, } from '@/classes';
   import { CampaignDoc } from '@/documents';
+
 
   
   ////////////////////////////////
@@ -314,7 +316,7 @@
       // Check if backend is available and show warning if not
       if (!Backend.available) {
         if (!ModuleSettings.get(SettingKey.hideBackendWarning)) {
-          ui.notifications?.warn(localize('notifications.backend.rollTablesNotAvailable'));
+          notifyWarn(localize('notifications.backend.rollTablesNotAvailable'));
         }
       } else {
         // this is a convenient time to poll for email

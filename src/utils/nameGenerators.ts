@@ -1,11 +1,13 @@
 import { moduleId } from '@/settings';
-import { isClientGM, localize } from '@/utils/game';
+import { localize } from '@/utils/game';
 import { Backend } from '@/classes';
 import { nameStyles } from '@/utils/nameStyles';
+import { PermissionType, validatePermission } from '@/utils/permissions';
 
 import { GeneratorType, SettingGeneratorConfig } from '@/types';
 import { Setting } from '@/classes';
 import { RollTableFlagKey } from '@/documents';
+import { notifyInfo } from './notifications';
 
 /**
  * The number of items to generate for each roll table.
@@ -276,7 +278,7 @@ export const refreshSettingRollTables = async(setting: Setting, empty: boolean =
   }
 
   refreshInProgress = true;
-  ui.notifications?.info(localize('applications.rollTableSettings.notifications.refreshStarted'));
+  notifyInfo(localize('applications.rollTableSettings.notifications.refreshStarted'));
 
   const config = setting.rollTableConfig;
 
@@ -332,7 +334,7 @@ export const refreshAllSettingRollTables = async() : Promise<void> => {
 export const updateSettingRollTableNames = async(setting: Setting) : Promise<void> => {
   const config = setting.rollTableConfig;
 
-  if (!config || !isClientGM()) {
+  if (!config || !validatePermission(PermissionType.Generate)) {
     return; // No roll tables configured for this setting
   }
 
