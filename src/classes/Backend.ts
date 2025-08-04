@@ -23,7 +23,7 @@ export class Backend {
 
   /** force will reconnect even if already connected (ex. when changing credentials) */
   static async configure(force: boolean = false) {
-    if (!validatePermission(PermissionType.Generate) || (Backend.inProgress || (Backend.available && !force))) {
+    if (!validatePermission(PermissionType.Backend) || (Backend.inProgress || (Backend.available && !force))) {
       return;
     }
 

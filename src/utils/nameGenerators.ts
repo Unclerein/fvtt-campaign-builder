@@ -334,7 +334,7 @@ export const refreshAllSettingRollTables = async() : Promise<void> => {
 export const updateSettingRollTableNames = async(setting: Setting) : Promise<void> => {
   const config = setting.rollTableConfig;
 
-  if (!config || !validatePermission(PermissionType.Generate)) {
+  if (!config || !validatePermission(PermissionType.Backend)) {
     return; // No roll tables configured for this setting
   }
 

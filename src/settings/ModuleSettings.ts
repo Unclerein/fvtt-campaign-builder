@@ -3,6 +3,7 @@ import { moduleId } from './index';
 import { AdvancedSettingsApplication } from '@/applications/settings/AdvancedSettingsApplication';
 import { SpeciesListApplication } from '@/applications/settings/SpeciesListApplication';
 import { RollTableSettingsApplication } from '@/applications/settings/RollTableSettingsApplication';
+import { PermissionSettingsApplication } from '@/applications/settings/PermissionSettingsApplication';
 import { SessionDisplayMode, Species, TagList, GeneratorType } from '@/types';
 import type { ApiLocationGenerateImagePostRequestImageModelEnum, ApiLocationGenerateImagePostRequestTextModelEnum } from '@/apiClient';
 
@@ -49,7 +50,7 @@ export enum SettingKey {
   playerAccessEntryRead = 'playerAccessEntryRead',  // permission level needed for players to read (visible) entries
   playerAccessEntryWrite = 'playerAccessEntryWrite',  // permission level needed for players to write entries
   playerAccessEntryFull = 'playerAccessEntryFull',  // permission level needed for players to have full access to entries (i.e. even see hidden entries)
-  playerAccessGenerate = 'playerAccessGenerate',  // permission level needed for players to run AI features
+  playerAccessBackend = 'playerAccessBackend',  // permission level needed for players to access backend features
   playerAccessSessionNotes = 'playerAccessSessionNotes',  // permission level needed for players to access session notes
   playerAccessSessionFull = 'playerAccessSessionFull',  // permission level needed for players to have full access to sessions and campaigns
 }
@@ -87,7 +88,7 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.playerAccessEntryRead ? CONST.USER_ROLES :
     K extends SettingKey.playerAccessEntryWrite ? CONST.USER_ROLES :
     K extends SettingKey.playerAccessEntryFull ? CONST.USER_ROLES :
-    K extends SettingKey.playerAccessGenerate ? CONST.USER_ROLES :
+    K extends SettingKey.playerAccessBackend ? CONST.USER_ROLES :
     K extends SettingKey.playerAccessSessionNotes ? CONST.USER_ROLES :
     K extends SettingKey.playerAccessSessionFull ? CONST.USER_ROLES :
     never;  
@@ -152,12 +153,12 @@ export class ModuleSettings {
     },
     {
       settingID: SettingKey.playerAccess,
-      name: 'settings.playerAccess',
-      label: 'fcb.settings.playerAccessLabel',   // localized by Foundry
-      hint: 'settings.playerAccessHelp',
+      name: 'settings.permissionSettings',
+      label: 'fcb.settings.permissionSettingsLabel',   // localized by Foundry
+      hint: 'settings.permissionSettingsHelp',
       icon: 'fas fa-bars',               // A Font Awesome icon used in the submenu button
       permissions: ['SETTINGS_WRITE'], // Optional: restrict to GM only
-      type: PlayerAccessApplication,
+      type: PermissionSettingsApplication,
     },
   ];
 
@@ -344,7 +345,7 @@ export class ModuleSettings {
       type: Number,
     },
     {
-      settingID: SettingKey.playerAccessGenerate,
+      settingID: SettingKey.playerAccessBackend,
       default: CONST.USER_ROLES.GAMEMASTER,
       type: Number,
     },

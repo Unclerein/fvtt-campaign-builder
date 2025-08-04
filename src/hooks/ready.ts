@@ -17,7 +17,7 @@ async function ready(): Promise<void> {
     return;
   
   // check the backend
-  if (validatePermission(PermissionType.Generate))
+  if (validatePermission(PermissionType.Backend))
     await Backend.configure();
   
   // Mount the external API
