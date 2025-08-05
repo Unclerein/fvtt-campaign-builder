@@ -13,12 +13,11 @@ export function registerForReadyHook() {
 
 async function ready(): Promise<void> {
   // don't do anything if even the most basic permission doesn't exist
-  if (!validatePermission(PermissionType.EntryRead))
+  if (!validatePermission(PermissionType.EntryRead) && !validatePermission(PermissionType.SessionNotes))
     return;
   
   // check the backend
-  if (validatePermission(PermissionType.Backend))
-    await Backend.configure();
+  await Backend.configure();
   
   // Mount the external API
   const module = game.modules.get(moduleId);
@@ -64,31 +63,33 @@ const loadDefaultSpecies = async () => {
 }
 
 async function addMainButton(): Promise<void> {
-  if (game.user?.isGM) {  
-    // make sure it's not there already - sometimes on 1st load this gets called multiple times
-    const existingButton = jQuery(document).find('#fcb-launch');
+  // need permission to ready entries or sessions to get the button
+  if (!validatePermission(PermissionType.EntryRead) && !validatePermission(PermissionType.SessionNotes))
+    return;
 
-    if (existingButton.length > 0)
-      return;
+  // make sure it's not there already - sometimes on 1st load this gets called multiple times
+  const existingButton = jQuery(document).find('#fcb-launch');
 
-    const sceneNav = jQuery(document).find('#scene-navigation');
+  if (existingButton.length > 0)
+    return;
 
-    // sometimes this is called before the toolbar is loaded
-    if (sceneNav.length === 0)
-      return;
-    
-    const toolTip = localize('tooltips.mainButton');
-    const button = jQuery(`<button id='fcb-launch' type="button" class="scene-navigation-menu" style="flex:0 1 20px; pointer-events: auto" title="${toolTip}"><i class="fas fa-globe"></i></button>`);
+  const sceneNav = jQuery(document).find('#scene-navigation');
 
-    // put the button before the nav
-    sceneNav.before(button);
+  // sometimes this is called before the toolbar is loaded
+  if (sceneNav.length === 0)
+    return;
+  
+  const toolTip = localize('tooltips.mainButton');
+  const button = jQuery(`<button id='fcb-launch' type="button" class="scene-navigation-menu" style="flex:0 1 20px; pointer-events: auto" title="${toolTip}"><i class="fas fa-globe"></i></button>`);
 
-    // wrap both in a new flexrow
-    button.add(sceneNav).wrapAll(`<div id="fcb-launch-wrapper" class="flexrow" style="align-items: flex-start"></div>`);
+  // put the button before the nav
+  sceneNav.before(button);
 
-    button.on('click', null, async (): Promise<void> => {
-      // create the instance and render 
-      await getCampaignBuilderApp().render(true);
-    });
-  }
+  // wrap both in a new flexrow
+  button.add(sceneNav).wrapAll(`<div id="fcb-launch-wrapper" class="flexrow" style="align-items: flex-start"></div>`);
+
+  button.on('click', null, async (): Promise<void> => {
+    // create the instance and render 
+    await getCampaignBuilderApp().render(true);
+  });
 }
