@@ -102,13 +102,20 @@ export class SessionNotesApplication extends VueApplicationMixin(ApplicationV2) 
 }
 
 // Function to open the session notes window
-export async function openSessionNotes(session: Session): Promise<void> {
-  // Create and render the application
+export async function openSessionNotes(session: Session, forceReset = true): Promise<void> {
+  // if it's open, we either just activate it or close and reopen
   if (SessionNotesApplication.app) {
-    // close the old one
-    await SessionNotesApplication.app.close();
+    if (forceReset) {
+      // Create and render the application
+      await SessionNotesApplication.app.close();
+    } else {
+      // just activate it
+      await SessionNotesApplication.app.render(true);
+      return;
+    }
   }
 
+  // setup and render a new one
   SessionNotesApplication.title = `Session ${session.number}`;
   SessionNotesApplication.app = new SessionNotesApplication();
 

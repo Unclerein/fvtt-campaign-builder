@@ -131,17 +131,7 @@
                 <i class="fas fa-pen"></i>
               </a>
               <span v-if="props.trackDelivery">
-                <!-- we track delivery on campaign (delivered and not) and session lore lists -->
-                <!-- this is a delivered one -->
-                <a 
-                  v-if="data.delivered"
-                  class="fcb-action-icon" 
-                  :data-tooltip="localize('tooltips.unmarkDelivered')"
-                  @click.stop="emit('unmarkItemDelivered', data.uuid)" 
-                >
-                  <i class="fas fa-circle-xmark"></i>
-                </a>
-                <!-- this is a undelivered session one -->
+                <!-- this is a session one that's not delivered -->
                 <a 
                   v-if="props.showMoveToCampaign && !data.delivered"
                   class="fcb-action-icon" 
@@ -150,15 +140,33 @@
                 >
                   <i class="fas fa-arrow-up"></i>
                 </a>
-                <!-- this is a undelivered campaign one -->
+
+                <!-- we track delivery on campaign (delivered and not) and session lore lists -->
+                <!-- this is a delivered one -->
                 <a 
-                  v-if="!props.showMoveToCampaign && !data.delivered"
+                  v-if="data.delivered"
                   class="fcb-action-icon" 
-                  :data-tooltip="localize('tooltips.moveToNextSession')"
-                  @click.stop="emit('moveToNextSession', data.uuid)" 
+                  :data-tooltip="localize('tooltips.unmarkAsDelivered')"
+                  @click.stop="emit('unmarkItemDelivered', data.uuid)" 
                 >
-                  <i class="fas fa-share"></i>
+                  <i class="fas fa-circle-xmark"></i>
                 </a>
+                <template v-else>
+                  <a 
+                    class="fcb-action-icon" 
+                    :data-tooltip="localize('tooltips.markAsDelivered')"
+                    @click.stop="emit('markItemDelivered', data.uuid)" 
+                  >
+                    <i class="fas fa-circle-check"></i>
+                  </a>
+                  <a 
+                    class="fcb-action-icon" 
+                    :data-tooltip="localize('tooltips.moveToNextSession')"
+                    @click.stop="emit('moveToNextSession', data.uuid)" 
+                  >
+                    <i class="fas fa-share"></i>
+                  </a>
+                </template>
               </span>
             </div>
           </div>
