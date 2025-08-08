@@ -8,6 +8,7 @@
 - Fixed some missing localization strings 
 - You can now create a new entry even if description is blank
 - Fixed notes buttons in the session buttons bar and added ability to open the notes popout
+- Fixed issue where roll tables were unnecessarily being repopulated
 
 ## v1.2.0 - So many things I skipped a version number!  AI options, better interactions with journal entries, quality of life improvements
 ![](https://img.shields.io/badge/release%20date-August%203%2C%202025-blue)
