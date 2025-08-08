@@ -4,5 +4,5 @@
 - update readme
 - update credits, if needed
 - create release
-- update description in foundry
+- update description in foundry - https://markdowntohtml.com/
 - add version in foundry

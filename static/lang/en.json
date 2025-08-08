@@ -375,6 +375,7 @@
         },
         "session": {
           "notes": "Notes",
+          "noteBox": "Note Box",
           "pcs": "PCs",
           "start": "Start",
           "lore": "Lore",
@@ -518,11 +519,10 @@
         "addToSession": "Add to session"
       },
       "relatedDocuments": {
-        "selectActors": "Select Actors",
-        "selectItems": "Select Items",
         "addActor": "Add Actor",
         "addItem": "Add Item",
-        "addJournal": "Add Journal/Page"        
+        "addJournal": "Add Journal/Page",
+        "addScene": "Add Scene"       
       },
       "relatedEntriesManagement": {
         "title": "Manage Related Entries",

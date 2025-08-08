@@ -278,7 +278,6 @@ export const refreshSettingRollTables = async(setting: Setting, empty: boolean =
   }
 
   refreshInProgress = true;
-  notifyInfo(localize('applications.rollTableSettings.notifications.refreshStarted'));
 
   const config = setting.rollTableConfig;
 
@@ -286,6 +285,8 @@ export const refreshSettingRollTables = async(setting: Setting, empty: boolean =
     return; // No roll tables configured for this setting
   }
 
+  let alerted = false;
+  
   for (const key in config.rollTables) {
     const table = await fromUuid<RollTable>(config.rollTables[key]);
     if (table) {
@@ -293,7 +294,20 @@ export const refreshSettingRollTables = async(setting: Setting, empty: boolean =
         await table.deleteEmbeddedDocuments("TableResult", table.results.map(r => r.id || ''));
       }
 
-      await refreshSettingRollTable(table, setting);
+      // see if we actually need any
+      const drawnResults = table.results.filter(r => r.drawn).map(r => r.id) as string[];
+      const neededItems = TABLE_SIZE - table.results.size + drawnResults.length;
+    
+
+      if (neededItems > 0) {
+        await refreshSettingRollTable(table, setting);
+
+        // ui alert if we have at least one
+        if (!alerted) {
+          notifyInfo(localize('applications.rollTableSettings.notifications.refreshStarted'));
+          alerted = true;
+        }
+      }
     }
   }
 
@@ -306,7 +320,7 @@ export const refreshSettingRollTables = async(setting: Setting, empty: boolean =
  * 
  * @returns A promise that resolves when all setting tables are refreshed
  */
-export const refreshAllSettingRollTables = async() : Promise<void> => {
+export const refreshAllSettingRollTables = async(empty: boolean = false) : Promise<void> => {
   // Import the mainStore dynamically to avoid circular dependencies
   const { useMainStore } = await import('@/applications/stores');
   const mainStore = useMainStore();
@@ -317,7 +331,7 @@ export const refreshAllSettingRollTables = async() : Promise<void> => {
   // Refresh roll tables for each setting
   for (const setting of settings) {
     try {
-      await refreshSettingRollTables(setting, true);
+      await refreshSettingRollTables(setting, empty);
     } catch (error) {
       console.error(`Error refreshing roll tables for setting ${setting.name}:`, error);
     }

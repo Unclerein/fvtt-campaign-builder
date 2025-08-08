@@ -146,7 +146,7 @@
     
     try {
       // Refresh setting-specific tables for all settings
-      await refreshAllSettingRollTables();
+      await refreshAllSettingRollTables(true);
       notifyInfo(localize('applications.rollTableSettings.notifications.refreshSuccess'));
     } catch (error) {
       console.error('Error refreshing roll tables:', error);

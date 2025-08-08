@@ -319,7 +319,8 @@
           "npcs": "NPCs",
           "monsters": "Monster",
           "magic": "Magische Gegenstände",
-          "todo": "Zu erledigen"
+          "todo": "Zu erledigen",
+          "noteBox": "Notizbox"
         },
         "setting": {
           "description": "Beschreibung",
@@ -467,11 +468,10 @@
         }
       },
       "relatedDocuments": {
-        "selectActors": "Akteure auswählen",
-        "selectItems": "Elemente auswählen",
         "addActor": "Akteur hinzufügen",
         "addItem": "Element hinzufügen",
-        "addJournal": "Journal/Seite hinzufügen"
+        "addJournal": "Journal/Seite hinzufügen",
+        "addScene": "Szene hinzufügen"
       },
       "relatedEntriesManagement": {
         "title": "Verwandte Einträge verwalten",

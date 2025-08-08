@@ -22,7 +22,7 @@
           label: localize('labels.use'),
           default: false,
           close: true,
-          disable: !name || (generateMode && !generatedDescription && !generatedRoleplayNotes),
+          disable: !name,
           callback: onUseClick
         },
       ]"

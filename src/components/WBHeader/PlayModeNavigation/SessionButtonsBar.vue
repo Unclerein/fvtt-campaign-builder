@@ -21,6 +21,7 @@
   // local imports
   import { useMainStore, usePlayingStore, useNavigationStore } from '@/applications/stores';
   import { localize } from '@/utils/game';
+  import { openSessionNotes, SessionNotesApplication } from '@/applications/SessionNotes';
 
   // types
 
@@ -37,8 +38,8 @@
   // data
   // note the ids need to match the tab ids in SessionContent.vue
   const sessionButtons = computed(() => [
+    { id: 'noteBox', label: localize('labels.tabs.session.noteBox'), icon: 'fa-external-link' },
     { id: 'notes', label: localize('labels.tabs.session.notes'), icon: 'fa-pen-to-square' },
-    { id: 'start', label: localize('labels.tabs.session.start'), icon: 'fa-play' },
     { id: 'lore', label: localize('labels.tabs.session.lore'), icon: 'fa-book-open' },
     { id: 'vignettes', label: localize('labels.tabs.session.vignettes'), icon: 'fa-map' },
     { id: 'locations', label: localize('labels.tabs.session.locations'), icon: 'fa-location-dot' },
@@ -80,6 +81,9 @@
         // it exists- so switch to it
         await navigationStore.activateTab(campaignTab.id);
       }
+    } else if (tabId === 'noteBox') {  // special case - it's the popout box
+      await openSessionNotes(currentSession, false);  
+      return;
     } else {
       // Check if we already have a tab open to that session
       const sessionTab = tabs.value.find((t) => t.header?.uuid === currentSession.uuid);
