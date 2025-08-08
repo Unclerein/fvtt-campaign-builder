@@ -1,7 +1,17 @@
 # Change Log
 
+## v1.2.1 - Bug fixes
+![](https://img.shields.io/badge/release%20date-August%208%2C%202025-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.2.1/module.zip)
+
+- Fixed bug where "mark delivered" buttons weren't showing in tables on session
+- Fixed some missing localization strings 
+- You can now create a new entry even if description is blank
+- Fixed notes buttons in the session buttons bar and added ability to open the notes popout
+- Fixed issue where roll tables were unnecessarily being repopulated
+
 ## v1.2.0 - So many things I skipped a version number!  AI options, better interactions with journal entries, quality of life improvements
-![](https://img.shields.io/badge/release%20date-August%2001%2C%202025-blue)
+![](https://img.shields.io/badge/release%20date-August%203%2C%202025-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.2.0/module.zip)
 
 **Note!** FOR THOSE USING THE BACKEND, THIS RELEASE REQUIRES AN UPGRADE.  SIMPLY RERUN THE SAME `curl` COMMAND YOU USED TO INSTALL THE PRIOR VERSION (FROM THE DIRECTORY WITH YOUR `.env` FILE) AND IT SHOULD JUST UPDATE IN PLACE.  YOU WILL THEN NEED TO UPDATE YOUR API KEY IN THE SETTINGS WITH THE NEW VALUE.
