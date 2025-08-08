@@ -319,7 +319,8 @@
           "npcs": "PNJs",
           "monsters": "Monstres",
           "magic": "Objets Magiques",
-          "todo": "À faire"
+          "todo": "À faire",
+          "noteBox": "Boîte à notes"
         },
         "setting": {
           "description": "Description",
@@ -467,11 +468,10 @@
         }
       },
       "relatedDocuments": {
-        "selectActors": "Sélectionner les acteurs",
-        "selectItems": "Sélectionner les éléments",
         "addActor": "Ajouter un acteur",
         "addItem": "Ajouter un élément",
-        "addJournal": "Ajouter un journal/page"
+        "addJournal": "Ajouter un journal/page",
+        "addScene": "Ajouter une scène"
       },
       "relatedEntriesManagement": {
         "title": "Gérer les entrées liées",
