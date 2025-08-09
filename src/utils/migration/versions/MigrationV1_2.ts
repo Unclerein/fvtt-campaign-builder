@@ -1,6 +1,6 @@
 import { Migration, MigrationResult, MigrationContext } from '../types';
 import { SettingDoc } from '@/documents';
-import { useMainStore, useSettingDirectoryStore } from '@/applications/stores';
+import { useMainStore, } from '@/applications/stores';
 import { Setting, Entry } from '@/classes';
 import { Hierarchy, Topics } from '@/types';
 

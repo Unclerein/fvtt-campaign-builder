@@ -1,7 +1,7 @@
 /**
  * Version utilities for handling module updates and migrations
  */
-import { moduleId } from '@/settings';
+import { version } from '@module';
 import { SettingKey, ModuleSettings } from '@/settings';
 
 export interface VersionInfo {
@@ -82,13 +82,14 @@ export class VersionUtils {
   /**
    * Get the current module version from module.json
    */
-  public static getCurrentModuleVersion(): string {
-    const module = game.modules.get(moduleId);
-
-    if (!module?.version) {
-      throw new Error ('Can\'t read module version to attempt migration');
+  public static async getCurrentModuleVersion(): Promise<string> {
+    // in development, we need to pull from package.json
+    if (version === '#{VERSION}#') {
+      const pkg = await import('@/../package.json');
+      return pkg.version;
+    } else {
+      return version;
     }
-    return module.version;
   }
 
   /**
@@ -102,7 +103,7 @@ export class VersionUtils {
    * Save the current version to settings
    */
   public static async saveCurrentVersion(): Promise<void> {
-    const currentVersion = this.getCurrentModuleVersion();
+    const currentVersion = await this.getCurrentModuleVersion();
     await ModuleSettings.set(SettingKey.lastKnownVersion, currentVersion);
   }
 }

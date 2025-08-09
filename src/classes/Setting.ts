@@ -179,10 +179,9 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
 
   set name(value: string) {
     this._name = value;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       name: value,
-    };
+    });
   }
 
   
@@ -865,4 +864,6 @@ private async deleteRollTables() : Promise<void> {
     this._nameStyleExamples = value;
     this.updateCumulative(SettingFlagKey.nameStyleExamples, value);
   }
+
+  public set 
 }

@@ -185,10 +185,22 @@ export class Entry {
 
   set name(value: string) {
     this._entryDoc.name = value;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       name: value,
-    };
+    });
+  }
+
+  get visible(): boolean {
+    return this._entryDoc.system.visible;
+  }
+
+  set visible(value: boolean) {
+    this._entryDoc.system.visible = value;
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
+      system: {
+        visible: value,
+      }
+    });
   }
 
   get tags(): TagInfo[] {
@@ -197,13 +209,11 @@ export class Entry {
 
   set tags(value: TagInfo[]) {
     this._entryDoc.system.tags = value;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         tags: value,
       }
-    };
+    });
   }
 
   get playerName(): string {
@@ -212,62 +222,52 @@ export class Entry {
 
   set playerName(value: string) {
     this._entryDoc.system.playerName = value;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         playerName: value,
       }
-    };
+    });
   }
 
-    get plotPoints(): string {
-      return this._entryDoc.system.plotPoints || '';
-    }
-  
-    set plotPoints(value: string) {
-      this._entryDoc.system.plotPoints = value;
-      this._cumulativeUpdate = {
-        ...this._cumulativeUpdate,
-        system: {
-          ...this._cumulativeUpdate.system,
-          plotPoints: value,
-        }
-      };
-    }
-  
-    get background(): string {
-      return this._entryDoc.system.background || '';
-    }
-  
-    set background(value: string) {
-      this._entryDoc.system.background = value;
-      this._cumulativeUpdate = {
-        ...this._cumulativeUpdate,
-        system: {
-          ...this._cumulativeUpdate.system,
-          background: value,
-        }
-      };
-    }
-  
-    get magicItems(): string {
-      return this._entryDoc.system.magicItems || '';
-    }
-  
-    set magicItems(value: string) {
-      this._entryDoc.system.magicItems = value;
-      this._cumulativeUpdate = {
-        ...this._cumulativeUpdate,
-        system: {
-          ...this._cumulativeUpdate.system,
-          magicItems: value,
-        }
-      };
-    }
-  
-  
+  get plotPoints(): string {
+    return this._entryDoc.system.plotPoints || '';
+  }
 
+  set plotPoints(value: string) {
+    this._entryDoc.system.plotPoints = value;
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
+      system: {
+        plotPoints: value,
+      }
+    });
+  }
+
+  get background(): string {
+    return this._entryDoc.system.background || '';
+  }
+
+  set background(value: string) {
+    this._entryDoc.system.background = value;
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
+      system: {
+        background: value,
+      }
+    });
+  }
+
+  get magicItems(): string {
+    return this._entryDoc.system.magicItems || '';
+  }
+
+  set magicItems(value: string) {
+    this._entryDoc.system.magicItems = value;
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
+      system: {
+        magicItems: value,
+      }
+    });
+  }
+  
   get speciesId(): string | undefined {
     if (!this._entryDoc.system.speciesId)
       return undefined;
@@ -280,13 +280,11 @@ export class Entry {
       throw new Error('Attempt to set species on non-character');
 
     this._entryDoc.system.speciesId = value;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         speciesId: value,
       }
-    };
+    });
   }
 
   get actorId(): string {
@@ -301,15 +299,12 @@ export class Entry {
       throw new Error('Attempt to set actorId on non-PC entry');
     
     this._entryDoc.system.actorId = value;
-    this.name = value ? this.name : '';
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       name: this.name,
       system: {
-        ...this._cumulativeUpdate.system,
         actorId: value,
       }
-    };
+    });
   }
 
   // topic is read-only
@@ -326,13 +321,11 @@ export class Entry {
 
   set type(value: string) {
     this._entryDoc.system.type = value;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         type: value,
       }
-    };
+    });
   }
 
   get description(): string {
@@ -341,12 +334,11 @@ export class Entry {
 
   set description(value: string) {
     this._entryDoc.text.content = value;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       text: {
         content: value,
       }
-    };
+    });
   }
 
   get rolePlayingNotes(): string {
@@ -355,13 +347,11 @@ export class Entry {
 
   set rolePlayingNotes(value: string) {
     this._entryDoc.system.rolePlayingNotes = value;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         rolePlayingNotes: value,
       }
-    };
+    });
   }
 
   get img(): string | undefined {
@@ -373,13 +363,11 @@ export class Entry {
       throw new Error('Call to Entry.img without _entryDoc');
 
     this._entryDoc.system.img = value || '';
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         img: value,
       }
-    };
+    });
   }
 
   // get direct access to the document (ex. to hook to foundry's editor)
@@ -394,13 +382,11 @@ export class Entry {
 
   set relationships(value: Record<ValidTopic, Record<string, RelatedItemDetails<any, any>>>) {
     this._entryDoc.system.relationships = value;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         relationships: value,
       }
-    };
+    });
   }
 
   get scenes(): string[] {
@@ -470,15 +456,13 @@ export class Entry {
     const setting = await this.getSetting();
 
     // rather than try to monitor all changes to the arrays (which would require saving the originals or a proxy), we just always save them
-    const updateData = {
-      ...this._cumulativeUpdate,
+    const updateData = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         scenes: this.scenes,
         actors: this.actors,
         journals: this.journals,
       }
-    };
+    });
 
     let retval: EntryDoc | null = null;
 
