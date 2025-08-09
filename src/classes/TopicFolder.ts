@@ -12,9 +12,6 @@ export class TopicFolder extends DocumentWithFlags<TopicDoc> {
 
   public setting: Setting | null;  // the setting the topic is in (if we don't setup up front, we can load it later)
 
-  // saved on JournalEntry
-  // private _name: string;   // topic names are hardcoded
-
   // saved in flags
   private _topNodes: string[];
   private _types: string[];
@@ -252,5 +249,5 @@ export class TopicFolder extends DocumentWithFlags<TopicDoc> {
     await setting.executeUnlocked(async () => {
       await this._doc.delete();
     });
-  }
+  }   
 }

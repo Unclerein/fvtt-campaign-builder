@@ -1,7 +1,7 @@
 import { version } from '@module'
 import { Configuration, FCBApi } from '@/apiClient';
 import { ModuleSettings, SettingKey } from '@/settings';
-import { notifyGMError, notifyGMInfo, notifyGMWarn } from '@/utils/notifications';
+import { notifyError, notifyInfo, notifyWarn } from '@/utils/notifications';
 import { isClientGM, localize } from '@/utils/game';
 import { Campaign } from '@/classes';
 import { useMainStore } from '@/applications/stores';
@@ -49,13 +49,13 @@ export class Backend {
         versionResult = await Backend.api.apiVersionGet();
       } catch (e) {
         if (!ModuleSettings.get(SettingKey.hideBackendWarning)) 
-          notifyGMError(localize('notifications.backend.failedConnection'));
+          notifyError(localize('notifications.backend.failedConnection'));
 
         Backend.inProgress = false;
         return;
       }
 
-      // see if the backend version matches the front-end and throw an error if it doesn't
+      // see if the backend version matches the front-end and show an error if it doesn't
 
       // if the module version is dev - then just deal with it... maybe put up a warning
       switch (versionResult.data.version) {
@@ -64,11 +64,11 @@ export class Backend {
         default:
           if (version === '#{VERSION}#') {
             // development version of front-end... do nothing (can't deploy through store with this version so it can only be a special case)
-            notifyGMWarn(`Development module detected.  Connected to backend version ${versionResult.data.version} at ${Backend.config.basePath}`);
+            notifyWarn(`Development module detected.  Connected to backend version ${versionResult.data.version} at ${Backend.config.basePath}`);
           } else {
             // anything else means the version is wrong
             // output a foundry error message
-            notifyGMError(localize('notifications.backend.versionMismatch')
+            notifyError(localize('notifications.backend.versionMismatch')
               .replace('$1', `${versionResult.data.version}`)
               .replace('$2', `${REQUIRED_VERSION}`));
 
@@ -94,7 +94,7 @@ export class Backend {
         }
       }
 
-      notifyGMInfo(localize('notifications.backend.successfulConnection'));
+      notifyInfo(localize('notifications.backend.successfulConnection'));
       Backend.available = true;
 
       // let's also poll for email since we just connected
@@ -111,7 +111,7 @@ export class Backend {
     const campaign = await Campaign.fromUuid(ModuleSettings.get(SettingKey.emailDefaultCampaign));
 
     if (!campaign) {
-      notifyGMError(localize('notifications.backend.emailSettingsNotSet'));
+      notifyError(localize('notifications.backend.emailSettingsNotSet'));
       return;
     }
 
@@ -119,7 +119,7 @@ export class Backend {
     try {
       ideas = (await Backend.api.apiPollEmailTodoGet())?.data?.items || null;
     } catch (error) {
-      ui.notifications?.error("Backend threw an error when polling for mail.");
+      notifyError("Backend threw an error when polling for mail.");
       return;
     }
 

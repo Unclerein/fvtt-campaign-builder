@@ -2,12 +2,15 @@ import {
   CampaignDoc, 
   SettingDoc, 
   TopicDoc,
+  RootFolderDoc,
   SettingFlagKey,
   CampaignFlagKey,
   TopicFlagKey,
+  RootFolderFlagKey,
   SettingFlagType,
   CampaignFlagType,
-  TopicFlagType, 
+  TopicFlagType,
+  RootFolderFlagType, 
 } from '@/documents';
 import { FlagSettings, } from '@/settings/DocumentFlags';
 import { moduleId } from '@/settings';
@@ -32,7 +35,7 @@ type FlagsObject<
 /** 
  * The allowed types to use flags (our types)
  */
-type ValidDocTypes = SettingDoc | CampaignDoc | TopicDoc;
+type ValidDocTypes = SettingDoc | CampaignDoc | TopicDoc | RootFolderDoc;
 
 
 /**
@@ -42,12 +45,14 @@ type FlagKey<T extends ValidDocTypes> =
   T extends SettingDoc ? SettingFlagKey :
   T extends CampaignDoc ? CampaignFlagKey :
   T extends TopicDoc ? TopicFlagKey :
+  T extends RootFolderDoc ? RootFolderFlagKey :
   never;
 
 type FlagType<T extends ValidDocTypes, K extends FlagKey<T>=FlagKey<T>> = 
   T extends SettingDoc ? (K extends SettingFlagKey ? SettingFlagType<K> : never) :
   T extends CampaignDoc ? (K extends CampaignFlagKey ? CampaignFlagType<K> : never) :
   T extends TopicDoc ? (K extends TopicFlagKey ? TopicFlagType<K> : never) :
+  T extends RootFolderDoc ? (K extends RootFolderFlagKey ? RootFolderFlagType<K> : never) :
   never;
 
   interface DocumentWithFlagsConstructor {
@@ -205,16 +210,13 @@ export class DocumentWithFlags<DocType extends ValidDocTypes> {
     FK extends FlagKey<DocType> = FlagKey<DocType>,
     FT extends FlagType<DocType, FK> = FlagType<DocType, FK>
   >(flag: FK, value: FT): void => {
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       flags: {
-        ...this._cumulativeUpdate.flags,
         [moduleId]: {
-          ...(this._cumulativeUpdate.flags?.[moduleId] || {}),
           [flag]: value
         }
       }
-    };
+    });
   };
 
   /**

@@ -1,63 +1,9 @@
 // functions for managing folders and compendia
 import { localize } from '@/utils/game';
 import { Topics, } from '@/types';
-import { SettingKey, ModuleSettings, UserFlagKey, UserFlags,} from '@/settings';
+import { UserFlagKey, UserFlags,} from '@/settings';
 import { toTopic } from '@/utils/misc';
-import { Setting } from '@/classes';
-
-/**
- * Gets the root folder.
- * If it is not stored in settings, creates a new folder and saves it to settings.
- * If there is a setting but the folder doesn't exist, creates a new one and saves it to settings.
- * @returns The root folder.
- */
-export async function getRootFolder(): Promise<Folder> {
-  const rootFolderId = ModuleSettings.get(SettingKey.rootFolderId);
-  let folder: Folder | null;
-
-  if (!rootFolderId) {
-    // no setting - create a new one
-    folder = await createRootFolder();
-
-    // save to settings for next time
-    await ModuleSettings.set(SettingKey.rootFolderId, folder.uuid);
-  } else { 
-    folder = game.folders?.find((f)=>f.uuid===rootFolderId) || null;
-
-    // there is a setting, but does the folder exist?
-    if (!folder) {
-      // folder doesn't exist, so create a new one
-      folder = await createRootFolder();
-  
-      // save to settings for next time
-      await ModuleSettings.set(SettingKey.rootFolderId, folder.uuid);
-    }
-  }
-
-  return folder;
-}
-
-
-/**
- * Create a new root folder.
- * @param {string} [name] The name for the folder. If not provided, uses the default root folder name in the localization.
- * @returns The new folder.
- */
-export async function createRootFolder(name?: string): Promise<Folder> {
-  if (!name)
-    name = localize('defaultRootFolderName');
-  
-  const folders = await Folder.createDocuments([{
-    name,
-    type: 'Compendium',
-    sorting: 'a',
-  }]);
-
-  if (!folders)
-    throw new Error('Couldn\'t create root folder');
-
-  return folders[0];
-}
+import { RootFolder, Setting } from '@/classes';
 
 
 /**
@@ -65,8 +11,8 @@ export async function createRootFolder(name?: string): Promise<Folder> {
  * Will create new folders if missing.
  * @returns The root and setting folders.
  */
-export async function getDefaultFolders(): Promise<{ rootFolder: Folder; setting: Setting}> {
-  const rootFolder = await getRootFolder(); // will create if needed
+export async function getDefaultFolders(): Promise<{ rootFolder: RootFolder; setting: Setting}> {
+  const rootFolder = await RootFolder.get(); // will create if needed
   const settingId = UserFlags.get(UserFlagKey.currentSetting);  // this isn't setting-specific (obviously)
 
   // make sure we have a default and it exists

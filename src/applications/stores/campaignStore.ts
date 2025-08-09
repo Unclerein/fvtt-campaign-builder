@@ -13,6 +13,7 @@ import { RelatedPCDetails, FieldData, CampaignLoreDetails, ToDoItem, ToDoTypes, 
 import { Campaign, Entry, Session } from '@/classes';
 import { localize } from '@/utils/game';
 import Document from 'node_modules/@types/fvtt-types/src/foundry/common/abstract/document.mjs';
+import { notifyWarn } from '@/utils/notifications';
 
 export enum CampaignTableTypes {
   None,
@@ -401,7 +402,7 @@ export const useCampaignStore = defineStore('campaign', () => {
 
       const document = await fromUuid<Document<any, any>>(toDo.linkedUuid);
       if (!document) {
-        ui.notifications.warn(localize('notifications.todoReferenceNotFound'));
+        notifyWarn(localize('notifications.todoReferenceNotFound'));
         return;
       }
     }

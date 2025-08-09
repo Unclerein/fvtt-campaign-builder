@@ -20,9 +20,14 @@
   // library imports
   import { computed } from 'vue';
 
+  // local imports
+  import { notifyError, notifyInfo } from '@/utils/notifications';
+  import { localize } from '@/utils/game';
+
   // library components
   import ContextMenu from '@imengyu/vue3-context-menu';
-  import { localize } from '@/utils/game';
+
+  // local components
 
   // types
   import { Topics, ValidTopic, WindowTabType } from '@/types';
@@ -310,7 +315,7 @@
           const blob = await response.blob();
           const clipboardItem = new ClipboardItem({ [blob.type]: blob });
           await navigator.clipboard.write([clipboardItem]);
-          ui.notifications?.info('Image copied to clipboard');
+          notifyInfo('Image copied to clipboard');
           return;
         } catch (directError) {
           console.log('Direct copy failed, trying canvas conversion:', directError);
@@ -347,7 +352,7 @@
         try {
           const clipboardItem = new ClipboardItem({ 'image/png': blob });
           await navigator.clipboard.write([clipboardItem]);
-          ui.notifications?.info('Image copied to clipboard');
+          notifyInfo('Image copied to clipboard');
         } catch (clipboardError) {
           console.error('Clipboard write failed:', clipboardError);
           fallbackCopyImage(img);
@@ -356,7 +361,7 @@
       
     } catch (error) {
       console.error('Failed to copy image to clipboard:', error);
-      ui.notifications?.error('Failed to copy image to clipboard');
+      notifyError('Failed to copy image to clipboard');
     }
   };
 
@@ -388,14 +393,14 @@
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
           
-          ui.notifications?.info('Image downloaded as fallback (clipboard not available)');
+          notifyInfo('Image downloaded as fallback (clipboard not available)');
         } catch (downloadError) {
-          ui.notifications?.error('Failed to copy or download image');
+          notifyError('Failed to copy or download image');
         }
       }, 'image/png');
     } catch (error) {
       console.error('Fallback copy failed:', error);
-      ui.notifications?.error('Failed to copy image');
+      notifyError('Failed to copy image');
     }
   };
 

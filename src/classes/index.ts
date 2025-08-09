@@ -8,3 +8,4 @@ export * from './Setting';
 export * from './Session';
 export * from './Backend';
 export * from './ExternalAPI';
+export * from './RootFolder';

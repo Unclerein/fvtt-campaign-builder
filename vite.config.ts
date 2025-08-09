@@ -19,6 +19,11 @@ export default defineConfig(({ mode }) => {
   const isDevelopment = mode === 'development'; 
 
   return {
+    // our dev mode is still using build so we have to overwrite like this
+    define: {
+      __DEV_BUILD__: JSON.stringify(isDevelopment)
+    },
+
     // base: './',
     resolve: {
       alias: [

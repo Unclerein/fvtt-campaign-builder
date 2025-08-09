@@ -133,10 +133,9 @@ export class Session {
 
   set name(value: string) {
     this._sessionDoc.name = value;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       name: value,
-    };
+    });
   }
 
   get tags(): TagInfo[] {
@@ -145,13 +144,11 @@ export class Session {
 
   set tags(value: TagInfo[]) {
     this._sessionDoc.system.tags = value;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         tags: value,
       }
-    };
+    });
   }
 
   get notes(): string {
@@ -160,13 +157,11 @@ export class Session {
 
   set notes(value: string) {
     this._sessionDoc.text.content = value;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       text: {
-        ...this._cumulativeUpdate.text,
         content: value,
       }
-    };
+    });
   }
 
   get number(): number {
@@ -175,13 +170,11 @@ export class Session {
 
   set number(value: number) {
     this._sessionDoc.system.number = value;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         number: value,
       }
-    };
+    });
   }
 
   get date(): Date | null {
@@ -196,13 +189,11 @@ export class Session {
 
   set date(value: Date | null) {
     this._sessionDoc.system.date = value?.isValid() ? value.toISOString() : null;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
-        date: value,
+        date: this._sessionDoc.system.date,
       }
-    };
+    });
   }
 
   get strongStart(): string {
@@ -211,13 +202,11 @@ export class Session {
 
   set strongStart(value: string) {
     this._sessionDoc.system.strongStart = value;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         strongStart: value,
       }
-    };
+    });
   }
 
   get img(): string {
@@ -226,13 +215,11 @@ export class Session {
 
   set img(value: string) {
     this._sessionDoc.system.img = value;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         img: value,
       }
-    };
+    });
   }
 
   get locations(): readonly SessionLocation[] {
@@ -248,13 +235,11 @@ export class Session {
       delivered: delivered
     });
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         locations: this._sessionDoc.system.locations
       }
-    };
+    });
 
     await this.save();
   }
@@ -262,13 +247,11 @@ export class Session {
   async deleteLocation(uuid: string): Promise<void> {
     this._sessionDoc.system.locations = this._sessionDoc.system.locations.filter(l=> l.uuid!==uuid);
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         locations: this._sessionDoc.system.locations
       }
-    };
+    });
 
     await this.save();
   }
@@ -278,15 +261,13 @@ export class Session {
     if (!location)
       return;
     
-    location.delivered = delivered;
+    location.delivered = delivered; 
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         locations: this._sessionDoc.system.locations
       }
-    };
+    });
 
     await this.save();
   }
@@ -304,13 +285,11 @@ export class Session {
       delivered: delivered
     });
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         npcs: this._sessionDoc.system.npcs
       }
-    };
+    });
 
     await this.save();
   }
@@ -318,13 +297,11 @@ export class Session {
   async deleteNPC(uuid: string): Promise<void> {
     this._sessionDoc.system.npcs = this._sessionDoc.system.npcs.filter(l=> l.uuid!==uuid);
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         npcs: this._sessionDoc.system.npcs
       }
-    };
+    });
 
     await this.save();
   }
@@ -336,13 +313,11 @@ export class Session {
     
     npc.delivered = delivered;
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         npcs: this._sessionDoc.system.npcs
       }
-    };
+    });
 
     await this.save();
   }
@@ -354,13 +329,11 @@ export class Session {
   set vignettes(value: SessionVignette[] | readonly SessionVignette[]) {
     this._sessionDoc.system.vignettes = value.slice();     // we clone it so it can't be edited outside
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         vignettes: this._sessionDoc.system.vignettes
       }
-    };
+    });
   }
 
   async addVignette(description: string): Promise<string> {
@@ -372,13 +345,11 @@ export class Session {
       delivered: false
     });
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         vignettes: this._sessionDoc.system.vignettes
       }
-    };
+    });
 
     await this.save();
     return uuid;
@@ -392,13 +363,11 @@ export class Session {
 
     vignette.description = description;
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         vignettes: this._sessionDoc.system.vignettes
       }
-    };
+    });
 
     await this.save();
   }
@@ -407,13 +376,11 @@ export class Session {
   async deleteVignette(uuid: string): Promise<void> {
     this._sessionDoc.system.vignettes = this._sessionDoc.system.vignettes.filter(l=> l.uuid!==uuid);
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         vignettes: this._sessionDoc.system.vignettes
       }
-    };
+    });
 
     await this.save();
   }
@@ -425,13 +392,11 @@ export class Session {
     
     vignette.delivered = delivered;
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         vignettes: this._sessionDoc.system.vignettes
       }
-    };
+    });
 
     await this.save();
   }
@@ -443,13 +408,11 @@ export class Session {
   set lore(value: SessionLore[] | readonly SessionLore[]) {
     this._sessionDoc.system.lore = value.slice();     // we clone it so it can't be edited outside
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         lore: this._sessionDoc.system.lore
       }
-    };
+    });
   }
 
   async addLore(description: string): Promise<string> {
@@ -461,15 +424,14 @@ export class Session {
       delivered: false,
       significant: false,
       journalEntryPageId: null,
+      sortOrder: this._sessionDoc.system.lore.length,
     });
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         lore: this._sessionDoc.system.lore
       }
-    };
+    });
 
     await this.save();
     return uuid;
@@ -483,13 +445,11 @@ export class Session {
 
     lore.description = description;
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         lore: this._sessionDoc.system.lore
       }
-    };
+    });
 
     await this.save();
   }
@@ -502,13 +462,11 @@ export class Session {
 
     lore.journalEntryPageId = journalEntryPageId;
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         lore: this._sessionDoc.system.lore
       }
-    };
+    });
 
     await this.save();
   }
@@ -517,13 +475,11 @@ export class Session {
   async deleteLore(uuid: string): Promise<void> {
     this._sessionDoc.system.lore = this._sessionDoc.system.lore.filter(l=> l.uuid!==uuid);
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         lore: this._sessionDoc.system.lore
       }
-    };
+    });
 
     await this.save();
   }
@@ -535,13 +491,11 @@ export class Session {
     
     lore.significant = significant;
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         lore: this._sessionDoc.system.lore
       }
-    };
+    });
 
     await this.save();
   }
@@ -553,13 +507,11 @@ export class Session {
     
     lore.delivered = delivered;
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         lore: this._sessionDoc.system.lore
       }
-    };
+    });
 
     await this.save();
   }
@@ -578,13 +530,11 @@ export class Session {
       delivered: false
     });
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         monsters: this._sessionDoc.system.monsters
       }
-    };
+    });
 
     await this.save();
   }
@@ -597,13 +547,11 @@ export class Session {
 
     monster.number = value;
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         monsters: this._sessionDoc.system.monsters
       }
-    };
+    });
 
     await this.save();
   }
@@ -611,13 +559,11 @@ export class Session {
   async deleteMonster(uuid: string): Promise<void> {
     this._sessionDoc.system.monsters = this._sessionDoc.system.monsters.filter(l=> l.uuid!==uuid);
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         monsters: this._sessionDoc.system.monsters
       }
-    };
+    });
 
     await this.save();
   }
@@ -629,13 +575,11 @@ export class Session {
     
     monster.delivered = delivered;
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         monsters: this._sessionDoc.system.monsters
       }
-    };
+    });
 
     await this.save();
   }
@@ -653,13 +597,11 @@ export class Session {
       delivered: false
     });
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         items: this._sessionDoc.system.items
       }
-    };
+    });
 
     await this.save();
   }
@@ -667,13 +609,11 @@ export class Session {
   async deleteItem(uuid: string): Promise<void> {
     this._sessionDoc.system.items = this._sessionDoc.system.items.filter(i=> i.uuid!==uuid);
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         items: this._sessionDoc.system.items
       }
-    };
+    });
 
     await this.save();
   }
@@ -685,13 +625,11 @@ export class Session {
     
     item.delivered = delivered;
 
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        ...this._cumulativeUpdate.system,
         items: this._sessionDoc.system.items
       }
-    };
+    });
 
     await this.save();
   }
