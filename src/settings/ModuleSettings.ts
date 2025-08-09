@@ -134,7 +134,7 @@ export class ModuleSettings {
       icon: 'fas fa-bars',               // A Font Awesome icon used in the submenu button
       permissions: ['SETTINGS_WRITE'], // Optional: restrict to GM only
       type: RollTableSettingsApplication,
-    },
+    }
   ];
 
   // these are globals shown in the options

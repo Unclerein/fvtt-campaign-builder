@@ -11,7 +11,6 @@ export function registerForReadyHook() {
 }
 
 async function ready(): Promise<void> {
-  // don't do anything if even the most basic permission doesn't exist
   if (!isClientGM())
     return;
   
@@ -62,7 +61,6 @@ const loadDefaultSpecies = async () => {
 }
 
 async function addMainButton(): Promise<void> {
-  // need permission to ready entries or sessions to get the button
   if (!isClientGM())
     return;
 

@@ -2,7 +2,6 @@ import { ModuleSettings, SettingKey } from '@/settings';
 import { RootFolderDoc, RootFolderFlagKey, rootFolderFlagSettings } from '@/documents';
 import { DocumentWithFlags } from '@/classes/DocumentWithFlags';
 import { localize } from '@/utils/game';
-import { Entry } from './Entry';
 import { Setting } from './Setting';
 
 export class RootFolder extends DocumentWithFlags<RootFolderDoc> {

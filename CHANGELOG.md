@@ -1,18 +1,5 @@
 # Change Log
 
-## v2.0.0 - Ability to give players access
-![](https://img.shields.io/badge/release%20date-August%204%2C%202025-blue)
-![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v2.0.0/module.zip)
-
-- You can now enable non-GM players to access the Campaign Builder:
-  - Specify a player trust level for read, write, and generate (i.e. run AI) permissions
-  - Flag individual entries as visible/not visible
-  - Optionally share session numbers, dates, titles, and notes for past sessions
-
-THESE ARE NOTES FOR IF I REVISIT THIS... THE CORE ISSUE IS COMPENDIUM ACCESS IS ALL OR NOTHING. THIS MEANS THAT WE NEED TO EITHER A) PUT EVERYTHING IN THE WORLD, B) MAKE A 2ND COMPENDIUM JUST FOR ROLES WITH READING WRITES.  IF WE DO B, THE QUESTION BECOMES HOW DO WE KEEP THEM IN SYNC AND THEN HOW DO WE MAKE ALL THE LINKS WORK?  FOR THAT MATTER, HOW SHOULD LINKS WORK IF THEY GO FROM A VISIBLE ENTRY TO AN INVISIBLE ONE (SIMILARLY FOR RELATIONSHIPS)
-
-THERE'S A LOT TO FIGURE OUT HERE
-
 ## v1.2.1 - Bug fixes
 ![](https://img.shields.io/badge/release%20date-August%208%2C%202025-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.2.1/module.zip)
