@@ -9,6 +9,7 @@ import { getParentId } from '@/utils/hierarchy';
 import { searchService } from '@/utils/search';
 import { useMainStore, usePlayingStore } from '@/applications/stores';
 import { localize } from '@/utils/game';
+import { getEntryPermissionBlock, getNoPermissionBlock, resetAllPermissions } from '@/utils/permissions';
 
 export type CreateEntryOptions = { name?: string; type?: string; parentId?: string};
 
@@ -190,17 +191,21 @@ export class Entry {
     });
   }
 
-  get visible(): boolean {
-    return this._entryDoc.system.visible;
+  get visibleToPlayers(): boolean {
+    return this._entryDoc.system.visibleToPlayers;
   }
 
-  set visible(value: boolean) {
-    this._entryDoc.system.visible = value;
+  public setVisibleToPlayers = async (value: boolean) => {
+    this._entryDoc.system.visibleToPlayers = value;
     this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       system: {
-        visible: value,
+        visibleToPlayers: value,
       }
     });
+    await this.save();
+
+    // now need to adjust the actual permissions
+    await this.resetPermissions();
   }
 
   get tags(): TagInfo[] {
@@ -578,6 +583,22 @@ export class Entry {
     // if the flag has this topic, it's a Record keyed by uuid
     return Object.keys(relationships[topicFolder.topic]);
   }
+
+  /**
+   * Resets the permissions for the entry based on its visibility.
+   */
+  public async resetPermissions() {
+    if (this.visibleToPlayers) {
+      // get the proper permissions
+      await this._entryDoc.update({ ownership: getEntryPermissionBlock()});
+    } else {
+      // no one should have any access
+      await this._entryDoc.update({ ownership: getNoPermissionBlock()});
+    }
+
+    // reset the permissions for all the folders
+    await resetAllPermissions({ updatedEntry: this });
+  };
 
   /** Adds the type to the list on the topic, if it's not there already.
    *  Requires the setting to be unlocked already

@@ -83,8 +83,7 @@ export class VersionUtils {
    * Get the current module version from module.json
    */
   public static async getCurrentModuleVersion(): Promise<string> {
-    // in development, we need to pull from package.json
-    if (version === '#{VERSION}#') {
+    if (__DEV_BUILD__) {
       const pkg = await import('@/../package.json');
       return pkg.version;
     } else {

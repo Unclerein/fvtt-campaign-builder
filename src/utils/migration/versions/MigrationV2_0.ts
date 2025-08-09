@@ -135,7 +135,7 @@ export class MigrationV2_0 implements Migration {
     try {
       // by default, we just set all the visibility to false and don't need to actually change any permissions
       for (const entry of topic.allEntries()) {
-        entry.visible = false;
+        entry.visibleToPlayers = false;
         await entry.save();
       }
 

@@ -67,36 +67,36 @@
       hint: 'settings.permissions.playerAccessEntryReadHelp',
       value: ModuleSettings.get(SettingKey.playerAccessEntryRead) as CONST.USER_ROLES,
     },
-    {
-      setting: SettingKey.playerAccessEntryWrite,
-      label: 'settings.permissions.playerAccessEntryWrite',
-      hint: 'settings.permissions.playerAccessEntryWriteHelp',
-      value: ModuleSettings.get(SettingKey.playerAccessEntryWrite) as CONST.USER_ROLES,
-    },
-    {
-      setting: SettingKey.playerAccessEntryFull,
-      label: 'settings.permissions.playerAccessEntryFull',
-      hint: 'settings.permissions.playerAccessEntryFullHelp',
-      value: ModuleSettings.get(SettingKey.playerAccessEntryFull) as CONST.USER_ROLES,
-    },
-    {
-      setting: SettingKey.playerAccessBackend,
-      label: 'settings.permissions.playerAccessBackend',
-      hint: 'settings.permissions.playerAccessBackendHelp',
-      value: ModuleSettings.get(SettingKey.playerAccessBackend) as CONST.USER_ROLES,
-    },
-    {
-      setting: SettingKey.playerAccessSessionNotes,
-      label:  'settings.permissions.playerAccessSessionNotes',
-      hint: 'settings.permissions.playerAccessSessionNotesHelp',
-      value: ModuleSettings.get(SettingKey.playerAccessSessionNotes) as CONST.USER_ROLES,
-    },
-    {
-      setting: SettingKey.playerAccessSessionFull,
-      label: 'settings.permissions.playerAccessSessionFull',
-      hint: 'settings.permissions.playerAccessSessionFullHelp',
-      value: ModuleSettings.get(SettingKey.playerAccessSessionFull) as CONST.USER_ROLES,
-    },
+    // {
+    //   setting: SettingKey.playerAccessEntryWrite,
+    //   label: 'settings.permissions.playerAccessEntryWrite',
+    //   hint: 'settings.permissions.playerAccessEntryWriteHelp',
+    //   value: ModuleSettings.get(SettingKey.playerAccessEntryWrite) as CONST.USER_ROLES,
+    // },
+    // {
+    //   setting: SettingKey.playerAccessEntryFull,
+    //   label: 'settings.permissions.playerAccessEntryFull',
+    //   hint: 'settings.permissions.playerAccessEntryFullHelp',
+    //   value: ModuleSettings.get(SettingKey.playerAccessEntryFull) as CONST.USER_ROLES,
+    // },
+    // {
+    //   setting: SettingKey.playerAccessBackend,
+    //   label: 'settings.permissions.playerAccessBackend',
+    //   hint: 'settings.permissions.playerAccessBackendHelp',
+    //   value: ModuleSettings.get(SettingKey.playerAccessBackend) as CONST.USER_ROLES,
+    // },
+    // {
+    //   setting: SettingKey.playerAccessSessionNotes,
+    //   label:  'settings.permissions.playerAccessSessionNotes',
+    //   hint: 'settings.permissions.playerAccessSessionNotesHelp',
+    //   value: ModuleSettings.get(SettingKey.playerAccessSessionNotes) as CONST.USER_ROLES,
+    // },
+    // {
+    //   setting: SettingKey.playerAccessSessionFull,
+    //   label: 'settings.permissions.playerAccessSessionFull',
+    //   hint: 'settings.permissions.playerAccessSessionFullHelp',
+    //   value: ModuleSettings.get(SettingKey.playerAccessSessionFull) as CONST.USER_ROLES,
+    // },
   ]);
 
   const permissionLevels = ref<{ value: CONST.USER_ROLES; label: string }[]>([

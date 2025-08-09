@@ -56,7 +56,7 @@ export class Backend {
         return;
       }
 
-      // see if the backend version matches the front-end and throw an error if it doesn't
+      // see if the backend version matches the front-end and show an error if it doesn't
 
       // if the module version is dev - then just deal with it... maybe put up a warning
       switch (versionResult.data.version) {

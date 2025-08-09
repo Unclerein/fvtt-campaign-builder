@@ -2,6 +2,8 @@ import { ModuleSettings, SettingKey } from '@/settings';
 import { RootFolderDoc, RootFolderFlagKey, rootFolderFlagSettings } from '@/documents';
 import { DocumentWithFlags } from '@/classes/DocumentWithFlags';
 import { localize } from '@/utils/game';
+import { Entry } from './Entry';
+import { Setting } from './Setting';
 
 export class RootFolder extends DocumentWithFlags<RootFolderDoc> {
   static override _documentName = 'Folder';
@@ -28,18 +30,18 @@ export class RootFolder extends DocumentWithFlags<RootFolderDoc> {
     this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, { name: value });
   }
 
-  // convenience pass-through for consumers relying on Folder.children
-  public get children(): any {
-    // Foundry Folder children structure (tree nodes)
-    return (this._doc as any).children;
-  }
+  public get settings(): Setting[] {
+    const settings: Setting[] = [];
 
-  public static async fromUuid(uuid: string, options?: Record<string, any>): Promise<RootFolder | null> {
-    const doc = await fromUuid<RootFolderDoc>(uuid, options);
-    if (!doc) return null;
-    const rf = new RootFolder(doc);
-    await rf.setup();
-    return rf;
+    // all children folders should be settings
+    for (const child of (this._doc?.children || [])) {
+      const setting = new Setting(child.folder);
+      
+      if (setting)
+        settings.push(setting);
+    }
+
+    return settings;
   }
 
   /**
@@ -49,7 +51,7 @@ export class RootFolder extends DocumentWithFlags<RootFolderDoc> {
    * @returns The root folder.
    */
   public static async get(): Promise<RootFolder> {
-    let folder: RootFolder | null;
+    let folder: RootFolder | null = null;
 
     const rootFolderId = ModuleSettings.get(SettingKey.rootFolderId);
 
@@ -57,7 +59,10 @@ export class RootFolder extends DocumentWithFlags<RootFolderDoc> {
       // no setting - create a new one
       folder = await RootFolder.create();
     } else { 
-      folder = await RootFolder.fromUuid(rootFolderId);
+      const doc = await fromUuid<RootFolderDoc>(rootFolderId);
+
+      if (doc)
+        folder = new RootFolder(doc);
   
       // there is a setting, but does the folder exist?
       if (!folder) {
@@ -104,5 +109,22 @@ export class RootFolder extends DocumentWithFlags<RootFolderDoc> {
       return this;
     }
     return null;
+  }
+
+  public async resetPermissions(options: { updatedEntry?: Entry }) {
+    // folders are easy - they just show if there's stuff in them that's visible
+    // so we can just check the children
+
+    if (options.updatedEntry && (await options.updatedEntry.getSetting())) {
+      // only need to check the setting that its in
+      const setting = await options.updatedEntry.getSetting();
+
+      await setting.resetPermissions(options);
+    }
+    else {
+      for (const setting of this.settings) {
+        await setting.resetPermissions(options);
+      }
+    }
   }
 }

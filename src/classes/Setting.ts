@@ -2,13 +2,13 @@ import { moduleId, UserFlags, UserFlagKey, ModuleSettings, SettingKey } from '@/
 import { SettingDoc, SettingFlagKey, settingFlagSettings } from '@/documents';
 import { Hierarchy, Topics, ValidTopic, SettingGeneratorConfig, RelatedJournal } from '@/types';
 import { FCBDialog } from '@/dialogs';
-import { DocumentWithFlags, Campaign, TopicFolder, RootFolder } from '@/classes';
+import { DocumentWithFlags, Campaign, TopicFolder, RootFolder, Entry } from '@/classes';
 import { cleanTrees } from '@/utils/hierarchy';
 import { localize } from '@/utils/game';
 import { initializeSettingRollTables, refreshSettingRollTables } from '@/utils/nameGenerators';
 import { Backend } from '@/classes';
 import { ApiNamePreviewPost200ResponsePreviewInner } from '@/apiClient';
-import { getEntryPermissionBlock, getNoPermissionBlock } from 'src/utils/permissions';
+import { getEntryPermissionBlock, getNoPermissionBlock } from '@/utils/permissions';
 
 type SettingCompendium = CompendiumCollection<'JournalEntry'>;
 
@@ -164,6 +164,11 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
    */
   public get uuid(): string {
     return this._doc.uuid;
+  }
+
+  // setting is visible if any topics are visible
+  get visibleToPlayers(): boolean {
+    return Object.entries(this.topicFolders).filter((f: TopicFolder)=> f.visibleToPlayers).length > 0;
   }
 
   /** 
@@ -864,35 +869,28 @@ private async deleteRollTables() : Promise<void> {
   // we could make this easier by always giving read access to the compendium, setting, and topics but that seems like an unnecessary risk
   // so instead, if there are any entries visible, we make the topic visible and so on
   // use knownVisible if you already know at least one entry is visible
-  public async resetPermissions(knownVisible: boolean = false) {
-    let permissions: Record<string, CONST.DOCUMENT_OWNERSHIP_LEVELS> = {};
-    let visible = knownVisible;
+  public async resetPermissions(options: { updatedEntry?: Entry }) {
+    // folders (i.e. settings) are easy - they just show if there's stuff in them that's visible
 
-    // see if anything is visible, if so set to the same permissions as entries generally
-    if (!visible) {
-      for (let topic of Object.values(this.topicFolders)) {
-        // check all the children
-        for (let entry of topic.allEntries()) {
-          if (entry.visible) {
-            visible = true;
-            break;
-          }
-        }
+    // so we can just check the children
+    if (options.updatedEntry) {
+      // only need to check the topic that matches
+      const topicFolder = this.topicFolders[options.updatedEntry.topic];
 
-        if (visible)
-          break;
+      if (topicFolder) {
+        await topicFolder.resetPermissions(options);
+      }
+    } else {
+      // do them all
+      for (const topicFolder of Object.values(this.topicFolders)) {
+        await topicFolder.resetPermissions(options);
       }
     }
 
-    // // get the proper permissions
-    // permissions = visible ? getEntryPermissionBlock() : getNoPermissionBlock();
-
-    // // set it on the topic
-    // await this._doc.update({ ownership: permissions });
-
-    // // adjust the parent
-    // const rootFolder = await RootFolder.get();
-    // if (rootFolder)
-    //   await rootFolder.resetPermissions(visible);
+    // compendium permissions work differently from documents
+    
+    // the compendium we set based on what the children say
+    const permissions = this.visibleToPlayers ? getEntryPermissionBlock() : getNoPermissionBlock();
+    await this._compendium?.update({ownership: permissions});
   }
 }

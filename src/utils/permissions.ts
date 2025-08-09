@@ -9,7 +9,8 @@
  */
  
 import { ModuleSettings, SettingKey } from '@/settings';
-import { EntryDoc } from 'src/documents';
+import { EntryDoc } from '@/documents';
+import { Entry, RootFolder } from '@/classes';
 
 export enum PermissionType {
   EntryRead = 0,  // read visible entries
@@ -41,6 +42,56 @@ export const validatePermission = (permission: PermissionType): boolean => {
   }  
 }
   
+/** Looks up which roles have access to entries at various levels and
+ *  returns a Record that can be used to set a foundry object's 
+ *  permissions that has every user's correct permission level
+ *  based on their current role.  It ignores GMs for simplicity, since
+ *  they have access to everything.
+ */
+export const getEntryPermissionBlock = (): Record<string, CONST.DOCUMENT_OWNERSHIP_LEVELS> => {
+  // make the default none for safety
+  const permissions: Record<string, CONST.DOCUMENT_OWNERSHIP_LEVELS> = {
+    default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE,
+  };
+
+  // see what roles are needed for each level of access
+  const roleToRead = ModuleSettings.get(SettingKey.playerAccessEntryRead);
+
+  // the role to write is the lesser of write and full access
+  const roleToWrite = Math.min(ModuleSettings.get(SettingKey.playerAccessEntryWrite), ModuleSettings.get(SettingKey.playerAccessEntryFull));
+
+  // go through each user and set their permissions
+  // if they need to read, they get observer
+  // if they need to write, they get owner
+  for (const user of game.users) {
+    if (user.role >= roleToWrite) {
+      permissions[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+    }
+    else if (user.role >= roleToRead) {
+      permissions[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+    }
+  }
+
+  return permissions;
+}
+
+/** Returns an ownership block that sets all permissions to none except for GMs */
+export const getNoPermissionBlock = (): Record<string, CONST.DOCUMENT_OWNERSHIP_LEVELS> => {
+  // make the default none for safety
+  const permissions: Record<string, CONST.DOCUMENT_OWNERSHIP_LEVELS> = {
+    default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE,
+  };
+
+  // add GM permissions
+  for (const user of game.users) {
+    if (user.role >= CONST.USER_ROLES.GAMEMASTER) {
+      permissions[user.id] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
+    }
+  }
+
+  return permissions;
+}
+
 /** used to update permissions on every document when a user's role changes 
  * 
  * @param {User} user - the user to update permissions for
@@ -54,3 +105,9 @@ export const updateUserPermissions = async (user: User, newRole: CONST.USER_ROLE
   }
 }
   
+export const resetAllPermissions = async (options: { updatedEntry?: Entry }) => {
+  const rootFolder = await RootFolder.get();
+
+  if (rootFolder)
+    await rootFolder.resetPermissions(options);
+}

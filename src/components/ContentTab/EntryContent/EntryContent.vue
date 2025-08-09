@@ -5,6 +5,12 @@
     <div ref="contentRef" class="fcb-sheet-container flexcol">
       <header class="fcb-name-header flexrow">
         <i :class="`fas ${icon} sheet-icon`"></i>
+        <button
+          @click="onVisibilityClick"
+          :title="currentEntry?.visibleToPlayers.toString() || 'false'"
+        >
+          {{ currentEntry?.visibleToPlayers.toString() || 'false' }}
+        </button>
         <InputText
           v-model="name"
           for="fcb-input-name"
@@ -720,6 +726,18 @@
       currentEntry.value.journals = newJournals;
       await currentEntry.value.save();
     }
+  };
+
+  const onVisibilityClick = async (event: MouseEvent) : Promise<void> => {
+    // Prevent default behavior
+    debugger;
+    event.preventDefault();
+    event.stopPropagation();    
+    
+    if (!currentEntry.value)
+      return;
+
+    await currentEntry.value.setVisibleToPlayers(!currentEntry.value.visibleToPlayers);
   };
 
   ////////////////////////////////
