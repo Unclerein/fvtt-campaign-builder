@@ -3,7 +3,6 @@ import { moduleId } from './index';
 import { AdvancedSettingsApplication } from '@/applications/settings/AdvancedSettingsApplication';
 import { SpeciesListApplication } from '@/applications/settings/SpeciesListApplication';
 import { RollTableSettingsApplication } from '@/applications/settings/RollTableSettingsApplication';
-import { PermissionSettingsApplication } from '@/applications/settings/PermissionSettingsApplication';
 import { SessionDisplayMode, Species, TagList, GeneratorType } from '@/types';
 import type { ApiLocationGenerateImagePostRequestImageModelEnum, ApiLocationGenerateImagePostRequestTextModelEnum } from '@/apiClient';
 
@@ -45,14 +44,6 @@ export enum SettingKey {
 
   speciesListMenu = 'speciesListMenu',  // display the species list screen
   speciesList = 'speciesList',
-
-  playerAccess = 'playerAccess',  // display the player access screen
-  playerAccessEntryRead = 'playerAccessEntryRead',  // permission level needed for players to read (visible) entries
-  playerAccessEntryWrite = 'playerAccessEntryWrite',  // permission level needed for players to write entries
-  playerAccessEntryFull = 'playerAccessEntryFull',  // permission level needed for players to have full access to entries (i.e. even see hidden entries)
-  playerAccessBackend = 'playerAccessBackend',  // permission level needed for players to access backend features
-  playerAccessSessionNotes = 'playerAccessSessionNotes',  // permission level needed for players to access session notes
-  playerAccessSessionFull = 'playerAccessSessionFull',  // permission level needed for players to have full access to sessions and campaigns
 }
 
 export type SettingKeyType<K extends SettingKey> =
@@ -84,13 +75,6 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.useGmailToDos ? boolean :
     K extends SettingKey.emailDefaultSetting ? string :
     K extends SettingKey.emailDefaultCampaign ? string :
-    K extends SettingKey.playerAccess ? never :
-    K extends SettingKey.playerAccessEntryRead ? CONST.USER_ROLES :
-    K extends SettingKey.playerAccessEntryWrite ? CONST.USER_ROLES :
-    K extends SettingKey.playerAccessEntryFull ? CONST.USER_ROLES :
-    K extends SettingKey.playerAccessBackend ? CONST.USER_ROLES :
-    K extends SettingKey.playerAccessSessionNotes ? CONST.USER_ROLES :
-    K extends SettingKey.playerAccessSessionFull ? CONST.USER_ROLES :
     never;  
 
 export class ModuleSettings {
@@ -150,15 +134,6 @@ export class ModuleSettings {
       icon: 'fas fa-bars',               // A Font Awesome icon used in the submenu button
       permissions: ['SETTINGS_WRITE'], // Optional: restrict to GM only
       type: RollTableSettingsApplication,
-    },
-    {
-      settingID: SettingKey.playerAccess,
-      name: 'settings.permissionSettings',
-      label: 'fcb.settings.permissionSettingsLabel',   // localized by Foundry
-      hint: 'settings.permissionSettingsHelp',
-      icon: 'fas fa-bars',               // A Font Awesome icon used in the submenu button
-      permissions: ['SETTINGS_WRITE'], // Optional: restrict to GM only
-      type: PermissionSettingsApplication,
     },
   ];
 
@@ -327,36 +302,6 @@ export class ModuleSettings {
     {
       settingID: SettingKey.longDescriptionParagraphs,
       default: 1,
-      type: Number,
-    },
-    {
-      settingID: SettingKey.playerAccessEntryRead,
-      default: CONST.USER_ROLES.GAMEMASTER,
-      type: Number,
-    },
-    {
-      settingID: SettingKey.playerAccessEntryWrite,
-      default: CONST.USER_ROLES.GAMEMASTER,
-      type: Number,
-    },
-    {
-      settingID: SettingKey.playerAccessEntryFull,
-      default: CONST.USER_ROLES.GAMEMASTER,
-      type: Number,
-    },
-    {
-      settingID: SettingKey.playerAccessBackend,
-      default: CONST.USER_ROLES.GAMEMASTER,
-      type: Number,
-    },
-    {
-      settingID: SettingKey.playerAccessSessionNotes,
-      default: CONST.USER_ROLES.GAMEMASTER,
-      type: Number,
-    },
-    {
-      settingID: SettingKey.playerAccessSessionFull,
-      default: CONST.USER_ROLES.GAMEMASTER,
       type: Number,
     },
   ];

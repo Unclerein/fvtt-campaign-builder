@@ -1,8 +1,7 @@
 import { setupEnricher } from '@/components/Editor/helpers';
 import { moduleId, ModuleSettings, SettingKey } from '@/settings';
-import { validatePermission, PermissionType } from '@/utils/permissions';
 import { getCampaignBuilderApp } from '@/applications/CampaignBuilder';
-import { localize } from '@/utils/game';
+import { isClientGM, localize } from '@/utils/game';
 import { refreshAllSettingRollTables } from '@/utils/nameGenerators';
 import { Backend, ExternalAPI } from '@/classes';
 import { MigrationManager } from '@/utils/migration';
@@ -13,7 +12,7 @@ export function registerForReadyHook() {
 
 async function ready(): Promise<void> {
   // don't do anything if even the most basic permission doesn't exist
-  if (!validatePermission(PermissionType.EntryRead) && !validatePermission(PermissionType.SessionNotes))
+  if (!isClientGM())
     return;
   
   // check the backend
@@ -64,7 +63,7 @@ const loadDefaultSpecies = async () => {
 
 async function addMainButton(): Promise<void> {
   // need permission to ready entries or sessions to get the button
-  if (!validatePermission(PermissionType.EntryRead) && !validatePermission(PermissionType.SessionNotes))
+  if (!isClientGM())
     return;
 
   // make sure it's not there already - sometimes on 1st load this gets called multiple times

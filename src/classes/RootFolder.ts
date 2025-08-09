@@ -110,21 +110,4 @@ export class RootFolder extends DocumentWithFlags<RootFolderDoc> {
     }
     return null;
   }
-
-  public async resetPermissions(options: { updatedEntry?: Entry }) {
-    // folders are easy - they just show if there's stuff in them that's visible
-    // so we can just check the children
-
-    if (options.updatedEntry && (await options.updatedEntry.getSetting())) {
-      // only need to check the setting that its in
-      const setting = await options.updatedEntry.getSetting();
-
-      await setting.resetPermissions(options);
-    }
-    else {
-      for (const setting of this.settings) {
-        await setting.resetPermissions(options);
-      }
-    }
-  }
 }

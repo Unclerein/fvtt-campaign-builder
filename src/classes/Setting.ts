@@ -2,13 +2,12 @@ import { moduleId, UserFlags, UserFlagKey, ModuleSettings, SettingKey } from '@/
 import { SettingDoc, SettingFlagKey, settingFlagSettings } from '@/documents';
 import { Hierarchy, Topics, ValidTopic, SettingGeneratorConfig, RelatedJournal } from '@/types';
 import { FCBDialog } from '@/dialogs';
-import { DocumentWithFlags, Campaign, TopicFolder, RootFolder, Entry } from '@/classes';
+import { DocumentWithFlags, Campaign, TopicFolder, RootFolder, } from '@/classes';
 import { cleanTrees } from '@/utils/hierarchy';
 import { localize } from '@/utils/game';
 import { initializeSettingRollTables, refreshSettingRollTables } from '@/utils/nameGenerators';
 import { Backend } from '@/classes';
 import { ApiNamePreviewPost200ResponsePreviewInner } from '@/apiClient';
-import { getEntryPermissionBlock, getNoPermissionBlock } from '@/utils/permissions';
 
 type SettingCompendium = CompendiumCollection<'JournalEntry'>;
 
@@ -164,11 +163,6 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
    */
   public get uuid(): string {
     return this._doc.uuid;
-  }
-
-  // setting is visible if any topics are visible
-  get visibleToPlayers(): boolean {
-    return Object.entries(this.topicFolders).filter((f: TopicFolder)=> f.visibleToPlayers).length > 0;
   }
 
   /** 
@@ -864,33 +858,5 @@ private async deleteRollTables() : Promise<void> {
   public set nameStyleExamples(value: { genre: string; settingFeeling: string; examples: ApiNamePreviewPost200ResponsePreviewInner[] } | null) {
     this._nameStyleExamples = value;
     this.updateCumulative(SettingFlagKey.nameStyleExamples, value);
-  }
-
-  // we could make this easier by always giving read access to the compendium, setting, and topics but that seems like an unnecessary risk
-  // so instead, if there are any entries visible, we make the topic visible and so on
-  // use knownVisible if you already know at least one entry is visible
-  public async resetPermissions(options: { updatedEntry?: Entry }) {
-    // folders (i.e. settings) are easy - they just show if there's stuff in them that's visible
-
-    // so we can just check the children
-    if (options.updatedEntry) {
-      // only need to check the topic that matches
-      const topicFolder = this.topicFolders[options.updatedEntry.topic];
-
-      if (topicFolder) {
-        await topicFolder.resetPermissions(options);
-      }
-    } else {
-      // do them all
-      for (const topicFolder of Object.values(this.topicFolders)) {
-        await topicFolder.resetPermissions(options);
-      }
-    }
-
-    // compendium permissions work differently from documents
-    
-    // the compendium we set based on what the children say
-    const permissions = this.visibleToPlayers ? getEntryPermissionBlock() : getNoPermissionBlock();
-    await this._compendium?.update({ownership: permissions});
   }
 }

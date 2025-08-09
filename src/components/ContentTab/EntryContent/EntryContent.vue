@@ -5,12 +5,6 @@
     <div ref="contentRef" class="fcb-sheet-container flexcol">
       <header class="fcb-name-header flexrow">
         <i :class="`fas ${icon} sheet-icon`"></i>
-        <button
-          @click="onVisibilityClick"
-          :title="currentEntry?.visibleToPlayers.toString() || 'false'"
-        >
-          {{ currentEntry?.visibleToPlayers.toString() || 'false' }}
-        </button>
         <InputText
           v-model="name"
           for="fcb-input-name"
@@ -344,7 +338,7 @@
     
   const icon = computed((): string => (!topic.value ? '' : getTopicIcon(topic.value)));
   const namePlaceholder = computed((): string => (topic.value===null ? '' : (localize(topicData[topic.value]?.namePlaceholder || '') || '')));
-  const canGenerate = computed(() => topic.value && [Topics.Character, Topics.Location, Topics.Organization, Topics.PC].includes(topic.value));
+  const canGenerate = computed(() => topic.value && [Topics.Character, Topics.Location, Topics.Organization].includes(topic.value));
   const generateDisabled = computed(() => !Backend.available);
   const showHierarchy = computed((): boolean => (topic.value===null ? false : hasHierarchy(topic.value)));
   const roleplayAboveDescription = computed(() => ModuleSettings.get(SettingKey.showRolePlayingNotes) && isInPlayMode.value);
@@ -726,18 +720,6 @@
       currentEntry.value.journals = newJournals;
       await currentEntry.value.save();
     }
-  };
-
-  const onVisibilityClick = async (event: MouseEvent) : Promise<void> => {
-    // Prevent default behavior
-    debugger;
-    event.preventDefault();
-    event.stopPropagation();    
-    
-    if (!currentEntry.value)
-      return;
-
-    await currentEntry.value.setVisibleToPlayers(!currentEntry.value.visibleToPlayers);
   };
 
   ////////////////////////////////

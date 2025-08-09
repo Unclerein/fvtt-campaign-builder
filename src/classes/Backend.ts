@@ -3,7 +3,6 @@ import { Configuration, FCBApi } from '@/apiClient';
 import { ModuleSettings, SettingKey } from '@/settings';
 import { notifyError, notifyInfo, notifyWarn } from '@/utils/notifications';
 import { localize } from '@/utils/game';
-import { validatePermission, PermissionType } from '@/utils/permissions';
 import { Campaign } from '@/classes';
 import { useMainStore } from '@/applications/stores';
 import { Reactive } from 'vue';
@@ -23,7 +22,7 @@ export class Backend {
 
   /** force will reconnect even if already connected (ex. when changing credentials) */
   static async configure(force: boolean = false) {
-    if (!validatePermission(PermissionType.Backend) || (Backend.inProgress || (Backend.available && !force))) {
+    if (Backend.inProgress || (Backend.available && !force)) {
       return;
     }
 
@@ -106,7 +105,7 @@ export class Backend {
   }
 
   static async pollForEmail() {
-    if (!validatePermission(PermissionType.SessionFull) || !ModuleSettings.get(SettingKey.useGmailToDos)) 
+    if (!ModuleSettings.get(SettingKey.useGmailToDos)) 
       return;
 
     const campaign = await Campaign.fromUuid(ModuleSettings.get(SettingKey.emailDefaultCampaign));

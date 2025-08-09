@@ -4,7 +4,6 @@ import { TopicDoc, SettingDoc, TopicFlagKey, topicFlagSettings, EntryDoc } from 
 import { DocumentWithFlags, Entry, Setting } from '@/classes';
 import { ValidTopic } from '@/types';
 import { getTopicTextPlural } from '@/compendia';
-import { getEntryPermissionBlock, getNoPermissionBlock } from '@/utils/permissions';
 
 // represents a topic entry (ex. a character, location, etc.)
 export class TopicFolder extends DocumentWithFlags<TopicDoc> {
@@ -12,9 +11,6 @@ export class TopicFolder extends DocumentWithFlags<TopicDoc> {
   static override _flagSettings = topicFlagSettings;
 
   public setting: Setting | null;  // the setting the topic is in (if we don't setup up front, we can load it later)
-
-  // saved on JournalEntry
-  // private _name: string;   // topic names are hardcoded
 
   // saved in flags
   private _topNodes: string[];
@@ -52,11 +48,6 @@ export class TopicFolder extends DocumentWithFlags<TopicDoc> {
 
   get uuid(): string {
     return this._doc.uuid;
-  }
-
-  // topic is visible if any entries are visible
-  get visibleToPlayers(): boolean {
-    return this.filterEntries((e: Entry)=> e.visibleToPlayers).length > 0;
   }
 
   /**
@@ -258,21 +249,5 @@ export class TopicFolder extends DocumentWithFlags<TopicDoc> {
     await setting.executeUnlocked(async () => {
       await this._doc.delete();
     });
-  }
-
-  // we could make this easier by always giving read access to the compendium, setting, and topics but that seems like an unnecessary risk
-  // so instead, if there are any entries visible, we make the topic visible and so on
-  // use knownVisible if you already know at least one entry is visible
-  public async resetPermissions(_options: { updatedEntry?: Entry }) {
-    let permissions: Record<string, CONST.DOCUMENT_OWNERSHIP_LEVELS> = {};
-
-    // we can ignore the updated Entry because if it's in us, checking our visibility is sufficient
-    
-    // see if anything is visible, if so set to the same permissions as entries generally
-    permissions = this.visibleToPlayers ? getEntryPermissionBlock() : getNoPermissionBlock();
-
-    // set it on the document
-    await this._doc.update({ ownership: permissions });
-  }
-    
+  }   
 }

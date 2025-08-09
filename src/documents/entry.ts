@@ -2,7 +2,6 @@ import { RelatedItemDetails, TagInfo, Topics, ValidTopic, RelatedJournal } from 
 
 const fields = foundry.data.fields;
 const entrySchema = {
-  visibleToPlayers: new fields.BooleanField({ required: true, nullable: false, initial: false }),
   topic: new fields.NumberField({ required: true, nullable: false, validate: (value: number) => { return Object.values(Topics).includes(value); }, textSearch: true, }),
   type: new fields.StringField({ required: true, nullable: false, initial: '', textSearch: true, }),
   tags: new fields.ArrayField(
@@ -91,7 +90,6 @@ export interface EntryDoc extends JournalEntryPage {
     type: string;
     tags: TagInfo[];
     rolePlayingNotes: string;
-    visibleToPlayers: boolean;
 
     /**
      * Keyed by topic, then entryId

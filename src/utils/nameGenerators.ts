@@ -1,8 +1,7 @@
 import { moduleId } from '@/settings';
-import { localize } from '@/utils/game';
+import { isClientGM, localize } from '@/utils/game';
 import { Backend } from '@/classes';
 import { nameStyles } from '@/utils/nameStyles';
-import { PermissionType, validatePermission } from '@/utils/permissions';
 
 import { GeneratorType, SettingGeneratorConfig } from '@/types';
 import { Setting } from '@/classes';
@@ -348,7 +347,7 @@ export const refreshAllSettingRollTables = async(empty: boolean = false) : Promi
 export const updateSettingRollTableNames = async(setting: Setting) : Promise<void> => {
   const config = setting.rollTableConfig;
 
-  if (!config || !validatePermission(PermissionType.Backend)) {
+  if (!config || !isClientGM()) {
     return; // No roll tables configured for this setting
   }
 

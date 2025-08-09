@@ -41,23 +41,6 @@
         "defaultTypeTavern": "Default Tavern type",
         "defaultTypeTavernHelp": "Default type to use when creating a tavern location entry"
       },
-      "permissionSettings": "Permission Settings",
-      "permissionSettingsLabel": "Permissions",
-      "permissionSettingsHelp": "Configure player permissions for the Campaign Builder",
-      "permissions": {
-        "playerAccessEntryRead": "Read Entries",
-        "playerAccessEntryReadHelp": "Ability to read entries marked as 'visible'",
-        "playerAccessEntryWrite": "Write Entries",
-        "playerAccessEntryWriteHelp": "Ability to create new entries (which will be marked visible)",
-        "playerAccessEntryFull": "Full Entries",
-        "playerAccessEntryFullHelp": "Ability to read and write all entries",
-        "playerAccessBackend": "Backend Features",
-        "playerAccessBackendHelp": "Ability to use backend features",
-        "playerAccessSessionNotes": "Session Notes",
-        "playerAccessSessionNotesHelp": "Ability to view session names, numbers, dates, and notes",
-        "playerAccessSessionFull": "Full Campaigns",
-        "playerAccessSessionFullHelp": "Ability to view and edit all campaign and session information"
-      },
       "advanced": "Advanced Settings",
       "advancedLabel": "Open Advanced Settings",
       "advancedHelp": "Configure advanced settings (including AI)",
