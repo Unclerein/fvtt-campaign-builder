@@ -6,6 +6,7 @@ import { nameStyles } from '@/utils/nameStyles';
 import { GeneratorType, SettingGeneratorConfig } from '@/types';
 import { Setting } from '@/classes';
 import { RollTableFlagKey } from '@/documents';
+import { notifyInfo } from './notifications';
 
 /**
  * The number of items to generate for each roll table.
@@ -302,7 +303,7 @@ export const refreshSettingRollTables = async(setting: Setting, empty: boolean =
 
         // ui alert if we have at least one
         if (!alerted) {
-          ui.notifications?.info(localize('applications.rollTableSettings.notifications.refreshStarted'));
+          notifyInfo(localize('applications.rollTableSettings.notifications.refreshStarted'));
           alerted = true;
         }
       }

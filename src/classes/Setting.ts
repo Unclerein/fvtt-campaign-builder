@@ -1,9 +1,8 @@
 import { moduleId, UserFlags, UserFlagKey, ModuleSettings, SettingKey } from '@/settings'; 
 import { SettingDoc, SettingFlagKey, settingFlagSettings } from '@/documents';
 import { Hierarchy, Topics, ValidTopic, SettingGeneratorConfig, RelatedJournal } from '@/types';
-import { getRootFolder,  } from '@/compendia';
 import { FCBDialog } from '@/dialogs';
-import { DocumentWithFlags, Campaign, TopicFolder } from '@/classes';
+import { DocumentWithFlags, Campaign, TopicFolder, RootFolder, } from '@/classes';
 import { cleanTrees } from '@/utils/hierarchy';
 import { localize } from '@/utils/game';
 import { initializeSettingRollTables, refreshSettingRollTables } from '@/utils/nameGenerators';
@@ -22,9 +21,6 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
   // JournalEntries
   public campaigns: Record<string, Campaign>;   // Campaigns keyed by uuid 
   public topicFolders: Record<ValidTopic, TopicFolder>;  // we load them when we load the setting (using validate()), so we assume it's never empty
-
-  // saved on Folder
-  private _name;
 
   // saved in flags
   private _campaignNames: Record<string, string>;  //name of each campaign; keyed by journal entry uuid
@@ -62,7 +58,6 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
     this._rollTableConfig = this.getFlag(SettingFlagKey.rollTableConfig);
     this._nameStyleExamples = this.getFlag(SettingFlagKey.nameStyleExamples);
     this._journals = this.getFlag(SettingFlagKey.journals) || [];
-    this._name = this._doc.name;
     if (this._compendiumId) {
       const compendium = game.packs?.get(this._compendiumId) as SettingCompendium;
       
@@ -174,15 +169,14 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
    * The setting name 
    */
   public get name(): string {
-    return this._name;
+    return this._doc.name;
   }
 
   set name(value: string) {
-    this._name = value;
-    this._cumulativeUpdate = {
-      ...this._cumulativeUpdate,
+    this._doc.name = value;
+    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
       name: value,
-    };
+    });
   }
 
   
@@ -368,12 +362,17 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
       if (updateData && updateData.flags[moduleId])
         updateData.flags[moduleId] = this.prepareFlagsForUpdate(updateData.flags[moduleId]);
 
-      const retval = await this._doc.update(updateData) || null;
-      if (retval) {
-        this._doc = retval;
+      // note: update returns null if nothing changed
+      try {
+        const retval = await this._doc.update(updateData) || null;
+        if (retval) {
+          this._doc = retval;
+        }
+          
         this._cumulativeUpdate = {};
-
         success = true;
+      } catch (e) {
+        console.error('Failed to update campaign', e);
       }
     }
 
@@ -386,7 +385,7 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
    * @returns The new setting, or null if the user cancelled the dialog.
    */
   public static async create(makeCurrent = false): Promise<Setting | null> {
-    const rootFolder = await getRootFolder(); // will create if needed
+    const rootFolder = await RootFolder.get(); // will create if needed
 
     // get the name
     let name;
@@ -516,7 +515,7 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
   private async createCompendium(): Promise<void> {
     const metadata = { 
       name: foundry.utils.randomID(), 
-      label: this._name,
+      label: this._doc.name,
       type: 'JournalEntry' as const, 
     };
 

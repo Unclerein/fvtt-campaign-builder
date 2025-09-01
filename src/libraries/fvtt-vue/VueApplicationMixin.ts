@@ -3,6 +3,7 @@
 
 import { App, createApp, h, reactive } from 'vue';
 import { useMainStore } from '@/applications/stores';
+import { notifyWarn } from '@/utils/notifications';
 
 export const VueApplicationMixinVersion = '0.0.6';
 
@@ -97,7 +98,7 @@ export function VueApplicationMixin<TBase extends new (...args: any[]) => foundr
 
         // If part is not in the PARTS object, skip it
         if (!part) {
-          ui.notifications.warn(`Part "${partId}" is not a supported template part for ${this.constructor.name}`);
+          notifyWarn(`Part "${partId}" is not a supported template part for ${this.constructor.name}`);
           continue;
         }
 

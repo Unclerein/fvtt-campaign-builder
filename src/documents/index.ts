@@ -3,6 +3,7 @@ export * from './session';
 export { CampaignDoc, CampaignFlagKey, CampaignFlagType, CampaignLore, flagSettings as campaignFlagSettings } from './campaign';
 export { SettingDoc, SettingFlagKey, SettingFlagType, flagSettings as settingFlagSettings } from './setting';
 export { TopicDoc, TopicFlagKey, TopicFlagType, flagSettings as topicFlagSettings } from './topic';
+export { RootFolderDoc, RootFolderFlagKey, RootFolderFlagType, flagSettings as rootFolderFlagSettings } from './rootFolder';
 
 // just need to handle our special flags
 export { RollTableFlagKey, RollTableFlagType, flagSettings as rolltableFlagSettings } from './rolltables';

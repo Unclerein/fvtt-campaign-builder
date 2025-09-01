@@ -90,7 +90,7 @@
   import { refreshAllSettingRollTables } from '@/utils/nameGenerators';
   import { rollTableSettingsApp } from '@/applications/settings/RollTableSettingsApplication';
   import { localize } from '@/utils/game';
-
+  import { notifyError, notifyInfo } from '@/utils/notifications';
   // library components
   import Checkbox from 'primevue/checkbox';
   import Inputtext from 'primevue/inputtext';
@@ -147,10 +147,10 @@
     try {
       // Refresh setting-specific tables for all settings
       await refreshAllSettingRollTables(true);
-      ui.notifications?.info(localize('applications.rollTableSettings.notifications.refreshSuccess'));
+      notifyInfo(localize('applications.rollTableSettings.notifications.refreshSuccess'));
     } catch (error) {
       console.error('Error refreshing roll tables:', error);
-      ui.notifications?.error(localize('applications.rollTableSettings.notifications.refreshError'));
+      notifyError(localize('applications.rollTableSettings.notifications.refreshError'));
     } finally {
       isRefreshing.value = false;
     }

@@ -20,9 +20,14 @@
   // library imports
   import { computed } from 'vue';
 
+  // local imports
+  import { notifyError, notifyInfo, notifyWarn } from '@/utils/notifications';
+  import { localize } from '@/utils/game';
+
   // library components
   import ContextMenu from '@imengyu/vue3-context-menu';
-  import { localize } from '@/utils/game';
+
+  // local components
 
   // types
   import { Topics, ValidTopic, WindowTabType } from '@/types';
@@ -291,7 +296,15 @@
   const copyImageLinkToClipboard = () => {
     if (!props.modelValue) return;
     
-    navigator.clipboard.writeText(props.modelValue);
+    // if it is a relative URL, need to add the base URL (though it also likely won't work outside of Foundry)
+    let url = props.modelValue;
+    if (!props.modelValue.startsWith('http')) {
+      const serverURL = window.location.origin;
+      url = `${serverURL}/${props.modelValue}`;
+      notifyWarn('Image link copied to clipboard as local URL - it will require the Foundry server to be running to work.');
+    }
+
+    navigator.clipboard.writeText(url);
   };
 
   const copyImageToClipboard = async () => {
@@ -306,11 +319,11 @@
       // For supported formats, try direct copy first
       if (isPng || isWebP || isGif) {
         try {
-          const response = await fetch(props.modelValue);
+          const response = await fetch(props.modelValue, { mode: 'cors', cache: 'no-store' });
           const blob = await response.blob();
           const clipboardItem = new ClipboardItem({ [blob.type]: blob });
           await navigator.clipboard.write([clipboardItem]);
-          ui.notifications?.info('Image copied to clipboard');
+          notifyInfo('Image copied to clipboard');
           return;
         } catch (directError) {
           console.log('Direct copy failed, trying canvas conversion:', directError);
@@ -322,10 +335,18 @@
       const img = new Image();
       img.crossOrigin = 'anonymous';
       
+      // need to add a cachebuster to the URL to force a reload for CORS to work right
+      const srcWithBust = (() => {
+        const u = props.modelValue as string;
+        const hasQuery = u.includes('?');
+        const sep = hasQuery ? '&' : '?';
+        return `${u}${sep}cb=${Date.now()}`;
+      })();
+      
       await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = reject;
-        img.src = props.modelValue!;
+        img.src = srcWithBust;
       });
 
       const canvas = document.createElement('canvas');
@@ -347,7 +368,7 @@
         try {
           const clipboardItem = new ClipboardItem({ 'image/png': blob });
           await navigator.clipboard.write([clipboardItem]);
-          ui.notifications?.info('Image copied to clipboard');
+          notifyInfo('Image copied to clipboard');
         } catch (clipboardError) {
           console.error('Clipboard write failed:', clipboardError);
           fallbackCopyImage(img);
@@ -356,7 +377,7 @@
       
     } catch (error) {
       console.error('Failed to copy image to clipboard:', error);
-      ui.notifications?.error('Failed to copy image to clipboard');
+      notifyError('Failed to copy image to clipboard');
     }
   };
 
@@ -388,14 +409,14 @@
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
           
-          ui.notifications?.info('Image downloaded as fallback (clipboard not available)');
+          notifyInfo('Image downloaded as fallback (clipboard not available)');
         } catch (downloadError) {
-          ui.notifications?.error('Failed to copy or download image');
+          notifyError('Failed to copy or download image');
         }
       }, 'image/png');
     } catch (error) {
       console.error('Fallback copy failed:', error);
-      ui.notifications?.error('Failed to copy image');
+      notifyError('Failed to copy image');
     }
   };
 

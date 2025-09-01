@@ -3,33 +3,32 @@
  */
 
 import { MigrationResult, MigrationContext, MigrationConstructor } from './types';
-import { MigrationV1_2 } from './versions/MigrationV1_2';
+import { migrationVersions } from './versions';
 import { VersionUtils } from '@/utils/version';
 import { MigrationProgressDialog } from './MigrationProgressDialog';
+import { notifyError } from '../notifications';
 
 /**
  * Manages all migrations for the Campaign Builder module
  */
 export class MigrationManager {
-  private static migrations: Record<string, MigrationConstructor> = {
-    '1.2.0': MigrationV1_2
-  };
+  private static migrations: Record<string, MigrationConstructor> = migrationVersions;
 
   /**
    * Check if any migrations are needed
    */
-  public static isMigrationNeeded(): boolean {
-    const neededMigrations = this.getNeededMigrations();
+  public static async isMigrationNeeded(): Promise<boolean> {
+    const neededMigrations = await this.getNeededMigrations();
     return neededMigrations.length > 0;
   }
 
   /**
    * Get all needed migrations for the version range
    */
-  private static getNeededMigrations(): MigrationConstructor[] {
+  private static async getNeededMigrations(): Promise<MigrationConstructor[]> {
     const needed: MigrationConstructor[] = [];
-    const lastVersion = VersionUtils.getLastKnownVersion();
-    const currentVersion = VersionUtils.getCurrentModuleVersion();
+    const lastVersion = VersionUtils.getLastKnownVersion();  // version when we last did a migration
+    const currentVersion = await VersionUtils.getCurrentModuleVersion();  // version currently running
 
     // any migration with a key greater than last known version and <= current version is needed
     //   (the second part of that is belt and suspenders, as it should never happen)
@@ -38,6 +37,9 @@ export class MigrationManager {
         needed.push(migration);
       }
     }
+
+    // sort the list by version so we do them in the right order
+    needed.sort((a: MigrationConstructor, b: MigrationConstructor) => VersionUtils.compareVersions((new a(this.createMigrationContext())).targetVersion, (new b(this.createMigrationContext())).targetVersion));
 
     return needed;
   }
@@ -56,11 +58,31 @@ export class MigrationManager {
    */
   public static async performMigration(): Promise<MigrationResult> {
     const lastVersion = VersionUtils.getLastKnownVersion();
-    const currentVersion = VersionUtils.getCurrentModuleVersion();
+    const currentVersion = await VersionUtils.getCurrentModuleVersion();
+
+    if (lastVersion === currentVersion) {
+      return {
+        success: true,
+        migratedCount: 0,
+        failedCount: 0,
+        warnings: ['No migrations needed']
+      };
+    }
+
+    // if version went backward, though a danger message
+    if (VersionUtils.compareVersions(lastVersion, currentVersion) > 0) {
+      notifyError(`Version went backward from ${lastVersion} to ${currentVersion}. This is not expected and may cause issues.`);
+      return {
+        success: true,
+        migratedCount: 0,
+        failedCount: 0,
+        warnings: ['No migrations needed']
+      };
+    }
 
     console.log(`Starting migration from ${lastVersion} to ${currentVersion}`);
 
-    const neededMigrations = this.getNeededMigrations();
+    const neededMigrations = await this.getNeededMigrations();
     
     if (neededMigrations.length === 0) {
       return {
@@ -143,29 +165,5 @@ export class MigrationManager {
         return overallResult;
       }
     );
-  }
-  
-  /**
-   * Run a specific migration (for testing)
-   */
-  public static async runSpecificMigration(version: string, dryRun = false): Promise<MigrationResult> {
-    const migrationClass = MigrationManager.migrations[version];
-    if (!migrationClass) {
-      return {
-        success: false,
-        migratedCount: 0,
-        failedCount: 1,
-        errors: [`Migration not found for version ${version}`]
-      };
-    }
-
-    const context = {
-      isWorldMigration: true,
-      isCompendiumMigration: true,
-      dryRun
-    };
-
-    const migration = new migrationClass(context);
-    return await migration.migrate();
   }
 }

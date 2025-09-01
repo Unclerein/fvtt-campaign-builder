@@ -86,10 +86,10 @@ export interface EntryDoc extends JournalEntryPage {
   __type: 'EntryDoc';
 
   system: {
-    rolePlayingNotes: string;
     topic: ValidTopic;
     type: string;
     tags: TagInfo[];
+    rolePlayingNotes: string;
 
     /**
      * Keyed by topic, then entryId
