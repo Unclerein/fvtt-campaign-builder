@@ -21,7 +21,7 @@
   import { computed } from 'vue';
 
   // local imports
-  import { notifyError, notifyInfo } from '@/utils/notifications';
+  import { notifyError, notifyInfo, notifyWarn } from '@/utils/notifications';
   import { localize } from '@/utils/game';
 
   // library components
@@ -296,7 +296,15 @@
   const copyImageLinkToClipboard = () => {
     if (!props.modelValue) return;
     
-    navigator.clipboard.writeText(props.modelValue);
+    // if it is a relative URL, need to add the base URL (though it also likely won't work outside of Foundry)
+    let url = props.modelValue;
+    if (!props.modelValue.startsWith('http')) {
+      const serverURL = window.location.origin;
+      url = `${serverURL}/${props.modelValue}`;
+      notifyWarn('Image link copied to clipboard as local URL - it will require the Foundry server to be running to work.');
+    }
+
+    navigator.clipboard.writeText(url);
   };
 
   const copyImageToClipboard = async () => {
@@ -311,7 +319,7 @@
       // For supported formats, try direct copy first
       if (isPng || isWebP || isGif) {
         try {
-          const response = await fetch(props.modelValue);
+          const response = await fetch(props.modelValue, { mode: 'cors', cache: 'no-store' });
           const blob = await response.blob();
           const clipboardItem = new ClipboardItem({ [blob.type]: blob });
           await navigator.clipboard.write([clipboardItem]);
@@ -327,10 +335,18 @@
       const img = new Image();
       img.crossOrigin = 'anonymous';
       
+      // need to add a cachebuster to the URL to force a reload for CORS to work right
+      const srcWithBust = (() => {
+        const u = props.modelValue as string;
+        const hasQuery = u.includes('?');
+        const sep = hasQuery ? '&' : '?';
+        return `${u}${sep}cb=${Date.now()}`;
+      })();
+      
       await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = reject;
-        img.src = props.modelValue!;
+        img.src = srcWithBust;
       });
 
       const canvas = document.createElement('canvas');
