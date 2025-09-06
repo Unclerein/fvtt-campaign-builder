@@ -94,15 +94,15 @@
             <div class="tab flexcol" data-group="primary" data-tab="content">
               <div class="standard-form scrollable">
                 <div class="form-group">
-                  <label>{{ localize('applications.advancedSettings.labels.defaultToLong') }}</label>
+                  <label>{{ localize('applications.advancedSettings.labels.rpgStyle') }}</label>
                   <div class="form-fields">
                     <Checkbox 
-                        v-model="defaultToLongDescriptions" 
+                        v-model="rpgStyle" 
                         :binary="true"
                       />
                   </div>
                   <p class="hint">
-                    {{ localize('applications.advancedSettings.labels.defaultToLongHint') }}
+                    {{ localize('applications.advancedSettings.labels.rpgStyleHint') }}
                   </p>
                 </div>
 
@@ -231,7 +231,7 @@
   // data
   const APIURL = ref<string>('');
   const APIToken = ref<string>('');
-  const defaultToLongDescriptions = ref<boolean>(true);
+  const rpgStyle = ref<boolean>(true);
   const longDescriptionParagraphs = ref<number>(1);
   const useGmailToDos = ref<boolean>(false);
   const emailDefaultSetting = ref<string>('');
@@ -305,7 +305,7 @@
   const onSubmitClick = async () => {
     await ModuleSettings.set(SettingKey.APIURL, APIURL.value);
     await ModuleSettings.set(SettingKey.APIToken, APIToken.value);
-    await ModuleSettings.set(SettingKey.defaultToLongDescriptions, defaultToLongDescriptions.value);
+    await ModuleSettings.set(SettingKey.rpgStyle, rpgStyle.value);
     await ModuleSettings.set(SettingKey.longDescriptionParagraphs, longDescriptionParagraphs.value);
     await ModuleSettings.set(SettingKey.useGmailToDos, useGmailToDos.value);
     await ModuleSettings.set(SettingKey.emailDefaultSetting, emailDefaultSetting.value);
@@ -323,7 +323,7 @@
   const onResetClick = async () => {
     APIURL.value = ModuleSettings.get(SettingKey.APIURL);
     APIToken.value = ModuleSettings.get(SettingKey.APIToken);
-    defaultToLongDescriptions.value = ModuleSettings.get(SettingKey.defaultToLongDescriptions);
+    rpgStyle.value = ModuleSettings.get(SettingKey.rpgStyle);
     longDescriptionParagraphs.value = ModuleSettings.get(SettingKey.longDescriptionParagraphs);
     useGmailToDos.value = ModuleSettings.get(SettingKey.useGmailToDos);
     emailDefaultSetting.value = ModuleSettings.get(SettingKey.emailDefaultSetting);
@@ -352,7 +352,7 @@
     // load the settings
     APIURL.value = ModuleSettings.get(SettingKey.APIURL);
     APIToken.value = ModuleSettings.get(SettingKey.APIToken);
-    defaultToLongDescriptions.value = ModuleSettings.get(SettingKey.defaultToLongDescriptions);
+    rpgStyle.value = ModuleSettings.get(SettingKey.rpgStyle);
     longDescriptionParagraphs.value = ModuleSettings.get(SettingKey.longDescriptionParagraphs);
     useGmailToDos.value = ModuleSettings.get(SettingKey.useGmailToDos);
     emailDefaultSetting.value = ModuleSettings.get(SettingKey.emailDefaultSetting);
