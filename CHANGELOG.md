@@ -1,5 +1,12 @@
 # Change Log
 
+## v1.3.0 - RPG-formatted text
+![](https://img.shields.io/badge/release%20date-September%206%2C%202025-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.3.0/module.zip)
+
+- Can now set AI-generated long descriptions to be RPG-formatted (i.e. boxed text + notes) instead of the long narrative descriptions previously generated.  See module settings to change this.
+- Got rid of the option to do long vs. short descriptions.  It's now always long (either full narrative or RPG-style based on the setting above) plus the role-play notes if enabled.
+
 ## v1.2.2 - Bug fixes
 ![](https://img.shields.io/badge/release%20date-September%201%2C%202025-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.2.2/module.zip)

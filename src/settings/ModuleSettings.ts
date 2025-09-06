@@ -32,7 +32,7 @@ export enum SettingKey {
   APIToken = 'APIToken',
   selectedTextModel = 'selectedTextModel', // selected text generation model
   selectedImageModel = 'selectedImageModel', // selected image generation model
-  defaultToLongDescriptions = 'defaultToLongDescriptions',
+  rpgStyle = 'rpgStyle', // whether to generate RPG-Style long descriptions
   longDescriptionParagraphs = 'longDescriptionParagraphs', // number of paragraphs for long descriptions (1-4)
   useGmailToDos = 'useGmailToDos', // whether to use Gmail for todos
   emailDefaultSetting = 'emailDefaultWorld', // default setting for email features
@@ -56,12 +56,12 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.autoRelationships ? boolean :
     K extends SettingKey.showTypesInTree ? boolean :
     K extends SettingKey.showRolePlayingNotes ? boolean :
+    K extends SettingKey.rpgStyle ? boolean :
     K extends SettingKey.advancedSettingsMenu ? never :
     K extends SettingKey.APIURL ? string :
     K extends SettingKey.APIToken ? string :
     K extends SettingKey.selectedTextModel ? ApiLocationGenerateImagePostRequestTextModelEnum :
     K extends SettingKey.selectedImageModel ? ApiLocationGenerateImagePostRequestImageModelEnum :
-    K extends SettingKey.defaultToLongDescriptions ? boolean :
     K extends SettingKey.longDescriptionParagraphs ? number :
     K extends SettingKey.defaultAddToSession ? boolean :
     K extends SettingKey.rollTableSettingsMenu ? never :
@@ -295,7 +295,7 @@ export class ModuleSettings {
       type: String,
     },
     {
-      settingID: SettingKey.defaultToLongDescriptions,
+      settingID: SettingKey.rpgStyle,
       default: true,
       type: Boolean,
     },
