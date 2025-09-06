@@ -117,7 +117,7 @@
             v-if="!useRoleplayNotes"
             class="generation-option-wrapper"
           >
-            <Checkbox 
+            <!-- <Checkbox 
               v-model="longDescriptions" 
               :binary="true"
               inputId="long-description-checkbox"
@@ -125,7 +125,7 @@
             <label for="long-description-checkbox" class="generation-label">
               {{ localize('labels.fields.longDescriptions') }}
               <i class="fas fa-info-circle tooltip-icon" :data-tooltip="localize('tooltips.createEntry.longDescriptions')"></i>
-            </label>
+            </label> -->
           </div>
           <div 
             v-else
@@ -145,47 +145,46 @@
           </div>
         </div>
         
-        <hr 
-          v-if="generateMode"
-          style="background-image: none; border: 1px solid #aaa; margin: 1rem 0 0.5rem 0"          
-        >
-        <div 
-          v-if="generateMode"
-          class="results-container"
-        >
-          <div v-if="generateError" class="error-message">
-            <span class="error-label">{{ localize('dialogs.generateNameDialog.errorMessage') }}</span> {{ generateError }}
-          </div>
-          <template v-else-if="generateComplete">
-            <div v-if="!name && (generatedDescription || generatedRoleplayNotes)" class="generated-content" style="background: rgba(255, 228, 196, .3)">
-              <div><span class="label">{{ localize('dialogs.createEntry.generatedName')}}:</span> {{ generatedName }}</div>
+        <template v-if="generateMode">
+          <hr 
+            style="background-image: none; border: 1px solid #aaa; margin: 1rem 0 0.5rem 0"          
+          >
+          <div 
+            class="results-container"
+          >
+            <div v-if="generateError" class="error-message">
+              <span class="error-label">{{ localize('dialogs.generateNameDialog.errorMessage') }}</span> {{ generateError }}
             </div>
-            <div v-if="generatedDescription" class="generated-content" style="background: rgba(255, 228, 196, .3)">
-              <div class="description">
-                <p><span class="label">{{ localize('dialogs.createEntry.generatedDescription')}}:</span></p>
-                {{ generatedDescription }}
+            <template v-else-if="generateComplete">
+              <div v-if="!name && (generatedDescription || generatedRoleplayNotes)" class="generated-content" style="background: rgba(255, 228, 196, .3)">
+                <div><span class="label">{{ localize('dialogs.createEntry.generatedName')}}:</span> {{ generatedName }}</div>
               </div>
-            </div>
-            <div v-if="generatedRoleplayNotes" class="generated-content" style="background: rgba(255, 228, 196, .3)">
-              <div class="description">
-                <p><span class="label">{{ localize('dialogs.createEntry.generatedRoleplayNotes')}}</span></p>
-                {{ generatedRoleplayNotes }}
+              <div v-if="generatedDescription" class="generated-content" style="background: rgba(255, 228, 196, .3)">
+                <div class="description">
+                  <p><span class="label">{{ localize('dialogs.createEntry.generatedDescription')}}:</span></p>
+                  {{ generatedDescription }}
+                </div>
               </div>
+              <div v-if="generatedRoleplayNotes" class="generated-content" style="background: rgba(255, 228, 196, .3)">
+                <div class="description">
+                  <p><span class="label">{{ localize('dialogs.createEntry.generatedRoleplayNotes')}}</span></p>
+                  {{ generatedRoleplayNotes }}
+                </div>
+              </div>
+            </template>
+            <div v-else-if="loading" class="loading-container">
+              <ProgressSpinner />
             </div>
-          </template>
-          <div v-else-if="loading" class="loading-container">
-            <ProgressSpinner />
+            <div v-else class="prompt-message">
+              {{ localize('dialogs.createEntry.generatePrompt')}}...<br/><br/>
+              {{ generateMode ? '' : localize('dialogs.createEntry.generatePrompt2')}}
+            </div>
           </div>
-          <div v-else class="prompt-message">
-            {{ localize('dialogs.createEntry.generatePrompt')}}...<br/><br/>
-            {{ generateMode ? '' : localize('dialogs.createEntry.generatePrompt2')}}
-          </div>
-
           <hr 
             style="background-image: none; border: 1px solid #aaa; margin: 1rem 0 0 0"          
           >
-        </div>
-
+        </template>
+        
         <!-- checkboxes at bottom -->
         <div class="generation-option">
           <div v-if="isInPlayMode && [Topics.Character, Topics.Location].includes(props.topic)"class="generation-option-wrapper">
@@ -324,7 +323,6 @@
   const loading = ref<boolean>(false);
   const generateError = ref<string>('');
   const generateImageAfterAccept = ref<boolean>(false);
-  const longDescriptions = ref<boolean>(true);
   const show = ref<boolean>(true);
   const generateChoice = ref<string>('both');
 
@@ -426,6 +424,7 @@
 
         result = await Backend.api.apiCharacterGeneratePost({
           genre: currentSetting.value.genre,
+          rpgStyle: ModuleSettings.get(SettingKey.rpgStyle),
           settingFeeling: currentSetting.value.settingFeeling,
           type: type.value,
           species: speciesName.value,
@@ -454,6 +453,7 @@
         // pull the other things we need  
         const options = {
           genre: currentSetting.value.genre,
+          rpgStyle: ModuleSettings.get(SettingKey.rpgStyle),
           settingFeeling: currentSetting.value.settingFeeling,
           type: type.value,
           parentName: parent?.name || '',
@@ -479,16 +479,19 @@
       }
       
       // pull off name and descriptions
-      generatedName.value = result.data.name;
+      generatedName.value = result!.data.name;
       if (!name.value || name.value.trim() === '') {
-        name.value = result.data.name;
+        name.value = result!.data.name;
       }
 
-      if (useRoleplayNotes.value) {        
-        generatedDescription.value = ['description', 'both'].includes(choice) ? result.data.description.long : '';
-        generatedRoleplayNotes.value = ['roleplay', 'both'].includes(choice) ? result.data.description.roleplayNotes : '';
+      if (['description', 'both'].includes(choice)) {        
+        generatedDescription.value = result!.data.description.long;
       } else {
-        generatedDescription.value = longDescriptions.value ? result.data.description.long : result.data.description.roleplayNotes;
+        generatedDescription.value = '';
+      }
+      if (useRoleplayNotes.value && ['roleplay', 'both'].includes(choice)) {        
+        generatedRoleplayNotes.value = result!.data.description.roleplayNotes;
+      } else {
         generatedRoleplayNotes.value = '';
       }
     } catch (error) {
@@ -515,7 +518,7 @@
     let roleplayToUse = '';
 
     if (!useRoleplayNotes.value) {
-      descriptionToUse = generatedTextToHTML(longDescriptions.value ? generatedDescription.value : generatedRoleplayNotes.value);
+      descriptionToUse = generatedTextToHTML(generatedDescription.value);
       roleplayToUse = ''      
     } else {
       if (choice === 'description') {
@@ -638,7 +641,6 @@
       parentName.value = '';
     }
 
-    longDescriptions.value = ModuleSettings.get(SettingKey.defaultToLongDescriptions);
     startingDescription.value = htmlToPlainText(props.initialDescription);
     generateComplete.value = false;
     generateError.value = '';
