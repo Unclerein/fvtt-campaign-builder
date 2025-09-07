@@ -1,5 +1,11 @@
 # Change Log
 
+## v1.3.1 - Fixed related item bug
+![](https://img.shields.io/badge/release%20date-September%207%2C%202025-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.3.1/module.zip)
+
+- Fixed a bug introduced in v1.2.2 that prevented the creation of new relationships between entries.
+
 ## v1.3.0 - RPG-formatted text
 ![](https://img.shields.io/badge/release%20date-September%206%2C%202025-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.3.0/module.zip)
