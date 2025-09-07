@@ -35,7 +35,7 @@
   // local components
 
   // types
-  import { Bookmark, } from '@/types';
+  import { Bookmark, BookmarkDragDropData, } from '@/types';
 
   ////////////////////////////////
   // props
@@ -109,10 +109,9 @@
   const onDragStart = (event: DragEvent): void => {
     const dragData = { 
       //from: this.object.uuid 
-    } as { type: string; bookmarkId?: string};
-
-    dragData.type = 'fcb-bookmark';
-    dragData.bookmarkId = props.bookmark.id;
+      type: 'fcb-bookmark',
+      bookmarkId: props.bookmark.id
+    } as BookmarkDragDropData;
 
     event.dataTransfer?.setData('text/plain', JSON.stringify(dragData));
   }; 
@@ -129,8 +128,8 @@
     event.preventDefault();  
 
     // parse the data 
-    let data = getValidatedData(event);
-    if (!data)
+    let data = getValidatedData(event) as BookmarkDragDropData;
+    if (!data || data.type !== 'fcb-bookmark')
       return;
 
     const target = (event.currentTarget as HTMLElement).closest('.fcb-bookmark-button') as HTMLElement;

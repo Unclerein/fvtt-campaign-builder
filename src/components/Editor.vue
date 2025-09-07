@@ -55,7 +55,7 @@
   import { sanitizeHTML } from '@/utils/sanitizeHtml';
   import { replaceEntityReferences } from '@/utils/entityLinking';
   import { extractUUIDs, compareUUIDs, } from '@/utils/uuidExtraction';
-
+  import { NodeDragDropData } from '@/types';
 
   // library components
 
@@ -339,31 +339,40 @@
     if (!editor.value || !props.editable) return;
 
     // Parse the data using the utility function
-    const data = getValidatedData(event);
-    if (!data) return;
+    const data = getValidatedData(event) as NodeDragDropData;
+    if (!data) 
+      return;
 
     let entryUuid: string | null = null;
     let entryName: string | null = null;
 
     // Handle different data structures from various drag sources
-    if (data.entryNode) {
-      // From SettingDirectoryNodeWithChildren or SettingDirectoryNode
-      entryUuid = data.childId;
-      entryName = data.name;
-    } else if (data.campaignNode) {
-      // From DirectoryCampaignNode
-      entryUuid = data.campaignId;
-      entryName = data.name;
-    } else if (data.settingNode) {
-      // From SettingDirectory setting
-      entryUuid = data.settingId;
-      entryName = data.name;
-    } else if (data.sessionNode) {
-      // From SessionDirectoryNode
-      entryUuid = data.sessionId;
-      entryName = data.name;
-    } else {
-      return;  // nothing we can handle
+    switch (data.type) {
+      case 'fcb-entry': 
+        // From SettingDirectoryNodeWithChildren or SettingDirectoryNode
+        entryUuid = data.childId;
+        entryName = data.name;
+        break;
+
+      case 'fcb-campaign': 
+        // From DirectoryCampaignNode
+        entryUuid = data.campaignId;
+        entryName = data.name;
+        break;
+
+      case 'fcb-setting': 
+        // From SettingDirectory setting
+        entryUuid = data.settingId;
+        entryName = data.name;
+        break;
+      case 'fcb-session': 
+        // From SessionDirectoryNode
+        entryUuid = data.sessionId;
+        entryName = data.name;
+        break;
+
+      default:
+        return;  // nothing we can handle
     }
 
     // If we found a valid UUID, create and insert the link

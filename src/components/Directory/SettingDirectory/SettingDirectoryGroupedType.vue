@@ -63,8 +63,8 @@
   import SettingDirectoryGroupedNode from './SettingDirectoryGroupedNode.vue';
 
   // types
-  import { ValidTopic, } from '@/types';
-  import { DirectoryTypeEntryNode, DirectoryTypeNode, Entry, TopicFolder } from '@/classes';
+  import { ValidTopic, EntryNodeDragData} from '@/types';
+  import { DirectoryTypeEntryNode, DirectoryTypeNode, Entry } from '@/classes';
 
   
   ////////////////////////////////
@@ -131,8 +131,8 @@
         return;
 
     // parse the data 
-    let data = getValidatedData(event);
-    if (!data)
+    let data = getValidatedData(event) as EntryNodeDragData;
+    if (!data || data.type !== 'fcb-entry')
       return;
 
     // make sure it's not already set
@@ -152,7 +152,7 @@
       return;
 
     // set the new type
-    const entry = await Entry.fromUuid(data.id, currentSetting.value.topicFolders[topic]);
+    const entry = await Entry.fromUuid(data.childId, currentSetting.value.topicFolders[topic]);
     if (entry) {
       const oldType = entry.type;
       entry.type = currentType.value.name;

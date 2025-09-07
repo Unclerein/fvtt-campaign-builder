@@ -30,7 +30,7 @@
   // local components
 
   // types
-  import { ValidTopic } from '@/types';
+  import { EntryNodeDragData, ValidTopic } from '@/types';
   import { DirectoryTypeEntryNode, } from '@/classes';
   
   ////////////////////////////////
@@ -95,11 +95,12 @@
     }
 
     const dragData = { 
-      typeNode: true,
+      type: 'fcb-entry',
       topic: toTopic(topicElement.dataset.topic),
-      name: props.typeName,
-      id: props.node.id,
-    } as { typeNode: true, topic: ValidTopic; name: string; id: string};
+      name: props.node.name,
+      childId: props.node.id,
+      typeName: props.typeName,
+    } as EntryNodeDragData;
 
     event.dataTransfer?.setData('text/plain', JSON.stringify(dragData));
   };

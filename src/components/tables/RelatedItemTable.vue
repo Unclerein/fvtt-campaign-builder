@@ -54,7 +54,7 @@
   import BaseTable from '@/components/tables/BaseTable.vue';
 
   // types
-  import { Topics, ValidTopic, RelatedItemDetails, RelatedItemDialogModes } from '@/types';
+  import { Topics, ValidTopic, RelatedItemDetails, RelatedItemDialogModes, EntryNodeDragData } from '@/types';
   
   type RelatedItemGridRow = { uuid: string; name: string; type: string } & Record<string, any>;
 
@@ -217,8 +217,8 @@
     event.preventDefault();
 
     // parse the data
-    let data = getValidatedData(event);
-    if (!data)
+    let data = getValidatedData(event) as EntryNodeDragData;
+    if (!data || data.type !== 'fcb-entry')
       return;
 
     // make sure it's the right format and topic matches

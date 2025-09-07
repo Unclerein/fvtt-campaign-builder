@@ -55,8 +55,10 @@ export class EntryDataModel extends foundry.abstract.TypeDataModel<EntrySchemaTy
 
   /** @override */
   prepareBaseData(): void {
-    if (this.relationships)
+    if (this.relationships) {
+      // Decode any protected keys back to normal
       this.relationships = relationshipKeyReplace(this.relationships as RelationshipFieldType, false);
+    }
   }
 }
 
@@ -78,8 +80,11 @@ export const relationshipKeyReplace = (relationships: RelationshipFieldType, ser
   return newRelationships;
 };
 
-const serializeEntryId = (entryId: string): string => { return entryId.replace(/\./g, '_'); };
-const deserializeEntryId = (entryId: string): string => { return entryId.replace(/_/g, '.'); };
+// Use a unique token that will never appear in a UUID to protect keys containing '.' during document updates
+const REL_KEY_TOKEN = '_';
+const serializeEntryId = (entryId: string): string => { return entryId.replaceAll('.', REL_KEY_TOKEN); };
+const deserializeEntryId = (entryId: string): string => { return entryId.replaceAll(REL_KEY_TOKEN, '.'); };
+
 
 // @ts-ignore - error because ts can't properly handle the structure of JournalEntryPage
 export interface EntryDoc extends JournalEntryPage {

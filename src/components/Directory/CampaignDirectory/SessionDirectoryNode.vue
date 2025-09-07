@@ -30,6 +30,7 @@
 
   // types
   import { DirectorySessionNode, } from '@/classes';
+  import { SessionNodeDragData } from '@/types';
   
   ////////////////////////////////
   // props
@@ -74,10 +75,10 @@
     event.stopPropagation();
 
     const dragData = {
-      sessionNode: true,
+      type: 'fcb-session',
       sessionId: props.sessionNode.id,
       name: props.sessionNode.name
-    };
+    } as SessionNodeDragData;
 
     event.dataTransfer?.setData('text/plain', JSON.stringify(dragData));
   };

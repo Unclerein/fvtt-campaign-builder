@@ -174,9 +174,10 @@ export class Setting extends DocumentWithFlags<SettingDoc>{
 
   set name(value: string) {
     this._doc.name = value;
-    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
+    this._cumulativeUpdate = {
+      ...this._cumulativeUpdate,
       name: value,
-    });
+    };
   }
 
   

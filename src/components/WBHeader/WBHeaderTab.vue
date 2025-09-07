@@ -44,6 +44,7 @@
   // local components
 
   // types
+  import { TabDragData } from '@/types';
 
   ////////////////////////////////
   // props
@@ -132,10 +133,9 @@
   const onDragStart = (event: DragEvent): void => {
     const dragData = { 
       //from: this.object.uuid 
-    } as { type: string; tabId?: string};
-
-    dragData.type = 'fcb-tab';   // JournalEntry... may want to consider passing a type that other things can do something with
-    dragData.tabId = props.tab.id;
+      type: 'fcb-tab',   // JournalEntry... may want to consider passing a type that other things can do something with
+      tabId: props.tab.id,
+    } as TabDragData;
 
     event.dataTransfer?.setData('text/plain', JSON.stringify(dragData));
   };
@@ -152,8 +152,8 @@
     event.preventDefault();  
 
     // parse the data 
-    let data = getValidatedData(event);
-    if (!data)
+    let data = getValidatedData(event) as TabDragData;
+    if (!data || data.type !== 'fcb-tab')
       return;
 
     // where are we droping it?
@@ -161,7 +161,8 @@
     if (!target)
       return;
 
-    if (data.tabId === props.tab.id) return; // Don't drop on yourself
+    if (data.tabId === props.tab.id) 
+      return; // Don't drop on yourself
 
     // insert before the drop target
     const tabsValue = tabs.value;
