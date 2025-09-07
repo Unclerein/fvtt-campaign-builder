@@ -140,9 +140,10 @@ export class Campaign extends DocumentWithFlags<CampaignDoc> {
 
   set name(value: string) {
     this._name = value;
-    this._cumulativeUpdate = foundry.utils.mergeObject(this._cumulativeUpdate, {
+    this._cumulativeUpdate = {
+      ...this._cumulativeUpdate, 
       name: value,
-    });
+    };
   }
 
   // get direct access to the document (ex. to hook to foundry's editor)

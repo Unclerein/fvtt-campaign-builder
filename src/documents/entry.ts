@@ -55,8 +55,13 @@ export class EntryDataModel extends foundry.abstract.TypeDataModel<EntrySchemaTy
 
   /** @override */
   prepareBaseData(): void {
-    if (this.relationships)
-      this.relationships = relationshipKeyReplace(this.relationships as RelationshipFieldType, false);
+    if (this.relationships) {
+      // First, decode any protected keys back to normal
+      let decoded = relationshipKeyReplace(this.relationships as RelationshipFieldType, false);
+      
+      // Then, normalize to flatten any nested structures caused by prior bad keys
+      this.relationships = normalizeRelationships(decoded);
+    }
   }
 }
 
@@ -78,8 +83,39 @@ export const relationshipKeyReplace = (relationships: RelationshipFieldType, ser
   return newRelationships;
 };
 
-const serializeEntryId = (entryId: string): string => { return entryId.replace(/\./g, '_'); };
-const deserializeEntryId = (entryId: string): string => { return entryId.replace(/_/g, '.'); };
+// Use a unique token that will never appear in a UUID to protect keys containing '.' during document updates
+const REL_KEY_TOKEN = '_';
+const serializeEntryId = (entryId: string): string => { return entryId.replaceAll('.', REL_KEY_TOKEN); };
+const deserializeEntryId = (entryId: string): string => { return entryId.replaceAll(REL_KEY_TOKEN, '.'); };
+
+// Flatten any nested relationship objects into a flat map keyed by each item's uuid
+const normalizeRelationships = (relationships: RelationshipFieldType): RelationshipFieldType => {
+  const flattened = {} as RelationshipFieldType;
+
+  const collect = (node: any, out: Record<string, any>) => {
+    if (!node || typeof node !== 'object') return;
+
+    for (const [k, v] of Object.entries(node)) {
+      if (v && typeof v === 'object') {
+        // If this looks like a relationship leaf, use its own uuid as the key
+        if ('uuid' in v && typeof (v as any).uuid === 'string') {
+          out[(v as any).uuid] = v;
+        } else {
+          collect(v, out);
+        }
+      }
+    }
+  };
+
+  for (const topic in relationships) {
+    const out: Record<string, any> = {};
+    collect(relationships[topic], out);
+    // If nothing was collected (already flat), just copy as-is
+    flattened[topic as unknown as ValidTopic] = Object.keys(out).length ? out : relationships[topic];
+  }
+
+  return flattened;
+};
 
 // @ts-ignore - error because ts can't properly handle the structure of JournalEntryPage
 export interface EntryDoc extends JournalEntryPage {

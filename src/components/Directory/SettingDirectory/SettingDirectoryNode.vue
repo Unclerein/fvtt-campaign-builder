@@ -40,7 +40,7 @@
   import SettingDirectoryNodeWithChildren from './SettingDirectoryNodeWithChildren.vue';
   
   // types
-  import { ValidTopic } from '@/types';
+  import { EntryNodeDragData, ValidTopic } from '@/types';
   import { DirectoryEntryNode, Entry, Setting, TopicFolder } from '@/classes';
 
   ////////////////////////////////
@@ -114,11 +114,12 @@
     }
 
     const dragData = { 
-      entryNode: true,
+      type: 'fcb-entry',
       topic: props.topic,
       name: name,
       childId: id,
-    } as { topic: ValidTopic; name: string; childId: string};
+      typeName: props.node.type ?? NO_TYPE_STRING,
+    } as EntryNodeDragData;
 
     event.dataTransfer?.setData('text/plain', JSON.stringify(dragData));
   };
@@ -138,8 +139,8 @@
         return;
 
     // parse the data 
-    let data = getValidatedData(event);
-    if (!data)
+    let data = getValidatedData(event) as EntryNodeDragData;
+    if (!data || data.type !== 'fcb-entry')
       return;
 
     const topicFolder = currentSetting.value?.topicFolders[props.topic];

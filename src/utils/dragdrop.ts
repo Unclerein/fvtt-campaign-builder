@@ -1,3 +1,5 @@
+// Drag/drop helpers for Foundry and internal DnD
+
 /**
  * Validates that a drag event contains valid JSON data in the 'text/plain' format.
  * Checks for proper data transfer format and attempts to parse the JSON content.
@@ -7,9 +9,9 @@
  * @param event - The drag event to validate
  * @returns The parsed JSON data as an object, or undefined if validation fails
  */
-export const getValidatedData = (event: DragEvent): Record<string, any> | undefined => {
-  if (event.dataTransfer?.types[0]!=='text/plain') 
-    return undefined;
+export const getValidatedData = (event: DragEvent): Record<string, unknown> | undefined => {
+  const types = event.dataTransfer?.types ?? [];
+  if (!types.includes('text/plain')) return undefined;
 
   let data;
   try {

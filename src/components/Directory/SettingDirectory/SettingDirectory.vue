@@ -117,10 +117,10 @@
     event.stopPropagation();
 
     const dragData = {
-      settingNode: true,
+      type: 'fcb-setting',
       settingId: setting.id,
       name: setting.name
-    };
+    } as SettingNodeDragData;
 
     event.dataTransfer?.setData('text/plain', JSON.stringify(dragData));
   };

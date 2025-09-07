@@ -58,7 +58,7 @@
   import SettingDirectoryNodeComponent from './SettingDirectoryNode.vue';
   
   // types
-  import { ValidTopic } from '@/types';
+  import { EntryNodeDragData, ValidTopic } from '@/types';
   import { Entry, DirectoryEntryNode, Setting, TopicFolder } from '@/classes';
 
   ////////////////////////////////
@@ -144,11 +144,12 @@
     }
 
     const dragData = { 
-      entryNode: true,
+      type: 'fcb-entry',
       topic: props.topic,
       name: name,
       childId: id,
-    } as { topic: ValidTopic; name: string; childId: string};
+      typeName: (currentNode.value.type ?? NO_TYPE_STRING),
+    } as EntryNodeDragData;
 
     event.dataTransfer?.setData('text/plain', JSON.stringify(dragData));
   };
@@ -168,8 +169,8 @@
       return false;
 
     // parse the data 
-    let data = getValidatedData(event);
-    if (!data)
+    let data = getValidatedData(event) as EntryNodeDragData;
+    if (!data || data.type !== 'fcb-entry')
       return;
 
     // make sure it's not the same item

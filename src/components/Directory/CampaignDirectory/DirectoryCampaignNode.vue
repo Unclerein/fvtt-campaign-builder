@@ -107,6 +107,7 @@
     event.stopPropagation();
 
     const dragData = {
+      type: 'fcb-node',
       campaignNode: true,
       campaignId: props.campaignNode.id,
       name: props.campaignNode.name
