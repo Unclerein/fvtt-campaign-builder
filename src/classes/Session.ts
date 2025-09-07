@@ -163,7 +163,6 @@ export class Session {
     this._cumulativeUpdate = {
       ...this._cumulativeUpdate,
       text: {
-        ...this._cumulativeUpdate.text,
         content: value,
       }
     };

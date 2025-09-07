@@ -216,7 +216,7 @@ export class DocumentWithFlags<DocType extends ValidDocTypes> {
       flags: {
         ...this._cumulativeUpdate.flags,
         [moduleId]: {
-          ...this._cumulativeUpdate.flags?.[moduleId],
+          ...(this._cumulativeUpdate.flags?.[moduleId] || {}),
           [flag]: value
         }
       }
