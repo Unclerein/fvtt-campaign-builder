@@ -1,5 +1,18 @@
 # Change Log
 
+## v1.4.1 - Assorted bug fixes
+![](https://img.shields.io/badge/release%20date-September%2023%2C%202025-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.4.1/module.zip)
+
+- Improved Russian translations (thanks Vlada!)
+- You can now properly create a PC from the "New Tab" page
+- Formatting (new lines in particular) is now preserved in descriptions when creating entries with user-entered text.
+- Editing a description no longer suggests creating references to entries/documents that can't be related to that entry 
+- Dragging an entry, session, campaign, or setting from the tree properly inserts a link to it in the editor again
+- Generated images now include the entry's name to make them easier to manage (requires new backend)
+- Changing between tabs when an editor is open now prompts for whether you want to save or discard any changes.
+- Updated some searches and the directory filter to support unicode characters
+
 ## v1.4.0 - Now in Russian
 ![](https://img.shields.io/badge/release%20date-September%2022%2C%202025-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.4.0/module.zip)

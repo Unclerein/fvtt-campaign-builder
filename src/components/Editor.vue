@@ -42,19 +42,19 @@
 
 <script setup lang="ts">
   // library imports
-  import { computed, nextTick, onMounted, ref, toRaw, watch, } from 'vue';
+  import { computed, nextTick, onMounted, onUnmounted, ref, toRaw, watch, } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
   import { enrichFcbHTML } from './Editor/helpers';
   import { useMainStore } from '@/applications/stores';
-  import { Campaign, Entry, Session, Setting } from '@/classes';
   import { getValidatedData } from '@/utils/dragdrop';
   import { notifyInfo } from '@/utils/notifications';
   import { localize } from '@/utils/game';
   import { sanitizeHTML } from '@/utils/sanitizeHtml';
   import { replaceEntityReferences } from '@/utils/entityLinking';
   import { extractUUIDs, compareUUIDs, } from '@/utils/uuidExtraction';
+  import { registerEditor, unregisterEditor } from '@/utils/editorChangeDetection';
   import { NodeDragDropData } from '@/types';
 
   // library components
@@ -63,6 +63,7 @@
 
   // types
   const TextEditor = foundry.applications.ux.TextEditor;
+  const ProseMirror = foundry.prosemirror;
 
   // type EditorOptions = {
   //   document: Document<any>,
@@ -213,9 +214,19 @@
     
     editor.value = await TextEditor.create(options, props.initialContent);
 
+    // Add custom drop handling to the ProseMirror editor
+    const rawEditor = toRaw(editor.value) as ProseMirrorEditor;
+    if (rawEditor?.view) {
+      const proseMirrorView = rawEditor.view;
+      const editorDom = proseMirrorView.dom;
+      
+      // Add our custom drop handler to the ProseMirror DOM element
+      editorDom.addEventListener('drop', onDrop);
+    }
+
     // we have to do this whole thing with lastSavedContent and sessionStore.lastSavedNotes because Foundry cleans the html in a different
     //   way than prosemirror (see https://github.com/foundryvtt/foundryvtt/issues/11021)
-    lastSavedContent.value = ProseMirror.dom.serializeString(toRaw(editor.value).view.state.doc.content);
+    lastSavedContent.value = ProseMirror.dom.serializeString(rawEditor.view.state.doc.content);
     emit('editorLoaded', lastSavedContent.value);
    
     options.target.closest('.editor')?.classList.add('prosemirror');
@@ -240,8 +251,8 @@
 
     // get the new content
     let content;
-    // @ts-ignore 
-    content = ProseMirror.dom.serializeString(toRaw(editor.value).view.state.doc.content);
+    const rawEditorForSave = toRaw(editor.value) as ProseMirrorEditor;
+    content = ProseMirror.dom.serializeString(rawEditorForSave.view.state.doc.content);
 
     // see if dirty
     const dirty = isDirty();
@@ -272,7 +283,7 @@
     // For edit-only mode (like in SessionNotes), don't destroy the editor
     if (remove && !props.editOnlyMode) {
       // this also blows up the DOM... don't think we actually need it
-      toRaw(editor.value)?.destroy();  
+      (toRaw(editor.value) as ProseMirrorEditor)?.destroy();  
       editor.value = null;
 
       buttonDisplay.value = '';   // brings the button back
@@ -297,6 +308,26 @@
     }
   };
 
+  // don't worry about saving, etc. - just clean up
+  const closeEditor = async () => {
+    if (!editor.value)
+      return;
+
+    // For edit-only mode (like in SessionNotes), don't destroy the editor
+    if (!props.editOnlyMode) {
+      // this also blows up the DOM... don't think we actually need it
+      (toRaw(editor.value) as ProseMirrorEditor)?.destroy();  
+      editor.value = null;
+
+      buttonDisplay.value = '';   // brings the button back
+
+      // bring back the deleted div by resetting 
+      editorVisible.value = false;
+      await nextTick();
+      editorVisible.value = true;
+    }    
+  };
+
   const isDirty = (): boolean => {
     if (!editor.value)
       return false;
@@ -308,11 +339,12 @@
     if (!editor.value)
       return '';
     
-    return ProseMirror.dom.serializeString(toRaw(editor.value).view.state.doc.content);
+    const rawEditorForGetContent = toRaw(editor.value) as ProseMirrorEditor;
+    return ProseMirror.dom.serializeString(rawEditorForGetContent.view.state.doc.content);
   }
 
   // expose methods
-  defineExpose({ isDirty, getContent });
+  defineExpose({ isDirty, getContent, saveEditor, closeEditor });
 
   ////////////////////////////////
   // event handlers
@@ -344,31 +376,26 @@
       return;
 
     let entryUuid: string | null = null;
-    let entryName: string | null = null;
 
     // Handle different data structures from various drag sources
     switch (data.type) {
       case 'fcb-entry': 
         // From SettingDirectoryNodeWithChildren or SettingDirectoryNode
         entryUuid = data.childId;
-        entryName = data.name;
         break;
 
       case 'fcb-campaign': 
         // From DirectoryCampaignNode
         entryUuid = data.campaignId;
-        entryName = data.name;
         break;
 
       case 'fcb-setting': 
         // From SettingDirectory setting
         entryUuid = data.settingId;
-        entryName = data.name;
         break;
       case 'fcb-session': 
         // From SessionDirectoryNode
         entryUuid = data.sessionId;
-        entryName = data.name;
         break;
 
       default:
@@ -377,52 +404,11 @@
 
     // If we found a valid UUID, create and insert the link
     if (entryUuid) {
-      // We should already have the name from the drag data, but if not, try to get it
-      if (!entryName) {
-        try {
-          // Try to get the name based on the type of entity
-          if (data.campaignNode) {
-            // It's a campaign
-            const campaign = await Campaign.fromUuid(entryUuid);
-            if (campaign) {
-              entryName = campaign.name;
-            }
-          } else if (data.sessionNode) {
-            // It's a session
-            const session = await Session.fromUuid(entryUuid);
-            if (session) {
-              entryName = session.name;
-            }
-          } else if (data.settingNode) {
-            // It's a setting
-            const setting = await Setting.fromUuid(entryUuid);
-            if (setting) {
-              entryName = setting.name;
-            }
-          } else {
-            // Try as a regular entry
-            const entry = await Entry.fromUuid(entryUuid);
-            if (entry) {
-              entryName = entry.name;
-            }
-          }
-        } catch (e) {
-          // If we can't get the name, use a generic one
-          entryName = 'Link to ???';
-        }
-      }
-
-      // Fallback if name is still not available
-      if (!entryName) {
-        entryName = 'Link to ???';
-      }
-
-      // Create a UUID link in the format @UUID[entryUuid]{entryName}
-      const linkText = `@UUID[${entryUuid}]{${entryName}}`;
+      // Create a UUID link 
+      const linkText = `@UUID[${entryUuid}]`;
 
       // Insert the link at the current cursor position
-      // For ProseMirror
-      const view = toRaw(editor.value).view;
+      const view = (toRaw(editor.value) as ProseMirrorEditor).view;
       const { state, dispatch } = view;
       const tr = state.tr.insertText(linkText);
       dispatch(tr);
@@ -452,7 +438,7 @@
       await nextTick();
 
       // Update the editor content
-      const view = toRaw(editor.value).view;
+      const view = (toRaw(editor.value) as ProseMirrorEditor).view;
       const { state, dispatch } = view;
       
       // Do nothing if the content is already what we want it to be
@@ -489,6 +475,13 @@
     // we create a random ID so we can use multiple instances
     editorId.value  = 'fcb-editor-' + foundry.utils.randomID();
 
+    // Register this editor instance for change tracking
+    registerEditor(editorId.value, {
+      isDirty,
+      saveEditor,
+      closeEditor,
+    });
+
     // initialize the editor
     if (!coreEditorRef.value)
       return;
@@ -506,6 +499,13 @@
     if (props.editOnlyMode) {
       await nextTick();
       await activateEditor();
+    }
+  });
+
+  onUnmounted(() => {
+    // Unregister this editor instance when component is destroyed
+    if (editorId.value) {
+      unregisterEditor(editorId.value);
     }
   });
 
