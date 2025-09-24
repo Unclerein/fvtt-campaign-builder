@@ -34,7 +34,7 @@
       "advancedHelp": "Configurer les paramètres avancés (y compris l'IA)",
       "speciesList": "Gérer la Liste des Espèces",
       "speciesListLabel": "Liste des Espèces",
-      "speciesListHelp": "Définissez les espèces à rendre disponibles. Cela concerne tous les Paramètres - signalez un problème si vous avez besoin de listes différentes par Paramètre.",
+      "speciesListHelp": "Définissez les espèces à rendre disponibles. Cela traverse tous les paramètres - déposez un problème si vous avez besoin de listes différentes par paramètre.",
       "hideBackendWarning": "Masquer l'avertissement de backend manquant ?",
       "hideBackendWarningHelp": "Si vous n'utilisez pas le backend, cela vous permet de désactiver la notification indiquant qu'il est manquant",
       "defaultAddToSession": "Par défaut 'Ajouter à la session en cours'",
@@ -335,7 +335,8 @@
         "createCampaign": "Créer une campagne",
         "createCharacter": "Créer un personnage",
         "createLocation": "Créer un lieu",
-        "createOrganization": "Créer une organisation"
+        "createOrganization": "Créer une organisation",
+        "createPC": "Créer PC"
       },
       "save": "Enregistrer",
       "ok": "OK",
@@ -492,6 +493,13 @@
       "deleteEntry": {
         "title": "Supprimer l'entrée ?",
         "message": "Êtes-vous sûr de vouloir supprimer cette entrée ? Elle sera retirée de toutes les relations et sessions. Toutes les références à celle-ci dans les éditeurs deviendront cassées."
+      },
+      "saveChanges": {
+        "title": "Modifications non enregistrées",
+        "message": "Vous avez des modifications non enregistrées dans un ou plusieurs éditeurs ouverts. Que souhaitez-vous faire ?",
+        "save": "Enregistrer les modifications",
+        "discard": "Annuler les modifications",
+        "cancel": "Annuler"
       }
     },
     "contextMenus": {
@@ -617,8 +625,9 @@
         "rollTablesNotAvailable": "Le backend n'est pas disponible. Les RollTables automatiques ne seront pas rafraîchies. Configurez le backend dans les paramètres avancés pour activer les noms générés par l'IA qui correspondent au thème de votre monde."
       },
       "addedToSession": "ajouté à la session",
-      "changesSaved": "modifications enregistrées",
-      "todoReferenceNotFound": "La référence liée pour cet élément à faire n'existe plus."
+      "changesSaved": "Modifications enregistrées",
+      "todoReferenceNotFound": "La référence liée pour cet élément à faire n'existe plus.",
+      "changesDiscarded": "Modifications annulées"
     }
   }
 }
