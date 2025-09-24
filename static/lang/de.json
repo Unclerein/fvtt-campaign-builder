@@ -34,7 +34,7 @@
       "advancedHelp": "Erweiterte Einstellungen konfigurieren (einschließlich KI)",
       "speciesList": "Artenliste verwalten",
       "speciesListLabel": "Artenliste",
-      "speciesListHelp": "Definieren Sie die verfügbaren Arten. Diese gelten für alle Einstellungen - melden Sie ein Problem, wenn Sie mehr unterschiedliche Listen pro Einstellung benötigen.",
+      "speciesListHelp": "Definieren Sie die verfügbaren Arten. Diese gelten für alle Einstellungen - melden Sie ein Problem, wenn Sie unterschiedliche Listen pro Einstellung benötigen.",
       "hideBackendWarning": "Warnung über fehlendes Backend ausblenden?",
       "hideBackendWarningHelp": "Wenn Sie das Backend nicht verwenden, können Sie die Benachrichtigung deaktivieren, dass es fehlt",
       "defaultAddToSession": "Standardmäßig 'Zur aktuellen Sitzung hinzufügen'",
@@ -335,7 +335,8 @@
         "createCampaign": "Kampagne erstellen",
         "createCharacter": "Charakter erstellen",
         "createLocation": "Ort erstellen",
-        "createOrganization": "Organisation erstellen"
+        "createOrganization": "Organisation erstellen",
+        "createPC": "PC erstellen"
       },
       "save": "Speichern",
       "ok": "OK",
@@ -492,6 +493,13 @@
       "deleteEntry": {
         "title": "Eintrag löschen?",
         "message": "Sind Sie sicher, dass Sie diesen Eintrag löschen möchten? Er wird aus allen Beziehungen und Sitzungen entfernt. Alle Verweise darauf in Editoren werden ungültig."
+      },
+      "saveChanges": {
+        "title": "Ungespeicherte Änderungen",
+        "message": "Sie haben ungespeicherte Änderungen in einem oder mehreren offenen Editoren. Was möchten Sie tun?",
+        "save": "Änderungen speichern",
+        "discard": "Änderungen verwerfen",
+        "cancel": "Abbrechen"
       }
     },
     "contextMenus": {
@@ -618,7 +626,8 @@
       },
       "addedToSession": "zur Sitzung hinzugefügt",
       "changesSaved": "Änderungen gespeichert",
-      "todoReferenceNotFound": "Die verknüpfte Referenz für dieses To-Do-Element existiert nicht mehr."
+      "todoReferenceNotFound": "Die verknüpfte Referenz für dieses To-Do-Element existiert nicht mehr.",
+      "changesDiscarded": "Änderungen verworfen"
     }
   }
 }
