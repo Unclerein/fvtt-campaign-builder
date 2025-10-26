@@ -441,7 +441,7 @@
   .fcb-table-help-icon {
     margin-left: 8px;
     margin-right: 8px;
-    font-size: var(--font-size-14);
+    font-size: var(--fcb-font-size-large);
     cursor: pointer;
   }
 </style>

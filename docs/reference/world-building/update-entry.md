@@ -35,6 +35,7 @@ There are 2-3 options below the description field:
 ### Generate long descriptions
 When checked, the description generated will be two full paragraphs with lots of details:
 
+TODO: need to refresh for new stuff
 ![Example long description](/assets/images/generate-long-description.webp)
 
 When off, it will simply create a quick description useful for roleplaying the character, including a brief description of their personality and appearance, and some suggested roleplaying approaches:

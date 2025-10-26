@@ -47,6 +47,7 @@ Get started:
 
 For campaigns, there are two modes you need to know about: [^Prep mode] and [^Play mode].  You change between these modes with the [toggle](/reference/navigation/prep-play) in the Campaign Builder window title bar.  If you have more than one campaign with at least one session, you'll see a drop-down where you can pick which campaign you are playing.  
 
+// TODO: update this
 ![prep/play toggle and dropdown](/assets/images/prep-play-with-campaign.webp)
 
 ### Prep mode:

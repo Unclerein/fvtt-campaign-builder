@@ -311,7 +311,7 @@
         }
 
         .option-content {
-          font-size: var(--font-size-14);
+          font-size: var(--fcb-font-size-large);
         }
       }
     }
