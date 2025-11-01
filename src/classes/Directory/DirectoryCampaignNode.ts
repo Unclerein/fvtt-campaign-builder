@@ -6,15 +6,17 @@ import { Campaign, CollapsibleNode, DirectorySessionNode, Session, } from '@/cla
 
 export class DirectoryCampaignNode extends CollapsibleNode<DirectorySessionNode> {
   name: string;
+  completed: boolean;
   
   // children are for the entries; loadedTypes is for the type nodes
   constructor(id: string, name: string, children: string[] = [], 
-    loadedChildren: DirectorySessionNode[] = [], expanded: boolean = false
+    loadedChildren: DirectorySessionNode[] = [], expanded: boolean = false, completed: boolean = false
   ) {
 
     super(id, expanded, null, children, loadedChildren, []);
 
     this.name = name;
+    this.completed = completed;
   }
 
   /**
@@ -37,7 +39,7 @@ export class DirectoryCampaignNode extends CollapsibleNode<DirectorySessionNode>
     if (!campaign)
       throw new Error('Bad campaign id in DirectoryCampaignNode._loadNodeList()');
 
-    const sessions = uuidsToLoad.length===0 ? [] : campaign.filterSessions((s: Session)=> uuidsToLoad.includes(s.uuid));
+    const sessions = uuidsToLoad.length===0 ? [] : await campaign.filterSessions((s: Session)=> uuidsToLoad.includes(s.uuid));
 
     for (let i=0; i<sessions.length; i++) {
       const newNode = DirectorySessionNode.fromSession(sessions[i], this.id);

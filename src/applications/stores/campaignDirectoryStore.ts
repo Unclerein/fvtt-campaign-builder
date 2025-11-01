@@ -6,7 +6,7 @@ import { reactive, ref, watch, nextTick } from 'vue';
 
 // local imports
 import { useMainStore, useNavigationStore, usePlayingStore } from '@/applications/stores';
-import { DirectoryCampaignNode, Campaign, Session, Setting, } from '@/classes';
+import { DirectoryCampaignNode, Campaign, Session, FCBSetting, } from '@/classes';
 import { FCBDialog } from '@/dialogs';
 import { notifyWarn } from '@/utils/notifications';
 
@@ -23,11 +23,11 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
   const navigationStore = useNavigationStore();
   const playingStore = usePlayingStore();
   const { currentSetting, currentEntry, isInPlayMode } = storeToRefs(mainStore); 
-  const { currentPlayedSession } = storeToRefs(playingStore);
+  const { currentPlayedSessionId } = storeToRefs(playingStore);
 
   ///////////////////////////////
   // internal state
-  const isCampaignTreeLoading = ref<boolean>(false);
+  const isCampaignTreeRefreshing = ref<boolean>(false);
 
   ///////////////////////////////
   // external state
@@ -43,22 +43,18 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
     return await node.toggleWithLoad(expanded);
   };
 
-  const collapseAll = async(): Promise<void> => {
-    if (!currentSetting.value)
-      return;
-
-    await currentSetting.value.collapseCampaignDirectory();
-
-    await refreshCampaignDirectoryTree();
-  };
- 
   // refreshes the campaign tree 
   const refreshCampaignDirectoryTree = async (updateIds: string[] = []): Promise<void> => {
+    // Prevent concurrent refreshes
+    if (isCampaignTreeRefreshing.value) {
+      return;
+    }
+
     // need to have a current setting and journals loaded
     if (!currentSetting.value)
       return;
 
-    isCampaignTreeLoading.value = true;
+    isCampaignTreeRefreshing.value = true;
 
     // Preserve scroll position before refresh
     let scrollContainer: HTMLElement | null = document.querySelector('.fcb-campaign-directory') as HTMLElement;
@@ -75,19 +71,20 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
     for (const id in campaigns) {
       const campaign = await Campaign.fromUuid(id);
 
-      // shouldn't happen but maybe something didn't get cleaned up; we'll clean it up in Setting.loadCampaigns() at some point
+      // shouldn't happen but maybe something didn't get cleaned up; we'll clean it up in FCBSetting.loadCampaigns() at some point
       if (!campaign) {
         continue;
       }
 
-      const children = campaign.sessions?.map(session => session.uuid) || [];
+      const children = campaign.sessionIds || [];
 
       currentCampaignTree.value.push(new DirectoryCampaignNode(
         id,
         campaigns[id].name,  // name
-        children,
+        children.slice(),
         [],
         expandedNodes[id] || false,
+        campaign.completed
       ));      
     }
     
@@ -109,7 +106,7 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
     if (currentEntry.value)
       await mainStore.refreshEntry();
 
-    isCampaignTreeLoading.value = false;
+    isCampaignTreeRefreshing.value = false;
 
     // Wait for next tick to ensure DOM is updated
     await nextTick();
@@ -140,7 +137,7 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
     if (!(await FCBDialog.confirmDialog('Delete campaign?', 'Are you sure you want to delete this campaign?')))
       return;
   
-    const sessions = campaign.sessions;
+    const sessions = await campaign.allSessions();
     for (let i=0; i<sessions.length; i++) {
       await navigationStore.cleanupDeletedEntry(sessions[i].uuid);
     }
@@ -163,7 +160,7 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
     // This shouldn't be possible because the only place you can do this is from the context menu
     //    and the option should be disabled when isInPlayMode, but some people have
     //    reported it happening.
-    if (isInPlayMode.value && session.uuid === currentPlayedSession.value?.uuid) {
+    if (isInPlayMode.value && session.uuid === currentPlayedSessionId) {
       notifyWarn('You cannot delete the current session while in Play mode.');
       return;
     }
@@ -200,10 +197,10 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
    * @param setting The setting to create the campaign in; defaults to the current setting if there is one
    * @returns The created campaign, or null if the setting is not found
    */
-  const createCampaign = async (setting?: Setting): Promise<Campaign | null> => {
+  const createCampaign = async (setting?: FCBSetting): Promise<Campaign | null> => {
     let campaign: Campaign | null = null;
 
-    let settingToUse: Setting | null;
+    let settingToUse: FCBSetting | null;
     
     if (!setting || setting.uuid === currentSetting.value?.uuid)
       settingToUse = currentSetting.value;
@@ -258,7 +255,7 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
   // watchers
 
   // when the setting changes, clean out the cache of loaded items
-  watch(currentSetting, async (newSetting: Setting | null): Promise<void> => {
+  watch(currentSetting, async (newSetting: FCBSetting | null): Promise<void> => {
     if (!newSetting) {
       currentCampaignTree.value = [];
       return;
@@ -275,8 +272,8 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
   // return the public interface
   return {
     currentCampaignTree,
+    isCampaignTreeRefreshing,
 
-    collapseAll,
     toggleWithLoad,
     refreshCampaignDirectoryTree,
     deleteCampaign,

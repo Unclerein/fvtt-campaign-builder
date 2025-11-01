@@ -232,21 +232,21 @@
 
   .styles-summary {
     background-color: rgba(0, 0, 0, 0.05);
-    border: 1px solid var(--color-border-light-tertiary);
+    border: 1px solid var(--fcb-control-border);
     border-radius: 4px;
     padding: 0.75rem;
     margin-bottom: 1rem;
     
     .style-summary {
       margin-bottom: 0.5rem;
-      font-size: var(--font-size-14);
+      font-size: var(--fcb-font-size-large);
       
       &:last-child {
         margin-bottom: 0;
       }
       
       strong {
-        color: var(--color-text-dark-primary);
+        color: var(--fcb-text);
       }
     }
   }
@@ -279,7 +279,7 @@
       
       .style-label {
         font-weight: 500;
-        font-size: var(--font-size-14);
+        font-size: var(--fcb-font-size-large);
         cursor: pointer;
       }
     }

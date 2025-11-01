@@ -137,10 +137,11 @@
   .tab-inner {
     height: 100%;
     overflow-y: auto;
+    font-family: var(--fcb-font-family);
   }
 
   .fcb-description-wrapper {
-    font-family: var(--font-body);
+    font-family: var(--fcb-font-family);
     align-items: flex-start;
     align-self: flex-start;
     overflow-y: visible;
@@ -156,11 +157,11 @@
       flex: 1;
 
       .form-group {
-        margin: 4px 8px 0px 0px;
+        margin: .25rem 8px 0px 0px;
       
         label {
-          font-size: var(--font-size-16);
-          font-weight: 600;
+          font-size: var(--fcb-font-size-large);
+          font-weight: 700;
           font-family: var(--fcb-font-family);
           color: var(--fcb-sheet-header-label-color);
           text-align: left;
@@ -170,30 +171,31 @@
           // this is for the labels that are on the left side of the field
           &.side-label {
             max-width: 175px;
+            align-self: flex-start;
           }
         }
 
         // this is for ones 
         input {
-          font-size: var(--font-size-16);
+          font-size: var(--fcb-font-size-large);
         }
 
         select {
           border: var(--fcb-sheet-header-input-border);
           font-size: inherit;
           font-family: inherit;
-          height: calc(var(--font-size-16) + 6);
+          height: calc(var(--fcb-font-size-header) + 6);
           margin: 0px;
           background: var(--fcb-sheet-header-input-background);
 
           &:hover {
-            box-shadow: 0 0 8px var(--color-shadow-primary);
+            box-shadow: 0 0 8px var(--fcb-accent);
           }
         }
 
         &.description {
           overflow: hidden; // keep the editor the right size
-          margin-top: 6px;
+          margin-top: 0.375rem;
           flex: 1;
         }
       }

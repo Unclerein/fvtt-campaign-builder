@@ -23,16 +23,17 @@
                 :key="field.field"
                 class="field-wrapper"
               >
-                <h6>
+                <div class='field-name'>
                   {{ field.header }}
                   <!-- <i class="fas fa-info-circle tooltip-icon" data-tooltip="If you create a new type, it will be added to the master list"></i> -->
-                </h6>
+                </div>
                 <InputText
                   :id="field.field"
                   v-model="extraFieldValuesObj[field.field]"
                   type="text"
+                  unstyled
                   class="field-input"
-                  :pt="{ root: { style: { 'font-size': 'var(--font-size-14)' }}}"      
+                  :pt="{ root: { style: { 'font-size': 'var(--fcb-font-size-large)' }}}"      
                 />
               </div>
             </div>
@@ -65,16 +66,16 @@
   import Dialog from '@/components/Dialog.vue';
 
   // types
-  import { Topics, ValidTopic, RelatedItemDialogModes } from '@/types';
+  import { Topics, ValidTopic, RelatedItemDialogModes, ValidTopicRecord } from '@/types';
   import { Entry, TopicFolder } from '@/classes';
 
-  type ExtraFieldValue = {
+  interface ExtraFieldValue {
     field: string;
     header: string;
     value: string;
   };
 
-  type ButtonProp = {
+  interface ButtonProp {
     label: string;
     close?: boolean;
     default?: boolean;
@@ -167,7 +168,7 @@
       buttonTitle: localize('dialogs.relatedItems.pc.buttonTitle'),
       // editButtonTitle: localize('dialogs.relatedItems.pc.editButtonTitle'),
     },
-  } as Record<ValidTopic, { 
+  } as ValidTopicRecord<{ 
     title: string; 
     // editTitle: string; 
     buttonTitle: string; 
@@ -335,7 +336,7 @@
       if (!currentSession.value && !(currentEntry.value && currentEntryTopic.value))
         throw new Error('Trying to show RelatedItemDialog without a current entry/session');
       
-        selectItems.value = (await Entry.getEntriesForTopic(currentSetting.value.topicFolders[props.topic] as TopicFolder, currentEntry.value || undefined)).map(mapEntryToOption);
+      selectItems.value = (await Entry.getEntriesForTopic(currentSetting.value.topicFolders[props.topic] as TopicFolder, currentEntry.value || undefined)).map(mapEntryToOption);
       
       extraFields.value = currentSession.value ? [] : relationshipStore.extraFields[currentEntryTopic.value][props.topic];
       extraFieldValuesObj.value = {};
@@ -370,35 +371,41 @@
   width: 100%;
   padding: 0.5rem 0;
 
-  h6 {
-    margin-bottom: 2px;
-    margin-top: 8px;
-    display: flex;
-    align-items: center;
-
-    .tooltip-icon {
-      margin-left: 5px;
-      font-size: 12px;
-      color: #888;
-      cursor: help;
-
-      &:hover {
-        color: #555;
-      }
-    }
-  }
-
   .extra-fields-container {
     width: 100%;
     margin-top: 20px;
 
     .extra-fields-title {
-      font-size: var(--font-size-16);
+      font-size: var(--fcb-font-size-header);
       font-weight: 600;
+      color: var(--fcb-text);
       margin-bottom: 0.75rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-top: 2rem;
+      border-bottom: 3px solid var(--fcb-control-border);
       padding-bottom: 0.25rem;
-      width: 80%;
+      width: fit-content;
+    }
+
+    .field-wrapper {
+      .field-name {
+        font: 350 var(--fcb-font-size-large) var(--fcb-font-family);
+        color: var(--fcb-text);
+        margin-bottom: 2px;
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+
+        .tooltip-icon {
+          margin-left: 5px;
+          font-size: var(--font-size-12);
+          color: var(--fcb-text);
+          cursor: help;
+        }
+      }
+
+      input {
+        color: var(--fcb-text);
+      }
     }
   }
 }
@@ -410,13 +417,13 @@
   padding: 1rem 0;
   background-color: rgba(0, 0, 0, 0.05);
   border-radius: 6px;
-  color: var(--color-text-dark-secondary);
+  color: var(--fcb-text);
   font-style: italic;
   gap: 0.75rem;
 
   i {
     font-size: 1.25rem;
-    color: var(--color-text-dark-tertiary);
+    color: var(--fcb-text);
   }
 }
 </style>

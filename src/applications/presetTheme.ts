@@ -1,20 +1,50 @@
 import Aura from '@primevue/themes/aura';
 import { definePreset } from '@primevue/themes';
 
-const foundryVariables = {
-  colorTextDarkPrimary: 'rgb(25, 24, 19)',    //'#191813',
-  colorTextLightPrimary: 'rgb(181, 179, 164)',  //#b5b3a4',
-  colorWarm1: 'rgb(238, 155, 58)',  //'ee9b3a',
-  colorWarm2: 'rgb(201, 89, 63)',   //'c9593f'
-  colorWarm3: 'rgb(93, 20, 43)',   //'#5d142b',  
-  colorBorderDark5: 'rgb(102, 102, 102)',   //'#666',   
-};
-
 const fcbVariables = {
+  light: {
+    fcbText: 'hsl(210 12% 18%)',
+    fcbTextMuted: 'hsl(210 9% 38%)',
+    fcbSurface: '#fff',
+    fcbSurface2: 'hsl(210 15% 95%)',
+    fcbSurfaceShaded: '#f1edee',  //color-mix(in oklch, var(--fcb-primary-500), white 92%)',
+    fcbControlBg: '#fff',
+    fcbRing: 'hsl(22 100% 55%)',
+    fcbControlBorder: 'hsl(210 10% 82%)',
+    fcbControlBorderFocus: 'hsl(22 100% 55%)',
+    fcbControlBgHover: 'rgba(0, 0, 0, 0.10)',
+    fcbButtonBorder: 'hsl(210 10% 82%)',
+    fcbButtonBorderHover: 'hsl(22 100% 55%)',
+    fcbSheetInputBorder: 'rgb(122, 121, 113)',
+    fcbSplitterGutter: 'hsl(210 10% 82%)',
+    fcbTableHeaderBottomBorder: 'hsl(210 7% 50%)',
+  },
+  dark: {
+    fcbText: 'hsl(210 20% 94%)',
+    fcbTextMuted: 'hsl(210 8% 65%)',
+    fcbSurface: 'hsl(210, 12%, 18%)',
+    fcbSurface2: 'hsl(210 14% 15%)',
+    fcbSurfaceShaded: '#293337', //'color-mix(in oklab, var(--fcb-primary) 10%, var(--fcb-surface))',
+    fcbControlBg: 'hsl(210, 12%, 18%)',
+    fcbRing: 'hsl(22 100% 55%)',
+    fcbControlBorder: 'hsl(210 12% 24%)',
+    fcbControlBorderFocus: 'hsl(22 100% 55%)',
+    fcbControlBgHover: 'rgba(255, 255, 255, 0.10)',
+    fcbButtonBorder: 'hsl(210 12% 24%)',
+    fcbButtonBorderHover: 'hsl(22 100% 55%)',
+    fcbSheetInputBorder: 'rgb(122, 121, 113)',
+    fcbSplitterGutter: 'hsl(210 10% 28%)',
+    fcbTableHeaderBottomBorder: 'hsl(210 8% 65%)',
+  },
   fcbDarkOverlay: 'rgba(0, 0, 0, 0.05)',
   fcbLightOverlay: 'rgba(255, 255, 255, 0.10)',
-  fcbSheetInputBorder: 'rgb(122, 121, 113)',
   fcbButtonBorderColor: '#444',
+  fcbAccent: 'hsl(22 100% 55%)',
+  fcbAccent700: 'hsl(22 100% 40%)',
+  fcbPrimary: 'hsl(164 48% 20%)',
+  fcbPrimary300: '#9cb089',  //'color-mix(in oklch, var(--fcb-primary-500), white 58%)',
+  fcbPrimary100: '#e7e0e2',  //color-mix(in oklch, var(--fcb-primary-500), white 86%)
+  
 };
 
 export default definePreset(Aura, {
@@ -22,16 +52,30 @@ export default definePreset(Aura, {
     datatable: {
       colorScheme: {
         light: {
-          headerCellSelectedColor: foundryVariables.colorWarm3,
-          rowColor: foundryVariables.colorTextDarkPrimary,
-          rowHoverColor: foundryVariables.colorTextDarkPrimary,
-          bodyCellBorderColor: 'rgb(165, 165, 155)',
+          headerColor: fcbVariables.light.fcbTextMuted,
+          headerBackground: fcbVariables.light.fcbSurface,
+          headerCellBackground: fcbVariables.light.fcbSurface,
+          headerCellColor: fcbVariables.light.fcbText,
+          headerCellSelectedBackground: fcbVariables.light.fcbSurface2,
+          headerCellSelectedColor: fcbVariables.fcbAccent,
+          headerCellBorderColor: fcbVariables.light.fcbTableHeaderBottomBorder,
+          rowColor: fcbVariables.light.fcbText,
+          rowBackground: fcbVariables.light.fcbSurface,
+          rowHoverColor: fcbVariables.light.fcbSurface2,
+          bodyCellBorderColor: fcbVariables.light.fcbButtonBorder,
         },
         dark: {
-          headerCellSelectedColor: foundryVariables.colorWarm2,
-          rowColor: foundryVariables.colorTextLightPrimary,
-          rowHoverColor: foundryVariables.colorTextLightPrimary,
-          bodyCellBorderColor: 'rgb(165, 165, 155)',
+          headerColor: fcbVariables.dark.fcbTextMuted,
+          headerBackground: fcbVariables.dark.fcbSurface,
+          headerCellBackground: fcbVariables.dark.fcbSurface,
+          headerCellColor: fcbVariables.dark.fcbText,
+          headerCellSelectedBackground: fcbVariables.dark.fcbSurface2,
+          headerCellSelectedColor:  fcbVariables.fcbAccent,
+          headerCellBorderColor: fcbVariables.dark.fcbTableHeaderBottomBorder,
+          rowColor: fcbVariables.dark.fcbText,
+          rowBackground: fcbVariables.dark.fcbSurface,
+          rowHoverColor: fcbVariables.dark.fcbSurface2,
+          bodyCellBorderColor: fcbVariables.dark.fcbButtonBorder,
         }
       },
       headerBackground: 'inherit',
@@ -61,23 +105,23 @@ export default definePreset(Aura, {
     inputtext: {
       colorScheme: {
         light: {
-          color: foundryVariables.colorTextDarkPrimary,
-          background: 'rgba(0, 0, 0, 0.1)',
-          borderColor: fcbVariables.fcbSheetInputBorder,
-          focusBorderColor: 'black',  // change to var
-          focusRingColor: foundryVariables.colorWarm2,
+          color: fcbVariables.light.fcbText,
+          background: fcbVariables.light.fcbControlBg,
+          borderColor: fcbVariables.light.fcbControlBorder,
+          focusBorderColor: fcbVariables.light.fcbControlBorderFocus, 
+          focusRingColor: fcbVariables.light.fcbRing,
         },
         dark: {
-          color: foundryVariables.colorTextLightPrimary,
-          background: 'rgb(48, 40, 49)',
-          borderColor: fcbVariables.fcbSheetInputBorder,
-          focusBorderColor: 'black',  // change to var
-          focusRingColor: foundryVariables.colorWarm2,
+          color: fcbVariables.dark.fcbText,
+          background: fcbVariables.dark.fcbControlBg,
+          borderColor: fcbVariables.dark.fcbControlBorder,
+          focusBorderColor: fcbVariables.dark.fcbControlBorderFocus,  
+          focusRingColor: fcbVariables.dark.fcbRing,
         }
       },
  
       borderRadius: '4px',
-      fontSize: '16px',
+      fontSize: '0.9rem',
       padding: {
         x: '3px',
         y: '1px',
@@ -90,15 +134,14 @@ export default definePreset(Aura, {
     checkbox: {
       colorScheme: {
         light: {
-          background: fcbVariables.fcbDarkOverlay,
           hoverBackground: fcbVariables.fcbDarkOverlay,
-          borderColor: fcbVariables.fcbButtonBorderColor,
+          borderColor: fcbVariables.light.fcbButtonBorder,
           checked: {
-            background: foundryVariables.colorWarm1,   
-            hoverBackground: foundryVariables.colorWarm1,
-            borderColor: 'black',
-            hoverBorderColor: 'black',
-            focusBorderColor: 'black',  
+            background: fcbVariables.fcbAccent700,   
+            hoverBackground: fcbVariables.fcbAccent,
+            borderColor: fcbVariables.light.fcbButtonBorder,
+            hoverBorderColor: fcbVariables.light.fcbButtonBorderHover,
+            focusBorderColor: fcbVariables.light.fcbButtonBorderHover,  
           },
           icon: {
             checked: {
@@ -109,20 +152,19 @@ export default definePreset(Aura, {
           focusBorderColor: 'black',
         },
         dark: {
-          background: fcbVariables.fcbLightOverlay,
           hoverBackground: fcbVariables.fcbLightOverlay,
-          borderColor: fcbVariables.fcbButtonBorderColor,
+          borderColor: fcbVariables.dark.fcbButtonBorder,
           checked: {
-            background: foundryVariables.colorWarm1,   
-            hoverBackground: foundryVariables.colorWarm1,
-            borderColor: 'black',
-            hoverBorderColor: 'black',
-            focusBorderColor: 'black',  
+            background: fcbVariables.fcbAccent700,   
+            hoverBackground: fcbVariables.fcbAccent,
+            borderColor: fcbVariables.dark.fcbButtonBorder,
+            hoverBorderColor: fcbVariables.dark.fcbButtonBorderHover,
+            focusBorderColor: fcbVariables.dark.fcbButtonBorderHover,  
           },
           icon: {
             checked: {
-              color: 'black',   
-              hoverColor: 'black',
+              color: 'white',   
+              hoverColor: 'white',
             }
           },
           focusBorderColor: 'black',
@@ -133,20 +175,21 @@ export default definePreset(Aura, {
     textarea: {
       colorScheme: {
         light: {
-          color: foundryVariables.colorTextDarkPrimary,
-          background: 'rgba(0, 0, 0, 0.1)',
-          borderColor: fcbVariables.fcbSheetInputBorder,
-          focusBorderColor: 'black',  
-          focusRingColor: foundryVariables.colorWarm2,
+          color: fcbVariables.light.fcbText,
+          background: fcbVariables.light.fcbControlBg,
+          borderColor: fcbVariables.light.fcbControlBorder,
+          focusBorderColor: fcbVariables.light.fcbControlBorderFocus, 
+          focusRingColor: fcbVariables.light.fcbRing,
         },
         dark: {
-          color: foundryVariables.colorTextLightPrimary,
-          background: 'rgb(48, 40, 49)',
-          borderColor: fcbVariables.fcbSheetInputBorder,
-          focusBorderColor: 'black',  
-          focusRingColor: foundryVariables.colorWarm2,
+          color: fcbVariables.dark.fcbText,
+          background: fcbVariables.dark.fcbControlBg,
+          borderColor: fcbVariables.dark.fcbControlBorder,
+          focusBorderColor: fcbVariables.dark.fcbControlBorderFocus,  
+          focusRingColor: fcbVariables.dark.fcbRing,
         }
       },
+      fontSize: '0.9rem',
       borderRadius: '4px',
       padding: {
         x: '3px',
@@ -163,15 +206,68 @@ export default definePreset(Aura, {
         borderColor: 'none',
         color: 'inherit',
       }, 
-      gutter: {
-        background: 'rgb(185, 185, 172)',
-      }
+      colorScheme: {
+        light: {
+          gutter: {
+            background: fcbVariables.light.fcbSplitterGutter,
+          }
+        },
+        dark: {
+          gutter: {
+            background: fcbVariables.dark.fcbSplitterGutter,
+          }
+        }
+      },
     },
     splitterpanel: {
       borderRadius: '0',
       background: 'inherit',
       color: 'inherit',
       borderColor: 'none',
+    },
+    select: {
+      colorScheme: {
+        light: {
+          color: fcbVariables.light.fcbText,
+          background: fcbVariables.light.fcbControlBg,  
+          borderColor: fcbVariables.light.fcbControlBorder,
+          disabledBackground: fcbVariables.light.fcbSurfaceShaded,
+          dropdownColor: fcbVariables.fcbPrimary,  
+          overlayBackground: fcbVariables.light.fcbSurfaceShaded,  
+          overlayBorderColor: fcbVariables.light.fcbText,
+          focusBorderColor: fcbVariables.light.fcbControlBorderFocus,
+          focusRingColor: fcbVariables.light.fcbRing,
+          option: {
+            color: fcbVariables.light.fcbText,
+            focusBackground: fcbVariables.fcbPrimary100,
+            focusColor: fcbVariables.light.fcbText,
+            // selectedFocusBackground: fcbVariables.fcbPrimary100,  // in CampaignBuilder.vue
+            selectedFocusColor: fcbVariables.fcbAccent700,
+            selectedBackground: fcbVariables.light.fcbSurfaceShaded,
+            selectedColor: fcbVariables.fcbAccent700,
+          }
+        },
+        dark: {
+          color: fcbVariables.dark.fcbText,
+          background: fcbVariables.dark.fcbControlBg,  
+          borderColor: fcbVariables.dark.fcbControlBorder,
+          disabledBackground: fcbVariables.dark.fcbSurfaceShaded,
+          dropdownColor: fcbVariables.fcbPrimary,
+          overlayBackground: fcbVariables.dark.fcbSurfaceShaded,  
+          overlayBorderColor: fcbVariables.dark.fcbText,
+          focusBorderColor: fcbVariables.dark.fcbControlBorderFocus,
+          focusRingColor: fcbVariables.dark.fcbRing,
+          option: {
+            color: fcbVariables.dark.fcbText,
+            focusBackground: fcbVariables.fcbPrimary300,
+            focusColor: fcbVariables.dark.fcbText,
+            // selectedFocusBackground: fcbVariables.fcbPrimary300,  // in CampaignBuilder.vue
+            selectedFocusColor: fcbVariables.fcbAccent700,
+            selectedBackground: fcbVariables.dark.fcbSurfaceShaded,
+            selectedColor: fcbVariables.fcbAccent700,
+          }
+        }
+      },
     },
   }
 });

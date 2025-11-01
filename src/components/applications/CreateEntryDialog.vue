@@ -31,26 +31,27 @@
       <div
         class="flexcol create-entry-dialog-content"
       >
-        <h6>
+        <div class="field-label">
           {{ localize('labels.fields.name')}}
           <i 
             v-if="generateMode"
             class="fas fa-info-circle tooltip-icon" 
             :data-tooltip="localize('tooltips.createEntry.name')"
           ></i>
-        </h6>
+        </div>
         <InputText
           v-model="name"
           type="text"
-          :pt="{ root: { style: { 'font-size': 'var(--font-size-14)' }}}"      
+          unstyled
+          :pt="{ root: { style: { 'font-size': 'var(--fcb-font-size-large)' }}}"      
         />
 
-        <h6>
+        <div class="field-label">
           {{ localize('labels.fields.type')}}
           <i 
             class="fas fa-info-circle tooltip-icon" 
             :data-tooltip="localize('tooltips.createEntry.type')"></i>
-        </h6>
+        </div>
         <TypeSelect
           :initial-value="type"
           :topic="props.topic"
@@ -58,14 +59,14 @@
         />
 
         <div v-if="props.topic===Topics.Character">
-          <h6>
+          <div class="field-label">
             {{ localize('labels.fields.species')}}
             <i 
               v-if="generateMode"
               class="fas fa-info-circle tooltip-icon" 
               :data-tooltip="localize('tooltips.createEntry.species')"
             ></i>
-          </h6>
+          </div>
           <SpeciesSelect
             :initial-value="speciesId"
             :allow-new-items="true"
@@ -74,14 +75,14 @@
           />
         </div>
         <div v-else-if="hasHierarchy(props.topic)">
-          <h6>
+          <div class="field-label">
             {{ localize('labels.fields.parent')}}
             <i 
               v-if="generateMode"
               class="fas fa-info-circle tooltip-icon" 
               :data-tooltip="localize('tooltips.createEntry.parent')"
             ></i>
-          </h6>
+          </div>
           <TypeAhead 
             :initial-list="validParents"
             :initial-value="parentId || ''"
@@ -89,23 +90,25 @@
           />
         </div>
 
-        <h6>
+        <div class="field-label">
           {{ generateMode ? localize('labels.fields.startingDescription') : localize('labels.fields.description') }}
           <i
             v-if="generateMode" 
             class="fas fa-info-circle tooltip-icon" 
             :data-tooltip="localize('tooltips.createEntry.description')"
           ></i>
-        </h6>
+        </div>
         <Textarea
           v-model="startingDescription"
+          unstyled
           :pt="{ root: { 
             style: { 
-              'font-size': 'var(--font-size-14)', 
-              'color': 'var(--input-text-color)',
+              'font-size': 'var(--fcb-font-size-large)', 
+              'color': 'var(--fcb-text)',
               'min-height': '6rem',
-              'max-height': '6rem',
-              'background': !generateComplete ? 'rgba(255, 228, 196, .3)' : '',
+              'max-height': '20rem',
+              'resize': 'vertical',
+              'background': !generateComplete ? 'var(--fcb-surface-shaded)' : '',
             }
           }}"
         />
@@ -156,16 +159,16 @@
               <span class="error-label">{{ localize('dialogs.generateNameDialog.errorMessage') }}</span> {{ generateError }}
             </div>
             <template v-else-if="generateComplete">
-              <div v-if="!name && (generatedDescription || generatedRoleplayNotes)" class="generated-content" style="background: rgba(255, 228, 196, .3)">
+              <div v-if="!name && (generatedDescription || generatedRoleplayNotes)" class="generated-content" style="background: var(--fcb-surface-shaded)">
                 <div><span class="label">{{ localize('dialogs.createEntry.generatedName')}}:</span> {{ generatedName }}</div>
               </div>
-              <div v-if="generatedDescription" class="generated-content" style="background: rgba(255, 228, 196, .3)">
+              <div v-if="generatedDescription" class="generated-content" style="background: var(--fcb-surface-shaded)">
                 <div class="description">
                   <p><span class="label">{{ localize('dialogs.createEntry.generatedDescription')}}:</span></p>
                   {{ generatedDescription }}
                 </div>
               </div>
-              <div v-if="generatedRoleplayNotes" class="generated-content" style="background: rgba(255, 228, 196, .3)">
+              <div v-if="generatedRoleplayNotes" class="generated-content" style="background: var(--fcb-surface-shaded)">
                 <div class="description">
                   <p><span class="label">{{ localize('dialogs.createEntry.generatedRoleplayNotes')}}</span></p>
                   {{ generatedRoleplayNotes }}
@@ -512,7 +515,7 @@
 
     // create the entry and kick off image generation if needed
     // if we haven't generated a description, use whatever's in brief description
-    // the idea is that - especially when we're dealing with a rolltable name - user can use this form as a sort of quick create
+    // the idea is that - especially when we're dealing with a RollTable name - user can use this form as a sort of quick create
     let details: CharacterDetails | LocationDetails | OrganizationDetails | null = null;
     let descriptionToUse = '';
     let roleplayToUse = '';
@@ -541,7 +544,7 @@
         name: generateComplete.value ? generatedName.value : name.value,
         type: type.value,
         description: descriptionToUse,
-        rolePlayingNotes: roleplayToUse,
+        roleplayingNotes: roleplayToUse,
         speciesId: validSpecies.includes(speciesId.value) ? speciesId.value : '',
         generateImage: generateImageAfterAccept.value
       }
@@ -551,7 +554,7 @@
         type: type.value,
         parentId: parentId.value,
         description: descriptionToUse,
-        rolePlayingNotes: roleplayToUse,
+        roleplayingNotes: roleplayToUse,
         generateImage: generateImageAfterAccept.value
       }
     }
@@ -661,7 +664,9 @@
   }
 
   .create-entry-dialog-content {
-    h6 {
+    .field-label {
+      font: 500 var(--fcb-font-size-large) var(--fcb-font-family);
+      color: var(--fcb-text-muted);
       display: flex;
       margin-bottom: 2px;
       margin-top: 8px;
@@ -696,7 +701,7 @@
 
     .tooltip-icon {
       margin-left: 5px;
-      font-size: 12px;
+      font-size: var(--font-size-12);
       color: #888;
       cursor: help;
 
@@ -725,7 +730,7 @@
 
       .prompt-message {
         text-align: center;
-        color: var(--fcb-color-text-generate-message);
+        color: var(--fcb-text);
         margin-top: 100px;
         font-style: italic;
       }

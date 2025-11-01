@@ -13,7 +13,8 @@
       <div class="fcb-window-title">{{ title }}</div>
       <a 
         class="header-button control close"
-        @click="() => { show = false; emit('cancel'); }"
+        data-testid="dialog-close-button"
+        @click="() => { show = false; emit('update:modelValue', false); emit('cancel'); }"
       >
         <i class="fas fa-times"></i>
         <span class="close-text">{{ localize('labels.close') }}</span>
@@ -21,7 +22,7 @@
     </header>
     <section class="window-content">
       <div class="fcb-dialog-content-wrapper">
-        <div class="fcb-dialog-content">
+        <div id="fcb-dialog-content">
           <slot />
         </div>
         <div class="fcb-dialog-buttons">
@@ -32,6 +33,7 @@
             :disabled="btn.disable"
             :style="btn.hidden ? {display:'none'} : {}"
             :class="`fcb-dialog-button ${btn.default ? 'default' : ''}`"
+            :data-testid="`dialog-button-${btn.label.toLowerCase().replace(/\s+/g, '-')}`"
             @click="onButtonClick(btn)"
           >
             <i v-if="btn.icon" :class="`fas ${btn.icon}`"></i>
@@ -55,7 +57,7 @@
   // local components
 
   // types
-  type ButtonProp = {
+  interface ButtonProp {
     label: string;
     close?: boolean;  // close after clicking
     default?: boolean;
@@ -177,7 +179,7 @@
     top: 20%;
     left: 50%;
     transform: translateX(-50%);
-    font-size: var(--font-size-14);
+    font-size: var(--fcb-font-size-large);
     width: 550px;
     max-width: 90%;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
@@ -202,11 +204,11 @@
         transition: all 0.2s ease;
 
         i {
-          font-size: 14px;
+          font-size: var(--fcb-font-size-large);
         }
 
         .close-text {
-          font-size: 14px;
+          font-size: var(--fcb-font-size-large);
         }
       }
 
@@ -222,15 +224,19 @@
       padding: 0px 8px 5px 8px;
       gap: 16px;
       overflow: visible;
+      background-color: var(--fcb-surface);
 
-      .fcb-dialog-content {
-        font-size: var(--font-size-14);
+      // this is an ID so that we get css priority
+      #fcb-dialog-content {
+        font-size: var(--fcb-font-size-large);
         width: 100%;
         overflow: visible !important; // allow typeaheads to come out
 
         input, textarea {
-          font-size: var(--font-size-14) !important;
+          font-size: var(--fcb-font-size-large) !important;
         }
+
+        @include style-base-components;
       }
 
       .fcb-dialog-buttons {
@@ -247,30 +253,27 @@
           justify-content: center;
           gap: 8px;
           min-width: 100px;
-          font-size: var(--font-size-14);
+          font-size: var(--fcb-font-size-large);
+          color: var(--fcb-button-text);
+          background: var(--fcb-button-bg);
           border-radius: 3px;
           padding: 1px 6px;
           cursor: pointer;
           transition: all 0.2s ease;
           font-weight: 500;
-          background: rgba(0, 0, 0, 0.1);
-          border: 2px groove solid rgb(240, 240, 224);
-          color: var(--color-text-primary);
+          border: 2px groove solid var(--fcb-button-border);
 
             &:hover:not(:disabled) {
-              border-color: #a5a394;
-              box-shadow: 0 0 5px var(--color-shadow-primary);
+              border-color: var(--fcb-button-border-hover);
+              box-shadow: 0 0 5px var(--fcb-accent);
+              background: var(--fcb-button-bg-hover);
+              color: var(--fcb-button-text-hover);
             }
 
           &.default {
-            background: rgba(0, 0, 0, 0.05);
+            background: var(--fcb-primary);
             border: 2px groove solid rgb(201, 199, 184);
-            color: var(--color-text-primary);
-
-            &:hover:not(:disabled) {
-              border-color: #a5a394;
-              box-shadow: 0 0 5px var(--color-shadow-primary);
-            }
+            color: var(--fcb-text-on-primary);
           }
 
           &:disabled {
@@ -279,7 +282,7 @@
           }
 
           i {
-            font-size: 14px;
+            font-size: var(--fcb-font-size-large);
           }
         }
       }

@@ -1,4 +1,4 @@
-# <img src="https://dovrosenberg.github.io/fvtt-campaign-builder/fcb-logo.webp" style="height: 64px" /> World & Campaign Builder
+# <img src="https://dovrosenberg.github.io/fvtt-campaign-builder/fcb-logo.webp" style="height: 4rem" /> World & Campaign Builder
 
 [![Supported Foundry Versions](https://img.shields.io/endpoint?url=https://foundryshields.com/version?url=https://github.com/dovrosenberg/fvtt-campaign-builder/raw/main/static/module.json)](https://github.com/dovrosenberg/fvtt-campaign-builder)
 
@@ -9,6 +9,12 @@
 World & Campaign Builder is designed to streamline every part of your TTRPG prep and gameplay—from deep worldbuilding to session planning and live play tracking. Whether you're building a sprawling lore-rich universe or following the Lazy DM approach to lightweight prep, this tool lets you create interconnected characters, locations, organizations, and events with ease, all inside Foundry. It’s fast enough to use in real time during a session, and flexible enough to evolve as your world grows. Optional AI-assisted content and image generation offer powerful creative boosts, but the module is fully usable without them. 
 
 See the [user documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/) for full details.
+
+<p align="center">
+  <img src="https://dovrosenberg.github.io/fvtt-campaign-builder/screenshots/screenshot1.webp" alt="World building view" width="260" />
+  <img src="https://dovrosenberg.github.io/fvtt-campaign-builder/screenshots/screenshot2.webp" alt="Entry relationships view" width="260" />
+  <img src="https://dovrosenberg.github.io/fvtt-campaign-builder/screenshots/screenshot3.webp" alt="Session planning view" width="260" />
+</p>
 
 ## A note on AI and "Advanced Features"
 You'll see lots of references to AI capabilities in the [documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/) and feature lists.  There is no AI-generated content (or any other content) provided by the module (other than foreign language translations of UI elements). It merely has the capability to use AI to generate various things if you desire.  

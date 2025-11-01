@@ -42,10 +42,10 @@ A [^Session] is intended to represent a single game session - played in one stre
 
 Get started:
 1. Pick the Setting the campaign is in from the [^Setting Directory]
-1. Right click on the header in the Campaign Directory to create a new campaign (the one that reads "[Your setting name] Campaigns")
+1. Right click on your setting in the Setting Directory to create a new campaign
 1. Right click on the Campaign name to create a new session
 
-For campaigns, there are two modes you need to know about: [^Prep mode] and [^Play mode].  You change between these modes with the [toggle](/reference/navigation/prep-play) in the Campaign Builder window title bar.  If you have more than one campaign with at least one session, you'll see a drop-down where you can pick which campaign you are playing.  
+For campaigns, there are two modes you need to know about: [^Prep mode] and [^Play mode].  You change between these modes with the [toggle](/reference/navigation/prep-play) in the Campaign Builder window title bar.  If you have more than one campaign **with at least one session in each**, you'll see a drop-down where you can pick which campaign you are playing.  
 
 ![prep/play toggle and dropdown](/assets/images/prep-play-with-campaign.webp)
 

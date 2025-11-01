@@ -70,18 +70,6 @@ export function VueApplicationMixin<TBase extends new (...args: any[]) => foundr
     }
 
     /**
-     * Perform pre-render operations before the first render of the Vue application.
-     * @param {Object} context - The render context.
-     * @param {Object} options - The render options.
-     * @returns {Promise<void>}
-     */
-    // TODO: This function used to load vue files using SFC, but since that has been removed, this function appears to do nothing.
-    // ?? Maybe this function should be removed or updated to do something else?
-    async _preFirstRender(context, options) {
-      await super._preFirstRender(context, options);
-    }
-
-    /**
      * Render the HTML content of the Vue application.
      * @param {Object} context - The render context.
      * @param {Object} options - The render options.
@@ -150,7 +138,13 @@ export function VueApplicationMixin<TBase extends new (...args: any[]) => foundr
             // Call the render method when the Vue Instance is updated
             // -- This will call FoundryVTTs Hooks related to rendering when Vue is updated
             // -- Useful for when other modules listen for rendering events to inject HTML
-            Instance.render();
+            // Instance.render();
+
+            // we have commented this out ^^^ because we are completely disconnecting rendering
+            //    from Vue to be able to enforce our singleton (which will also improve
+            //    performance because we do so much processing in every _canRender)
+            // additionally, every call to render() where there's a doc involved opens a new
+            //    tab... that's bad
           }
         });
 
@@ -250,8 +244,9 @@ export function VueApplicationMixin<TBase extends new (...args: any[]) => foundr
         this.#instance = null;
       }
       
-      // Call the close method of the base application
-      return await super.close(options);
+      // Call the close method of the base application with animate: false
+      // to prevent the background from showing during the close animation
+      return await super.close({ animate: false, ...options });
     }
 
 

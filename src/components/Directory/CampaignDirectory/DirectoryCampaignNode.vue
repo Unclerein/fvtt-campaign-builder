@@ -1,23 +1,28 @@
 <template>
   <li
-    :class="`fcb-campaign-folder folder entry flexcol fcb-directory-compendium ${props.campaignNode.expanded ? '' : 'collapsed'} ${isActiveCampaign ? 'active' : ''}`"
+    :class="`fcb-campaign-folder folder flexcol ${props.campaignNode.expanded ? '' : 'collapsed'} ${isActiveCampaign ? 'active' : ''} ${props.campaignNode.completed ? 'campaign-completed' : ''}`"
     :data-campaign="props.campaignNode.id"
-    draggable="true"
-    @dragstart="onDragStart"
   >
     <header class="folder-header flexrow">
       <div
-        class="fcb-compendium-label noborder"
+        class="noborder"
         style="margin-bottom:0px"
+        draggable="true"
+        :data-tooltip="props.campaignNode.completed ? localize('tooltip.campaignComplete') : ''"
         @contextmenu="onCampaignContextMenu"
+        @dragstart="onDragStart"
       >
         <i
           class="fas fa-folder-open fa-fw"
           style="margin-right: 4px;"
+          data-testid="campaign-folder-toggle"
           @click="onCampaignFolderClick"
         ></i>
-        <span @click="onCampaignSelectClick">
-          {{ props.campaignNode.name }}
+        <span data-testid="campaign-name" @click="onCampaignSelectClick">
+          <span class="node-name">
+            {{ props.campaignNode.name }}
+            <i v-if="props.campaignNode.completed" class="fas fa-check-circle completed-icon"></i>
+          </span>
         </span>
       </div>
     </header>
@@ -48,6 +53,7 @@
   import { localize } from '@/utils/game';
   import { useCampaignDirectoryStore, useNavigationStore, useMainStore } from '@/applications/stores';
   import { getTabTypeIcon } from '@/utils/misc';
+  import { Campaign } from '@/classes';
 
   // library components
   import ContextMenu from '@imengyu/vue3-context-menu';
@@ -56,8 +62,8 @@
   import SessionDirectoryNode from './SessionDirectoryNode.vue';
   
   // types
-  import { DirectoryCampaignNode, } from '@/classes';
-  import { DirectorySessionNode, WindowTabType } from '@/types';
+  import { DirectoryCampaignNode, DirectorySessionNode } from '@/classes';
+  import { CampaignNodeDragData, WindowTabType } from '@/types';
   
   ////////////////////////////////
   // props
@@ -107,17 +113,21 @@
     event.stopPropagation();
 
     const dragData = {
-      type: 'fcb-node',
-      campaignNode: true,
+      type: 'fcb-campaign',
       campaignId: props.campaignNode.id,
       name: props.campaignNode.name
-    };
+    } as CampaignNodeDragData;
 
     event.dataTransfer?.setData('text/plain', JSON.stringify(dragData));
   };
 
   // change campaign
   const onCampaignFolderClick = async (_event: MouseEvent) => {
+    // if it's completed, don't toggle
+    if (currentNode.value.completed) {
+      return;
+    }
+
     currentNode.value = await campaignDirectoryStore.toggleWithLoad(currentNode.value as DirectoryCampaignNode, !currentNode.value.expanded);
   };
 
@@ -151,6 +161,24 @@
           }
         },
         { 
+          icon: 'fa-check-circle',
+          iconFontClass: 'fas',
+          label: props.campaignNode.completed ? localize('contextMenus.campaignFolder.markActive') : localize('contextMenus.campaignFolder.markComplete'),
+          hidden: isInPlayMode.value,
+          onClick: async () => {
+            const campaign = await Campaign.fromUuid(props.campaignNode.id);
+            if (campaign) {
+              campaign.completed = !campaign.completed;
+              await campaign.save();
+
+              // Update the local node's completed status
+              props.campaignNode.completed = campaign.completed;
+              // Refresh the campaign directory to show the updated status
+              await campaignDirectoryStore.refreshCampaignDirectoryTree();
+            }
+          }
+        },
+        { 
           icon: 'fa-trash',
           iconFontClass: 'fas',
           label: localize('contextMenus.campaignFolder.delete'), 
@@ -180,6 +208,7 @@
         .fcb-campaign-folder {
           align-items: flex-start;
           justify-content: flex-start;
+          font-weight: 700;
 
           &.active {
             font-weight: bold;
@@ -190,6 +219,7 @@
           border-bottom: none;
           width: 100%;
           flex: 1;
+          font-weight: 700;
         }
 
         .fcb-campaign-folder:not(.collapsed) > .folder-header {
@@ -231,113 +261,76 @@
   // the nested tree structure
   // https://www.youtube.com/watch?v=rvKCsHS590o&t=1755s has a nice overview of how this is assembled
 
-  .fcb-directory-compendium {
-    .fcb-entry-item, .fcb-type-item {
+  .fcb-campaign-folder{
+    // font-size: var(--fcb-font-size);
+    // font-family: var(--fcb-font-family);
+
+    .fcb-directory-entry, .fcb-current-directory-entry {
       position: relative;
       padding-left: 1em;
       cursor: pointer;
     }
 
-    // bold the active one
-    .fcb-current-directory-entry {
-      font-weight: bold;
-      cursor: pointer;
+    .fcb-directory-entry {
+      font-weight: 400;
     }
 
-    .fcb-directory-entry {
-      cursor: pointer;
+    // bold the active one
+    .fcb-current-directory-entry {
+      color: var(--fcb-accent-400);
+      font-weight: 700;
     }
-    
+
+
+    // leaving this here for when we introduce story arcs
+    // ul {
+    //   list-style: none;
+    //   line-height: 2em;   // this makes the horizontal lines centered (when combined with the height on the li::before
+
+    //   li {
+    //     position: relative;
+    //     padding: 0;
+    //     margin: -0.5em 0 0 0;
+
+    //     font-weight: normal;
+
+    //     // this draws the top-half ot the vertical plus the horizontal tree connector lines
+    //     &::before {
+    //       top: 0px;
+    //       border-bottom: 2px solid gray;
+    //       height: 1em;   // controls vertical position of horizontal lines
+    //     }
+
+    //     // extends the vertical lines down
+    //     &::after {
+    //       bottom: 0px;
+    //       height: 100%;
+    //     }
+
+    //     &::before, &::after {
+    //       content: "";
+    //       position: absolute;
+    //       left: -10px;   // pushes them left of the text
+    //       border-left: 2px solid gray;
+    //       width: 10px;   // controls the length of the horizontal lines
+    //     }
+
+    //     &:last-child::after {
+    //       display: none;   // avoid a little tail at the bottom of the vertical lines
+    //     }
+    //   }
+    // }
+
+    // // move the text away from the end of the horizontal lines
+    // li {
+    //   padding-left: 3px;
+    // }
+
     // add margin when these are immediate children of summary
     div.summary.top > .fcb-directory-entry,
     div.summary.top > .fcb-current-directory-entry {
       margin-left: 8px;
     }
-
-    ul {
-      list-style: none;
-      line-height: 2em;   // this makes the horizontal lines centered (when combined with the height on the li::before
-
-      li {
-        position: relative;
-        padding: 0;
-        margin: -0.5em 0 0 0;
-
-        font-family: 'Signika', sans-serif;
-        font-size: var(--font-size-14);
-        font-weight: normal;
-
-        // this draws the top-half ot the vertical plus the horizontal tree connector lines
-        &::before {
-          top: 0px;
-          border-bottom: 2px solid gray;
-          height: 1em;   // controls vertical position of horizontal lines
-        }
-
-        // extends the vertical lines down
-        &::after {
-          bottom: 0px;
-          height: 100%;
-        }
-
-        &::before, &::after {
-          content: "";
-          position: absolute;
-          left: -10px;   // pushes them left of the text
-          border-left: 2px solid gray;
-          width: 10px;   // controls the length of the horizontal lines
-        }
-
-        &:last-child::after {
-          display: none;   // avoid a little tail at the bottom of the vertical lines
-        }
-      }
-
-      // add the little open markers
-      div.summary .fcb-directory-expand-button {
-        position: absolute;
-        text-align: center;
-        line-height: 0.80em;
-        color: black;
-        background: #777;
-        display: block;
-        width: 15px;
-        height: 15px;
-        border-radius: 50em;
-        left: -1.2em;
-        top: 0.5em;
-        z-index: 1;
-      }
-
-      div.summary.top .fcb-directory-expand-button {
-        margin-left: 1em;
-      }
-
-      div.details {
-        padding-left: 0.5em;
-      }
-    }
-
-    // move the text away from the end of the horizontal lines
-    li {
-      padding-left: 3px;
-    }
-
-    // the top level
-    & > ul {
-      div.summary {
-        list-style: none; 
-
-        &::marker, &::-webkit-details-marker {
-          display: none !important;
-        }
-      }
-
-    }
-  }
-
-  ul.fcb-directory-tree > li:after, ul.fcb-directory-tree > li:before {
-    display:none;
   }
 
 </style>

@@ -33,23 +33,26 @@ export const useRelationshipStore = defineStore('relationship', () => {
   const relatedDocumentRows = ref<RelatedDocumentDetails[]>([]);
   const sessionReferences = ref<SessionReference[]>([]);
 
+  // note that the field attribute becomes the key in the storage
+  //    and that key is used as part of the search index, so they should
+  //    be meaningful words/phrases
   const extraFields = {
     [Topics.Character]: {
-      [Topics.Character]: [],
+      [Topics.Character]: [{field:'relationship', header:'Relationship'}],
       [Topics.Location]: [{field:'role', header:'Role'}],
       [Topics.Organization]: [{field:'role', header:'Role'}],
       [Topics.PC]: [],
     },
     [Topics.Location]: {
       [Topics.Character]: [{field:'role', header:'Role'}],
-      [Topics.Location]: [],
+      [Topics.Location]: [{field:'relationship', header:'Relationship'}],
       [Topics.Organization]: [],
       [Topics.PC]: [{field:'role', header:'Role'}],
     },
     [Topics.Organization]: {
       [Topics.Character]: [{field:'role', header:'Role'}],
       [Topics.Location]: [],
-      [Topics.Organization]: [],
+      [Topics.Organization]: [{field:'relationship', header:'Relationship'}],
       [Topics.PC]: [{field:'role', header:'Role'}],
     },    
     [Topics.PC]: {
@@ -283,23 +286,23 @@ export const useRelationshipStore = defineStore('relationship', () => {
       delete entryRelationships[relatedItemTopic][relatedEntry.uuid];
 
       // @ts-ignore - foundry code to delete the key
-      entryRelationships[relatedItemTopic][`-=${relatedItemId}`] = null;
+      // entryRelationships[relatedItemTopic][`-=${relatedItemId}`] = null;
       entry.relationships = entryRelationships;
       await entry.save();
 
       // clean out the entry that tells foundry to delete the key
-      delete entryRelationships[relatedItemTopic][`-=${relatedItemId}`];
+      // delete entryRelationships[relatedItemTopic][`-=${relatedItemId}`];
     }
     if (relatedEntryRelationships && relatedEntryRelationships[entryTopic] && relatedEntryRelationships[entryTopic][entry.uuid]) {
       delete relatedEntryRelationships[entryTopic][entry.uuid];
 
       // @ts-ignore - foundry code to delete the key
-      relatedEntryRelationships[entryTopic][`-=${entry.uuid}`] = null;
+      // relatedEntryRelationships[entryTopic][`-=${entry.uuid}`] = null;
       relatedEntry.relationships = relatedEntryRelationships;
       await relatedEntry.save();
 
       // clean out the entry that tells foundry to delete the key
-      delete relatedEntryRelationships[entryTopic][`-=${entry.uuid}`];
+      // delete relatedEntryRelationships[entryTopic][`-=${entry.uuid}`];
     }
 
     await mainStore.refreshEntry();
@@ -463,7 +466,7 @@ export const useRelationshipStore = defineStore('relationship', () => {
     // Go through all campaigns in the setting
     for (const campaign of campaigns) {
       // Get all sessions in the campaign
-      const sessions = campaign.filterSessions(() => true);
+      const sessions = await campaign.filterSessions(() => true);
 
       for (const session of sessions) {
         let isReferenced = false;

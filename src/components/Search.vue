@@ -5,6 +5,7 @@
         v-model="searchQuery"
         type="text"
         class="fcb-search-input"
+        data-testid="search-input"
         :placeholder="localize('placeholders.search')"
         @input="onSearchInput"
         @keydown.enter="onEnterPress"
@@ -32,13 +33,15 @@
         v-for="(result, index) in searchResults" 
         :key="result.uuid"
         :class="['fcb-search-result', { 'fcb-search-result-selected': index === selectedIndex }]"
+        :data-testid="`search-result-${index}`"
         @click="selectResult($event, result)"
         @mouseenter="selectedIndex = index"
       >
         <div class="fcb-search-result-header">
           <!-- If there's a type use that, otherwise, use the topic -->
           <span class="fcb-search-result-name">
-            {{ result.name }} ({{ result.resultType === 'entry' ? (result.type ? result.type : result.topic) : result.resultType === 'session' ? localize('labels.session.session') : localize('labels.pc.pc') }})
+            {{ result.name }} 
+            <span class="fcb-search-result-topic-type">({{ result.resultType === 'entry' ? (result.type ? result.type : result.topic) : result.resultType === 'session' ? localize('labels.session.session') : localize('labels.pc.pc') }})</span>
           </span>
         </div>
       </div>
@@ -252,6 +255,7 @@
   width: 100%;
   max-width: 400px;
   z-index: 10;  // try to bring the whole container forward
+  font-family: var(--fcb-font-family);
   
   .fcb-search-input-container {
     position: relative;
@@ -259,15 +263,15 @@
     
     .fcb-search-input {
       width: 180px;
-      height: 24px;
+      height: 1.5rem;
       padding: 4px 24px 4px 8px;
-      font-size: 12px;
+      font-size: var(--font-size-12);
       border-radius: 3px;
       
       &:focus {
         outline: none;
-        border-color: var(--color-border-highlight);
-        box-shadow: 0 0 0 1px var(--color-border-highlight);
+        border-color: var(--fcb-control-border-focus);
+        box-shadow: 0 0 0 1px var(--fcb-accent);
       }
 
       // in light mode, inputs are darker than background, so need to override
@@ -279,10 +283,10 @@
     .fcb-search-icon {
       position: absolute;
       right: 6px;
-      font-size: 12px;
+      font-size: var(--font-size-12);
       top: 50%;
       transform: translateY(-50%);
-      color: var(--color-text-secondary);
+      color: var(--fcb-text);
       pointer-events: none;
     }
   }
@@ -296,52 +300,61 @@
     max-height: 300px;
     overflow-y: auto;
     background-color: var(--fcb-list-background); 
-    border: 1px solid var(--color-border-primary);
+    border: 1px solid var(--fcb-control-border);
     border-radius: 4px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     z-index: 1000;
-    margin-top: 4px;
-    font-size: 12px;
+    margin-top: 0.25rem;
+    font-size: var(--font-size-12);
     z-index: 10; // Higher z-index to appear above other elements
  
     .fcb-search-loading,
     .fcb-search-no-results {
       padding: 12px;
       text-align: center;
-      color: var(--color-text-secondary);
+      color: var(--fcb-text);
     }
     
     .fcb-search-result {
       padding: 6px 8px;
-      border-bottom: 1px solid var(--color-border-secondary);
+      border-bottom: 1px solid var(--fcb-control-border);
       cursor: pointer;
-      background-color: var(--fcb-list-background);
+      background: var(--fcb-list-background);
       
       &:last-child {
         border-bottom: none;
       }
       
+      .fcb-search-result-name {
+        font-size: var(--font-size-12);
+        font-weight: 500;
+        color: var(--fcb-text);
+
+        .fcb-search-result-topic-type {
+          color: var(--fcb-text-muted);
+        }
+      }
+
       &:hover,
       &.fcb-search-result-selected {
-        background-color: var(--fcb-list-highlight);
+        background: var(--fcb-list-highlight-bg);
+
+        .fcb-search-result-name {
+          font-size: var(--font-size-12);
+          font-weight: 500;
+          color: var(--fcb-list-highlight-text);
+
+          .fcb-search-result-topic-type {
+            color: var(--fcb-list-highlight-text-muted);
+          }
+        }
       }
       
       .fcb-search-result-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2px;
-        
-        .fcb-search-result-name {
-          font-size: 12px;
-          font-weight: bold;
-          color: var(--color-text-primary);
-        }
-        
-        .fcb-search-result-topic-type {
-          font-size: 12px;
-          color: var(--color-text-secondary);
-        }
+        margin-bottom: 0.125rem;
       }
     }
   }
