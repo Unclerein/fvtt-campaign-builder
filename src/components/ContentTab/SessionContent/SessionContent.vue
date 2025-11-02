@@ -291,7 +291,7 @@
         await currentSession.value.save();
 
         // the save may renumber a bunch of things, so need to refresh the campaign directory tree (every node with a number >= the new number)
-        const sessionsToRefresh = await currentSession.value.campaign?.filterSessions(s=> s.number>=newValue) || [];
+        const sessionsToRefresh = currentSession.value.campaign?.sessionIndex.filter(s=> s.number>=newValue) || [];
 
         await campaignDirectoryStore.refreshCampaignDirectoryTree(sessionsToRefresh.map(s=> s.uuid));
         await navigationStore.propagateNameChange(currentSession.value.uuid, `${localize('labels.session.session')} ${newValue.toString()}`);
@@ -448,5 +448,9 @@
     margin-right: 8px;
     font-size: var(--fcb-font-size-large);
     cursor: pointer;
+  }
+  .p-datepicker .p-inputtext{
+   padding-left: 8px; 
+   font-size: var(--fcb-font-size-large) !important;
   }
 </style>

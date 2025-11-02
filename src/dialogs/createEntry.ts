@@ -3,7 +3,7 @@ import PrimeVue from 'primevue/config';
 import App from '@/components/applications/CreateEntryDialog.vue';
 import { hasHierarchy, } from '@/utils/hierarchy';
 import { useMainStore, useSettingDirectoryStore, useRelationshipStore, useNavigationStore, } from '@/applications/stores'; 
-import { CharacterDetails, LocationDetails, OrganizationDetails, Topics, ValidTopic } from '@/types';
+import { CharacterDetails, EntryBasicIndex, LocationDetails, OrganizationDetails, Topics, ValidTopic } from '@/types';
 import { Entry, TopicFolder } from '@/classes';
 import { generateImage, handleGeneratedEntry } from '@/utils/generation';
 import { localize } from '@/utils/game';
@@ -89,8 +89,8 @@ async function createEntryDialog(topic: ValidTopic,
 
   // TODO - shouldn't we check here to make sure it's a legal parent?
   if (topicFolder && hasHierarchy(topic)) {
-    validParents = Object.keys(topicFolder.entries)
-      .map((entryId: string)=>({ label: topicFolder.entries[entryId], id: entryId}));
+    validParents = topicFolder.entryIndex
+      .map((index: EntryBasicIndex)=>({ label: index.name, id: index.uuid}));
   }
   
   // construct a promise that returns when the callback is called
@@ -149,8 +149,8 @@ async function updateEntryDialog(entry: Entry): Promise<Entry | null> {
 
   // TODO - shouldn't we check here to make sure it's a legal parent?
   if (topicFolder && hasHierarchy(topic)) {
-    validParents = Object.keys(topicFolder.entries)
-      .map((entryId: string)=>({ label: topicFolder.entries[entryId], id: entryId}));
+    validParents = topicFolder.entryIndex
+      .map((index: EntryBasicIndex)=>({ label: index.name, id: index.uuid}));
   }
   
   // construct a promise that returns when the callback is called
