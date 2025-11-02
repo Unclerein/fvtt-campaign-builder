@@ -4,7 +4,7 @@
 
 import { CollapsibleNode, Session } from '@/classes';
 import { ModuleSettings, SettingKey } from '@/settings';
-import { SessionDisplayMode } from '@/types';
+import { SessionBasicIndex, SessionDisplayMode } from '@/types';
 import { localize } from '@/utils/game';
 
 // represents an entry in the type-grouped structure
@@ -69,15 +69,17 @@ export class DirectorySessionNode extends CollapsibleNode<never> {
   }
 
   // converts the entry to a DirectoryEntryNode for cleaner interface
-  static fromSession = (session: Session, campaignId: string): DirectorySessionNode => {
+  static fromSessionBasicIndex = (session: SessionBasicIndex, campaignId: string): DirectorySessionNode => {
     if (!CollapsibleNode._currentSetting)
-      throw new Error('No currentSetting in DirectorySessionNode.fromEntry()');
+      throw new Error('No currentSetting in DirectorySessionNode.fromSessionBasicIndex()');
+
+    const dateValue = session.date ? new Date(session.date) : null;
 
     return new DirectorySessionNode(
       session.uuid,
       session.name,
       session.number,
-      session.date,
+      dateValue?.isValid() ? dateValue : null,
       campaignId,
     );
   };

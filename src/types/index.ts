@@ -150,6 +150,21 @@ export interface SettingIndex {
   packId: string;
 }
 
+/** This is the format of how our entries are stored in the topic folder */
+export interface EntryBasicIndex { 
+  uuid: string;
+  name: string; 
+  type: string; 
+};
+
+/** This is the format of how our sessions are stored in campaigns */
+export interface SessionBasicIndex { 
+  uuid: string;
+  name: string; 
+  number: number; 
+  date: string | null;
+};
+
 export type ValidDocType = 
   typeof DOCUMENT_TYPES.Setting | 
   typeof DOCUMENT_TYPES.Campaign | 

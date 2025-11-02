@@ -14,6 +14,8 @@ import { TagsSchema } from './Tags';
 import { TopicSchema } from './Topic';
 import { TopicFolderSchema } from './TopicFolder';
 import { RelationshipsSchema, RelatedItemDetailsSchema } from './Relationships';
+import { EntryBasicIndexSchema } from './EntryBasicIndex';
+import { SessionBasicIndexSchema } from './SessionBasicIndex';
 
 export const schemas = {
   ToDoItem: ToDoItemSchema,
@@ -32,5 +34,7 @@ export const schemas = {
   Topic: TopicSchema,
   TopicFolder: TopicFolderSchema,
   RelatedItemDetails: RelatedItemDetailsSchema,
-  Relationships: RelationshipsSchema
+  Relationships: RelationshipsSchema,
+  EntryBasicIndex: EntryBasicIndexSchema,
+  SessionBasicIndex: SessionBasicIndexSchema,
 }

@@ -1,5 +1,12 @@
 # Change Log
 
+## v1.5.1 - Much faster setting tree rendering
+![](https://img.shields.io/badge/release%20date-November%202%2C%202025-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.5.1/module.zip)
+
+- The setting directory tree now loads much faster - especially for larger Settings
+- Fixed a bug where changing the parent of a node in a deep tree could cause it to lose track of the overall hierarchy.  This resulted in a variety of odd effects, most noticeably filtering the tree didn't work properly when the matched entry was several layers down.  If you see this happening, remove the parent of the problem entry and then set it back and the new version should clean it up.
+
 ## v1.5.0 - Tons of changes, but mostly behind the scenes
 ![](https://img.shields.io/badge/release%20date-November%201%2C%202025-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.5.0/module.zip)
@@ -21,12 +28,6 @@
 - Dragging a campaign name into an editor now properly creates a link.
 - The description box in the create entry dialog can now be expanded if desired.
 - You can now "complete" a campaign so your old campaigns don't clog up search results, etc.
-
-## v1.4.2 - Bug fix
-![](https://img.shields.io/badge/release%20date-October%209%2C%202025-blue)
-![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.4.2/module.zip)
-
-- Fixed issue where players were prompted to create a session after modifying non-Campaign Builder documents in some circumstances.
 
 ## v1.4.2 - Bug fix
 ![](https://img.shields.io/badge/release%20date-October%209%2C%202025-blue)
