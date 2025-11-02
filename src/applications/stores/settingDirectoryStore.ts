@@ -15,7 +15,7 @@ import { scrollToActiveEntry } from '@/utils/directoryScroll';
 
 // types
 import { Entry, DirectoryTopicNode, DirectoryTypeEntryNode, DirectoryEntryNode, DirectoryTypeNode, CreateEntryOptions, FCBSetting, TopicFolder, getGlobalSetting } from '@/classes';
-import { DirectorySetting, Hierarchy, Topics, ValidTopic, EntryFilterIndex, ValidTopicRecord } from '@/types';
+import { DirectorySetting, Hierarchy, Topics, ValidTopic, ValidTopicRecord, EntryBasicIndex } from '@/types';
 import { MenuItem } from '@imengyu/vue3-context-menu';
 
 // the store definition
@@ -49,7 +49,7 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
   // current search text
   const filterText = ref<string>('');
 
-  // currently displayed nodes and types
+  // currently displayed nodes and types based on the filter text
   const filterNodes = ref<ValidTopicRecord<string[]>>({});
 
   ///////////////////////////////
@@ -116,7 +116,7 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
       topicNode.loadedTypes.push(newTypeNode);
     }
 
-    newTypeNode.loadedChildren = newTypeNode.loadedChildren.concat([await DirectoryTypeEntryNode.fromEntry(entry, newTypeNode)]).sort((a,b)=>a.name.localeCompare(b.name));
+    newTypeNode.loadedChildren = newTypeNode.loadedChildren.concat([DirectoryTypeEntryNode.fromEntryBasicIndex(entry, newTypeNode)]).sort((a,b)=>a.name.localeCompare(b.name));
     newTypeNode.children.push(entry.uuid);
 
     // update the hierarchy (even for entries without hierarchy, we still need it for filtering)
@@ -173,7 +173,7 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
     if (!child)
       return false;
 
-    const childNode =  await DirectoryEntryNode.fromEntry(child);
+    const childNode =  DirectoryEntryNode.fromEntryBasicIndex({uuid: child.uuid, name: child.name, type: child.type}, topicFolder);
     const oldParentId = childNode.parentId;
 
     // make sure it's not already in the right place
@@ -182,7 +182,7 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
 
     // get the parent, if any, and create the nodes for simpler syntax 
     const parent = parentId ? await Entry.fromUuid(parentId) : null;
-    const parentNode = parent ? await DirectoryEntryNode.fromEntry(parent) : null;
+    const parentNode = parent ? DirectoryEntryNode.fromEntryBasicIndex({uuid: parent.uuid, name: parent.name, type: parent.type}, topicFolder) : null;
     
     // make sure they share a topic (if parent isn't null)
     if (parent && child.topic !== parent.topic)
@@ -197,7 +197,7 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
       const oldParent = await Entry.fromUuid(childNode.parentId);
 
       if (oldParent) {
-        const oldParentNode = await DirectoryEntryNode.fromEntry(oldParent);
+        const oldParentNode = DirectoryEntryNode.fromEntryBasicIndex({uuid: oldParent.uuid, name: oldParent.name, type: oldParent.type}, topicFolder);
         if (oldParentNode) {
           oldParentNode.children = oldParentNode.children.filter((c)=>c!==childId);
           updateHierarchyFromNode(oldParent.uuid, oldParentNode);
@@ -226,8 +226,8 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
     // recalculate the ancestor lists for all of the descendants of the child
     // first, figure out the differences between the child's old ancestors and the new ones (so we can touch fewer items)
     // we add an extra value to ancestorsToRemove so that we can ensure it's never empty (which will cause the $ne to throw an error)
-    const ancestorsToAdd = originalChildAncestors.filter(a => !childNode.ancestors.includes(a));
-    const ancestorsToRemove = childNode.ancestors.filter(a => !originalChildAncestors.includes(a));
+    const ancestorsToAdd = childNode.ancestors.filter(a => !originalChildAncestors.includes(a));
+    const ancestorsToRemove = originalChildAncestors.filter(a => !childNode.ancestors.includes(a));
 
     // then, update all of the child's descendants ancestor fields with that set of changes
     if (ancestorsToAdd || ancestorsToRemove) {
@@ -237,19 +237,19 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
         const children = hierarchies[entry.uuid]?.children || [];
 
         for (let i=0; i<children?.length; i++) {
-          const child = await Entry.fromUuid(children[i]);
+          const childEntry = await Entry.fromUuid(children[i]);
 
-          if (!child)
+          if (!childEntry)
             continue;
 
-          const childNode = await DirectoryEntryNode.fromEntry(child);
+          const childNode = DirectoryEntryNode.fromEntryBasicIndex({uuid: childEntry.uuid, name: childEntry.name, type: childEntry.type}, topicFolder);
           childNode.ancestors = childNode.ancestors.filter(a => !ancestorsToRemove.includes(a));
           childNode.ancestors = childNode.ancestors.concat(ancestorsToAdd);
 
-          updateHierarchyFromNode(child.uuid, childNode);
+          updateHierarchyFromNode(childEntry.uuid, childNode);
 
           // now do it's kids
-          await doUpdateOnDescendants(child);
+          await doUpdateOnDescendants(childEntry);
         }
       };
 
@@ -384,7 +384,10 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
     // save the parent
     const parentId = currentSetting.value.getEntryHierarchy(entryId)?.parentId || null;
 
-    const entry = (await currentSetting.value.topicFolders[topic].filterEntries((e: EntryFilterIndex) => e.uuid === entryId, true))[0];
+    const entry = await Entry.fromUuid(entryId);
+    if (!entry)
+      return;
+
     await entry.delete();
 
     // update tabs/bookmarks
@@ -464,7 +467,7 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
       await directoryTopicNode.recursivelyLoadNode(expandedNodes, updateEntryIds);
 
       // load the type-grouped entries
-      await directoryTopicNode.loadTypeEntries(topicFolders[directoryTopicNode.topicFolder.topic].types, expandedNodes);
+      directoryTopicNode.loadTypeEntries(topicFolders[directoryTopicNode.topicFolder.topic].types, expandedNodes);
     }
 
     // @ts-ignore (fvtt circularity issue)
@@ -573,9 +576,9 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
 
   // populates filterNodes with a list of all the nodes that should be shown in the current tree
   // this includes: all nodes matching the filterText, all of their ancestors, and
-  //    all of their types (we also ways leave the packs)
+  //    all of their types 
   // it's an object keyed by topic with a list of all the ids to include
-  const updateFilterNodes = async (): Promise<void> => {
+  const updateFilterNodes = () => {
     if (!currentSetting.value)
       return;
 
@@ -590,8 +593,11 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
     for (let i=0; i<topics.length; i++) {
       const topicObj = currentSetting.value.topicFolders[topics[i]];
 
+      if (!topicObj)
+        continue;
+
       // filter on name and type
-      const matchedEntryObjects = await topicObj.filterEntries((e: EntryFilterIndex)=>( filterText.value === '' || regex.test( e.name || '' ) || regex.test( e.type || '' )), false);
+      const matchedEntryObjects = topicObj.entryIndex.filter((e: EntryBasicIndex)=>( filterText.value === '' || regex.test( e.name || '' ) || regex.test( e.type || '' )));
     
       let allItemsToShow: string[] = [];
 
@@ -670,7 +676,6 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
     setNodeParent,
     refreshSettingDirectoryTree,
     updateEntryType,
-    updateFilterNodes,
     deleteSetting,
     createSetting,
     createEntry,

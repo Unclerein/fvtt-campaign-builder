@@ -1,7 +1,7 @@
 import { toRaw, } from 'vue';
 import { entryIndexFields, } from '@/documents';
 import { Entry, FCBSetting } from '@/classes';
-import { EntryFilterIndex, ValidTopic } from '@/types';
+import { EntryBasicIndex, EntryFilterIndex, ValidTopic } from '@/types';
 
 // represents a topic entry (ex. a character, location, etc.)
 export class TopicFolder {
@@ -47,12 +47,12 @@ export class TopicFolder {
     this.setting.topics[this.topic]!.types = value;
   }
 
-  /** map of entry uuid to name for all entries in the folder */
-  public get entries(): Record<string, string> {
+  /** map of entry uuid to entry data (name and type) for all entries in the folder */
+  public get entryIndex(): EntryBasicIndex[] {
     return this.setting.topics[this.topic]!.entries;
   }
 
-  public set entries(value: Record<string, string>) {
+  public set entryIndex(value: EntryBasicIndex[]) {
     this.setting.topics[this.topic]!.entries = value;
   }
   
@@ -64,15 +64,17 @@ export class TopicFolder {
    * @returns {Entry[]} The entries that pass the filter
    */
   public async filterEntries<T extends boolean>(filterFn: (s: EntryFilterIndex) => boolean, fullEntry: T): Promise<T extends true ? Entry[] : EntryFilterIndex[]> { 
+    // TODO: we could make this more efficient if we wanted to 
+    //    add actorId to the index and then calc id
     // get all the journal entries
-    const indexes = await toRaw(this.setting.compendium).getIndex(entryIndexFields);
+    const indexes = await toRaw(this.setting.compendium).getIndex(entryIndexFields());
   
     // find the sessions connected to this entries in this folder
     const entries = indexes
       .filter((e)=> (
         // filter out just the ones that are in this folders' entries list
         !!e.pages && e.pages.length===1 &&
-        !!this.entries[e.uuid]
+        !!this.entryIndex.find((entry)=> entry.uuid === e.uuid)
       ))
       .map((e) => ({ 
         name: e.name, 
