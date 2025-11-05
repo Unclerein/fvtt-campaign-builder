@@ -1,20 +1,17 @@
 <template>
-  <section class="standard-form">
-    <div class="fcb-sheet-container flexcol species-list">
-      <div class="species-list-table" data-application-part="content">
-        <BaseTable
-          :rows="rows"
-          :columns="columns"
-          :show-add-button="true"
-          :show-filter="false"
-          :allow-edit="true"
-          :add-button-label="localize('applications.speciesList.labels.add')"
-          :delete-item-label="localize('applications.speciesList.labels.delete')"
-          @delete-item="onDeleteItem"
-          @add-item="onAddItem"
-          @cell-edit-complete="onCellEditComplete"
-        />
-      </div>
+  <section class="window-content standard-form">
+    <div class="standard-form scrollable">
+      <BaseTable
+        :rows="rows"
+        :columns="columns"
+        :show-add-button="true"
+        :show-filter="false"
+        :allow-edit="true"
+        :add-button-label="localize('applications.speciesList.labels.add')"
+        :actions="[{ icon: 'fa-trash', callback: (data) => onDeleteItem(data.uuid), tooltip: localize('applications.speciesList.labels.delete') }]"
+        @add-item="onAddItem"
+        @cell-edit-complete="onCellEditComplete"
+      />
 
       <footer class="form-footer" data-application-part="footer">
       <button 
