@@ -7,12 +7,9 @@
     :extra-add-text="newItemDragLabel"
     :addButtonLabel="newItemLabel"
     :filterFields="filterFields"
-    :allowEdit="extraColumns.length > 0"
-    :edit-item-label="localize('tooltips.editRelationship')"
-    :delete-item-label="localize('tooltips.deleteRelationship')"
+    :actions="actions"
 
     @add-item="onAddItemClick"
-    @delete-item="onDeleteItemClick"
     @drop-new="onDropNew"
     @dragover="onDragover"
     @cell-edit-complete="onCellEditComplete"
@@ -25,7 +22,6 @@
     :mode="RelatedItemDialogModes.Edit"
     :item-id="editItem.itemId"
     :item-name="editItem.itemName"
-    :extra-field-values="editItem.extraFields"
   />
   <RelatedItemDialog
     v-model="addDialogShow"
@@ -55,7 +51,7 @@
   import BaseTable from '@/components/tables/BaseTable.vue';
 
   // types
-  import { Topics, ValidTopic, RelatedItemDetails, RelatedItemDialogModes, EntryNodeDragData, ValidTopicRecord } from '@/types';
+  import { Topics, ValidTopic, RelatedItemDetails, RelatedItemDialogModes, EntryNodeDragData, ValidTopicRecord, ActionButtonDefinition } from '@/types';
   
   interface RelatedItemGridRow extends Record<string, any> { 
     uuid: string; 
@@ -107,6 +103,15 @@
     });
 
     return base;
+  });
+
+  const actions = computed(() => {
+    const actions: ActionButtonDefinition[] = [{ icon: 'fa-trash', callback: (data) => onDeleteItemClick(data.uuid), tooltip: localize('tooltips.deleteRelationship') }];
+
+    if (extraColumns.value.length > 0)
+      actions.push({ icon: 'fa-pen', isEdit: true, callback: async () => {}, tooltip: localize('tooltips.editRelationship') });
+
+    return actions;
   });
 
   const newItemLabel = computed(() => {

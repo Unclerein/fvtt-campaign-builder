@@ -28,6 +28,12 @@
       <CampaignContent />
     </div>
     <div 
+      v-if="currentContentType===WindowTabType.Front"
+      class="fcb-content-wrapper"
+    >
+      <FrontContent />
+    </div>
+    <div 
       v-else-if="currentContentType===WindowTabType.NewTab"
       class="fcb-content-wrapper"
     >
@@ -51,10 +57,10 @@
   // local components 
   import EntryContent from '@/components/ContentTab/EntryContent/EntryContent.vue';
   import SessionContent from '@/components/ContentTab/SessionContent/SessionContent.vue';
-
   import CampaignContent from '@/components/ContentTab/CampaignContent/CampaignContent.vue';
   import HomePage from '@/components/ContentTab/HomePage.vue';
   import SettingContent from '@/components/ContentTab/SettingContent.vue';
+  import FrontContent from '@/components/ContentTab/FrontContent/FrontContent.vue';
   
   // types
   import { WindowTabType } from '@/types';
@@ -125,11 +131,19 @@
         margin-bottom: 0.25rem;
         
         .fcb-input-name {
+          font-size: var(--font-size-32);
+          height: 2.25rem;
+        }
+        
+        .fcb-input-sub-name {
+          font-size: var(--font-size-20);
+          height: 1.75rem;
+        }
+        
+        .fcb-input-name, .fcb-input-sub-name {
           background: none;
           color: var(--fcb-text);
           margin-left: 3px;
-          font-size: var(--font-size-32);
-          height: 2.25rem;
 
           // the box shadow when we're not focused makes the box look like the wrong background color
           box-shadow: none;
@@ -308,6 +322,44 @@
 
         &.flexcol {
           flex:1;
+        }
+
+        .form-group {
+          margin: .25rem 8px 0px 0px;
+        
+          label {
+            font-size: var(--fcb-font-size-large);
+            font-weight: 700;
+            font-family: var(--fcb-font-family);
+            color: var(--fcb-sheet-header-label-color);
+            text-align: left;
+            background: none;
+            border: none;
+
+            // this is for the labels that are on the left side of the field
+            &.side-label {
+              max-width: 175px;
+              align-self: flex-start;
+            }
+          }
+
+          // this is for ones 
+          input {
+            font-size: var(--fcb-font-size-large);
+          }
+
+          select {
+            border: var(--fcb-sheet-header-input-border);
+            font-size: inherit;
+            font-family: inherit;
+            height: calc(var(--fcb-font-size-header) + 6);
+            margin: 0px;
+            background: var(--fcb-sheet-header-input-background);
+
+            &:hover {
+              box-shadow: 0 0 8px var(--fcb-accent);
+            }
+          }
         }
       }
     }

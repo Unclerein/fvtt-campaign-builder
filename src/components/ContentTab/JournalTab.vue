@@ -9,10 +9,8 @@
         :extra-add-text="localize('labels.journals.dropToAdd')"
         :filter-fields="filterFields"
         :can-reorder="false"
-        :allow-delete="true"
-        :delete-item-label="localize('tooltips.deleteRelationship')"
+        :actions="[{ icon: 'fa-trash', callback: (data) => onDeleteItemClick(data.uuid), tooltip: localize('tooltips.deleteRelationship') }]"
 
-        @delete-item="onDeleteItemClick"
         @cell-click="onCellClick"
         @drop-new="onDropNew"
         @dragover="onDragover"

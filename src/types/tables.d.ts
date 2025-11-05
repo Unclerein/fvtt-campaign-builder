@@ -9,6 +9,21 @@ export interface TablePagination {
   filters: Record<string, { value: string | null; matchMode: DataTableFilterMetaData['matchMode']}>;   // maps field name to filter value applied to it
 }
 
+export interface ActionButtonDefinition {
+  icon: string;
+
+  /** receives the row */
+  callback: (data: Record<string, any> & { uuid: string }) => void;
+
+  tooltip: string;
+
+  /** based on the data for the row, should it be displayed */
+  display?: (data: Record<string, any> & { uuid: string}) => boolean;
+
+  /** if true, pressing the button activates row edit mode */
+  isEdit?: boolean;
+}
+
 export interface FieldData {
   field:string; 
   header: string;

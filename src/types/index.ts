@@ -20,21 +20,17 @@ export type * from './generators.ts';
 export * from './customFields.ts';
 export type * from './customFields.ts';
 
-// used to determine which component to display in the tab
-export enum ContentType {
-  Entry,
-  Campaign,
-  Session,
-  Setting,
-}
+// get all the ones defined in the schemas
+export type * from '@/documents/fields/index.ts';
 
-// should match ContentType plus NewTab
 export enum WindowTabType  {
   NewTab,
   Entry,
   Campaign,
   Session,
   Setting,
+  Front,
+  Arc,
 }
 
 export interface WindowTabHistory {
@@ -108,7 +104,8 @@ export enum SessionDisplayMode {
 export enum RelatedItemDialogModes {
   Add = 'add',
   Edit = 'edit',
-  Session = 'session' // for adding to sessions
+  Session = 'session', // for adding to sessions
+  Danger = 'danger', // for adding any topic item (ex. for front participants)
 }
 
 export enum ToDoTypes {
@@ -169,4 +166,11 @@ export type ValidDocType =
   typeof DOCUMENT_TYPES.Setting | 
   typeof DOCUMENT_TYPES.Campaign | 
   typeof DOCUMENT_TYPES.Entry | 
-  typeof DOCUMENT_TYPES.Session;
+  typeof DOCUMENT_TYPES.Session |
+  typeof DOCUMENT_TYPES.Front;
+
+export interface ContentTabDescriptor {
+  id: string;
+  label: string;
+}
+  

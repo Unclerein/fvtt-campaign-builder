@@ -6,23 +6,17 @@
       :show-filter="false"
       :filter-fields="[]"
       :add-button-label="localize('labels.campaign.addIdea')"
-      :track-delivery="false"
       :allow-drop-row="false"
       :rows="mappedIdeaRows"
       :columns="columns"
       :allow-edit="true"
       :edit-item-label="localize('tooltips.editRow')"
-      :delete-item-label="localize('tooltips.deleteIdea')"
-      :show-move-to-campaign="false"
-      :show-move-to-to-do="true"
-      :move-to-to-do-label="localize('tooltips.moveToToDo')"
       :draggable-rows="false"
       :can-reorder="true"
-      @delete-item="onDeleteIdea"
+      :actions="actions"
       @add-item="onAddIdea"
       @cell-edit-complete="onCellEditComplete"
       @reorder="onReorder"
-      @move-to-to-do="onMoveToToDo"
     >
     </BaseTable>
   </div>
@@ -67,6 +61,13 @@
     return ideaRows.value.map((row: Idea) => ({
       ...row
     }));
+  });
+
+  const actions = computed(() => {
+    return [
+      { icon: 'fa-trash', callback: (data) => onDeleteIdea(data.uuid), tooltip: localize('tooltips.deleteIdea') },
+      { icon: 'fa-arrow-right', callback: (data) => onMoveToToDo(data.uuid), tooltip: localize('tooltips.moveToToDo') },
+    ];
   });
 
   const columns = computed(() => {
