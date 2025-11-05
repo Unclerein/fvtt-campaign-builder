@@ -72,6 +72,16 @@ jobs:
       # Create a zip file with all files required by the module to add to the release
       - run: (cd module-download; zip -r ../module.zip .)
 
+      # Check if this is a prerelease (not main branch)
+      - name: Check if prerelease
+        id: check-prerelease
+        run: |
+          if [ "${{ github.ref_name }}" != "main" ]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
       # update the release with the new files
       - name: Update Release with Files
         id: create_version_release
@@ -80,7 +90,7 @@ jobs:
           allowUpdates: true # Set this to false if you want to prevent updating existing releases
           name: ${{ github.event.release.name }}
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.check-prerelease.outputs.prerelease }}
           token: ${{ secrets.RELEASE_TOKEN }}  # needs access to repo scope in classic tokens
           artifacts: './module.json, ./module.zip'
           tag: ${{ github.event.release.tag_name }}
