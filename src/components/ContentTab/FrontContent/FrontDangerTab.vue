@@ -16,6 +16,8 @@
       </header>
       
       <Panel
+        header="Overview"
+        toggleable
         :pt="{
           root: {
             style: {'margin-top': '0.5em' },
