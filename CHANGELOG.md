@@ -28,24 +28,11 @@
 - The description box in the create entry dialog can now be expanded if desired.
 - You can now "complete" a campaign so your old campaigns don't clog up search results, etc.
 
-## v1.4.2 - Bug fix
-![](https://img.shields.io/badge/release%20date-October%209%2C%202025-blue)
-![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.4.2/module.zip)
-
-- Fixed issue where players were prompted to create a session after modifying non-Campaign Builder documents in some circumstances.
-
-## v1.4.2 - Bug fix
-![](https://img.shields.io/badge/release%20date-October%209%2C%202025-blue)
-![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.4.2/module.zip)
-
-- Fixed issue where players were prompted to create a session after modifying non-Campaign Builder documents in some circumstances.
-
 ## v1.5.5 - Bug fixes 
 ![](https://img.shields.io/badge/release%20date-November%2021%2C%202025-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.5.5/module.zip)
 
 - You can now correctly create new types in the type selection box on the entry description tab
-
 
 ## v1.5.4 - Fixed migration bug 
 ![](https://img.shields.io/badge/release%20date-November%2015%2C%202025-blue)
