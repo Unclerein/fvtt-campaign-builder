@@ -128,7 +128,7 @@ export class Entry extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Entry> {
     }
     const setting = topicFolder.setting;
 
-    let nameToUse: string | null = options.name || null;
+    let nameToUse: string | null = options.name || '';
     while (nameToUse==='') {  // if hit ok, must have a value
       nameToUse = await FCBDialog.inputDialog(`Create ${topicText}`, promptText);
     }  
