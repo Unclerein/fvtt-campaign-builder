@@ -259,7 +259,7 @@
   
   // types
   import { DocumentLinkType, Topics, ValidTopic, WindowTabType, RelatedJournal, ContentTabDescriptor } from '@/types';
-  import { FCBSetting, TopicFolder, Backend, Entry, Session } from '@/classes';
+  import { FCBSetting, TopicFolder, Backend, Entry, Session, Campaign } from '@/classes';
   import { DOCUMENT_TYPES } from '@/documents';
 
 
@@ -343,7 +343,7 @@
   // methods
   const refreshEntry = async () => {
     // refresh this so we can capture changes to campaigns as soon as they happen
-    updatePushButton();
+    await updatePushButton();
 
     if (!currentEntry.value || !currentEntry.value.uuid) {
       topic.value = null;
@@ -372,27 +372,34 @@
     }
   };
 
-  /** how many campaigns have available sessions */
-  const numAvailableSessions = (): number => {
+  /** are there campaigns with available sessions? */
+  const availableCampaigns = async (): Promise<Campaign[]> => {
     if (!currentSetting.value)
-      return 0;
+      return [];
 
-    let num = 0;
+    const retval = [] as Campaign[];
+
     // otherwise check all campaigns until we find one with sessions that don't have it
-    for (const campaignId of Object.keys(currentSetting.value?.campaigns || {})) {
-      if (currentSetting.value?.campaigns[campaignId].currentSession && !currentSetting.value.campaigns[campaignId].currentSession.npcs.find((npc) => npc.uuid===currentEntry.value?.uuid)) {
-        num++;
+    for (const campaign of Object.values(currentSetting.value?.campaigns || {})) {
+      if (campaign.currentSessionNumber == null || !campaign.currentSessionId)
+        continue;
+
+      const session = await Session.fromUuid(campaign.currentSessionId);
+
+      if (!session)
+        continue;
+
+      if (!session.npcs.find((npc) => npc.uuid===currentEntry.value?.uuid)) {
+        retval.push(campaign);
       }
     }
 
-    return num;
+    return retval;
   };
 
   // this is a bit odd, but using computed functions doesn't work because they don't update when campaigns are added, etc. and it seemed like a lot of overhead to capture changes there just for this title
-  const updatePushButton = (): void => {
-    const numSessions = numAvailableSessions();
-    
-    if (numSessions===0) {
+  const updatePushButton = async (): Promise<void> => {    
+    if ((await availableCampaigns()).length === 0) {
       pushButtonTitle.value = localize('tooltips.sessionUnavailable');
       pushButtonDisabled.value = true;
     } else {
@@ -454,14 +461,13 @@
       return;
     }
 
-    // e have more than one; now find all the campaigns with an active session
-    let campaignsWithSessions = [] as { uuid: string; name: string}[];
-
-    for (const campaignId of Object.keys(currentSetting.value.campaigns)) {
-      if (currentSetting.value?.campaigns[campaignId].currentSession && !currentSetting.value.campaigns[campaignId].currentSession.npcs.find((npc) => npc.uuid===currentEntry.value?.uuid)) {
-        campaignsWithSessions.push({ uuid: campaignId, name: currentSetting.value.campaigns[campaignId].name });
-      }
-    }
+    // we have more than one; now find all the campaigns with an active session
+    let campaignsWithSessions = (await availableCampaigns()).map((c) => ({
+      uuid: c.uuid,
+      name: c.name,
+      currentSessionId: c.currentSessionId,
+      currentSessionNumber: c.currentSessionNumber,
+    }));
 
     // if there aren't any, we're done (though this should never happen because the button shouldn't be enabled)
     if (campaignsWithSessions.length===0) {
@@ -469,8 +475,6 @@
     }
 
     // if there's more than one, we need the menu
-    const campaigns = currentSetting.value.campaigns;
-
     interface MenuItem {
       label: string;
       onClick: () => void | Promise<void>;
@@ -485,28 +489,31 @@
     let activeItem: MenuItem | null = null;
     if (currentPlayedCampaign.value?.currentSessionId) {
       currentCampaignId = currentPlayedCampaign.value.uuid;
-      
-      activeItem = {
-        label: `${campaigns[currentCampaignId].name} (#${campaigns[currentCampaignId].currentSessionNumber})`,        
-        customClass: 'push-to-active-campaign-menu-item',
-        onClick: async () => { await selectCampaignForPush(currentCampaignId as string); },
-        divided: campaignsWithSessions.length > 1 ? 'down' : undefined,
-      };
+      const currentCampaign = campaignsWithSessions.find((c) => c.uuid===currentCampaignId);
+
+      if (currentCampaign) {
+        activeItem = {
+          label: `${currentCampaign.name} (#${currentCampaign.currentSessionNumber})`,        
+          customClass: 'push-to-active-campaign-menu-item',
+          onClick: async () => { await selectCampaignForPush(currentCampaignId as string); },
+          divided: campaignsWithSessions.length > 1 ? 'down' : undefined,
+        };
+      }
     }
 
     // check for any other campaigns
-    for (const campaignId of Object.keys(campaigns)) {
+    for (const campaign of campaignsWithSessions) {
       // skip the one we added above
-      if (campaignId === currentCampaignId)
+      if (campaign.uuid === currentCampaignId)
         continue;
 
       // skip ones without sessions
-      if (!campaigns[campaignId].currentSessionId)
+      if (!campaign.currentSessionId)
         continue;
 
       menuItems.push({
-        label: `${campaigns[campaignId].name} (#${campaigns[campaignId].currentSessionNumber})`,        
-        onClick: async () => { await selectCampaignForPush(campaignId); },
+        label: `${campaign.name} (#${campaign.currentSessionNumber})`,        
+        onClick: async () => { await selectCampaignForPush(campaign.uuid); },
       });
     }
 
@@ -549,7 +556,7 @@
     }
 
     notifyInfo(`${currentEntry.value.name} ${localize('notifications.addedToSession')}`);
-    updatePushButton();// # of available changed
+    await updatePushButton();// # of available changed
   };
 
   const onGenerateButtonClick = (event: MouseEvent): void => {
