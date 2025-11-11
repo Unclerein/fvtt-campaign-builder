@@ -1,5 +1,11 @@
 # Change Log
 
+## v1.5.3 - Fixed bug adding journal entries to lore
+![](https://img.shields.io/badge/release%20date-November%2011%2C%202025-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.5.3/module.zip)
+
+- You can now add journal entries to lore rows (not just journal entry pages)
+
 ## v1.5.2 - Fixed bug preventing PC creation
 ![](https://img.shields.io/badge/release%20date-November%208%2C%202025-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.5.2/module.zip)
