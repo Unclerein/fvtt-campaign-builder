@@ -73,7 +73,7 @@
           <div class="flexrow form-group description">
             <Editor
                 :initial-content="currentSetting.description || ''"
-                fixed-height="240px"
+                fixed-height="300px"
                 :current-entity-uuid="currentSetting?.uuid"
                 @editor-saved="onDescriptionEditorSaved"
               />
@@ -150,7 +150,7 @@
   
   const tabs = computed(() => [
     { id: 'description', label: localize('labels.tabs.setting.description') },
-    { id: 'journals', label: localize('labels.tabs.setting.journals') },
+    { id: 'journals', label: localize('labels.journals') },
   ]);
 
   ////////////////////////////////

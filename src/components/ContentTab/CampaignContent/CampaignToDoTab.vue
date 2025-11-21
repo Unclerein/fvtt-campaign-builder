@@ -38,8 +38,7 @@
   import BaseTable from '@/components/tables/BaseTable.vue';
   
   // types
-  import { ToDoItem, ToDoTypes, BaseTableGridRow } from '@/types';
-  import { DataTableCellEditCompleteEvent } from 'primevue';
+  import { ToDoItem, ToDoTypes, BaseTableGridRow, CellEditCompleteEvent } from '@/types';
 
   // store
   const campaignStore = useCampaignStore();
@@ -108,16 +107,15 @@
     }
   };
 
-  const onCellEditComplete = async (event: DataTableCellEditCompleteEvent) => {
-    const { data, newValue, field, originalEvent } = event;
+  const onCellEditComplete = async (event: CellEditCompleteEvent) => {
+    const { data, newValue, field, } = event;
 
     switch (field) {
       case 'text':
-        await campaignStore.updateToDoItem(data.uuid, newValue);
+        await campaignStore.updateToDoItem(data.uuid, newValue as string);
         break;
 
       default:
-        originalEvent?.preventDefault();
         break;
     }  
   }

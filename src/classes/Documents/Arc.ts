@@ -1,14 +1,15 @@
 // represents a game session 
 
 import { toRaw } from 'vue';
-import { DOCUMENT_TYPES, } from '@/documents';
+import { ArcLocation, ArcLore, ArcMonster, ArcParticipant, DOCUMENT_TYPES, } from '@/documents';
 import { searchService } from '@/utils/search';
 import { FCBDialog } from '@/dialogs';
 import { Campaign } from './Campaign';
-import { getGlobalSetting, } from './FCBSetting';
 import { localize } from '@/utils/game';
 import { FCBJournalEntryPage, FCBJournalEntryPageStatic } from './FCBJournalEntryPage';
-import { Danger } from '@/types';
+import { Session } from './Session';
+import { getGlobalSetting } from '@/utils/globalSettings';
+import { Idea } from '@/types';
 
 type ArcDocClass = JournalEntryPage<typeof DOCUMENT_TYPES.Arc>;
 
@@ -16,15 +17,17 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
   static override _documentType = DOCUMENT_TYPES.Arc;
   static override _defaultSystem = { 
     campaignId: '',  
-    // strongStart: '',  
-    // locations: [],  
-    // items: [],  
-    // npcs: [],  
-    // monsters: [],  
-    // vignettes: [],  
-    // lore: [],  
+    startSessionNumber: -1,
+    endSessionNumber: -1,
+    sortOrder: 0,
+    customFields: {},
+    locations: [],  
+    participants: [],  
+    monsters: [],  
+    ideas: [],
+    lore: [],  
     img: '',   
-    // tags: [],
+    tags: [],
   } as unknown as ArcDocClass['system'];
 
   public campaign: Campaign | null;  // the campaign the front is in (if we don't setup up front, we can load it later)
@@ -41,8 +44,8 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
 
   static override async fromUuid<
     T extends FCBJournalEntryPageStatic<any, any>
-  > (this: T, frontId: string): Promise<InstanceType<T> | null> { 
-      const arc = await super.fromUuid(frontId) as unknown as (Arc | null);
+  > (this: T, arcId: string): Promise<InstanceType<T> | null> { 
+      const arc = await super.fromUuid(arcId) as unknown as (Arc | null);
       
       if (!arc)
         return null;
@@ -76,7 +79,7 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
     let nameToUse: string | null = name;
 
     while (nameToUse==='') {  // if hit ok, must have a value
-      nameToUse = await FCBDialog.inputDialog(localize('dialogs.createArc.title'), `${localize('dialogs.createArc.frontName')}:`); 
+      nameToUse = await FCBDialog.inputDialog(localize('dialogs.createArc.title'), `${localize('dialogs.createArc.arcName')}:`); 
     }  
     
     // if name is null, then we cancelled the dialog
@@ -94,21 +97,16 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
     if (!arc)
       return null;
 
-    await arc.save();
-
-    // add to campaign
+    // add to campaign and setting indexes; also sets the sort order
+    //    because we don't want to call Arc.update() until it's been
+    //    added to the index
     await campaign.addArc(arc);
     
     // Add to search index
     try {
-      // TODO: 
-      // const front = await getGlobalSetting(front.settingId);
-      // if (!front)
-      //   throw new Error('Invalid setting in Front.create()');
-
-      // await searchService.addOrUpdateFrontIndex(front, setting);
+      await searchService.addOrUpdateArcIndex(arc);
     } catch (error) {
-      console.error('Failed to add front to search index:', error);
+      console.error('Failed to add arc to search index:', error);
     }
 
     return arc;
@@ -117,6 +115,90 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
   public async isCampaignCompleted(): Promise<boolean> {
     const campaign = await this.loadCampaign();
     return campaign.completed;
+  }
+
+  get startSessionNumber(): number {
+    return this._clone.system.startSessionNumber;
+  }
+
+  set startSessionNumber(value: number) {
+    this._clone.system.startSessionNumber = value;
+  }
+
+  get endSessionNumber(): number {
+    return this._clone.system.endSessionNumber;
+  }
+
+  set endSessionNumber(value: number) {
+    this._clone.system.endSessionNumber = value;
+  }
+
+  public get ideas(): readonly Idea[] {
+    return this._clone.system.ideas;
+  }
+
+  public set ideas(value: Idea[] | readonly Idea[]) {
+    this._clone.system.ideas = value.slice();     // we clone it so it can't be edited outside (this is historical)
+  }
+
+  /** Creates a new idea item and adds to the arc*/
+  /** returns the uuid */
+  public async addIdea(text: string): Promise<string | null> {
+    const item: Idea = {
+      uuid: foundry.utils.randomID(),
+      text: text || '',
+      sortOrder: this._clone.system.ideas.reduce((max, item) => Math.max(max, item.sortOrder), -1) + 1,
+    };
+
+    this._clone.system.ideas.push(item);
+    await this.save();
+
+    return item.uuid;
+  }
+  
+  public async updateIdea(uuid: string, newText: string): Promise<void> {
+    const item = this._clone.system.ideas.find(i => i.uuid === uuid);
+    if (!item)
+      return;
+
+    item.text = newText;
+    await this.save();
+  }
+
+  public async deleteIdea(uuid: string): Promise<void> {
+    this._clone.system.ideas = this._clone.system.ideas.filter(i => i.uuid !== uuid);
+    await this.save();
+  }
+
+  public async moveIdeaToCampaign(uuid: string): Promise<void> {
+    const item = this._clone.system.ideas.find(i => i.uuid === uuid);
+    if (!item)
+      return;
+
+    await this.campaign?.addIdea(item.text);    
+    this._clone.system.ideas = this._clone.system.ideas.filter(i => i.uuid !== uuid);
+    await this.save();
+  }
+
+
+  public async getLastSession(): Promise<Session | null> {
+    if (this.endSessionNumber==-1)
+      return null;
+
+    await this.loadCampaign();
+    const index = this.campaign?.sessionIndex.find(s=> s.number===this.endSessionNumber);
+    if (!index)
+      return null;
+
+    return (await Session.fromUuid(index.uuid)) || null;
+  }
+
+  get sortOrder(): number {
+    return this._clone.system.sortOrder;
+  }
+
+  set sortOrder(value: number) {
+    this._clone.system.sortOrder = value;
   }
 
   get tags(): string[] {
@@ -137,15 +219,6 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
     this._clone.text.content = value;
   }
 
-  //TODO
-  // get strongStart(): string {
-  //   return this._clone.system.strongStart;
-  // }
-
-  // set strongStart(value: string) {
-  //   this._clone.system.strongStart = value;
-  // }
-
   get img(): string {
     return this._clone.system.img || '';
   }
@@ -154,281 +227,156 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
     this._clone.system.img = value;
   }
 
-  // get locations(): SessionLocation[] {
-  //   return this._clone.system.locations || [];
-  // }
-
-  // set locations(value: SessionLocation[] | readonly SessionLocation[]) {
-  //   this._clone.system.locations = value.slice();     // we clone it so it can't be edited outside
-  // }
+  get locations(): ArcLocation[] {
+    return this._clone.system.locations || [];
+  }
 
-  // async addLocation(uuid: string, delivered: boolean = false): Promise<void> {
-  //   if (this._clone.system.locations.find(l=> l.uuid===uuid))
-  //     return;
+  set locations(value: ArcLocation[] | readonly ArcLocation[]) {
+    this._clone.system.locations = value.slice();     // we clone it so it can't be edited outside
+  }
 
-  //   this._clone.system.locations.push({
-  //     uuid: uuid,
-  //     delivered: delivered
-  //   });
+  async addLocation(uuid: string, notes: string = ''): Promise<void> {
+    if (this._clone.system.locations.find(l=> l.uuid===uuid))
+      return;
 
-  //   await this.save();
-  // }
+    this._clone.system.locations.push({ uuid, notes });
+    await this.save();
+  }
 
-  // async deleteLocation(uuid: string): Promise<void> {
-  //   this._clone.system.locations = this._clone.system.locations.filter(l=> l.uuid!==uuid);
-  //   await this.save();
-  // }
+  async deleteLocation(uuid: string): Promise<void> {
+    this._clone.system.locations = this._clone.system.locations.filter(l=> l.uuid!==uuid);
+    await this.save();
+  }
 
-  // TODO: ability to mark grim portents off as done
-  // async markLocationDelivered(uuid: string, delivered: boolean): Promise<void> {
-  //   const location = this._clone.system.locations.find((l) => l.uuid===uuid);
-  //   if (!location)
-  //     return;
-    
-  //   location.delivered = delivered; 
+  async updateLocationNotes(uuid: string, notes: string): Promise<void> {
+    const location = this._clone.system.locations.find(s=> s.uuid===uuid);
 
-  //   await this.save();
-  // }
+    if (!location)
+      return;
 
-  // get npcs(): SessionNPC[] {
-  //   return this._clone.system.npcs || [];
-  // }
-
-  // set npcs(value: SessionNPC[] | readonly SessionNPC[]) {
-  //   this._clone.system.npcs = value.slice();     // we clone it so it can't be edited outside
-  // }
-
-  // async addNPC(uuid: string, delivered: boolean = false): Promise<void> {
-  //   if (this._clone.system.npcs.find(l=> l.uuid===uuid))
-  //     return;
-
-  //   this._clone.system.npcs.push({
-  //     uuid: uuid,
-  //     delivered: delivered
-  //   });
+    location.notes = notes;
 
-  //   await this.save();
-  // }
+    await this.save();
+  }
 
-  // async deleteNPC(uuid: string): Promise<void> {
-  //   this._clone.system.npcs = this._clone.system.npcs.filter(l=> l.uuid!==uuid);
+  get participants(): ArcParticipant[] {
+    return this._clone.system.participants || [];
+  }
 
-  //   await this.save();
-  // }
+  set participants(value: ArcParticipant[] | readonly ArcParticipant[]) {
+    this._clone.system.participants = value.slice();     // we clone it so it can't be edited outside
+  }
 
-  // async markNPCDelivered(uuid: string, delivered: boolean): Promise<void> {
-  //   const npc = this._clone.system.npcs.find((l) => l.uuid===uuid);
-  //   if (!npc)
-  //     return;
-    
-  //   npc.delivered = delivered;
+  async addParticipant(uuid: string, notes: string = ''): Promise<void> {
+    if (this._clone.system.participants.find(l=> l.uuid===uuid))
+      return;
 
-  //   await this.save();
-  // }
+    this._clone.system.participants.push({uuid, notes});
 
-  // get vignettes(): SessionVignette[] {
-  //   return this._clone.system.vignettes || [];
-  // }
+    await this.save();
+  }
 
-  // set vignettes(value: SessionVignette[] | readonly SessionVignette[]) {
-  //   this._clone.system.vignettes = value.slice();     // we clone it so it can't be edited outside
-  // }
+  async deleteParticipant(uuid: string): Promise<void> {
+    this._clone.system.participants = this._clone.system.participants.filter(l=> l.uuid!==uuid);
 
-  // async addVignette(description: string): Promise<string> {
-  //   const uuid = foundry.utils.randomID();
+    await this.save();
+  }
 
-  //   this._clone.system.vignettes.push({
-  //     uuid: uuid,
-  //     description: description,
-  //     delivered: false
-  //   });
+  async updateParticipantNotes(uuid: string, notes: string): Promise<void> {
+    const participant = this._clone.system.participants.find(s=> s.uuid===uuid);
 
-  //   await this.save();
-  //   return uuid;
-  // }
+    if (!participant)
+      return;
 
-  // async updateVignetteDescription(uuid: string, description: string): Promise<void> {
-  //   const vignette = this._clone.system.vignettes.find(s=> s.uuid===uuid);
+    participant.notes = notes;
 
-  //   if (!vignette)
-  //     return;
+    await this.save();
+  }
 
-  //   vignette.description = description;
+  get lore(): ArcLore[] {
+    return this._clone.system.lore || [];
+  }
 
-  //   await this.save();
-  // }
+  set lore(value: ArcLore[] | readonly ArcLore[]) {
+    this._clone.system.lore = value.slice();     // we clone it so it can't be edited outside
+  }
 
+  async addLore(description: string): Promise<string> {
+    const uuid = foundry.utils.randomID();
 
-  // async deleteVignette(uuid: string): Promise<void> {
-  //   this._clone.system.vignettes = this._clone.system.vignettes.filter(l=> l.uuid!==uuid);
+    this._clone.system.lore.push({
+      uuid: uuid,
+      description: description,
+      journalEntryPageId: null,
+      sortOrder: this._clone.system.lore.length,
+    });
 
-  //   await this.save();
-  // }
+    await this.save();
+    return uuid;
+  }
 
-  // async markVignetteDelivered(uuid: string, delivered: boolean): Promise<void> {
-  //   const vignette = this._clone.system.vignettes.find((s) => s.uuid===uuid);
-  //   if (!vignette)
-  //     return;
-    
-  //   vignette.delivered = delivered;
+  async updateLoreDescription(uuid: string, description: string): Promise<void> {
+    const lore = this._clone.system.lore.find(l=> l.uuid===uuid);
 
-  //   await this.save();
-  // }
+    if (!lore)
+      return;
 
-  // get lore(): SessionLore[] {
-  //   return this._clone.system.lore || [];
-  // }
+    lore.description = description;
 
-  // set lore(value: SessionLore[] | readonly SessionLore[]) {
-  //   this._clone.system.lore = value.slice();     // we clone it so it can't be edited outside
-  // }
+    await this.save();
+  }
 
-  // async addLore(description: string): Promise<string> {
-  //   const uuid = foundry.utils.randomID();
+  async updateLoreJournalEntry(loreUuid: string, journalEntryPageId: string | null): Promise<void> {
+    const lore = this._clone.system.lore.find(l=> l.uuid===loreUuid);
 
-  //   this._clone.system.lore.push({
-  //     uuid: uuid,
-  //     description: description,
-  //     delivered: false,
-  //     significant: false,
-  //     journalEntryPageId: null,
-  //     sortOrder: this._clone.system.lore.length,
-  //   });
+    if (!lore)
+      return;
 
-  //   await this.save();
-  //   return uuid;
-  // }
+    lore.journalEntryPageId = journalEntryPageId;
 
-  // async updateLoreDescription(uuid: string, description: string): Promise<void> {
-  //   const lore = this._clone.system.lore.find(l=> l.uuid===uuid);
+    await this.save();
+  }
 
-  //   if (!lore)
-  //     return;
 
-  //   lore.description = description;
+  async deleteLore(uuid: string): Promise<void> {
+    this._clone.system.lore = this._clone.system.lore.filter(l=> l.uuid!==uuid);
 
-  //   await this.save();
-  // }
+    await this.save();
+  }
 
-  // async updateLoreJournalEntry(loreUuid: string, journalEntryPageId: string | null): Promise<void> {
-  //   const lore = this._clone.system.lore.find(l=> l.uuid===loreUuid);
+  get monsters(): ArcMonster[] {
+    return this._clone.system.monsters || [];
+  }
 
-  //   if (!lore)
-  //     return;
+  set monsters(value: ArcMonster[] | readonly ArcMonster[]) {
+    this._clone.system.monsters = value.slice();     // we clone it so it can't be edited outside
+  }
 
-  //   lore.journalEntryPageId = journalEntryPageId;
+  async addMonster(uuid: string, notes: string = ''): Promise<void> {
+    if (this._clone.system.monsters.find(l=> l.uuid===uuid))
+      return;
 
-  //   await this.save();
-  // }
+    this._clone.system.monsters.push({ uuid, notes });
 
+    await this.save();
+  }
 
-  // async deleteLore(uuid: string): Promise<void> {
-  //   this._clone.system.lore = this._clone.system.lore.filter(l=> l.uuid!==uuid);
+  async updateMonsterNotes(uuid: string, notes: string): Promise<void> {
+    const monster = this._clone.system.monsters.find(l=> l.uuid===uuid);
 
-  //   await this.save();
-  // }
+    if (!monster)
+      return;
 
-  // async markLoreSignificant(uuid: string, significant: boolean): Promise<void> {
-  //   const lore = this._clone.system.lore.find((l) => l.uuid===uuid);
-  //   if (!lore)
-  //     return;
-    
-  //   lore.significant = significant;
+    monster.notes = notes;
 
-  //   await this.save();
-  // }
+    await this.save();
+  }
 
-  // async markLoreDelivered(uuid: string, delivered: boolean): Promise<void> {
-  //   const lore = this._clone.system.lore.find((l) => l.uuid===uuid);
-  //   if (!lore)
-  //     return;
-    
-  //   lore.delivered = delivered;
+  async deleteMonster(uuid: string): Promise<void> {
+    this._clone.system.monsters = this._clone.system.monsters.filter(l=> l.uuid!==uuid);
 
-  //   await this.save();
-  // }
-
-  // get monsters(): SessionMonster[] {
-  //   return this._clone.system.monsters || [];
-  // }
-
-  // set monsters(value: SessionMonster[] | readonly SessionMonster[]) {
-  //   this._clone.system.monsters = value.slice();     // we clone it so it can't be edited outside
-  // }
-
-  // async addMonster(uuid: string, number = 1): Promise<void> {
-  //   if (this._clone.system.monsters.find(l=> l.uuid===uuid))
-  //     return;
-
-  //   this._clone.system.monsters.push({
-  //     uuid: uuid,
-  //     number: number,
-  //     delivered: false
-  //   });
-
-  //   await this.save();
-  // }
-
-  // async updateMonsterNumber(uuid: string, value: number): Promise<void> {
-  //   const monster = this._clone.system.monsters.find(l=> l.uuid===uuid);
-
-  //   if (!monster)
-  //     return;
-
-  //   monster.number = value;
-
-  //   await this.save();
-  // }
-
-  // async deleteMonster(uuid: string): Promise<void> {
-  //   this._clone.system.monsters = this._clone.system.monsters.filter(l=> l.uuid!==uuid);
-
-  //   await this.save();
-  // }
-
-  // async markMonsterDelivered(uuid: string, delivered: boolean): Promise<void> {
-  //   const monster = this._clone.system.monsters.find((l) => l.uuid===uuid);
-  //   if (!monster)
-  //     return;
-    
-  //   monster.delivered = delivered;
-
-  //   await this.save();
-  // }
-
-  // get items(): SessionItem[] {
-  //   return this._clone.system.items || [];
-  // }
-
-  // set items(value: SessionItem[] | readonly SessionItem[]) {
-  //   this._clone.system.items = value.slice();     // we clone it so it can't be edited outside
-  // }
-
-  // async addItem(uuid: string): Promise<void> {
-  //   if (this._clone.system.items.find(i=> i.uuid===uuid))
-  //     return;
-
-  //   this._clone.system.items.push({
-  //     uuid: uuid,
-  //     delivered: false
-  //   });
-
-  //   await this.save();
-  // }
-
-  // async deleteItem(uuid: string): Promise<void> {
-  //   this._clone.system.items = this._clone.system.items.filter(i=> i.uuid!==uuid);
-  //   await this.save();
-  // }
-
-  // async markItemDelivered(uuid: string, delivered: boolean): Promise<void> {
-  //   const item = this._clone.system.items.find((i) => i.uuid===uuid);
-  //   if (!item)
-  //     return;
-    
-  //   item.delivered = delivered;
-  //   await this.save();
-  // }
+    await this.save();
+  }
 
   get campaignId(): string {
     return this._clone.system.campaignId;
@@ -438,6 +386,18 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
     this._clone.system.campaignId = value;
   }
 
+  public async deleteSession(session: Session): Promise<void> {    
+    const setting = await this.getSetting();
+    if (!setting)
+      throw new Error('Invalid setting in Arc.deleteSession()');
+    
+    const campaign = await Campaign.fromUuid(this.campaignId);
+    if (!campaign)
+      throw new Error('Invalid campaign in Arc.deleteSession()');
+
+    await campaign.deleteSession(session);
+  }
+
   // used to set arbitrary properties on the entryDoc
   /**
    * Updates a front in the database
@@ -445,8 +405,6 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
    * @returns A promise that resolves after the update
    */
   public async save(): Promise<void> {
-    const campaign = await this.loadCampaign();
-
     // we attempt to save first - because if it fails, we don't 
     //    want to adjust anything else
     try {
@@ -455,15 +413,15 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
       throw error;
     }
 
+    // update the campaign and setting indexes
+    const campaign = await Campaign.fromUuid(this.campaignId);
+    if (!campaign)
+      throw new Error('Invalid campaign in Arc.save()');
+    await campaign.updateArc(this);
+
     // Update the search index (rely on retval being null if no changes were made)
     try {
-      const setting = await getGlobalSetting(this.settingId);
-
-      //TODO
-      // if (!setting)
-      //   throw new Error('Setting not found in Session.save()');
-      
-      // await searchService.addOrUpdateSessionIndex(this, setting);
+      await searchService.addOrUpdateArcIndex(this);
     } catch (error) {
       console.error('Failed to update search index:', error);
     }
@@ -481,12 +439,15 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
     if (!campaign)
       throw new Error('Campaign not found in Front.delete()');
     
-    await campaign.deleteFront(this);
+    await campaign.deleteArc(this);  // removes from setting, too
     
     await toRaw(this._doc).delete();
 
+    // Remove from search index
+    searchService.removeSearchEntry(id);
+
     // remove from the expanded list
-    await setting.deleteFrontFromSetting(id);
+    await setting.deleteIdFromExpandedList(id);
   }
     
 }

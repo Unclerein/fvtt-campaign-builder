@@ -9,6 +9,7 @@ import { useCampaignDirectoryStore, useMainStore, useNavigationStore, usePlaying
 import { FCBDialog } from '@/dialogs';
 import { localize } from '@/utils/game'; 
 import { htmlToPlainTextReplaceUuid } from '@/utils/sanitizeHtml';
+import { getArcForSession } from '@/utils/arcIndex';
 
 // types
 import { 
@@ -23,7 +24,7 @@ import {
 } from '@/types';
 import { SessionLore, SessionVignette } from '@/documents';
 
-import { Entry, Session } from '@/classes';
+import { Arc, Entry, Session } from '@/classes';
 
 export enum SessionTableTypes {
   None,
@@ -79,7 +80,7 @@ export const useSessionStore = defineStore('session', () => {
         onClick: onJournalClick
       },
     ],  
-  } as Record<SessionTableTypes, FieldData>;
+  } as unknown as Record<SessionTableTypes, FieldData[]>;
 
   
   ///////////////////////////////
@@ -514,6 +515,37 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   /**
+   * Move a lore back to the arc as unused.
+   * @param uuid the UUID of the lore to move
+   */
+  const moveLoreToArc = async (uuid: string): Promise<void> => {
+    if (!currentSession.value)
+      return;
+
+    const currentLore = currentSession.value.lore.find(l=> l.uuid===uuid);
+
+    if (!currentLore)
+      return;
+
+
+    const campaign = await currentSession.value.loadCampaign();
+
+    if (!campaign) 
+      return;
+
+    const arcIndex = getArcForSession(campaign.arcIndex, currentSession.value.number);
+    const arc = arcIndex ? await Arc.fromUuid(arcIndex.uuid) : null;
+    if (!arc)
+      return;
+    
+    // have a next session - add there and delete here
+    await arc.addLore(currentLore.description);
+    await currentSession.value.deleteLore(uuid);
+
+    await _refreshLoreRows();
+  }
+
+  /**
    * Adds a magic item to the session.
    * @param uuid the UUID of the item to add.
    */
@@ -683,7 +715,8 @@ export const useSessionStore = defineStore('session', () => {
       return null;
 
     const nextSessionNumber = currentSession.value.number+1;
-    const nextSessionIndex = campaign.sessionIndex.find(s=> s.number === nextSessionNumber);
+    const nextSessionIndex = campaign.sessionIndex
+      .find(s=> s.number === nextSessionNumber);
 
     if (nextSessionIndex) {
       const nextSession = await Session.fromUuid(nextSessionIndex.uuid);
@@ -951,7 +984,7 @@ export const useSessionStore = defineStore('session', () => {
   const _refreshRowsForTab = async () => {
     switch (currentContentTab.value) {
       case 'notes':
-        await _refreshLocationRows();
+        // await _refreshLocationRows();
         break;
       case 'lore':
         await _refreshLoreRows();
@@ -1038,5 +1071,6 @@ export const useSessionStore = defineStore('session', () => {
     markLoreSignificant,
     moveLoreToNext,
     moveLoreToCampaign,
+    moveLoreToArc,
   };
 });

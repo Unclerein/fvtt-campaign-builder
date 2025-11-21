@@ -17,7 +17,7 @@
           @click="onArcFolderClick"
         ></i>
         <i :class="'icon fas ' + getTabTypeIcon(WindowTabType.Arc)" style="margin-right: 4px;"></i>
-        <span data-testid="arc-name">
+        <span data-testid="arc-name" @click="onArcSelectClick">
           <span 
             :class="`node-name ${props.arcNode.id===currentArc?.uuid ? 'active' : ''}`"
           >
@@ -56,7 +56,6 @@
   import { getTabTypeIcon } from '@/utils/misc';
 
   // library components
-  import ContextMenu from '@imengyu/vue3-context-menu';
   
   // local components
   import CampaignDirectorySessionNode from './CampaignDirectorySessionNode.vue';
@@ -82,7 +81,7 @@
   const campaignDirectoryStore = useCampaignDirectoryStore();
   const navigationStore = useNavigationStore();
   const mainStore = useMainStore();
-  const { currentArc } = storeToRefs(mainStore);
+  const { currentArc, } = storeToRefs(mainStore);
 
   ////////////////////////////////
   // data
@@ -117,28 +116,24 @@
   //   event.dataTransfer?.setData('text/plain', JSON.stringify(dragData));
   // };
 
-  // change campaign
+  // change arc
   const onArcFolderClick = async (_event: MouseEvent) => {
-    // if it's completed, don't toggle
-    if (currentNode.value.completed) {
-      return;
-    }
-
-    // TODO:
     currentNode.value = await campaignDirectoryStore.toggleWithLoad(currentNode.value as DirectoryArcNode, !currentNode.value.expanded);
   };
 
   const onArcSelectClick = async (event: MouseEvent) => {
-    // TODO
-    // await navigationStore.openCampaign(currentNode.value.id, {newTab: event.ctrlKey});
+    await navigationStore.openArc(currentNode.value.id, {newTab: event.ctrlKey});
   };
 
+  // hidden for now because we want all management to go through arcmanager and only add sessions
+  //    to campaign
   const onArcContextMenu = (event: MouseEvent): void => {
-    // TODO
-    // //prevent the browser's default menu
-    // event.preventDefault();
-    // event.stopPropagation();
+    //prevent the browser's default menu
+    event.preventDefault();
+    event.stopPropagation();
 
+    // we don't allow deleting here because I don't feel like adding rebalance code right now and
+    //   it's probably better for users to visualize the arc structure in the manager
     // //show our menu
     // ContextMenu.showContextMenu({
     //   customClass: 'fcb',
@@ -147,56 +142,12 @@
     //   zIndex: 300,
     //   items: [
     //     { 
-    //       icon: getTabTypeIcon(WindowTabType.Session),
-    //       iconFontClass: 'fas',
-    //       disabled: isInPlayMode.value,
-    //       label: localize('contextMenus.campaignFolder.createSession'), 
-    //       onClick: async () => {
-    //         const session = await campaignDirectoryStore.createSession(props.campaignNode.id);
-
-    //         if (session) {
-    //           await navigationStore.openSession(session.uuid, { newTab: true, activate: true, }); 
-    //         }
-    //       }
-    //     },
-    //     { 
-    //       icon: getTabTypeIcon(WindowTabType.Front),
-    //       iconFontClass: 'fas',
-    //       disabled: isInPlayMode.value,
-    //       label: localize('contextMenus.campaignFolder.createFront'), 
-    //       onClick: async () => {
-    //         const front = await campaignDirectoryStore.createFront(props.campaignNode.id);
-
-    //         if (front) {
-    //           await navigationStore.openFront(front.uuid, { newTab: true, activate: true, }); 
-    //         }
-    //       }
-    //     },
-    //     { 
-    //       icon: 'fa-check-circle',
-    //       iconFontClass: 'fas',
-    //       label: props.campaignNode.completed ? localize('contextMenus.campaignFolder.markActive') : localize('contextMenus.campaignFolder.markComplete'),
-    //       hidden: isInPlayMode.value,
-    //       onClick: async () => {
-    //         const campaign = await Campaign.fromUuid(props.campaignNode.id);
-    //         if (campaign) {
-    //           campaign.completed = !campaign.completed;
-    //           await campaign.save();
-
-    //           // Update the local node's completed status
-    //           props.campaignNode.completed = campaign.completed;
-    //           // Refresh the campaign directory to show the updated status
-    //           await campaignDirectoryStore.refreshCampaignDirectoryTree();
-    //         }
-    //       }
-    //     },
-    //     { 
     //       icon: 'fa-trash',
     //       iconFontClass: 'fas',
-    //       label: localize('contextMenus.campaignFolder.delete'), 
-    //       disabled: isInPlayMode.value,
+    //       label: localize('contextMenus.arcFolder.delete'), 
+    //       disabled: onlyArc.value,
     //       onClick: async () => {
-    //         await campaignDirectoryStore.deleteCampaign(props.campaignNode.id);
+    //         await campaignDirectoryStore.deleteArc(props.arcNode.id);
     //       }
     //     },
     //   ]
