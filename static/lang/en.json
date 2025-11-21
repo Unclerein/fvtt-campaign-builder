@@ -65,9 +65,7 @@
       "showRolePlayingNotes": "Show role playing notes on entries",
       "showRolePlayingNotesHelp": "When true, a separate field for role playing notes will be shown separately from the Entry description.",
       "useFronts": "Use Fronts",
-      "useFrontsHelp": "Turn on campaign \"front\" functionality.",
-      "useArcs": "Use Arcs",
-      "useArcsHelp": "Group sessions into story arcs within each campaign."
+      "useFrontsHelp": "Turn on campaign \"front\" functionality."
     },
     "applications": {
       "sessionNotes": {
@@ -214,6 +212,11 @@
       "close": "Close",
       "update": "Update",
       "noToAll": "No to All",
+      "actors": "Actors",
+      "sessions": "Sessions",
+      "scenes": "Scenes",
+      "journals": "Journals",
+
       "tableHeaders": {
         "actions": "Actions",
         "name": "Name",
@@ -285,8 +288,12 @@
       "entry": {
         "topic": "TopicFolder",
         "type": "Type",
-        "relationships": "Relationships",
-        "sessions": "Sessions"
+        "relationships": "Relationships"
+      },
+      "arc": {
+        "addParticipant": "Add Participant",
+        "addParticipantDrag": "(or drag/drop a character/organization)",
+        "participantHelpText": "Characters and organizations likely to come up during the arc"
       },
       "session": {
         "session": "Session",
@@ -306,6 +313,8 @@
         "addActorDrag": "(or drag/drop an actor)",
         "addScene": "Add scene",
         "addSceneDrag": "(or drag/drop a scene)",
+        "addJournal": "Add Journal",
+        "addJournalDrag": "(or drag/drop a journal or journal page)", 
         "loreHelpText": "Tweet-sized bits of useful and interesting information. Click to read more from Lazy DM.",
         "itemHelpText": "Magic items that fit your PCs and the plot. Click to read more from Lazy DM.",
         "npcHelpText": "NPCs likely to be encountered in the session.",
@@ -316,6 +325,7 @@
         "strongStartHelpText": "A strong start is a short, impactful event that sets the tone for the session. Click to read more from Lazy DM."
       },
       "front": {
+        "front": "Front",
         "motivation": "Motivation",
         "grimPortents": "Grim Portents",
         "participants": "Participants",
@@ -323,10 +333,6 @@
         "addParticipant": "Add Participant",
         "addPortent": "Add Grim Portent",
         "portentHelpText": "Grim portents are the events that will occur if the danger is not dealt with. They can bring resolution, open new paths, shift the story."
-      },
-      "journals": {
-        "addJournal": "Add Journal",
-        "dropToAdd": "(or drag/drop a journal or journal page)" 
       },
       "campaign": {
         "addPC": "Add PC",
@@ -348,32 +354,36 @@
       "tabs": {
         "entry": {
           "description": "Description",
-          "journals": "Journals",
           "characters": "Characters",
           "locations": "Locations",
           "pcs": "PCs",
           "locationChildren": "Child locations",
           "organizations": "Organizations",
-          "organizationChildren": "Sub-organizations",
-          "scenes": "Scenes",
-          "actors": "Actors",
-          "sessions": "Sessions"
+          "organizationChildren": "Sub-organizations"
         },
         "campaign": {
           "description": "Description",
-          "journals": "Journals",
           "pcs": "PCs",
           "lore": "Lore",
           "toDo": "To-Do",
           "ideas": "Ideas"
         },
         "setting": {
-          "description": "Description",
-          "journals": "Journals"
+          "description": "Description"
         },
         "front": {
           "description": "Description",
           "createNewDanger": "Create new Danger"
+        },
+        "arc": {
+          "arc": "Arc",
+          "description": "Description",
+          "pcs": "PCs",
+          "lore": "Lore",
+          "locations": "Locations",
+          "participants": "Participants",
+          "monsters": "Monsters",
+          "ideas": "Ideas"
         },
         "session": {
           "notes": "Notes",
@@ -399,6 +409,7 @@
       "locationName": "Location Name",
       "organizationName": "Organization Name",
       "pcName": "PC Name",
+      "arcName": "Arc Name",
       "campaignName": "Campaign Name",
       "settingName": "Setting Name",
       "sessionName": "Session Name",
@@ -426,6 +437,9 @@
         "emailSettingsNotSet": "You have enabled the email idea list feature, but you haven't set a default Setting or Campaign.  Please set these in the advanced settings.",
         "rollTablesNotAvailable": "Backend is not available. Automatic RollTables will not be refreshed. Configure the backend in Advanced Settings to enable AI-generated names that match your world's theme."
       },
+      "participantCopiedToNextSession": "Participant copied to next session",
+      "locationCopiedToNextSession": "Location copied to next session",
+      "monsterCopiedToNextSession": "Monster copied to next session",
       "todoReferenceNotFound": "The linked reference for this to-do item no longer exists.",
       "addedToSession": "added to session",
       "changesSaved": "Changes saved",
@@ -468,6 +482,22 @@
         "generatedRoleplayNotes": "Generated roleplaying notes",
         "generatePrompt": "Press generate for results",
         "generatePrompt2": "Otherwise, \"Brief Description\" will be used as the new Entry description."
+      },
+      "arcManager": {
+        "title": "Manage Arcs",
+        "labels": {
+          "edit": "Edit arc",
+          "delete": "Delete arc",
+          "addArc": "Add Arc"
+        },
+        "missingSession": "Missing Session",
+        "warning": {
+          "mustBeBlank": "There are no sessions in the campaign, so start and end must be blank",
+          "invalidSessionNumber": "Invalid session number",
+          "startTooHigh": "Start session must be less than end session",
+          "bothBlank": "Start and end session numbers must either both be blank or both be non-blank",
+          "allSessionsCovered": "All sessions must be covered by an arc"
+        }
       },
       "createPC": {
         "title": "Create PC",
@@ -547,11 +577,6 @@
         "title": "Manage Related Entries",
         "addedItems": "Add relationships to these?",
         "removedItems": "Remove relationships from these?"
-      },
-      "contextMenus": {
-        "cannotActivateFromCompendium": "Cannot activate from compendium",
-        "cannotToggleNavigationFromCompendium": "Cannot toggle navigation from scene in a compendium",
-        "cannotToggleNavigationWhileActive": "Cannot toggle navigation while scene is active"
       }
     },
     "contextMenus": {
@@ -573,15 +598,27 @@
       "campaignFolder": {
         "createSession": "Create a session",
         "createFront": "Create a front",
+        "createArc": "Create an arc",
+        "manageArcs": "Manage arcs",
         "delete": "Delete campaign",
         "markComplete": "Mark campaign complete",
         "markActive": "Mark campaign active"
       },
+      "arcFolder": {
+        "createSession": "Create a session",
+        "delete": "Delete arc"
+      },
       "session": {
         "delete": "Delete session"
       },
+      "dialogs": {
+        "cannotActivateFromCompendium": "Cannot activate from compendium",
+        "cannotToggleNavigationFromCompendium": "Cannot toggle navigation from scene in a compendium",
+        "cannotToggleNavigationWhileActive": "Cannot toggle navigation while scene is active"
+      },
       "image": {
         "viewImage": "View Image",
+        "showToPlayers": "Show to players",
         "changeImage": "Change Image",
         "addImage": "Add Image",
         "removeImage": "Remove Image",
@@ -625,6 +662,7 @@
       "historyBack": "Back",
       "historyForward": "Forward",
       "editRelationship": "Edit relationship",
+      "editNotes": "Edit notes",
       "editParticipant": "Edit participant",
       "editPortent": "Edit grim portent",
       "deleteRelationship": "Delete relationship",
@@ -645,7 +683,10 @@
       "markAsDelivered": "Mark as delivered",
       "unmarkAsDelivered": "Unmark as delivered",
       "moveToNextSession": "Move to next session",
+      "copyToNextSession": "Copy to next session",
       "moveToCampaign": "Move to campaign for later usage",
+      "moveToArc": "Move to arc for later usage",
+      "movetoLastArc": "Move to latest arc",
       "addToCampaign": "Add to campaign",
       "addToASession": "Add to a session",
       "sessionUnavailable": "No campaigns with an active session, or this entry is already attached to them all",

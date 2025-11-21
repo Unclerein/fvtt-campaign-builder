@@ -6,7 +6,7 @@ import { reactive, ref, watch, nextTick } from 'vue';
 
 // local imports
 import { useMainStore, useNavigationStore, usePlayingStore } from '@/applications/stores';
-import { DirectoryCampaignNode, Campaign, Session, FCBSetting, Front, DirectoryArcNode, DirectoryFrontFolder, } from '@/classes';
+import { DirectoryCampaignNode, Campaign, Session, FCBSetting, Front, DirectoryArcNode, DirectoryFrontFolder, Arc, } from '@/classes';
 import { FCBDialog } from '@/dialogs';
 import { notifyWarn } from '@/utils/notifications';
 import { ModuleSettings, SettingKey } from '@/settings';
@@ -72,39 +72,25 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
     const campaigns = currentSetting.value.campaigns;
 
     for (const campaign of Object.values(campaigns)) {
-      // a few possibilities here:
-      //   - if we are using fronts, the first child is the front folder
-      //   - if we are using arcs, the rest of the children are arcs; otherwise they are sessions
+      // if we are using fronts, the first child is the front folder
       let children: string[] = [];
       if (ModuleSettings.get(SettingKey.useFronts)) {
         children.push(campaign.uuid + ':front');  // this is the id for the front folder
       }
 
-      if (ModuleSettings.get(SettingKey.useArcs)) {
-        // TODO: flesh out the arcs
-        // For now, we need a placeholder or children don't get loaded
-        children.push(campaign.uuid + ':arc');
-
-        currentCampaignTree.value.push(new DirectoryCampaignNode(
-          campaign.uuid,
-          campaign.name,  // name
-          children.slice(),
-          [],
-          expandedNodes[campaign.uuid] || false,
-          campaign.completed
-        ));      
-      } else {
-        children = children.concat(campaign.sessionIndex.map(s=> s.uuid) || []);
-
-        currentCampaignTree.value.push(new DirectoryCampaignNode(
-          campaign.uuid,
-          campaign.name,  // name
-          children.slice(),
-          [],
-          expandedNodes[campaign.uuid] || false,
-          campaign.completed
-        ));      
+      // the rest of the children are arcs
+      for (const arc of currentSetting.value.campaignIndex.find((c)=>c.uuid===campaign.uuid)?.arcs || []) {
+        children.push(arc.uuid);
       }
+
+      currentCampaignTree.value.push(new DirectoryCampaignNode(
+        campaign.uuid,
+        campaign.name,  // name
+        children.slice(),
+        [],
+        expandedNodes[campaign.uuid] || false,
+        campaign.completed
+      ));      
     }
     
     // Sort and add to reactive array
@@ -139,6 +125,9 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
   };
 
   const deleteCampaign = async(campaignId: string): Promise<void> => {
+    if (!currentSetting.value)
+      return;
+    
     // have to delete all the sessions, too - not from the database (since deleting campaign
     //    will do that), but from the UI
     const campaign = await Campaign.fromUuid(campaignId);
@@ -156,11 +145,13 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
     if (!(await FCBDialog.confirmDialog('Delete campaign?', 'Are you sure you want to delete this campaign?')))
       return;
   
-    const sessions = await campaign.allSessions();
-    for (let i=0; i<sessions.length; i++) {
-      await navigationStore.cleanupDeletedEntry(sessions[i].uuid);
+    for (const arc of campaign.arcIndex) {
+      await navigationStore.cleanupDeletedEntry(arc.uuid);
     }
 
+    for (const session of campaign.sessionIndex) {
+      await navigationStore.cleanupDeletedEntry(session.uuid);
+    }
     await campaign.delete();
 
     // update tabs/bookmarks
@@ -214,15 +205,23 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
     await refreshCampaignDirectoryTree();
   };
 
+  /** create a session in campaign. Puts it at the end.
+   *  @param campaignId the campaign to create the session 
+   */
   const createSession = async (campaignId: string): Promise<Session | null> => {
+    if (!currentSetting.value)
+      return null;
+
     const campaign = await Campaign.fromUuid(campaignId);
     if (!campaign)
-      throw new Error('Bad campaign in campaignDirectoryStore.createSession()');
+      throw new Error('Bad campaign in campaignDirectoryStore.createSessionInArc()');
 
     const session = await Session.create(campaign);
 
     if (session) {
-      await refreshCampaignDirectoryTree();
+      // need to force the parent arc to reload (which is always the last one)
+      const lastArc = campaign.arcIndex.at(-1);
+      await refreshCampaignDirectoryTree([session.uuid, lastArc!.uuid]);
       return session;
     } else {
       return null;
@@ -239,6 +238,27 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
     if (front) {
       await refreshCampaignDirectoryTree();
       return front;
+    } else {
+      return null;
+    }
+  };
+
+  /** create an arc in campaign. Puts it at the end.
+   *  @param campaignId the campaign to create the arc 
+   */
+  const createArc = async (campaignId: string): Promise<Arc | null> => {
+    if (!currentSetting.value)
+      return null;
+
+    const campaign = await Campaign.fromUuid(campaignId);
+    if (!campaign)
+      throw new Error('Bad campaign in campaignDirectoryStore.createArc()');
+
+    const arc = await Arc.create(campaign);
+
+    if (arc) {
+      await refreshCampaignDirectoryTree();
+      return arc;
     } else {
       return null;
     }
@@ -332,6 +352,7 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
     deleteSession,
     deleteFront,
     createSession,
+    createArc,
     createFront,
     createCampaign,
     getCampaigns,

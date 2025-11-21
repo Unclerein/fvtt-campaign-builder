@@ -1,8 +1,8 @@
 import MiniSearch from 'minisearch';
-import { Entry, Session, FCBSetting } from '@/classes';
+import { Entry, Session, FCBSetting, Arc, Front } from '@/classes';
 import { Topics, ValidTopic, } from '@/types';
 import { ModuleSettings, SettingKey } from '@/settings';
-import { SessionLore, SessionRelatedItem, SessionVignette } from '@/documents';
+import { ArcLore, SessionLore, SessionRelatedItem, SessionVignette } from '@/documents';
 
 /**
  * Represents a searchable item in the index, containing all relevant search fields.
@@ -12,7 +12,7 @@ export interface SearchableItem {
   /** Unique identifier for the item */
   uuid: string;
   /** Type of result: entry, session */
-  resultType: 'entry' | 'session';
+  resultType: 'entry' | 'session' | 'front' | 'arc';
   /** Display name of the item */
   name: string;
   /** Comma-separated list of tags associated with the item */
@@ -40,7 +40,7 @@ export interface FCBSearchResult {
   /** Display name of the result */
   name: string;
   /** Type of result: entry, session */
-  resultType: 'entry' | 'session';
+  resultType: 'entry' | 'session' | 'front' | 'arc';
   /** Topic/category the result belongs to */
   topic: string;
 
@@ -126,21 +126,18 @@ class SearchService {
     if (!this._searchIndex)
       throw new Error('Unable to create _searchIndex in SearchService.buildIndex()');
 
-    // Process each topic 
-    const topics = [Topics.Character, Topics.Location, Topics.Organization, Topics.PC] as ValidTopic[];
-    
     // Collect all items first
     const items = [] as SearchableItem[];
 
     // add all the entries
-    const entries = await setting.allEntries(true);
+    const entries = await setting.allEntries();
       
     for (const entry of entries) {
       // Create a searchable item for each entry
       items.push(await this.createSearchableItemFromEntry(entry, setting));
     }
 
-    // add all the sessions, by campaign
+    // add all the sessions, arcs, and fronts by campaign
     for (const campaignId in setting.campaigns) {
       const campaign = setting.campaigns[campaignId];
 
@@ -151,6 +148,21 @@ class SearchService {
       for (const session of sessions) { 
         // Create a searchable item for each session
         const item = await this.createSearchableItemFromSession(session);
+        items.push(item);
+      }
+
+      for (const index of campaign.arcIndex) { 
+        const arc = await Arc.fromUuid(index.uuid);
+        
+        // Create a searchable item for each arc
+        const item = await this.createSearchableItemFromArc(arc!);
+        items.push(item);
+      }
+
+      const fronts = await campaign.allFronts();
+      for (const front of fronts) { 
+        // Create a searchable item for each front
+        const item = await this.createSearchableItemFromFront(front);
         items.push(item);
       }
     }
@@ -274,7 +286,6 @@ class SearchService {
    * Extracts relationships, hierarchy information, and other metadata for indexing.
    * 
    * @param session - The session to convert
-   * @param setting - The setting containing the item
    * @returns A promise that resolves to the searchable item
    */
   private async createSearchableItemFromSession(session: Session): Promise<SearchableItem> {
@@ -283,39 +294,13 @@ class SearchService {
 
     description = session.notes + '|' + session.strongStart;
 
-    // Add relationship snippets
-    // locations, npcs - entries
-    // items, monsters - documents
-    // vignettes, lore - documents
-    const addEntrySnippet = async <T extends SessionRelatedItem>(relatedEntries: Readonly<T[]>, fromUuidCallback: (string)=>Promise<{name?:string | undefined} | null>) => {
-      for (const relatedItem of relatedEntries) {
-        // only index delivered ones
-        if (!relatedItem.delivered) 
-          continue;
+    await addSessionEntrySnippet(snippets, session.locations, (uuid) => Entry.fromUuid(uuid));
+    await addSessionEntrySnippet(snippets, session.npcs, (uuid) => Entry.fromUuid(uuid));
+    await addSessionEntrySnippet(snippets, session.items, fromUuid);
+    await addSessionEntrySnippet(snippets, session.monsters, fromUuid);
 
-        const fullRelatedItem = await fromUuidCallback(relatedItem.uuid);
-        
-        if (fullRelatedItem?.name)
-          snippets.push(`${fullRelatedItem?.name}`);
-      }
-    };
-    await addEntrySnippet(session.locations, (uuid) => Entry.fromUuid(uuid));
-    await addEntrySnippet(session.npcs, (uuid) => Entry.fromUuid(uuid));
-    await addEntrySnippet(session.items, fromUuid);
-    await addEntrySnippet(session.monsters, fromUuid);
-
-    // vignettes, lore
-    const addShortSnippet = async (relatedEntries: readonly SessionLore[] | readonly SessionVignette[]) => {
-      for (const relatedItem of relatedEntries) {
-        // only index delivered ones
-        if (!relatedItem.delivered) 
-          continue;
-
-        snippets.push(`${relatedItem?.description}`);
-      }
-    };
-    await addShortSnippet(session.lore);
-    await addShortSnippet(session.vignettes);
+    addSessionShortSnippet(snippets, session.lore);
+    addSessionShortSnippet(snippets, session.vignettes);
 
     return {
       uuid: session.uuid,
@@ -330,20 +315,80 @@ class SearchService {
     };
   }
 
-  private async createSearchableItemFromPC(pc: PC): Promise<SearchableItem> {
-    // pcs don't have any relationships, so we just put in the basic info
+  /**
+   * Creates a searchable item from a session with all relevant search fields populated.
+   * Extracts relationships, hierarchy information, and other metadata for indexing.
+   * 
+   * @param front - The front to convert
+   * @returns A promise that resolves to the searchable item
+   */
+  private async createSearchableItemFromFront(front: Front): Promise<SearchableItem> {
+    const snippets: string[] = [];
+    let description = '';
+
+    description = front.description;
+
+    // for each danger, add some snippets
+    for (const danger of front.dangers) {
+      snippets.push(danger.name);
+      snippets.push(danger.description);
+      snippets.push(danger.impendingDoom);
+      snippets.push(danger.motivation);
+      snippets.push(danger.grimPortents.map(p=>p.description).join('|'));
+
+      // add participants
+      for (const participant of danger.participants) {
+        const entry = await Entry.fromUuid(participant.uuid);
+        if (entry)
+          snippets.push(entry.name);
+      }
+    }
+
     return {
-      uuid: pc.uuid,
-      name: pc.name,
-      resultType: 'pc',
-      tags: '',
-      description: pc.background,
-      topic: 'PC',
+      uuid: front.uuid,
+      name: front.name,
+      resultType: 'front',
+      tags: !front.tags ? '' : front.tags.join(', '),
+      description: description,
+      topic: 'Front',
       species: '',
       type: '',
-      relationships: pc.plotPoints,  // to weight like relationships
+      relationships: snippets.join(' '),
     };
   }
+
+  /**
+   * Creates a searchable item from a session with all relevant search fields populated.
+   * Extracts relationships, hierarchy information, and other metadata for indexing.
+   * 
+   * @param arc - The arc to convert
+   * @returns A promise that resolves to the searchable item
+   */
+  private async createSearchableItemFromArc(arc: Arc): Promise<SearchableItem> {
+    const snippets: string[] = [];
+    let description = '';
+
+    description = arc.description;
+
+    await addArcEntrySnippet(snippets, arc.locations, (uuid) => Entry.fromUuid(uuid));
+    await addArcEntrySnippet(snippets, arc.participants, (uuid) => Entry.fromUuid(uuid));
+    await addArcEntrySnippet(snippets, arc.monsters, fromUuid);
+
+    addArcShortSnippet(snippets, arc.lore);
+
+    return {
+      uuid: arc.uuid,
+      name: arc.name,
+      resultType: 'arc',
+      tags: !arc.tags ? '' : arc.tags.join(', '),
+      description: description,
+      topic: 'Arc',
+      species: '',
+      type: '',
+      relationships: snippets.join(' '),
+    };
+  }
+
   /**
    * Searches the index for items matching the specified query string.
    * Uses fuzzy matching and field weighting to return the most relevant results.
@@ -406,10 +451,9 @@ class SearchService {
    * If the item already exists, it will be replaced with the updated version.
    * 
    * @param entry - The entry to add or update
-   * @param setting - The setting containing the entry
    * @returns A promise that resolves when the operation is complete
    */
-  public async addOrUpdateSessionIndex(session: Session, setting: FCBSetting): Promise<void> {
+  public async addOrUpdateSessionIndex(session: Session): Promise<void> {
     // don't index sessions for completed campaigns
     if (await session.isCampaignCompleted())
       return;
@@ -423,7 +467,63 @@ class SearchService {
 
     // Create and add the new searchable item
     // @ts-ignore - can't get item to type right, but this should always work
-    const searchableItem = await this.createSearchableItemFromSession(session, setting);
+    const searchableItem = await this.createSearchableItemFromSession(session);
+    if (this._searchIndex.has(searchableItem.uuid))
+      this._searchIndex.replace(searchableItem);
+    else
+      this._searchIndex.add(searchableItem);
+  }
+
+  /**
+   * Adds or updates an entry in the search index for a front.
+   * If the item already exists, it will be replaced with the updated version.
+   * 
+   * @param front - The front to add or update
+   * @returns A promise that resolves when the operation is complete
+   */
+  public async addOrUpdateFrontIndex(front: Front): Promise<void> {
+    // don't index sessions for completed campaigns
+    if (await front.isCampaignCompleted())
+      return;
+    
+    if (!this._initialized || !this._searchIndex) {
+      await this.initIndex();
+    }
+    
+    if (!this._searchIndex)
+      throw new Error('Couldn\'t create search index in search.addOrUpdateFrontIndex()');
+
+    // Create and add the new searchable item
+    // @ts-ignore - can't get item to type right, but this should always work
+    const searchableItem = await this.createSearchableItemFromFront(front);
+    if (this._searchIndex.has(searchableItem.uuid))
+      this._searchIndex.replace(searchableItem);
+    else
+      this._searchIndex.add(searchableItem);
+  }
+
+  /**
+   * Adds or updates an entry in the search index.
+   * If the item already exists, it will be replaced with the updated version.
+   * 
+   * @param arc - The arc to add or update
+   * @returns A promise that resolves when the operation is complete
+   */
+  public async addOrUpdateArcIndex(arc: Arc): Promise<void> {
+    // don't index sessions for completed campaigns
+    if (await arc.isCampaignCompleted())
+      return;
+    
+    if (!this._initialized || !this._searchIndex) {
+      await this.initIndex();
+    }
+    
+    if (!this._searchIndex)
+      throw new Error('Couldn\'t create search index in search.addOrUpdateArcIndex()');
+
+    // Create and add the new searchable item
+    // @ts-ignore - can't get item to type right, but this should always work
+    const searchableItem = await this.createSearchableItemFromArc(arc);
     if (this._searchIndex.has(searchableItem.uuid))
       this._searchIndex.replace(searchableItem);
     else
@@ -436,7 +536,7 @@ class SearchService {
    * 
    * @param uuid - The UUID of the item to remove
    */
-  public removeEntry(uuid: string): void {
+  public removeSearchEntry(uuid: string): void {
     if (!this._initialized || !this._searchIndex) {
       return;
     }
@@ -497,6 +597,55 @@ class SearchService {
     return retval;
   }
 }
+
+// Add relationship snippets
+// locations, npcs - entries
+// items, monsters - documents
+// vignettes, lore - documents
+async function addSessionEntrySnippet<T extends SessionRelatedItem>(snippets: string[], relatedEntries: Readonly<T[]>, fromUuidCallback: (string)=>Promise<{name?:string | undefined} | null>) {
+  for (const relatedItem of relatedEntries) {
+    // only index delivered ones
+    if (!relatedItem.delivered) 
+      continue;
+
+    const fullRelatedItem = await fromUuidCallback(relatedItem.uuid);
+    
+    if (fullRelatedItem?.name)
+      snippets.push(`${fullRelatedItem?.name}`);
+  }
+};
+
+// Add relationship snippets
+// locations, participants - entries
+// monsters - documents
+// lore - documents
+async function addArcEntrySnippet<T extends { uuid: string }>(snippets: string[], relatedEntries: Readonly<T[]>, fromUuidCallback: (string)=>Promise<{name?:string | undefined} | null>) {
+  for (const relatedItem of relatedEntries) {
+    const fullRelatedItem = await fromUuidCallback(relatedItem.uuid);
+    
+    if (fullRelatedItem?.name)
+      snippets.push(`${fullRelatedItem?.name}`);
+  }
+};
+
+// vignettes, lore
+function addSessionShortSnippet(snippets: string[], relatedEntries: readonly SessionLore[] | readonly SessionVignette[]) {
+  for (const relatedItem of relatedEntries) {
+    // only index delivered ones
+    if (!relatedItem.delivered) 
+      continue;
+
+    snippets.push(`${relatedItem?.description}`);
+  }
+};
+
+// vignettes, lore
+function addArcShortSnippet(snippets: string[], relatedEntries: readonly ArcLore[]) {
+  for (const relatedItem of relatedEntries) {
+    snippets.push(`${relatedItem?.description}`);
+  }
+};
+
 
 /**
  * Singleton instance of the search service for use throughout the application.

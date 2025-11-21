@@ -43,19 +43,9 @@
         draggable="false"
       />
       <CampaignDirectoryArcNode 
-        v-if="ModuleSettings.get(SettingKey.useArcs)"
         v-for="node in sortedChildren"
         :key="'arc' + node.id"
         :arc-node="node as DirectoryArcNode"
-        :top="true"
-        class="fcb-entry-item" 
-        draggable="true"
-      />
-      <CampaignDirectorySessionNode 
-        v-else
-        v-for="node in sortedChildren"
-        :key="node.id"
-        :session-node="node as DirectorySessionNode"
         :top="true"
         class="fcb-entry-item" 
         draggable="true"
@@ -74,12 +64,12 @@
   import { useCampaignDirectoryStore, useNavigationStore, useMainStore } from '@/applications/stores';
   import { getTabTypeIcon } from '@/utils/misc';
   import { ModuleSettings, SettingKey } from '@/settings';
+  import { FCBDialog } from '@/dialogs';
 
   // library components
   import ContextMenu from '@imengyu/vue3-context-menu';
   
   // local components
-  import CampaignDirectorySessionNode from './CampaignDirectorySessionNode.vue';
   import CampaignDirectoryArcNode from './CampaignDirectoryArcNode.vue';
   import CampaignDirectoryFrontFolder from './CampaignDirectoryFrontFolder.vue';
 
@@ -114,7 +104,7 @@
   
   ////////////////////////////////
   // computed data
-  const sortedChildren = computed((): DirectorySessionNode[] | DirectoryArcNode[] => {
+  const sortedChildren = computed((): DirectoryArcNode[] => {
     let children = props.campaignNode.loadedChildren;
 
     // if we are using fronts, strip the front folder
@@ -122,13 +112,10 @@
       children = children.slice(1);
     }
 
-    // sort sessions by number, arcs by name
-    if (ModuleSettings.get(SettingKey.useArcs)) {
-      return (children as DirectoryArcNode[]).sort((a, b) => a.name.localeCompare(b.name));
-    } else {
-      return (children as DirectorySessionNode[]).sort((a, b) => a.sessionNumber - b.sessionNumber);
-    }
+    // arcs are already in order (they are kept in sortorder by manage arcs dialog)
+    return children as DirectoryArcNode[];
   });
+
   const frontFolderNode = computed((): DirectoryFrontFolder | null => {
     if (ModuleSettings.get(SettingKey.useFronts)) {
       // front is always the first one
@@ -205,6 +192,26 @@
             if (session) {
               await navigationStore.openSession(session.uuid, { newTab: true, activate: true, }); 
             }
+          }
+        },
+        { 
+          icon: getTabTypeIcon(WindowTabType.Arc),
+          iconFontClass: 'fas',
+          label: localize('contextMenus.campaignFolder.createArc'), 
+          onClick: async () => {
+            const arc = await campaignDirectoryStore.createArc(props.campaignNode.id);
+
+            if (arc) {
+              await navigationStore.openArc(arc.uuid, { newTab: true, activate: true, }); 
+            }
+          }
+        },
+        { 
+          icon: getTabTypeIcon(WindowTabType.Arc),
+          iconFontClass: 'fas',
+          label: localize('contextMenus.campaignFolder.manageArcs'), 
+          onClick: async () => {
+            FCBDialog.arcManagerDialog(props.campaignNode.id);
           }
         },
         { 
