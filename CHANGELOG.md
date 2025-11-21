@@ -13,6 +13,13 @@
 - Fixed bug where changes to referenced document names wasn't always updating the names referenced in campaign builder.
 - Fixed a bug where some entries with no type were missing from the 'grouped by type' tree.
 
+## v1.5.5 - Bug fixes 
+![](https://img.shields.io/badge/release%20date-November%2021%2C%202025-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.5.5/module.zip)
+
+- You can now correctly create new types in the type selection box on the entry description tab
+
+
 ## v1.5.4 - Fixed migration bug 
 ![](https://img.shields.io/badge/release%20date-November%2015%2C%202025-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.5.4/module.zip)
