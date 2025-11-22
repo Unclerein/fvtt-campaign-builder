@@ -108,7 +108,9 @@
             "name": "Tiefling",
             "description": "Gezeichnet durch infernalisches Erbe, besitzen Tieflinge teuflische Merkmale, eine angeborene Feuerresistenz und ein Talent für Magie. Sie haben Hörner, Schwänze und ungewöhnliche Augen- und Hautfarben, die von tiefem Rot bis zu Violett und Blau reichen."
           }
-        }
+        },
+        "newSpecies": "Neue Spezies",
+        "newDescription": "Beschreibung für neue Spezies"
       },
       "advancedSettings": {
         "title": "Erweiterte Einstellungen konfigurieren",
@@ -364,7 +366,8 @@
         "journalName": "Journal",
         "pageName": "Journalseite",
         "type": "Typ",
-        "role": "Rolle"
+        "role": "Rolle",
+        "description": "Beschreibung"
       },
       "locations": {
         "compendium": "Kompendium",
@@ -383,7 +386,6 @@
         "grimPortents": "Düstere Vorzeichen",
         "participants": "Teilnehmer",
         "impendingDoom": "Drohendem Untergang",
-        "addParticipant": "Teilnehmer hinzufügen",
         "addPortent": "Düsteres Vorzeichen hinzufügen",
         "portentHelpText": "Düstere Vorzeichen sind die Ereignisse, die eintreten werden, wenn die Gefahr nicht beseitigt wird. Sie können eine Lösung bringen, neue Wege eröffnen, die Geschichte verändern.",
         "front": "Vorderseite"
@@ -395,6 +397,11 @@
         "addParticipant": "Teilnehmer hinzufügen",
         "addParticipantDrag": "(oder ziehen/ablegen eines Charakters/Organisation)",
         "participantHelpText": "Charaktere und Organisationen, die wahrscheinlich während des Bogens auftauchen"
+      },
+      "complete": "Vollständig",
+      "danger": {
+        "addParticipant": "Teilnehmer hinzufügen",
+        "addParticipantDrag": "(oder ziehen/ablegen eines Charakters/Organisation)"
       }
     },
     "placeholders": {
@@ -622,6 +629,9 @@
         "cannotActivateFromCompendium": "Kann nicht aus dem Kompendium aktiviert werden",
         "cannotToggleNavigationFromCompendium": "Kann die Navigation von einer Szene im Kompendium nicht umschalten",
         "cannotToggleNavigationWhileActive": "Kann die Navigation nicht umschalten, während die Szene aktiv ist"
+      },
+      "front": {
+        "delete": "Vorderseite löschen"
       }
     },
     "tooltips": {
