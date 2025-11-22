@@ -80,9 +80,9 @@
 
   const columns = computed((): any[] => {
     // for now, just action and name
-    const actionColumn = { field: 'actions', style: 'text-align: left; width: 75px;', header: 'Actions' };
-    const nameColumn = { field: 'name', style: 'text-align: left; width: 20%;', header: 'Name', sortable: true, editable: true, smallEditBox: true }; 
-    const descriptionColumn = { field: 'description', style: 'text-align: left', header: 'Description', sortable: true, editable: true }; 
+    const actionColumn = { field: 'actions', style: 'text-align: left; width: 75px;', header: localize('labels.tableHeaders.actions') };
+    const nameColumn = { field: 'name', style: 'text-align: left; width: 20%;', header: localize('labels.tableHeaders.name'), sortable: true, editable: true, smallEditBox: true }; 
+    const descriptionColumn = { field: 'description', style: 'text-align: left', header: localize('labels.tableHeaders.description'), sortable: true, editable: true }; 
 
     return [actionColumn, nameColumn, descriptionColumn];
   });
@@ -104,8 +104,8 @@
     // Add a new empty species to our list
     const newSpecies = {
       id: foundry.utils.randomID(),
-      name: '!New Species',   // ! to put at top of the list to make visible (since you'll probably be there when adding)
-      description: 'Description for new species',
+      name: `!${localize('applications.speciesList.newSpecies')}`,   // ! to put at top of the list to make visible (since you'll probably be there when adding)
+      description: localize('applications.speciesList.newDescription'),
     };
     speciesList.value.push(newSpecies);
   };

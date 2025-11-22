@@ -20,6 +20,10 @@ Before prepping for a session, you first have to create the overall [^Campaign] 
 * [Create](/reference/campaign-mgt/content/campaign/) your Campaign
 * Attach the [PCs](/reference/campaign-mgt/content/campaign/pcs) to the campaign
 * Start to capture your [Ideas](/reference/campaign-mgt/content/campaign/ideas)
+* Create or update [Fronts](/reference/campaign-mgt/content/front/) to track long-term threats and storylines for the campaign
+
+### Arcs and long-term planning
+* [Create](/reference/campaign-mgt/content/arc/) story [^Arcs] to [group](/reference/campaign-mgt/content/arc/manager) related sessions
 
 ### Sessions
 * Review [PCs](/reference/campaign-mgt/content/session/pcs) - think through plot points to bring in to the next game
@@ -41,6 +45,17 @@ Before prepping for a session, you first have to create the overall [^Campaign] 
 * [Campaign Directory](/reference/navigation/sidebar#campaign-directory)
 * [Campaign Details](/reference/campaign-mgt/content/campaign/)
 * [Session Details](/reference/campaign-mgt/content/session/)
+* [Front Details](/reference/campaign-mgt/content/front/)
+
+## Fronts and long-term threats
+[Fronts] are an optional tool for tracking larger-scale threats and story threads across many sessions. A [^Front] is made up of one or more [^Dangers], each with [^Grim Portents] and an [^Impending Doom].
+
+If you like to think about how the world changes off-screen, or want to keep track of villain plans and looming disasters, Fronts give you a home for that work:
+- During **World Building**, you create the people, places, and organizations that Fronts will later reference.
+- During **Session Prep**, you can update Fronts so their Dangers are ready to intersect with the next session.  You can mark Grim Portents complete as events unfold.
+- When you **Record Results**, you can adjust Fronts based on what actually happened at the table.
+
+You can safely ignore Fronts if you don’t need this level of structure, or turn them off entirely in [Module Settings].
 
 ## Sample Session Preparation Walkthrough
 
@@ -176,7 +191,7 @@ After each session:
      - Move to campaign: For Lore items in particular, you can move them back to the campaign lore list if you want to keep it for later.
      - Delivered: Marking any item as delivered means it came up during the session.  This is an easy way to track what's come up already as you work through the session.  It also adds the item to the To-Do list as a reminder that it came up in case after the session you want to flesh out notes, or update the entry in Setting in case it comes up again in the future.  Finally, marking NPCs and Locations as delivered will add a cross-reference to them on their Entry screen so you can quickly look back at when different things came up in the campaign.
     
->[!Tip]
+>[!TIP]
 > For Lore items, marking them as delivered can also add the Lore to the master campaign list.  Lore items that are marked as [significant](/reference/campaign-mgt/content/session/#significant) and also delivered will show up on the campaign's "Delivered Lore" list.  
 
 
