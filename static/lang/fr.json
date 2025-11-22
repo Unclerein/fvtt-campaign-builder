@@ -108,7 +108,9 @@
             "name": "Tieffelin",
             "description": "Marqués par une ascendance infernale, les tieffelins possèdent des traits démoniaques, une résilience innée au feu et un talent pour la magie. Ils ont des cornes, des queues et des couleurs d'yeux et de peau inhabituelles, allant des rouges profonds aux violets et bleus."
           }
-        }
+        },
+        "newSpecies": "Nouvelle Espèce",
+        "newDescription": "Description pour la nouvelle espèce"
       },
       "advancedSettings": {
         "title": "Configurer les Paramètres Avancés",
@@ -364,7 +366,8 @@
         "journalName": "Journal",
         "pageName": "Page du journal",
         "type": "Type",
-        "role": "Rôle"
+        "role": "Rôle",
+        "description": "Description"
       },
       "locations": {
         "compendium": "Compendium",
@@ -383,7 +386,6 @@
         "grimPortents": "Présages funestes",
         "participants": "Participants",
         "impendingDoom": "Catastrophe imminente",
-        "addParticipant": "Ajouter un participant",
         "addPortent": "Ajouter un présage funeste",
         "portentHelpText": "Les présages funestes sont les événements qui se produiront si le danger n'est pas traité. Ils peuvent apporter une résolution, ouvrir de nouveaux chemins, changer l'histoire.",
         "front": "Front"
@@ -395,6 +397,11 @@
         "addParticipant": "Ajouter un participant",
         "addParticipantDrag": "(ou glisser/déposer un personnage/organisation)",
         "participantHelpText": "Personnages et organisations susceptibles d'apparaître pendant l'arc"
+      },
+      "complete": "Terminer",
+      "danger": {
+        "addParticipant": "Ajouter un participant",
+        "addParticipantDrag": "(ou glisser/déposer un personnage/organisation)"
       }
     },
     "placeholders": {
@@ -622,6 +629,9 @@
         "cannotActivateFromCompendium": "Impossible d'activer depuis le compendium",
         "cannotToggleNavigationFromCompendium": "Impossible de basculer la navigation depuis une scène dans un compendium",
         "cannotToggleNavigationWhileActive": "Impossible de basculer la navigation pendant qu'une scène est active"
+      },
+      "front": {
+        "delete": "Supprimer l'avant"
       }
     },
     "tooltips": {
