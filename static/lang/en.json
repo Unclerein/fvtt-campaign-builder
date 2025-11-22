@@ -78,6 +78,8 @@
           "edit": "Edit species",
           "delete": "Delete species"
         },
+        "newSpecies": "New Species",
+        "newDescription": "Description for new species",
         "defaultSpecies": {
           "dwarf": {
             "name": "Dwarf",
@@ -211,6 +213,7 @@
       "no": "No",
       "close": "Close",
       "update": "Update",
+      "complete": "Complete",
       "noToAll": "No to All",
       "actors": "Actors",
       "sessions": "Sessions",
@@ -224,7 +227,8 @@
         "journalName": "Journal",
         "pageName": "Journal Page",
         "type": "Type",
-        "role": "Role"
+        "role": "Role",
+        "description": "Description"
       },
       "locations": {
         "compendium": "Compendium",
@@ -330,9 +334,12 @@
         "grimPortents": "Grim Portents",
         "participants": "Participants",
         "impendingDoom": "Impending Doom",
-        "addParticipant": "Add Participant",
         "addPortent": "Add Grim Portent",
         "portentHelpText": "Grim portents are the events that will occur if the danger is not dealt with. They can bring resolution, open new paths, shift the story."
+      },
+      "danger": {
+        "addParticipant": "Add Participant",
+        "addParticipantDrag": "(or drag/drop a character/organization)"
       },
       "campaign": {
         "addPC": "Add PC",
@@ -610,6 +617,9 @@
       },
       "session": {
         "delete": "Delete session"
+      },
+      "front": {
+        "delete": "Delete front"
       },
       "dialogs": {
         "cannotActivateFromCompendium": "Cannot activate from compendium",

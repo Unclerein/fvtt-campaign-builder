@@ -23,7 +23,24 @@
             style: {'margin-top': '0.5em' },
           },
         }"
-      >
+      >        
+        <!-- Description -->
+        <div class="flexrow form-group">
+          <LabelWithHelp
+            label-text="labels.description"
+            top-label
+          />
+        </div>
+
+        <div class="flexrow form-group" style="margin-top: 1rem">
+          <Editor
+            :initial-content="currentDanger?.description || ''"
+            fixed-height="120px"
+            :current-entity-uuid="currentFront?.uuid"
+            @editor-saved="onDescriptionEditorSaved"
+          />
+        </div>
+
         <!-- Impending Doom -->
         <div class="flexrow form-group">
           <LabelWithHelp
@@ -36,22 +53,6 @@
             unstyled
             style="width: calc(100% - 2px); font-family: var(--fcb-font-family)"
             @update:model-value="onImpendingDoomUpdate"
-          />
-        </div>
-        
-        <!-- Description -->
-        <div class="flexrow form-group">
-          <LabelWithHelp
-            label-text="labels.description"
-            top-label
-          />
-        </div>
-        <div class="flexrow form-group">
-          <Editor
-            :initial-content="currentDanger?.description || ''"
-            fixed-height="120px"
-            :current-entity-uuid="currentFront?.uuid"
-            @editor-saved="onDescriptionEditorSaved"
           />
         </div>
       </Panel>
@@ -80,13 +81,11 @@
         }"
       >
         <div class="flexrow form-group">
-          <TextArea
-            v-model="motivation"
-            rows="3"
-            data-testid="danger-motivation"
-            unstyled
-            style="width: 100%; font-family: var(--fcb-font-family)"
-            @update:model-value="onMotivationUpdate"
+          <Editor
+            :initial-content="motivation || ''"
+            fixed-height="120px"
+            :current-entity-uuid="currentFront?.uuid"
+            @editor-saved="onMotivationEditorSaved"
           />
         </div>
       </Panel>
@@ -164,7 +163,6 @@
   // debounce changes to name
   let nameDebounceTimer: NodeJS.Timeout | undefined = undefined;
   let impendingDoomTimer: NodeJS.Timeout | undefined = undefined;
-  let motivationTimer: NodeJS.Timeout | undefined = undefined;
 
   const onNameUpdate = (newName: string | undefined) => {
     const debounceTime = 500;
@@ -205,22 +203,13 @@
     }, debounceTime);
   };
 
-  const onMotivationUpdate = (newMotivation: string | undefined) => {
-    const debounceTime = 500;
-  
-    clearTimeout(motivationTimer);
+  const onMotivationEditorSaved = (newMotivation: string) => {
+    if (!currentDanger.value) return;
     
-    motivationTimer = setTimeout(async () => {
-      const newValue = newMotivation || '';
-
-      if (currentFront.value && currentDanger.value && currentDangerIndex.value !== null && currentDanger.value.motivation!==newValue) {
-        currentDanger.value.motivation = newValue;
-        currentFront.value.updateDanger(currentDangerIndex.value, currentDanger.value);
-        await currentFront.value.save();
-      }
-    }, debounceTime);
+    currentDanger.value.motivation = newMotivation;
+    saveDanger();
   };
-  
+
   const onDescriptionEditorSaved = (newContent: string) => {
     if (!currentDanger.value) return;
     

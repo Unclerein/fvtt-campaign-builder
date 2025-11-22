@@ -55,6 +55,10 @@ export const useFrontStore = defineStore('front', () => {
     if (!currentDanger.value || currentDangerIndex.value == null)
       return null;
 
+    // no duplicates
+    if (currentDanger.value.participants.some(p => p.uuid === entryToAdd.uuid))
+      return null;
+
     const uuid = entryToAdd.uuid;
     currentFront.value?.updateDanger(currentDangerIndex.value, {
       ...currentDanger.value,
@@ -105,7 +109,7 @@ export const useFrontStore = defineStore('front', () => {
     const uuid = foundry.utils.randomID();
     currentFront.value?.updateDanger(currentDangerIndex.value, {
       ...currentDanger.value,
-      grimPortents: [...currentDanger.value.grimPortents, { uuid, description }],
+      grimPortents: [...currentDanger.value.grimPortents, { uuid, description, complete: false }],
     });
     await currentFront.value?.save();
 
@@ -129,13 +133,13 @@ export const useFrontStore = defineStore('front', () => {
   };
 
   /** update portent in given danger */
-  const updateGrimPortent = async (uuid: string, description: string): Promise<void> => {
+  const updateGrimPortent = async (uuid: string, description: string, complete: boolean): Promise<void> => {
     if (!currentDanger.value || currentDangerIndex.value == null)
       return;
     
     currentFront.value?.updateDanger(currentDangerIndex.value, {
       ...currentDanger.value,
-      grimPortents: currentDanger.value.grimPortents.map(p => p.uuid === uuid ? { uuid, description } : p),
+      grimPortents: currentDanger.value.grimPortents.map(p => p.uuid === uuid ? { uuid, description, complete } : p),
     });
     await currentFront.value?.save();
 
