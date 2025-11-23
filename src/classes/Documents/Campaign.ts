@@ -206,6 +206,7 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
       if (!firstArc)
         throw new Error('First arc not found in Campaign.updateArcsForNewSessionNumber()');
 
+      firstArc.campaign = this;
       firstArcIndex.startSessionNumber = newSessionNumber;
       await firstArc.save();
       covered = true;
@@ -217,6 +218,7 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
       if (!lastArc)
         throw new Error('Last arc not found in Campaign.updateArcsForNewSessionNumber()');
 
+      lastArc.campaign = this;
       lastArcIndex.endSessionNumber = newSessionNumber;
       await lastArc.save();
       covered = true;
@@ -233,6 +235,7 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
             throw new Error('Arc not found in Campaign.updateArcsForNewSessionNumber()');
           }
 
+          arc.campaign = this;
           arc.endSessionNumber = newSessionNumber;
           await arc.save();          
         }
@@ -356,6 +359,8 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
         // it was in the middle - do nothing
         break;
       }
+
+      await this.save();
 
       const arc = await Arc.fromUuid(arcIndex.uuid);
       if (!arc)
