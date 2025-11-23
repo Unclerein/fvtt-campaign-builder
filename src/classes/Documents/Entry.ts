@@ -144,21 +144,8 @@ export class Entry extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Entry> {
       folderName,
       { system: {
         playerName: topicFolder.topic === Topics.PC ? nameToUse : '',
-        actorId: null,
-        plotPoints: '',
-        background: '',
-        magicItems: '',
         type: topicFolder.topic === Topics.PC ? 'PC' : options.type || '',
         topic: topicFolder.topic,
-        relationships: {
-          [Topics.Character]: {},
-          [Topics.Location]: {},
-          [Topics.Organization]: {},
-          [Topics.PC]: {},
-        },
-        actors: [],
-        scenes: [],
-        img: '',
       }
     }) as unknown as Entry;
 

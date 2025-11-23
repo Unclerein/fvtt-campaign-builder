@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
   // library imports
-  import { computed, ref, watch, onBeforeUnmount } from 'vue';
+  import { computed, ref, shallowRef, watch, onBeforeUnmount, } from 'vue';
   import { storeToRefs } from 'pinia';
   
   // local imports
@@ -86,7 +86,7 @@
   
   ////////////////////////////////
   // data
-  const campaign = ref<Campaign | null>(null);
+  const campaign = shallowRef<Campaign | null>(null);
   const arcs = ref<ArcBasicIndex[]>([]);
   const show = ref<boolean>(true);
   const editingMode = ref<boolean>(false);
@@ -270,8 +270,8 @@
     newData.endSessionNumber = newData.endSessionNumber.toString().trim();
     
     // convert blanks to -1
-    newData.startSessionNumber = newData.startSessionNumber || '-1';
-    newData.endSessionNumber = newData.endSessionNumber || '-1';
+    newData.startSessionNumber = newData.startSessionNumber.length === 0 ? '-1' : newData.startSessionNumber;
+    newData.endSessionNumber = newData.endSessionNumber.length === 0 ? '-1' : newData.endSessionNumber;
 
     // if the session numbers are bad, reset everything
     let newStartSession = Number.parseInt(newData.startSessionNumber);
