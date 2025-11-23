@@ -179,7 +179,7 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
     if (!(await FCBDialog.confirmDialog('Delete session?', 'Are you sure you want to delete this session?')))
       return;
   
-    await session.delete();
+    await session.delete();  // this will remove from the campaign, etc.
 
     // update tabs/bookmarks
     await navigationStore.cleanupDeletedEntry(sessionId);
