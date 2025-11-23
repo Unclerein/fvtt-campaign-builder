@@ -8,7 +8,7 @@
         class="noborder"
         style="margin-bottom:0px"
         draggable="true"
-        :data-tooltip="props.campaignNode.completed ? localize('tooltip.campaignComplete') : ''"
+        :data-tooltip="props.campaignNode.completed ? localize('tooltips.campaignComplete') : ''"
         @contextmenu="onCampaignContextMenu"
         @dragstart="onDragStart"
       >

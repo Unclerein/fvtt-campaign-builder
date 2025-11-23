@@ -145,9 +145,6 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
       } else {
         // there are arcs, but none have sessions
         const firstArc = this.arcIndex.at(0);
-        // firstArc!.endSessionNumber = session.number;
-        // firstArc!.startSessionNumber = session.number;
-        // await this.save();
 
         const arc = await Arc.fromUuid(firstArc!.uuid);
         if (!arc)
