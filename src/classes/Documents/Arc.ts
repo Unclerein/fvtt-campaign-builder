@@ -414,7 +414,7 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
     }
 
     // update the campaign and setting indexes
-    const campaign = await Campaign.fromUuid(this.campaignId);
+    const campaign = await this.loadCampaign();
     if (!campaign)
       throw new Error('Invalid campaign in Arc.save()');
     await campaign.updateArc(this);

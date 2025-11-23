@@ -105,8 +105,16 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
       date: session.date?.toLocaleDateString() || null,
     } as SessionBasicIndex;
 
-    // we need to add to the last arc and to the session index
+    // we need to add to the session index
     this._clone.system.sessionIndex.push(newSession);
+
+    // update the session number on the campaign
+    if (this.currentSessionNumber==null || session.number > this.currentSessionNumber) {
+      this._clone.system.currentSessionNumber = session.number;
+      this._clone.system.currentSessionId = session.uuid;
+    }
+
+    await this.save();
         
     // add to last arc - we update Arc object, which will update the indexes
     if (this.arcIndex.length === 0) {
@@ -120,32 +128,41 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
       arc.sortOrder = 0;  // just in case
       await arc.save();
     } else { 
-      const lastArc = this.arcIndex.at(-1);
       const lastArcWithSessions = getLastArcWithSessions(this._clone.system.arcIndex);
+      if (lastArcWithSessions) {
+        // extend the last arc that has sessions
+        const arc = await Arc.fromUuid(lastArcWithSessions.uuid);
 
-      const lastArcObject = await Arc.fromUuid(lastArc!.uuid);
-      if (!lastArcObject)
-        throw new Error('Failed to get last arc in Campaign.addSession()');
+        if (!arc)
+          throw new Error('Failed to get target arc in Campaign.addSession()');
 
-      // if the last one with sessions is also the last one, just extend it
-      if (lastArcWithSessions!.uuid === lastArc!.uuid && lastArc!.endSessionNumber !== session.number) {
-        lastArcObject.endSessionNumber = session.number;
-        await lastArcObject.save();
-      } else if (lastArc!.endSessionNumber !== session.number || lastArc!.startSessionNumber !== session.number) {
-        // otherwise, make a single-session one out of the last one
-        lastArcObject.startSessionNumber = session.number;
-        lastArcObject.endSessionNumber = session.number;
-        await lastArcObject.save();
+        // there's a race condition I can't find where if we let the arc re-load the 
+        //    campaign the index hasn't been updated properly; this will make
+        //    it use this copy
+        arc.campaign = this;
+        arc.endSessionNumber = session.number;
+        await arc.save();
+      } else {
+        // there are arcs, but none have sessions
+        const firstArc = this.arcIndex.at(0);
+        // firstArc!.endSessionNumber = session.number;
+        // firstArc!.startSessionNumber = session.number;
+        // await this.save();
+
+        const arc = await Arc.fromUuid(firstArc!.uuid);
+        if (!arc)
+          throw new Error('Failed to get first arc in Campaign.addSession()');
+
+        // there's a race condition I can't find where if we let the arc re-load the 
+        //    campaign the index hasn't been updated properly; this will make
+        //    it use this copy
+        arc.campaign = this;
+        arc.startSessionNumber = session.number;
+        arc.endSessionNumber = session.number;
+        await arc.save();
       }
     }
 
-    // update the session number on the campaign
-    if (this.currentSessionNumber==null || session.number > this.currentSessionNumber) {
-      this.currentSessionNumber = session.number;
-      this.currentSessionId = session.uuid;
-    }
-
-    await this.save();
   }
 
   /** update indices for a session */
@@ -320,6 +337,40 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
     // Remove from index
     this._clone.system.sessionIndex = this._clone.system.sessionIndex.filter(s => s.uuid !== session.uuid);
     await this.save();
+
+    let arcIndexToUpdate = '';
+
+    // find the arc it was in
+    for (const arcIndex of this.arcIndex) {
+      if (arcIndex.startSessionNumber > session.number || arcIndex.endSessionNumber < session.number)
+        continue;
+
+      // if there was only one, empty it
+      if (arcIndex.startSessionNumber === arcIndex.endSessionNumber) {
+        arcIndex.startSessionNumber = -1;
+        arcIndex.endSessionNumber = -1;
+      } else if (arcIndex.startSessionNumber === session.number) {
+        // it was at the start, make the new start one higher 
+        arcIndex.startSessionNumber++;
+      } else if (arcIndex.endSessionNumber === session.number) {
+        // it was at the end, make the new end one lower
+        arcIndex.endSessionNumber--;
+      } else {
+        // it was in the middle - do nothing
+        break;
+      }
+
+      const arc = await Arc.fromUuid(arcIndex.uuid);
+      if (!arc)
+        throw new Error('Arc not found in Campaign.deleteSession()');
+
+      arc.campaign = this;
+      arc.startSessionNumber = arcIndex.startSessionNumber;
+      arc.endSessionNumber = arcIndex.endSessionNumber;
+      await arc.save();  // this should update the indexes
+
+      arcIndexToUpdate = arcIndex.uuid;
+    }
 
     // note: sessions are no longer stored on setting
 
@@ -862,13 +913,6 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
     } catch (error) {
       throw error;
     }
-
-    // keep the setting references up to date
-    let setting = await getGlobalSetting(this.settingId);
-    if (!setting)
-      throw new Error('Invalid setting in Campaign.save()');
-
-    await setting.loadCampaigns();
   }
 
   /**
