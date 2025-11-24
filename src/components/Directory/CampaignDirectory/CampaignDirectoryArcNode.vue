@@ -54,9 +54,11 @@
   import { localize } from '@/utils/game';
   import { useCampaignDirectoryStore, useNavigationStore, useMainStore } from '@/applications/stores';
   import { getTabTypeIcon } from '@/utils/misc';
+  import { FCBDialog } from '@/dialogs';
 
   // library components
-  
+  import ContextMenu from '@imengyu/vue3-context-menu';
+
   // local components
   import CampaignDirectorySessionNode from './CampaignDirectorySessionNode.vue';
   
@@ -134,24 +136,23 @@
 
     // we don't allow deleting here because I don't feel like adding rebalance code right now and
     //   it's probably better for users to visualize the arc structure in the manager
-    // //show our menu
-    // ContextMenu.showContextMenu({
-    //   customClass: 'fcb',
-    //   x: event.x,
-    //   y: event.y,
-    //   zIndex: 300,
-    //   items: [
-    //     { 
-    //       icon: 'fa-trash',
-    //       iconFontClass: 'fas',
-    //       label: localize('contextMenus.arcFolder.delete'), 
-    //       disabled: onlyArc.value,
-    //       onClick: async () => {
-    //         await campaignDirectoryStore.deleteArc(props.arcNode.id);
-    //       }
-    //     },
-    //   ]
-    // });
+    //show our menu
+    ContextMenu.showContextMenu({
+      customClass: 'fcb',
+      x: event.x,
+      y: event.y,
+      zIndex: 300,
+      items: [
+        { 
+          icon: getTabTypeIcon(WindowTabType.Arc),
+          iconFontClass: 'fas',
+          label: localize('contextMenus.campaignFolder.manageArcs'), 
+          onClick: async () => {
+            FCBDialog.arcManagerDialog(props.arcNode.parentId!);
+          }
+        },
+      ]
+    });
   };
 
 
