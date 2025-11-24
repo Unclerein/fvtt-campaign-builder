@@ -159,15 +159,13 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
 
   }
 
-
-
   /**
    * Ensures the new session number falls inside the current arc coverage.  If not, adjusts the 
    * arcs as needed. Modifies arcIndex directly without saving - caller must save campaign.
    * 
    * @param newNumber - The new session number
    */
-  public updateArcsForNewSessionNumber(newSessionNumber: number): void {
+  public async updateArcsForNewSessionNumber(newSessionNumber: number): void {
     // see if it's fine already
     if (getArcForSession(this.arcIndex, newSessionNumber) != null) 
       return;
@@ -182,15 +180,25 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
     }
 
     let covered = false;
+    let arcToAdjust: Arc | null = null;
     if (newSessionNumber < firstArcIndex.startSessionNumber) {
       // Need to extend the first arc backwards - modify index directly
       firstArcIndex.startSessionNumber = newSessionNumber;
+
+      arcToAdjust = await Arc.fromUuid(firstArcIndex.uuid);
       covered = true;
     }
 
     if (newSessionNumber > lastArcIndex.endSessionNumber) {
       // Need to extend the last arc forwards - modify index directly
       lastArcIndex.endSessionNumber = newSessionNumber;
+
+      arcToAdjust = await Arc.fromUuid(lastArcIndex.uuid);
+      if (!arcToAdjust)
+        throw new Error('Failed to get last arc in Campaign.updateArcsForNewSessionNumber()');
+
+      arcToAdjust.endSessionNumber = newSessionNumber;
+
       covered = true;
     }
 
@@ -201,10 +209,22 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
       for (let i = this.arcIndex.length - 1; i >= 0; i--) {
         if (this.arcIndex[i].endSessionNumber < newSessionNumber) {
           this.arcIndex[i].endSessionNumber = newSessionNumber;
+
+          const arc = await Arc.fromUuid(this.arcIndex[i].uuid);
+          if (!arc)
+            throw new Error('Failed to get arc in Campaign.updateArcsForNewSessionNumber()');
+
+          arc.campaign = this;
+          arc.endSessionNumber = newSessionNumber;
+          await arc.save();
+
           break;
         }
       }
     }
+
+    if (arcToAdjust)
+      await arcToAdjust.save();
   }
   
   /** Register the arc to the end of the campaign (and setting); saves Campaign */

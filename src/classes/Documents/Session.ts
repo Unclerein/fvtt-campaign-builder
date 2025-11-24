@@ -504,8 +504,8 @@ export class Session extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Session> 
     // Update campaign indices (doesn't save)
     this._updateSessionIndexInCampaign(campaign);
     
-    // Adjust arc boundaries if needed (doesn't save)
-    campaign.updateArcsForNewSessionNumber(this.number);
+    // Adjust arc boundaries if needed (saves arcs but not the campaign)
+    await campaign.updateArcsForNewSessionNumber(this.number);
     
     // Reset current session if needed (doesn't save)
     campaign.resetCurrentSession();

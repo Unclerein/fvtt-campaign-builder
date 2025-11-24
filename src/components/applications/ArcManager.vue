@@ -428,6 +428,9 @@
     arc.startSessionNumber = newStartSession;
     arc.endSessionNumber = newEndSession;
 
+    // clean arcs to fill any gaps created by the edit
+    cleanArcs(arcs.value);
+    
     // force refresh
     refreshData();
   };

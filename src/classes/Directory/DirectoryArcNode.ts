@@ -33,15 +33,15 @@ export class DirectoryArcNode extends CollapsibleNode<DirectorySessionNode> {
     const campaign = CollapsibleNode._currentSetting.campaigns[this.parentId!] || await Campaign.fromUuid(this.parentId!);
     if (!campaign)
       throw new Error('Bad campaign id in DirectoryArcNode._loadNodeList()');
-    
-    const arc = await Arc.fromUuid(this.id);
-    if (!arc)
+
+    const index = campaign.arcIndex.find((a)=>a.uuid===this.id);
+    if (!index)
       throw new Error('Bad arc id in DirectoryArcNode._loadNodeList()');
 
     // we only want to load ones not already in _loadedNodes, unless its in updateIds
     const uuidsToLoad = ids.filter((id)=>!CollapsibleNode._loadedNodes[id] || updateIds.includes(id));
 
-    const sessions = campaign.sessionIndex.filter((s) => s.number>=arc.startSessionNumber && s.number<=arc.endSessionNumber);
+    const sessions = campaign.sessionIndex.filter((s) => s.number>=index.startSessionNumber && s.number<=index.endSessionNumber);
     
     const sessionsToUse = uuidsToLoad.length===0 ? [] : 
       sessions.filter((s: SessionBasicIndex)=> uuidsToLoad.includes(s.uuid));

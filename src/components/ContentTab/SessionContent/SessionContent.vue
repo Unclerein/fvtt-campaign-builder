@@ -281,18 +281,24 @@
     clearTimeout(numberDebounceTimer);
     
     numberDebounceTimer = setTimeout(async () => {
+      if (!currentSession.value)
+        return;
+      
       const newValue = isNaN(parseInt(newNumber || '')) ? null : parseInt(newNumber as string);
 
-      if (newValue != null && currentSession.value && currentSession.value.number!==newValue) {
+      if (newValue != null && currentSession.value.number!==newValue) {
         currentSession.value.number = newValue;
         await currentSession.value.save();
 
-        // the save may renumber a bunch of things, so need to refresh the campaign directory tree (every node with a number >= the new number)
-        const campaign = currentSession.value.campaign;
-        const sessionsToRefresh = campaign?.sessionIndex.filter(s=> s.number>=newValue) || [];
+        // the save may renumber a bunch of things and affect multiple arcs, so refresh all arcs
+        await currentSession.value.loadCampaign();
+        const updateIds = currentSession.value.campaign!.arcIndex.map(arc => arc.uuid).concat(currentSession.value.uuid);
+        await campaignDirectoryStore.refreshCampaignDirectoryTree(updateIds);
 
-        await campaignDirectoryStore.refreshCampaignDirectoryTree(sessionsToRefresh.map(s=> s.uuid));
         await navigationStore.propagateNameChange(currentSession.value.uuid, `${localize('labels.session.session')} ${newValue.toString()}`);
+      } else {
+        // restore the old one
+        sessionNumber.value = currentSession.value.number.toString();
       }
     }, debounceTime);
   };
@@ -353,6 +359,7 @@
       if (currentSession.value && currentSession.value.date?.toISOString()!==newDate?.toISOString()) {
         currentSession.value.date = newDate || null;
         await currentSession.value.save();
+        await campaignDirectoryStore.refreshCampaignDirectoryTree([currentSession.value.uuid]);
       }
     }, debounceTime);
   });

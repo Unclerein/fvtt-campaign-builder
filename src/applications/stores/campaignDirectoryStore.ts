@@ -60,70 +60,76 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
 
     isCampaignTreeRefreshing.value = true;
 
-    // Preserve scroll position before refresh
-    let scrollContainer: HTMLElement | null = document.querySelector('.fcb-campaign-directory') as HTMLElement;
-    const originalScrollTop = scrollContainer?.scrollTop || 0;
+    // wrap in a try to ensure we don't get stuck in a refresh loop
+    try {
+      // Preserve scroll position before refresh
+      let scrollContainer: HTMLElement | null = document.querySelector('.fcb-campaign-directory') as HTMLElement;
+      const originalScrollTop = scrollContainer?.scrollTop || 0;
 
-    const expandedNodes = currentSetting.value.expandedIds || {};
+      const expandedNodes = currentSetting.value.expandedIds || {};
 
-    currentCampaignTree.value = [];
-    
-    // get all the campaigns - we could just use campaignNames but this will clean up any bad ones (i.e. got deleted incompletely)
-    await currentSetting.value.loadCampaigns();
-    const campaigns = currentSetting.value.campaigns;
-
-    for (const campaign of Object.values(campaigns)) {
-      // if we are using fronts, the first child is the front folder
-      let children: string[] = [];
-      if (ModuleSettings.get(SettingKey.useFronts)) {
-        children.push(campaign.uuid + ':front');  // this is the id for the front folder
-      }
-
-      // the rest of the children are arcs
-      const campaignIndexArcs = currentSetting.value.campaignIndex.find((c)=>c.uuid===campaign.uuid)?.arcs || [];
+      currentCampaignTree.value = [];
       
-      for (const arc of campaignIndexArcs) {
-        children.push(arc.uuid);
+      // get all the campaigns - we could just use campaignNames but this will clean up any bad ones (i.e. got deleted incompletely)
+      await currentSetting.value.loadCampaigns();
+      const campaigns = currentSetting.value.campaigns;
+
+      for (const campaign of Object.values(campaigns)) {
+        // if we are using fronts, the first child is the front folder
+        let children: string[] = [];
+        if (ModuleSettings.get(SettingKey.useFronts)) {
+          children.push(campaign.uuid + ':front');  // this is the id for the front folder
+        }
+
+        // the rest of the children are arcs
+        const campaignIndexArcs = currentSetting.value.campaignIndex.find((c)=>c.uuid===campaign.uuid)?.arcs || [];
+        
+        for (const arc of campaignIndexArcs) {
+          children.push(arc.uuid);
+        }
+
+        currentCampaignTree.value.push(new DirectoryCampaignNode(
+          campaign.uuid,
+          campaign.name,  // name
+          children.slice(),
+          [],
+          expandedNodes[campaign.uuid] || false,
+          campaign.completed
+        ));      
       }
+      
+      // Sort and add to reactive array
+      (currentCampaignTree.value as DirectoryCampaignNode<any>[]).sort((a: DirectoryCampaignNode<any>, b: DirectoryCampaignNode<any>) => a.name.localeCompare(b.name));
 
-      currentCampaignTree.value.push(new DirectoryCampaignNode(
-        campaign.uuid,
-        campaign.name,  // name
-        children.slice(),
-        [],
-        expandedNodes[campaign.uuid] || false,
-        campaign.completed
-      ));      
-    }
-    
-    // Sort and add to reactive array
-    (currentCampaignTree.value as DirectoryCampaignNode<any>[]).sort((a: DirectoryCampaignNode<any>, b: DirectoryCampaignNode<any>) => a.name.localeCompare(b.name));
+      // load any open campaigns
+      for (let i=0; i<currentCampaignTree.value.length; i++) {
+        const campaignNode = currentCampaignTree.value[i];
 
-    // load any open campaigns
-    for (let i=0; i<currentCampaignTree.value.length; i++) {
-      const campaignNode = currentCampaignTree.value[i];
+        if (!campaignNode.expanded)
+          continue;
 
-      if (!campaignNode.expanded)
-        continue;
+        // have to check all children are loaded and expanded properly
+        await campaignNode.recursivelyLoadNode(expandedNodes, updateIds);
+      } 
 
-      // have to check all children are loaded and expanded properly
-      await campaignNode.recursivelyLoadNode(expandedNodes, updateIds);
-    } 
+      // refresh the entry - this will update the push to session button
+      if (currentEntry.value)
+        await mainStore.refreshEntry();
 
-    // refresh the entry - this will update the push to session button
-    if (currentEntry.value)
-      await mainStore.refreshEntry();
+      isCampaignTreeRefreshing.value = false;
 
-    isCampaignTreeRefreshing.value = false;
+      // Wait for next tick to ensure DOM is updated
+      await nextTick();
 
-    // Wait for next tick to ensure DOM is updated
-    await nextTick();
-
-    // Perform scroll restoration once after DOM updates
-    // We get the container again because it was unmounted and remounted
-    scrollContainer = document.querySelector<HTMLElement>('.fcb-setting-directory');
-    if (scrollContainer && originalScrollTop) {
-      scrollContainer.scrollTop = originalScrollTop;
+      // Perform scroll restoration once after DOM updates
+      // We get the container again because it was unmounted and remounted
+      scrollContainer = document.querySelector<HTMLElement>('.fcb-setting-directory');
+      if (scrollContainer && originalScrollTop) {
+        scrollContainer.scrollTop = originalScrollTop;
+      }
+    } catch (error) {
+      isCampaignTreeRefreshing.value = false;
+      throw error;
     }
   };
 
@@ -242,6 +248,17 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
     } else {
       return null;
     }
+  };
+
+  /** refresh all arcs in the campaign; useful when a session is renumbered */
+  const refreshAllCampaignArcs = async (campaignId: string, sessionId: string): Promise<void> => {
+    const campaign = await Campaign.fromUuid(campaignId);
+    if (!campaign)
+      return;
+
+    // Refresh all arcs in the campaign
+    const updateIds = campaign.arcIndex.map(arc => arc.uuid).concat(sessionId);
+    await refreshCampaignDirectoryTree(updateIds);
   };
 
   const createFront = async (campaignId: string): Promise<Front | null> => {
@@ -368,6 +385,7 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
     deleteSession,
     deleteFront,
     createSession,
+    refreshAllCampaignArcs,
     createArc,
     createFront,
     createCampaign,
