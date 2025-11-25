@@ -1,7 +1,7 @@
 # Change Log
-## v1.6.0 - Better campaign planning
-![](https://img.shields.io/badge/release%20date-October%2023%2C%202025-blue)
-![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.6.0/module.zip)
+## v1.6.1 - Better campaign planning
+![](https://img.shields.io/badge/release%20date-November%2025%2C%202025-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.6.1/module.zip)
 
 - You can now use fronts.  They can be disabled in the module settings.
 - Sessions are now grouped into "arcs" (chapters).  These can be used to track lore and story lines across multiple sessions without having to keep all those pieces in the campaign indefinitely.
