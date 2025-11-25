@@ -320,15 +320,18 @@ export const useRelationshipStore = defineStore('relationship', () => {
         if (!relatedEntry || !relatedEntry.relationships || !entry.topic)
           continue;
 
-        const relatedRelationship = relatedEntry.relationships[entry.topic]![entry.uuid];
+        const relatedEntryRelationships = relatedEntry.relationships;
 
-        if (!relatedRelationship)
+        if (!relatedEntryRelationships[entry.topic]![entry.uuid])
           continue;
 
         // Update the field
         for (let i=0; i< fieldsArray.length; i++) {
-          relatedRelationship[fieldsArray[i]] = entry[fieldsArray[i]];
+          relatedEntryRelationships[entry.topic]![entry.uuid][fieldsArray[i]] = entry[fieldsArray[i]];
         }
+        
+        // Reassign the cloned relationships back to the entry
+        relatedEntry.relationships = relatedEntryRelationships;
         await relatedEntry.save();
       }
     }
