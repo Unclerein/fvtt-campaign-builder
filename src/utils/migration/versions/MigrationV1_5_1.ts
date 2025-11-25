@@ -140,7 +140,9 @@ export class MigrationV1_5_1 implements Migration {
         const campaignIndexEntries = await pack.getIndex({
           fields: [
             'name',
+            // @ts-ignore
             'uuid',
+            // @ts-ignore
             'flags.campaign-builder.campaignBuilderType',
           ],
         });

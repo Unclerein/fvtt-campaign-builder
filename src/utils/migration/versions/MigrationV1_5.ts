@@ -3,7 +3,7 @@ import { notifyError } from '@/utils/notifications';
 import { ModuleSettings, SettingKey, UserFlagKey, } from '@/settings';
 import { RootFolder, FCBSetting, Session, Campaign, Entry, TopicFolder, WindowTab, Arc } from '@/classes';
 import { updateGlobalSetting } from '@/utils/globalSettings';
-import { Bookmark, defaultCustomFields, Hierarchy, Idea, RelatedItemDetails, RelatedJournal, RelatedPCDetails, TabHeader, ToDoItem, Topics, ValidTopic, ValidTopicRecord, ArcBasicIndex } from '@/types';
+import { Bookmark, defaultCustomFields, Hierarchy, Idea, RelatedEntryDetails, RelatedJournal, RelatedPCDetails, TabHeader, ToDoItem, Topics, ValidTopic, ValidTopicRecord, ArcBasicIndex } from '@/types';
 import { CampaignLore, SessionItem, SessionLocation, SessionLore, SessionMonster, SessionNPC, SessionVignette, } from '@/documents';
 import { cleanKeysOnLoad } from '@/utils/cleanKeys';
 
@@ -211,7 +211,6 @@ async function migrateSetting(folder: Folder): Promise<FCBSetting> {
   // and update the permissions to hide and unlock the compendium
   const pack = game.packs.get(compendiumId);
   await pack?.configure({ ownership: { 
-    NONE: 'NONE',
     GAMEMASTER: 'OWNER', 
     ASSISTANT: 'LIMITED', 
     TRUSTED: 'LIMITED', 
@@ -401,13 +400,17 @@ async function migrateCampaign(oldCampaign: JournalEntry, setting: FCBSetting): 
     if (!arc)
       throw new Error('Failed to create catch-all arc in MigrationV1_5.migrateCampaign()');
 
+    debugger;
     let minSessionNumber = Number.MAX_SAFE_INTEGER;
     let maxSessionNumber = Number.MIN_SAFE_INTEGER;
     for (const sessionIdx of sessionList) {
-      if (sessionIdx.number < minSessionNumber)
-        minSessionNumber = sessionIdx.number;
-      if (sessionIdx.number > maxSessionNumber)
-        maxSessionNumber = sessionIdx.number;
+      if (sessionIdx.system.number == null)
+        continue;
+
+      if (sessionIdx.system.number < minSessionNumber)
+        minSessionNumber = sessionIdx.system.number;
+      if (sessionIdx.system.number > maxSessionNumber)
+        maxSessionNumber = sessionIdx.system.number;
     }
 
     arc.startSessionNumber = minSessionNumber;
@@ -544,10 +547,10 @@ async function migrateEntry(topicFolder: TopicFolder, entry: JournalEntryPage): 
   newEntry.roleplayingNotes = system.rolePlayingNotes || ''; // note different caps in old one
 
   // relationships used to use _ in keys
-  const newRelationships = {} as ValidTopicRecord<Record<string, RelatedItemDetails<any, any>>>;
+  const newRelationships = {} as ValidTopicRecord<Record<string, RelatedEntryDetails<any, any>>>;
 
   for (const topic in system.relationships) {
-    const newTopicBlock = {} as Record<string, RelatedItemDetails<any, any>>;
+    const newTopicBlock = {} as Record<string, RelatedEntryDetails<any, any>>;
     for (const entryId in system.relationships[topic]) {
       const relationship = system.relationships[topic][entryId];
       // Filter out invalid relationships with null/undefined values
@@ -649,11 +652,11 @@ const cleanCompendiumIds = async (settingId: string) => {
     // entries
     for (const entry of await topicFolder.allEntries()) {
       // relationships
-      const newRelationships = {} as ValidTopicRecord<Record<string, RelatedItemDetails<any, any>>>;
+      const newRelationships = {} as ValidTopicRecord<Record<string, RelatedEntryDetails<any, any>>>;
       
       for (const topic in entry.relationships) {
         const relationships = entry.relationships[topic];
-        const updatedRelationships = {} as Record<string, RelatedItemDetails<any, any>>;
+        const updatedRelationships = {} as Record<string, RelatedEntryDetails<any, any>>;
 
         for (const relationshipId in relationships) {
           if (!globalUuidMap[relationshipId] || !globalUuidMap[relationships[relationshipId].uuid]) {

@@ -50,9 +50,13 @@ export class MigrationV1_6 implements Migration {
         const campaignIndex = await setting.compendium.getIndex({
           fields: [
             'name', 
+            // @ts-ignore
             'uuid', 
+            // @ts-ignore
             'flags.campaign-builder.campaignBuilderType',
+            // @ts-ignore
             'pages.system.sessions',
+            // @ts-ignore
             'pages.system.sessionIndex',
           ]
         });
@@ -69,7 +73,7 @@ export class MigrationV1_6 implements Migration {
           // get the sessions off the index if we're coming from 1.5.1 or higher
           // if we're coming from lower, the 1_5_1 migration already moved them 
           //    to session index
-          let sessionList: SessionBasicIndex[];
+          let sessionList = [] as SessionBasicIndex[];
 
           // loading campaign breaks the index, so we have to capture first
           if (VersionUtils.compareVersions(this._context.originalVersion, '1.5.1') >= 0) {
