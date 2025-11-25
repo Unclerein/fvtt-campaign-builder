@@ -400,7 +400,6 @@ async function migrateCampaign(oldCampaign: JournalEntry, setting: FCBSetting): 
     if (!arc)
       throw new Error('Failed to create catch-all arc in MigrationV1_5.migrateCampaign()');
 
-    debugger;
     let minSessionNumber = Number.MAX_SAFE_INTEGER;
     let maxSessionNumber = Number.MIN_SAFE_INTEGER;
     for (const sessionIdx of sessionList) {

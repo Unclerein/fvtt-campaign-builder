@@ -4,7 +4,6 @@
       v-model="show"
       :title="dialogTitle"
       :buttons="dialogButtons"
-      @cancel="onCancel"
     >
       <div class="add-related-items-content flexcol">
         <div v-if="selectItems.length > 0">
@@ -222,7 +221,7 @@
       label: localize('labels.cancel'),
       default: false,
       close: true,
-      callback: () => { show.value=false;}
+      callback: onCancel
     });
 
     if (props.allowCreate) {
