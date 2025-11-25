@@ -631,6 +631,7 @@
       await settingDirectoryStore.updateEntryType(currentEntry.value, oldType);
 
       // Propagate the type change to all related entries
+      // This will also refresh any entries currently viewing the relationship data
       await relationshipStore.propagateFieldChange(currentEntry.value, 'type');
     }
   };
