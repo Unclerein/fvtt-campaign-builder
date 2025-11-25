@@ -13,7 +13,7 @@ import { SessionLocationSchema } from './SessionLocation';
 import { TagsSchema } from './Tags';
 import { TopicSchema } from './Topic';
 import { TopicBasicIndexSchema } from './TopicBasicIndex';
-import { RelationshipsSchema, RelatedItemDetailsSchema } from './Relationships';
+import { RelationshipsSchema, RelatedEntryDetailsSchema } from './Relationships';
 import { EntryBasicIndexSchema } from './EntryBasicIndex';
 import { SessionBasicIndexSchema } from './SessionBasicIndex';
 import { ArcBasicIndexSchema } from './ArcBasicIndex';
@@ -42,7 +42,7 @@ export const schemas = {
   SessionLocation: SessionLocationSchema,
   Topic: TopicSchema,
   TopicBasicIndex: TopicBasicIndexSchema,
-  RelatedItemDetails: RelatedItemDetailsSchema,
+  RelatedEntryDetails: RelatedEntryDetailsSchema,
   Relationships: RelationshipsSchema,
   EntryBasicIndex: EntryBasicIndexSchema,
   SessionBasicIndex: SessionBasicIndexSchema,

@@ -14,12 +14,12 @@
     @dragover="onDragover"
   />
 
-  <RelatedItemDialog
+  <RelatedEntryDialog
     v-model="addDialogShow"
     :topic="Topics.PC"
     :item-id="editItem.itemId"
     :item-name="editItem.itemName"
-    :mode="RelatedItemDialogModes.Add"
+    :mode="RelatedEntryDialogModes.Add"
     :allow-create="false"
   />
 </template>
@@ -38,10 +38,10 @@
 
   // local components
   import BaseTable from '@/components/tables/BaseTable.vue';
-  import RelatedItemDialog from '@/components/tables/RelatedItemDialog.vue';
+  import RelatedEntryDialog from '@/components/tables/RelatedEntryDialog.vue';
   
   // types
-  import { RelatedPCDetails, RelatedItemDialogModes, Topics } from '@/types';
+  import { RelatedPCDetails, RelatedEntryDialogModes, Topics } from '@/types';
   import { Entry } from '@/classes';
   
   ////////////////////////////////

@@ -12,10 +12,10 @@
     @dragoverNew="onDragoverNew"
     @drop-new="onDropNew"
   />
-  <RelatedItemDialog
+  <RelatedEntryDialog
     v-model="showNPCPicker"
     :topic="Topics.Character"
-    :mode="RelatedItemDialogModes.Session"
+    :mode="RelatedEntryDialogModes.Session"
   />
 </template>
 
@@ -27,7 +27,7 @@
 
   // local imports
   import { useSessionStore, SessionTableTypes} from '@/applications/stores';
-  import { Topics, RelatedItemDialogModes,} from '@/types';
+  import { Topics, RelatedEntryDialogModes,} from '@/types';
   import { localize } from '@/utils/game'
   import { getValidatedData } from '@/utils/dragdrop';
 
@@ -35,7 +35,7 @@
 
   // local components
   import BaseTable from '@/components/tables/BaseTable.vue';
-  import RelatedItemDialog from '@/components/tables/RelatedItemDialog.vue';
+  import RelatedEntryDialog from '@/components/tables/RelatedEntryDialog.vue';
 
   // types
   

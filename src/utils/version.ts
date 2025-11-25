@@ -83,6 +83,7 @@ export class VersionUtils {
    * Get the current module version from module.json
    */
   public static async getCurrentModuleVersion(): Promise<string> {
+    // @ts-ignore
     if (__DEV_BUILD__) {
       const pkg = await import('@/../package.json');
       return pkg.version;

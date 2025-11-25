@@ -1,10 +1,10 @@
 import { toRaw } from 'vue';
 
 import { DOCUMENT_TYPES, } from '@/documents';
-import { RelatedJournal, RelatedItemDetails, ValidTopic, Topics, ToDoTypes, ValidTopicRecord, } from '@/types';
+import { RelatedJournal, RelatedEntryDetails, ValidTopic, Topics, ToDoTypes, ValidTopicRecord, } from '@/types';
 import { FCBDialog } from '@/dialogs';
 import { getTopicText } from '@/compendia';
-import { FCBSetting, TopicFolder,  } from '@/classes';
+import { TopicFolder,  } from '@/classes';
 import { getParentId } from '@/utils/hierarchy';
 import { searchService } from '@/utils/search';
 import { useMainStore, usePlayingStore, useSettingDirectoryStore } from '@/applications/stores';
@@ -315,11 +315,11 @@ export class Entry extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Entry> {
   }
 
   // keyed by topic then by entryId
-  get relationships(): ValidTopicRecord<Record<string, RelatedItemDetails<any, any>>> {
-    return this._clone.system.relationships as unknown as ValidTopicRecord<Record<string, RelatedItemDetails<any, any>>>;
+  get relationships(): ValidTopicRecord<Record<string, RelatedEntryDetails<any, any>>> {
+    return this._clone.system.relationships as unknown as ValidTopicRecord<Record<string, RelatedEntryDetails<any, any>>>;
   }  
 
-  set relationships(value: ValidTopicRecord<Record<string, RelatedItemDetails<any, any>>>) {
+  set relationships(value: ValidTopicRecord<Record<string, RelatedEntryDetails<any, any>>>) {
     this._clone.system.relationships = value;
   }
 

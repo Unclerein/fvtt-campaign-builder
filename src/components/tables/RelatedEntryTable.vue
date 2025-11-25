@@ -15,20 +15,20 @@
     @cell-edit-complete="onCellEditComplete"
   />
 
-  <RelatedItemDialog
+  <RelatedEntryDialog
     v-if="extraColumns.length > 0"
     v-model="editDialogShow"
     :topic="props.topic"
-    :mode="RelatedItemDialogModes.Edit"
+    :mode="RelatedEntryDialogModes.Edit"
     :item-id="editItem.itemId"
     :item-name="editItem.itemName"
   />
-  <RelatedItemDialog
+  <RelatedEntryDialog
     v-model="addDialogShow"
     :topic="props.topic"
     :item-id="editItem.itemId"
     :item-name="editItem.itemName"
-    :mode="RelatedItemDialogModes.Add"
+    :mode="RelatedEntryDialogModes.Add"
   />
 </template>
 
@@ -47,13 +47,13 @@
   // library components
 
   // local components
-  import RelatedItemDialog from './RelatedItemDialog.vue';
+  import RelatedEntryDialog from './RelatedEntryDialog.vue';
   import BaseTable from '@/components/tables/BaseTable.vue';
 
   // types
-  import { Topics, ValidTopic, RelatedItemDetails, RelatedItemDialogModes, EntryNodeDragData, ValidTopicRecord, ActionButtonDefinition, CellEditCompleteEvent } from '@/types';
+  import { Topics, ValidTopic, RelatedEntryDetails, RelatedEntryDialogModes, EntryNodeDragData, ValidTopicRecord, ActionButtonDefinition, CellEditCompleteEvent } from '@/types';
   
-  interface RelatedItemGridRow extends Record<string, any> { 
+  interface RelatedEntryGridRow extends Record<string, any> { 
     uuid: string; 
     name: string; 
     type: string;
@@ -78,7 +78,7 @@
   const navigationStore = useNavigationStore();
 
   const { currentEntryTopic } = storeToRefs(mainStore);
-  const { relatedItemRows, } = storeToRefs(relationshipStore);
+  const { relatedEntryRows, } = storeToRefs(relationshipStore);
   const extraFields = relationshipStore.extraFields;
 
   ////////////////////////////////
@@ -132,8 +132,8 @@
     }
   });
 
-  const rows = computed((): RelatedItemGridRow[] => 
-    relatedItemRows.value.map((item: RelatedItemDetails<any, any>) => {
+  const rows = computed((): RelatedEntryGridRow[] => 
+    relatedEntryRows.value.map((item: RelatedEntryDetails<any, any>) => {
       const base = { uuid: item.uuid, name: item.name, type: item.type };
 
       extraColumns.value.forEach((field) => {
@@ -283,14 +283,14 @@
     const { data, field, newValue } = event;
     const uuid = data.uuid as string;
 
-    const currentFullRow = relatedItemRows.value.find(r => r.uuid === uuid);
+    const currentFullRow = relatedEntryRows.value.find(r => r.uuid === uuid);
     if (!currentFullRow) {
-      throw new Error('Cannot find row in RelatedItemTable.onCellEditComplete:' + uuid);
+      throw new Error('Cannot find row in RelatedEntryTable.onCellEditComplete:' + uuid);
     }
 
     const relevantExtraFieldDefs = extraFields[currentEntryTopic.value]?.[props.topic] || [];
     if (!relevantExtraFieldDefs.length) {
-      throw new Error('Call to RelatedItemTable.onCellEditComplete without an extra field:' + uuid);
+      throw new Error('Call to RelatedEntryTable.onCellEditComplete without an extra field:' + uuid);
     }
 
     const extraFieldsToSave: Record<string, string> = { ...currentFullRow.extraFields }; // Start with existing extra fields

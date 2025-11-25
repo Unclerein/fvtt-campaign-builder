@@ -204,11 +204,11 @@ class SearchService {
     const relationships = entry.relationships;
     for (const topicKey in relationships) {
       const topic = parseInt(topicKey) as ValidTopic;
-      const relatedItems = relationships[topic];
+      const relatedEntries = relationships[topic];
       
-      for (const relatedId in relatedItems) {
+      for (const relatedId in relatedEntries) {
         // when we remove them, we set it to null, so we need to check for that
-        const related = relatedItems[relatedId];
+        const related = relatedEntries[relatedId];
 
         if (!related)
           continue;
@@ -629,8 +629,8 @@ async function addArcEntrySnippet<T extends { uuid: string }>(snippets: string[]
 };
 
 // vignettes, lore
-function addSessionShortSnippet(snippets: string[], relatedEntries: readonly SessionLore[] | readonly SessionVignette[]) {
-  for (const relatedItem of relatedEntries) {
+function addSessionShortSnippet(snippets: string[], relatedItems: readonly SessionLore[] | readonly SessionVignette[]) {
+  for (const relatedItem of relatedItems) {
     // only index delivered ones
     if (!relatedItem.delivered) 
       continue;
@@ -640,8 +640,8 @@ function addSessionShortSnippet(snippets: string[], relatedEntries: readonly Ses
 };
 
 // vignettes, lore
-function addArcShortSnippet(snippets: string[], relatedEntries: readonly ArcLore[]) {
-  for (const relatedItem of relatedEntries) {
+function addArcShortSnippet(snippets: string[], relatedItems: readonly ArcLore[]) {
+  for (const relatedItem of relatedItems) {
     snippets.push(`${relatedItem?.description}`);
   }
 };

@@ -125,7 +125,7 @@
               :data-tab="relationship.tab"
             >
               <div class="tab-inner">
-                <RelatedItemTable :topic="relationship.topic" />
+                <RelatedEntryTable :topic="relationship.topic" />
               </div>
             </div> 
           </div>
@@ -164,7 +164,7 @@
   import Editor from '@/components/Editor.vue';
   import LabelWithHelp from '@/components/LabelWithHelp.vue';
   import JournalTab from '@/components/ContentTab/JournalTab.vue';
-  import RelatedItemTable from '@/components/tables/RelatedItemTable.vue';
+  import RelatedEntryTable from '@/components/tables/RelatedEntryTable.vue';
   import RelatedEntriesManagementDialog from '@/components/RelatedEntriesManagementDialog.vue';
   
   // types

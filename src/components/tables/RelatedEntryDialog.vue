@@ -16,7 +16,7 @@
             @selection-made="onSelectionMade"
           />
           <div class="extra-fields-container" v-if="extraFields.length > 0">
-            <h3 class="extra-fields-title">{{ localize('dialogs.relatedItems.additionalInformation') }}</h3>
+            <h3 class="extra-fields-title">{{ localize('dialogs.relatedEntries.additionalInformation') }}</h3>
             <div class="extra-fields-group">
               <div
                 v-for="field in extraFields"
@@ -41,7 +41,7 @@
         </div>
         <div v-else class="no-items-message">
           <i class="fas fa-info-circle"></i>
-          <span>{{ localize('dialogs.relatedItems.allItemsConnected') }}</span>
+          <span>{{ localize('dialogs.relatedEntries.allItemsConnected') }}</span>
         </div>
       </div>
     </Dialog>
@@ -66,7 +66,7 @@
   import Dialog from '@/components/Dialog.vue';
 
   // types
-  import { Topics, ValidTopic, RelatedItemDialogModes, ValidTopicRecord, TopicBasicIndex, EntryBasicIndex } from '@/types';
+  import { Topics, ValidTopic, RelatedEntryDialogModes, ValidTopicRecord, TopicBasicIndex, EntryBasicIndex } from '@/types';
   import { Entry, } from '@/classes';
 
   interface ButtonProp {
@@ -90,8 +90,8 @@
       default: Topics.Character,
     },
     mode: {
-      type: String as PropType<RelatedItemDialogModes>,
-      default: RelatedItemDialogModes.Add,
+      type: String as PropType<RelatedEntryDialogModes>,
+      default: RelatedEntryDialogModes.Add,
     },
     itemId: { 
       type: String as PropType<string>, 
@@ -133,24 +133,24 @@
 
   const topicDetails = {
     [Topics.Character]: {
-      title: localize('dialogs.relatedItems.character.title'),
-      createButtonTitle: localize('dialogs.relatedItems.character.createButtonTitle'),
-      buttonTitle: localize('dialogs.relatedItems.character.buttonTitle'),
+      title: localize('dialogs.relatedEntries.character.title'),
+      createButtonTitle: localize('dialogs.relatedEntries.character.createButtonTitle'),
+      buttonTitle: localize('dialogs.relatedEntries.character.buttonTitle'),
     },
     [Topics.Location]: {
-      title: localize('dialogs.relatedItems.location.title'),
-      createButtonTitle: localize('dialogs.relatedItems.location.createButtonTitle'),
-      buttonTitle: localize('dialogs.relatedItems.location.buttonTitle'),
+      title: localize('dialogs.relatedEntries.location.title'),
+      createButtonTitle: localize('dialogs.relatedEntries.location.createButtonTitle'),
+      buttonTitle: localize('dialogs.relatedEntries.location.buttonTitle'),
     },
     [Topics.Organization]: {
-      title: localize('dialogs.relatedItems.organization.title'),
-      createButtonTitle: localize('dialogs.relatedItems.organization.createButtonTitle'),
-      buttonTitle: localize('dialogs.relatedItems.organization.buttonTitle'),
+      title: localize('dialogs.relatedEntries.organization.title'),
+      createButtonTitle: localize('dialogs.relatedEntries.organization.createButtonTitle'),
+      buttonTitle: localize('dialogs.relatedEntries.organization.buttonTitle'),
     },
     [Topics.PC]: {
-      title: localize('dialogs.relatedItems.pc.title'),
-      createButtonTitle: localize('dialogs.relatedItems.pc.createButtonTitle'),
-      buttonTitle: localize('dialogs.relatedItems.pc.buttonTitle'),
+      title: localize('dialogs.relatedEntries.pc.title'),
+      createButtonTitle: localize('dialogs.relatedEntries.pc.createButtonTitle'),
+      buttonTitle: localize('dialogs.relatedEntries.pc.buttonTitle'),
     },
   } as ValidTopicRecord<{ 
     title: string; 
@@ -159,28 +159,28 @@
   }>;
 
   const dangerDetails = {
-    title: localize('dialogs.relatedItems.entry.title'),
-    buttonTitle: localize('dialogs.relatedItems.entry.buttonTitle'),
+    title: localize('dialogs.relatedEntries.entry.title'),
+    buttonTitle: localize('dialogs.relatedEntries.entry.buttonTitle'),
   };
 
   const participantDetails = dangerDetails;
 
   const locationDetails = {
     title: topicDetails[Topics.Location]?.title,
-    buttonTitle: localize('dialogs.relatedItems.entry.buttonTitle'),
+    buttonTitle: localize('dialogs.relatedEntries.entry.buttonTitle'),
   };
 
   const sessionDetails = {
-    buttonTitle: localize('dialogs.relatedItems.addToSession'),
+    buttonTitle: localize('dialogs.relatedEntries.addToSession'),
   };
 
   ////////////////////////////////
   // computed data
   const dialogTitle = computed(() => {
     switch (props.mode) {
-      case RelatedItemDialogModes.Danger:
+      case RelatedEntryDialogModes.Danger:
         return dangerDetails.title;
-      case RelatedItemDialogModes.ArcParticipant:
+      case RelatedEntryDialogModes.ArcParticipant:
         return participantDetails.title;
       default:
         return (props.topic && topicDetails[props.topic]?.title) || '';
@@ -189,15 +189,15 @@
 
   const actionButtonLabel = computed(() => {
     switch (props.mode) {
-      case RelatedItemDialogModes.Danger:
+      case RelatedEntryDialogModes.Danger:
         return dangerDetails.buttonTitle;
-      case RelatedItemDialogModes.ArcParticipant:
+      case RelatedEntryDialogModes.ArcParticipant:
         return participantDetails.buttonTitle;
-      case RelatedItemDialogModes.ArcLocation:
+      case RelatedEntryDialogModes.ArcLocation:
         return locationDetails.buttonTitle;
-      case RelatedItemDialogModes.Add:
+      case RelatedEntryDialogModes.Add:
         return topicDetails[props.topic]?.buttonTitle;
-      case RelatedItemDialogModes.Session:
+      case RelatedEntryDialogModes.Session:
         return sessionDetails.buttonTitle;
     }
     return '';
@@ -205,8 +205,8 @@
 
   // add mode or session mode
   const createButtonLabel = computed(() => {
-    if ([RelatedItemDialogModes.Danger, RelatedItemDialogModes.ArcParticipant].includes(props.mode)) 
-      throw new Error('Trying to add create button to danger/participant RelatedItemDialog');
+    if ([RelatedEntryDialogModes.Danger, RelatedEntryDialogModes.ArcParticipant].includes(props.mode)) 
+      throw new Error('Trying to add create button to danger/participant RelatedEntryDialog');
 
     return topicDetails[props.topic]?.createButtonTitle || '';
   });
@@ -277,7 +277,7 @@
     }, {} as Record<string, string>);
 
     switch (props.mode) {
-      case RelatedItemDialogModes.Add:
+      case RelatedEntryDialogModes.Add:
         if (entryToAdd.value) {
           const fullEntry = await Entry.fromUuid(entryToAdd.value);
 
@@ -287,7 +287,7 @@
         };
         break;
       
-      case RelatedItemDialogModes.Danger:
+      case RelatedEntryDialogModes.Danger:
         if (entryToAdd.value) {
           const fullEntry = await Entry.fromUuid(entryToAdd.value);
 
@@ -297,7 +297,7 @@
         };
         break;
 
-      case RelatedItemDialogModes.ArcLocation:
+      case RelatedEntryDialogModes.ArcLocation:
         if (entryToAdd.value) {
           const fullEntry = await Entry.fromUuid(entryToAdd.value);
 
@@ -307,7 +307,7 @@
         };
         break;
 
-      case RelatedItemDialogModes.ArcParticipant:
+      case RelatedEntryDialogModes.ArcParticipant:
         if (entryToAdd.value) {
           const fullEntry = await Entry.fromUuid(entryToAdd.value);
 
@@ -317,7 +317,7 @@
         };
         break;
 
-      case RelatedItemDialogModes.Session:
+      case RelatedEntryDialogModes.Session:
         if (entryToAdd.value) {
           const fullEntry = await Entry.fromUuid(entryToAdd.value);
 
@@ -328,7 +328,7 @@
             } else if (props.topic === Topics.Location) {
               await sessionStore.addLocation(entryToAdd.value);
             } else {
-              throw new Error('Trying to add invalid topic to session in RelatedItemDialog.onActionClick');
+              throw new Error('Trying to add invalid topic to session in RelatedEntryDialog.onActionClick');
             }
           }
         };
@@ -371,9 +371,9 @@
       
       let entries = [] as {id: string; label: string}[];
       switch (props.mode) {
-        case RelatedItemDialogModes.Danger:
+        case RelatedEntryDialogModes.Danger:
           if (!currentFront.value)
-            throw new Error('Trying to show RelatedItemDialog in danger mode without a current front');
+            throw new Error('Trying to show RelatedEntryDialog in danger mode without a current front');
 
             // concat all the topics
           entries = [];
@@ -383,9 +383,9 @@
             );
           }
           break;
-        case RelatedItemDialogModes.ArcParticipant:
+        case RelatedEntryDialogModes.ArcParticipant:
           if (!currentArc.value)
-            throw new Error('Trying to show RelatedItemDialog in participant mode without a current arc');
+            throw new Error('Trying to show RelatedEntryDialog in participant mode without a current arc');
           
           // characters and organizations only
           entries = [];
@@ -395,16 +395,16 @@
             );
           }
           break;
-        case RelatedItemDialogModes.ArcLocation:
+        case RelatedEntryDialogModes.ArcLocation:
           if (!currentArc.value)
-            throw new Error('Trying to show RelatedItemDialog in arc location mode without a current arc');
+            throw new Error('Trying to show RelatedEntryDialog in arc location mode without a current arc');
           
           // locations only
           entries = (currentSetting.value.topics[Topics.Location]?.entries || []).map(mapEntryToOption);
           break;
         default:
           if (!currentSession.value && !(currentEntry.value && currentEntryTopic.value))
-            throw new Error('Trying to show RelatedItemDialog without a current entry/session/front');
+            throw new Error('Trying to show RelatedEntryDialog without a current entry/session/front');
 
           entries = (currentSetting.value.topics[props.topic]?.entries || []).map(mapEntryToOption);
       }

@@ -538,7 +538,7 @@
         "title": "Add To-do",
         "text": "Enter to-do text:"
       },
-      "relatedItems": {
+      "relatedEntries": {
         "additionalInformation": "Additional Information",
         "allItemsConnected": "All possible related items are already connected.",
         "entry": {

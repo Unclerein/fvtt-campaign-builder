@@ -505,7 +505,7 @@
         "title": "Добавить элемент списка дел",
         "text": "Введите текст элемента списка дел:"
       },
-      "relatedItems": {
+      "relatedEntries": {
         "additionalInformation": "Дополнительная информация",
         "allItemsConnected": "Все возможные связанные элементы уже подключены.",
         "character": {

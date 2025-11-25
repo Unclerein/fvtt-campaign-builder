@@ -177,7 +177,7 @@
           :data-tab="relationship.tab"
         >
           <div class="tab-inner">
-            <RelatedItemTable :topic="relationship.topic as ValidTopic" />
+            <RelatedEntryTable :topic="relationship.topic as ValidTopic" />
           </div>
         </div>
         <div 
@@ -245,7 +245,7 @@
   import DescriptionTab from '@/components/ContentTab/DescriptionTab.vue';
   import JournalTab from '@/components/ContentTab/JournalTab.vue';
   import PCContent from '@/components/ContentTab/PCContent.vue';
-  import RelatedItemTable from '@/components/tables/RelatedItemTable.vue';
+  import RelatedEntryTable from '@/components/tables/RelatedEntryTable.vue';
   import RelatedDocumentTable from '@/components/tables/RelatedDocumentTable.vue';
   import Editor from '@/components/Editor.vue';
   import TypeAhead from '@/components/TypeAhead.vue';

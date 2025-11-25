@@ -13,10 +13,10 @@
     @drop-new="onDropNew"
     @cell-edit-complete="onCellEditComplete"
   />
-  <RelatedItemDialog
+  <RelatedEntryDialog
     v-model="showParticipantPicker"
     :topic="Topics.Character"
-    :mode="RelatedItemDialogModes.ArcParticipant"
+    :mode="RelatedEntryDialogModes.ArcParticipant"
     :allow-create="false"
   />
 </template>
@@ -29,7 +29,7 @@
 
   // local imports
   import { ArcTableTypes, useArcStore, useMainStore } from '@/applications/stores';
-  import { Topics, RelatedItemDialogModes, CellEditCompleteEvent,} from '@/types';
+  import { Topics, RelatedEntryDialogModes, CellEditCompleteEvent,} from '@/types';
   import { localize } from '@/utils/game'
   import { getValidatedData } from '@/utils/dragdrop';
   import { getTopicText } from '@/compendia';
@@ -40,7 +40,7 @@
 
   // local components
   import BaseTable from '@/components/tables/BaseTable.vue';
-  import RelatedItemDialog from '@/components/tables/RelatedItemDialog.vue';
+  import RelatedEntryDialog from '@/components/tables/RelatedEntryDialog.vue';
 
   // types
   

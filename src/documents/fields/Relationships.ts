@@ -1,9 +1,9 @@
-import { RelatedItemDetails, Topics, ValidTopicRecord } from '@/types';
+import { RelatedEntryDetails, Topics, ValidTopicRecord } from '@/types';
 import { TopicSchema } from './Topic';
 
 const fields = foundry.data.fields;
 
-export const RelatedItemDetailsSchema = () => (
+export const RelatedEntryDetailsSchema = () => (
   new fields.SchemaField({
     /** uuid of related entry */
     uuid: new fields.DocumentUUIDField({ required: true, nullable: false }),
@@ -25,20 +25,20 @@ export const RelatedItemDetailsSchema = () => (
 export const RelationshipsSchema = () => (
   new fields.SchemaField({
     [Topics.Character]: new fields.TypedObjectField(
-      RelatedItemDetailsSchema(),
-      { required: true, nullable: false, initial: {} as Record<string, RelatedItemDetails<any, any>> }
+      RelatedEntryDetailsSchema(),
+      { required: true, nullable: false, initial: {} as Record<string, RelatedEntryDetails<any, any>> }
     ),
     [Topics.Location]: new fields.TypedObjectField(
-      RelatedItemDetailsSchema(),
-      { required: true, nullable: false, initial: {} as Record<string, RelatedItemDetails<any, any>> }
+      RelatedEntryDetailsSchema(),
+      { required: true, nullable: false, initial: {} as Record<string, RelatedEntryDetails<any, any>> }
     ),
     [Topics.Organization]: new fields.TypedObjectField(
-      RelatedItemDetailsSchema(),
-      { required: true, nullable: false, initial: {} as Record<string, RelatedItemDetails<any, any>> }
+      RelatedEntryDetailsSchema(),
+      { required: true, nullable: false, initial: {} as Record<string, RelatedEntryDetails<any, any>> }
     ),
     [Topics.PC]: new fields.TypedObjectField(
-      RelatedItemDetailsSchema(),
-      { required: true, nullable: false, initial: {} as Record<string, RelatedItemDetails<any, any>> }
+      RelatedEntryDetailsSchema(),
+      { required: true, nullable: false, initial: {} as Record<string, RelatedEntryDetails<any, any>> }
     ),
   },
   { required: true, nullable: false, initial: {
@@ -46,6 +46,6 @@ export const RelationshipsSchema = () => (
       [Topics.Location]: {},
       [Topics.Organization]: {},
       [Topics.PC]: {},
-    } as ValidTopicRecord<Record<string, RelatedItemDetails<any, any>>>   // all the things related to this item, grouped by topic
+    } as ValidTopicRecord<Record<string, RelatedEntryDetails<any, any>>>   // all the things related to this item, grouped by topic
   }
 ));

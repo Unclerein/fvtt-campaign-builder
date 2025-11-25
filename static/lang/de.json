@@ -477,7 +477,7 @@
         "description": "Wählen Sie die Namensstile aus, die Sie für von KI generierte Namen in dieser Einstellung verwenden möchten. Sie können unten Beispiele für jeden Stil basierend auf Genre und Stimmung dieser Einstellung anzeigen.",
         "errorMessage": "Es gab einen Fehler:"
       },
-      "relatedItems": {
+      "relatedEntries": {
         "additionalInformation": "Zusätzliche Informationen",
         "allItemsConnected": "Alle möglichen verwandten Elemente sind bereits verbunden.",
         "character": {

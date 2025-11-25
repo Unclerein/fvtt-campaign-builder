@@ -16,10 +16,10 @@
     @dropNew="onDropNew"
     @cell-edit-complete="onCellEditComplete"
   />
-  <RelatedItemDialog
+  <RelatedEntryDialog
     v-model="showLocationPicker"
     :topic="Topics.Location"
-    :mode="props.arcMode ? RelatedItemDialogModes.ArcLocation : RelatedItemDialogModes.Session"
+    :mode="props.arcMode ? RelatedEntryDialogModes.ArcLocation : RelatedEntryDialogModes.Session"
   />
 
 </template>
@@ -32,7 +32,7 @@
 
   // local imports
   import { useSessionStore, SessionTableTypes, useArcStore, ArcTableTypes } from '@/applications/stores';
-  import { Topics, RelatedItemDialogModes, CellEditCompleteEvent, } from '@/types';
+  import { Topics, RelatedEntryDialogModes, CellEditCompleteEvent, } from '@/types';
   import { localize } from '@/utils/game'
   import { getValidatedData } from '@/utils/dragdrop';
   import { notifyInfo } from '@/utils/notifications';
@@ -41,7 +41,7 @@
 
   // local components
   import BaseTable from '@/components/tables/BaseTable.vue';
-  import RelatedItemDialog from '@/components/tables/RelatedItemDialog.vue';
+  import RelatedEntryDialog from '@/components/tables/RelatedEntryDialog.vue';
 
   // types
   

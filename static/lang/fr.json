@@ -477,7 +477,7 @@
         "description": "Sélectionnez les styles de nommage que vous souhaitez utiliser pour les noms générés par l'IA dans ce paramètre. Vous pouvez prévisualiser des exemples de chaque style ci-dessous, basés sur le genre et l'ambiance de ce paramètre.",
         "errorMessage": "Il y a eu une erreur :"
       },
-      "relatedItems": {
+      "relatedEntries": {
         "additionalInformation": "Informations supplémentaires",
         "allItemsConnected": "Tous les éléments possibles liés sont déjà connectés.",
         "character": {

@@ -49,7 +49,7 @@
   ////////////////////////////////
   // store
   const sessionStore = useSessionStore();
-  const { relatedItemRows } = storeToRefs(sessionStore);
+  const { relatedEntryRows } = storeToRefs(sessionStore);
   
   ////////////////////////////////
   // data
@@ -61,7 +61,7 @@
   ////////////////////////////////
   // methods
   const mappedItemRows = computed(() => (
-    relatedItemRows.value.map((row) => ({
+    relatedEntryRows.value.map((row) => ({
       ...row,
     }))
   ));

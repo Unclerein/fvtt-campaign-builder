@@ -101,7 +101,7 @@ export enum SessionDisplayMode {
   Name = 'name'
 }
 
-export enum RelatedItemDialogModes {
+export enum RelatedEntryDialogModes {
   Add = 'add',
   Edit = 'edit',
   Session = 'session', // for adding to sessions

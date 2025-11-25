@@ -42,7 +42,7 @@ export const useSessionStore = defineStore('session', () => {
   // the state
   // used for tables
   const relatedLocationRows = ref<SessionLocationDetails[]>([]);
-  const relatedItemRows = ref<SessionItemDetails[]>([]);
+  const relatedEntryRows = ref<SessionItemDetails[]>([]);
   const relatedNPCRows = ref<SessionNPCDetails[]>([]);
   const relatedMonsterRows = ref<SessionMonsterDetails[]>([]);
   const vignetteRows = ref<SessionVignette[]>([]);
@@ -800,25 +800,6 @@ export const useSessionStore = defineStore('session', () => {
   }
 
 
-  // const _refreshRows = async () => {
-  //   relatedLocationRows.value = [];
-  //   relatedItemRows.value = [];
-  //   relatedNPCRows.value = [];
-  //   relatedMonsterRows.value = [];
-  //   vignetteRows.value = [];
-  //   loreRows.value = [];
-
-  //   if (!currentSession.value)
-  //     return;
-
-  //   await _refreshLocationRows();
-  //   await _refreshItemRows();
-  //   await _refreshNPCRows();
-  //   await _refreshMonsterRows();
-  //   await _refreshVignetteRows();
-  //   await _refreshLoreRows();
-  // };
-
   const _refreshLocationRows = async () => {
     if (!currentSession.value)
       return;
@@ -907,7 +888,7 @@ export const useSessionStore = defineStore('session', () => {
       }
     }
 
-    relatedItemRows.value = retval;
+    relatedEntryRows.value = retval;
   }
 
   const _refreshMonsterRows = async () => {
@@ -1031,7 +1012,7 @@ export const useSessionStore = defineStore('session', () => {
   // return the public interface
   return {
     relatedLocationRows,
-    relatedItemRows,
+    relatedEntryRows,
     relatedNPCRows,
     relatedMonsterRows,
     vignetteRows,

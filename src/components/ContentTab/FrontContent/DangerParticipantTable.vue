@@ -18,11 +18,11 @@
   />
 
   <!-- note topic doesn't matter for this mode -->
-  <RelatedItemDialog
+  <RelatedEntryDialog
     v-model="addParticipantDialogShow"
     :topic="Topics.Character"
     :allow-create="false"
-    :mode="RelatedItemDialogModes.Danger"
+    :mode="RelatedEntryDialogModes.Danger"
   />
 </template>
 
@@ -38,10 +38,10 @@
   
   // local components
   import BaseTable from '@/components/tables/BaseTable.vue';
-  import RelatedItemDialog from '@/components/tables/RelatedItemDialog.vue';
+  import RelatedEntryDialog from '@/components/tables/RelatedEntryDialog.vue';
 
   // types
-  import { CellEditCompleteEvent, ActionButtonDefinition, DangerParticipant, RelatedItemDialogModes, Topics, } from '@/types';
+  import { CellEditCompleteEvent, ActionButtonDefinition, DangerParticipant, RelatedEntryDialogModes, Topics, } from '@/types';
   import { Entry } from '@/classes';
 
   ////////////////////////////////

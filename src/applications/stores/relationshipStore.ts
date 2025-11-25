@@ -9,7 +9,7 @@ import { useMainStore, } from './index';
 // types
 import { 
   Topics, ValidTopic,
-  RelatedItemDetails, FieldDataByTopic,
+  RelatedEntryDetails, FieldDataByTopic,
   RelatedDocumentDetails,
   DocumentLinkType,
 } from '@/types';
@@ -29,7 +29,7 @@ interface SessionReference {
 export const useRelationshipStore = defineStore('relationship', () => {
   ///////////////////////////////
   // the state
-  const relatedItemRows = ref<RelatedItemDetails<any, any>[]>([]);
+  const relatedEntryRows = ref<RelatedEntryDetails<any, any>[]>([]);
   const relatedDocumentRows = ref<RelatedDocumentDetails[]>([]);
   const sessionReferences = ref<SessionReference[]>([]);
 
@@ -95,14 +95,14 @@ export const useRelationshipStore = defineStore('relationship', () => {
     const relatedEntryTopic = relatedEntry.topic;
 
     // create the relationship items
-    const relatedItem1 = {
+    const relatedEntry1 = {
       uuid: relatedEntry.uuid,
       name: relatedEntry.name,
       topic: relatedEntry.topic,
       type: relatedEntry.type || '',
       extraFields: extraFields,
     };
-    const relatedItem2 = {
+    const relatedEntry2 = {
       uuid: entry.uuid,
       name: entry.name,
       topic: entry.topic,
@@ -116,17 +116,17 @@ export const useRelationshipStore = defineStore('relationship', () => {
 
     if (!entryRelationships[relatedEntryTopic]) {
       entryRelationships[relatedEntryTopic] = {
-        [relatedEntry.uuid]: relatedItem1
+        [relatedEntry.uuid]: relatedEntry1
       };
     } else {
-      entryRelationships[relatedEntryTopic][relatedEntry.uuid] = relatedItem1;
+      entryRelationships[relatedEntryTopic][relatedEntry.uuid] = relatedEntry1;
     }
     if (!relatedEntryRelationships[entryTopic]) {
       relatedEntryRelationships[entryTopic] = {
-        [entry.uuid]: relatedItem2
+        [entry.uuid]: relatedEntry2
       };
     } else {
-      relatedEntryRelationships[entryTopic][entry.uuid] = relatedItem2;
+      relatedEntryRelationships[entryTopic][entry.uuid] = relatedEntry2;
     }
 
     entry.relationships = entryRelationships;
@@ -263,12 +263,12 @@ export const useRelationshipStore = defineStore('relationship', () => {
   }
 
   // remove a relationship to the current entry
-  async function deleteRelationship(relatedItemTopic: Topics, relatedItemId: string): Promise<void> {
+  async function deleteRelationship(relatedTopic: Topics, relatedId: string): Promise<void> {
     if (!currentEntry.value)
       throw new Error('Invalid entry in relationshipStore.deleteRelationship()');
 
     const entry = currentEntry.value;
-    const relatedEntry = await Entry.fromUuid(relatedItemId); 
+    const relatedEntry = await Entry.fromUuid(relatedId); 
     if (!relatedEntry)
       throw new Error('Invalid entry in relationshipStore.deleteRelationship()');
 
@@ -283,26 +283,16 @@ export const useRelationshipStore = defineStore('relationship', () => {
     const relatedEntryRelationships = foundry.utils.deepClone(relatedEntry.relationships);
 
     if (entryRelationships && entryRelationships[relatedEntryTopic] && entryRelationships[relatedEntryTopic][relatedEntry.uuid]) {
-      delete entryRelationships[relatedItemTopic][relatedEntry.uuid];
+      delete entryRelationships[relatedTopic][relatedEntry.uuid];
 
-      // @ts-ignore - foundry code to delete the key
-      // entryRelationships[relatedItemTopic][`-=${relatedItemId}`] = null;
       entry.relationships = entryRelationships;
       await entry.save();
-
-      // clean out the entry that tells foundry to delete the key
-      // delete entryRelationships[relatedItemTopic][`-=${relatedItemId}`];
     }
     if (relatedEntryRelationships && relatedEntryRelationships[entryTopic] && relatedEntryRelationships[entryTopic][entry.uuid]) {
       delete relatedEntryRelationships[entryTopic][entry.uuid];
 
-      // @ts-ignore - foundry code to delete the key
-      // relatedEntryRelationships[entryTopic][`-=${entry.uuid}`] = null;
       relatedEntry.relationships = relatedEntryRelationships;
       await relatedEntry.save();
-
-      // clean out the entry that tells foundry to delete the key
-      // delete relatedEntryRelationships[entryTopic][`-=${entry.uuid}`];
     }
 
     await mainStore.refreshEntry();
@@ -330,7 +320,7 @@ export const useRelationshipStore = defineStore('relationship', () => {
         if (!relatedEntry || !relatedEntry.relationships || !entry.topic)
           continue;
 
-        const relatedRelationship = relatedEntry.relationships[entry.topic][entry.uuid];
+        const relatedRelationship = relatedEntry.relationships[entry.topic]![entry.uuid];
 
         if (!relatedRelationship)
           continue;
@@ -346,18 +336,18 @@ export const useRelationshipStore = defineStore('relationship', () => {
 
   // return all of the related items to this one for a given topic
   async function getRelationships<PrimaryTopic extends ValidTopic, RelatedTopic extends ValidTopic>(topic: RelatedTopic): 
-      Promise<RelatedItemDetails<PrimaryTopic, RelatedTopic>[]> {
-    const retval = [] as RelatedItemDetails<PrimaryTopic, RelatedTopic>[];
+      Promise<RelatedEntryDetails<PrimaryTopic, RelatedTopic>[]> {
+    const retval = [] as RelatedEntryDetails<PrimaryTopic, RelatedTopic>[];
 
     if (!currentEntry.value)
       throw new Error('Invalid current entry in relationshipStore.getRelationships()');
 
-    const relatedItems = (currentEntry.value.relationships ? currentEntry.value.relationships[topic] || {} : {}) as Record<string, RelatedItemDetails<PrimaryTopic, RelatedTopic>>;
+    const relatedEntries = (currentEntry.value.relationships ? currentEntry.value.relationships[topic] || {} : {}) as Record<string, RelatedEntryDetails<PrimaryTopic, RelatedTopic>>;
 
     // convert the map to an array and add the names
-    for (const relatedItem of Object.values(relatedItems)) {
-      if (relatedItem)
-        retval.push(relatedItem as RelatedItemDetails<PrimaryTopic, RelatedTopic>);
+    for (const relatedEntry of Object.values(relatedEntries)) {
+      if (relatedEntry)
+        retval.push(relatedEntry as RelatedEntryDetails<PrimaryTopic, RelatedTopic>);
     }
    
     return retval;
@@ -374,7 +364,7 @@ export const useRelationshipStore = defineStore('relationship', () => {
   // internal functions
   const _refreshRows = async () => {
     if (!currentEntry.value || !currentContentTab.value) {
-      relatedItemRows.value = [];
+      relatedEntryRows.value = [];
       relatedDocumentRows.value = [];
       sessionReferences.value = [];
     } else {
@@ -407,10 +397,10 @@ export const useRelationshipStore = defineStore('relationship', () => {
       }
 
       if (topic !== Topics.None) {
-        relatedItemRows.value = currentEntry.value.relationships ? Object.values(currentEntry.value.relationships[topic]) : [];
+        relatedEntryRows.value = currentEntry.value.relationships ? Object.values(currentEntry.value.relationships[topic]!) : [];
         relatedDocumentRows.value = [];
       } else if (currentDocumentType.value===DocumentLinkType.Scenes) {
-        relatedItemRows.value = [];
+        relatedEntryRows.value = [];
 
         const sceneList = [] as RelatedDocumentDetails[];
         for (let i=0; i<currentEntry.value.scenes.length; i++) {
@@ -428,7 +418,7 @@ export const useRelationshipStore = defineStore('relationship', () => {
         }
         relatedDocumentRows.value = sceneList;
       } else if (currentDocumentType.value===DocumentLinkType.Actors) {
-        relatedItemRows.value = [];
+        relatedEntryRows.value = [];
 
         const actorList = [] as RelatedDocumentDetails[];
         for (let i=0; i<currentEntry.value.actors.length; i++) {
@@ -445,7 +435,7 @@ export const useRelationshipStore = defineStore('relationship', () => {
         }
         relatedDocumentRows.value = actorList;
       } else {
-        relatedItemRows.value = [];
+        relatedEntryRows.value = [];
         relatedDocumentRows.value = [];
       }
     }
@@ -530,7 +520,7 @@ export const useRelationshipStore = defineStore('relationship', () => {
   ///////////////////////////////
   // return the public interface
   return {
-    relatedItemRows,
+    relatedEntryRows,
     relatedDocumentRows,
     extraFields,
     sessionReferences,
