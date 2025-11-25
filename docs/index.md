@@ -26,15 +26,17 @@ features:
 
   const version = inject('version')
   const baseUrl = import.meta.env.BASE_URL ?? '/'
-  const screenshots = Array.from({ length: 4 }, (_, i) =>
-    `${baseUrl}screenshots/screenshot${i + 1}.webp`
-  )
   const labels = [
     'Build out your world',
     'Easily maintain connections between elements',
     'Prep sessions in "Lazy DM" style (or however you choose)',
+    'Use Fronts to track \'off-camera\' action by the bad guys',
+    'Story arcs let you track your plot and store ideas for the future', 
     'AI generation of text and images (optional)'
   ];
+  const screenshots = Array.from({ length: labels.length }, (_, i) =>
+    `${baseUrl}screenshots/screenshot${i + 1}.webp`
+  )
   const currentIndex = ref(0);
   const currentScreenshot = computed(() => screenshots[currentIndex.value]);
   const slideLabel = computed(() => labels[currentIndex.value]);
