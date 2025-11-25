@@ -105,7 +105,7 @@ export const usePlayingStore = defineStore('playing', () => {
   //   - if both are not null, ditto
   watch(() => currentPlayedSessionId.value, async (newSessionId: string | null, oldSessionId: string | null) => {
     // make the sure the id changed
-    if (oldSessionId === newSessionId)
+    if (!isInPlayMode.value || oldSessionId === newSessionId)
       return;
 
     const oldSession = oldSessionId == null ? null : await Session.fromUuid(oldSessionId);
