@@ -1,7 +1,7 @@
 import { toRaw } from 'vue';
 
 import { DOCUMENT_TYPES, } from '@/documents';
-import { RelatedJournal, RelatedItemDetails, ValidTopic, Topics, ToDoTypes, ValidTopicRecord, } from '@/types';
+import { RelatedJournal, RelatedEntryDetails, ValidTopic, Topics, ToDoTypes, ValidTopicRecord, } from '@/types';
 import { FCBDialog } from '@/dialogs';
 import { getTopicText } from '@/compendia';
 import { TopicFolder,  } from '@/classes';
@@ -144,21 +144,8 @@ export class Entry extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Entry> {
       folderName,
       { system: {
         playerName: topicFolder.topic === Topics.PC ? nameToUse : '',
-        actorId: null,
-        plotPoints: '',
-        background: '',
-        magicItems: '',
         type: topicFolder.topic === Topics.PC ? 'PC' : options.type || '',
         topic: topicFolder.topic,
-        relationships: {
-          [Topics.Character]: {},
-          [Topics.Location]: {},
-          [Topics.Organization]: {},
-          [Topics.PC]: {},
-        },
-        actors: [],
-        scenes: [],
-        img: '',
       }
     }) as unknown as Entry;
 
@@ -328,11 +315,11 @@ export class Entry extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Entry> {
   }
 
   // keyed by topic then by entryId
-  get relationships(): ValidTopicRecord<Record<string, RelatedItemDetails<any, any>>> {
-    return this._clone.system.relationships as unknown as ValidTopicRecord<Record<string, RelatedItemDetails<any, any>>>;
+  get relationships(): ValidTopicRecord<Record<string, RelatedEntryDetails<any, any>>> {
+    return this._clone.system.relationships as unknown as ValidTopicRecord<Record<string, RelatedEntryDetails<any, any>>>;
   }  
 
-  set relationships(value: ValidTopicRecord<Record<string, RelatedItemDetails<any, any>>>) {
+  set relationships(value: ValidTopicRecord<Record<string, RelatedEntryDetails<any, any>>>) {
     this._clone.system.relationships = value;
   }
 
@@ -460,54 +447,25 @@ export class Entry extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Entry> {
     await setting.deleteEntryFromSetting(topicFolder, uuid);
 
     // Remove from search index
-    try {
-      searchService.removeEntry(uuid);
-    } catch (error) {
-      console.error('Failed to remove entry from search index:', error);
-    }
+    searchService.removeSearchEntry(uuid);
   }
 
-      
-  /**
-   * Find all journal entries of a given topic
-   * @todo   At some point, may need to make reactive (i.e. filter by what's been entered so far) or use algolia if lists are too long; 
-   *            might also consider making every topic a different subtype and then using DocumentIndex.lookup  -- that might give performance
-   *            improvements in lots of places
-   * @param topic the topic to search
-   * @param notRelatedTo if present, only return entries that are not already linked to this entry
-   * @returns a list of Entries
-   */
-  public static async getEntriesForTopic(topicFolder: TopicFolder, notRelatedTo?: Entry | undefined): Promise<Entry[]> {
-    // we find all journal entries with this topic
-    let entries = await topicFolder.allEntries(true);
+  // /**
+  //  * Retrieves a list of all uuids that are linked to the current entry for a specified topic.
+  //  * 
+  //  * @param topic - The topic for which to retrieve related items.
+  //  * @returns An array of related uuids. Returns an empty array if there is no current entry.
+  //  */
+  // public getAllRelatedEntries(topicFolder: TopicFolder): string[] {
+  //   // get relationships
+  //   const relationships = this.relationships || {};
 
-    // filter unique ones if needed
-    if (notRelatedTo) {
-      const relatedEntries = notRelatedTo.getAllRelatedEntries(topicFolder);
+  //   if (!relationships[topicFolder.topic])
+  //     return [];
 
-      // also remove the current one
-      entries = entries.filter((entry) => !relatedEntries.includes(entry.uuid) && entry.uuid !== notRelatedTo.uuid);
-    }
-
-    return entries;
-  }
-  
-  /**
-   * Retrieves a list of all uuids that are linked to the current entry for a specified topic.
-   * 
-   * @param topic - The topic for which to retrieve related items.
-   * @returns An array of related uuids. Returns an empty array if there is no current entry.
-   */
-  public getAllRelatedEntries(topicFolder: TopicFolder): string[] {
-    // get relationships
-    const relationships = this.relationships || {};
-
-    if (!relationships[topicFolder.topic])
-      return [];
-
-    // if the flag has this topic, it's a Record keyed by uuid
-    return Object.keys(relationships[topicFolder.topic] || {});
-  }
+  //   // if the flag has this topic, it's a Record keyed by uuid
+  //   return Object.keys(relationships[topicFolder.topic] || {});
+  // }
 
   /** Adds the type to the list on the topic, if it's not there already.
    *  Requires the setting to be unlocked already

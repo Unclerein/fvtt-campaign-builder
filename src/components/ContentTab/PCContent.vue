@@ -18,7 +18,7 @@
         <div class="fcb-subtab-wrapper">
           <nav class="fcb-sheet-navigation flexrow tabs" data-group="primary">
             <a class="item" data-tab="description">{{ localize('labels.tabs.entry.description') }}</a>
-            <a class="item" data-tab="journals">{{ localize('labels.tabs.entry.journals') }}</a>
+            <a class="item" data-tab="journals">{{ localize('labels.journals') }}</a>
             <a 
               v-for="relationship in relationships"
               :key="relationship.tab"
@@ -125,7 +125,7 @@
               :data-tab="relationship.tab"
             >
               <div class="tab-inner">
-                <RelatedItemTable :topic="relationship.topic" />
+                <RelatedEntryTable :topic="relationship.topic" />
               </div>
             </div> 
           </div>
@@ -164,7 +164,7 @@
   import Editor from '@/components/Editor.vue';
   import LabelWithHelp from '@/components/LabelWithHelp.vue';
   import JournalTab from '@/components/ContentTab/JournalTab.vue';
-  import RelatedItemTable from '@/components/tables/RelatedItemTable.vue';
+  import RelatedEntryTable from '@/components/tables/RelatedEntryTable.vue';
   import RelatedEntriesManagementDialog from '@/components/RelatedEntriesManagementDialog.vue';
   
   // types

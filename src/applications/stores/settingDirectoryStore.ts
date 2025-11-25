@@ -12,9 +12,10 @@ import { getCurrentSetting, getTopicTextPlural, } from '@/compendia';
 import { localize } from '@/utils/game';
 import { FCBDialog } from '@/dialogs';
 import { scrollToActiveEntry } from '@/utils/directoryScroll';
+import { getGlobalSetting } from '@/utils/globalSettings';
 
 // types
-import { Entry, DirectoryTopicNode, DirectoryTypeEntryNode, DirectoryEntryNode, DirectoryTypeNode, CreateEntryOptions, FCBSetting, TopicFolder, getGlobalSetting } from '@/classes';
+import { Entry, DirectoryTopicFolderNode, DirectoryTypeEntryNode, DirectoryEntryNode, DirectoryTypeNode, CreateEntryOptions, FCBSetting, TopicFolder,  } from '@/classes';
 import { DirectorySetting, Hierarchy, Topics, ValidTopic, ValidTopicRecord, EntryBasicIndex } from '@/types';
 import { MenuItem } from '@imengyu/vue3-context-menu';
 
@@ -72,7 +73,7 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
    * @param topic - The topic node to be toggled.
    * @returns A promise that resolves when the topic has been toggled.
    */
-  const toggleTopic = async(topicNode: DirectoryTopicNode) : Promise<void> => {
+  const toggleTopic = async(topicNode: DirectoryTopicFolderNode) : Promise<void> => {
     await topicNode.toggleWithLoad(!topicNode.expanded);
     await refreshSettingDirectoryTree();
   };
@@ -373,7 +374,7 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
   };
 
   // delete an entry from the setting
-  const deleteEntry = async (topic: ValidTopic, entryId: string) => {
+  const deleteEntry = async (_topic: ValidTopic, entryId: string) => {
     if (!currentSetting.value)
       return;
 
@@ -441,11 +442,11 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
     const expandedNodes = currentSetting.value.expandedIds;
 
     const topics = [Topics.Character, Topics.Location, Topics.Organization, Topics.PC] as ValidTopic[];
-    currentSettingBlock.topicNodes = topics.map((topic: ValidTopic): DirectoryTopicNode => {
+    currentSettingBlock.topicNodes = topics.map((topic: ValidTopic): DirectoryTopicFolderNode => {
       const id = `${(currentSetting.value as FCBSetting).uuid}.topic.${topic}`;
       const topicObj = topicFolders[topic] as TopicFolder;
 
-      return new DirectoryTopicNode(
+      return new DirectoryTopicFolderNode(
         id,
         getTopicTextPlural(topic),
         topicObj,
@@ -454,20 +455,20 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
         [],
         expandedNodes[id] || false,
       );
-    }).sort((a: DirectoryTopicNode, b: DirectoryTopicNode): number => a.topicFolder.topic - b.topicFolder.topic);
+    }).sort((a: DirectoryTopicFolderNode, b: DirectoryTopicFolderNode): number => a.topicFolder.topic - b.topicFolder.topic);
 
     // load the children for any open topics
     for (let i=0; i<currentSettingBlock?.topicNodes.length; i++) {
-      const directoryTopicNode = currentSettingBlock.topicNodes[i];
+      const DirectoryTopicFolderNode = currentSettingBlock.topicNodes[i];
 
-      if (!directoryTopicNode.expanded)
+      if (!DirectoryTopicFolderNode.expanded)
         continue;
 
       // have to check all children are loaded and expanded properly
-      await directoryTopicNode.recursivelyLoadNode(expandedNodes, updateEntryIds);
+      await DirectoryTopicFolderNode.recursivelyLoadNode(expandedNodes, updateEntryIds);
 
       // load the type-grouped entries
-      directoryTopicNode.loadTypeEntries(topicFolders[directoryTopicNode.topicFolder.topic].types, expandedNodes);
+      await DirectoryTopicFolderNode.loadTypeEntries(topicFolders[DirectoryTopicFolderNode.topicFolder.topic]!.types, expandedNodes);
     }
 
     // @ts-ignore (fvtt circularity issue)
@@ -591,20 +592,29 @@ export const useSettingDirectoryStore = defineStore('settingDirectory', () => {
     const topics = [Topics.Character, Topics.Location, Topics.Organization, Topics.PC] as ValidTopic[];
 
     for (let i=0; i<topics.length; i++) {
-      const topicObj = currentSetting.value.topicFolders[topics[i]];
+      const topic = topics[i];
+      const topicObj = currentSetting.value.topicFolders[topic];
 
       if (!topicObj)
         continue;
 
       // filter on name and type
-      const matchedEntryObjects = topicObj.entryIndex.filter((e: EntryBasicIndex)=>( filterText.value === '' || regex.test( e.name || '' ) || regex.test( e.type || '' )));
+      const matchedEntryObjects = topicObj.entryIndex.filter((e: EntryBasicIndex) =>( filterText.value === '' || regex.test( e.name || '' ) || regex.test( e.type || '' )));
     
       let allItemsToShow: string[] = [];
 
       // add the ancestors and types;
       for (const entry of matchedEntryObjects) {
         allItemsToShow.push(entry.uuid);
-        allItemsToShow.push(entry.type || NO_TYPE_STRING);
+
+        // type filter IDs must match DirectoryTypeNode.id, which is built as
+        //   `${topicId}:${typeName}` where topicId is the DirectoryTopicFolderNode id.
+        // DirectoryTopicFolderNode ids are built in refreshSettingDirectoryTree as
+        //   `${currentSetting.uuid}.topic.${topic}`.
+        const topicId = `${currentSetting.value.uuid}.topic.${topic}`;
+        const typeName = entry.type || NO_TYPE_STRING;
+        const typeNodeId = `${topicId}:${typeName}`;
+        allItemsToShow.push(typeNodeId);
 
         const hierarchy = hierarchies[entry.uuid];
         if (hierarchy && hierarchy.ancestors) {

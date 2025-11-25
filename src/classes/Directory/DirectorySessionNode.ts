@@ -2,7 +2,7 @@
  * An node representing a session in the campaign tree structures
  */
 
-import { CollapsibleNode, Session } from '@/classes';
+import { CollapsibleNode, } from '@/classes';
 import { ModuleSettings, SettingKey } from '@/settings';
 import { SessionBasicIndex, SessionDisplayMode } from '@/types';
 import { localize } from '@/utils/game';
@@ -78,7 +78,7 @@ export class DirectorySessionNode extends CollapsibleNode<never> {
     return new DirectorySessionNode(
       session.uuid,
       session.name,
-      session.number,
+      Number.parseInt(session.number.toString()), // make sure we didn't get it as a string
       dateValue?.isValid() ? dateValue : null,
       campaignId,
     );

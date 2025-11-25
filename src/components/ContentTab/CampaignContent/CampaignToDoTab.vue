@@ -6,23 +6,17 @@
       :show-filter="false"
       :filter-fields="[]"
       :add-button-label="localize('labels.campaign.addToDo')"
-      :track-delivery="false"
       :allow-drop-row="false"
       :rows="mappedToDoRows"
       :columns="columns"
       :allow-edit="true"
       :edit-item-label="localize('tooltips.editRow')"
-      :delete-item-label="localize('tooltips.deleteToDo')"
-      :show-move-to-campaign="false"
-      :show-move-to-ideas="true"
-      :move-to-ideas-label="localize('tooltips.moveToIdeas')"
       :draggable-rows="false"
       :can-reorder="true"
-      @delete-item="onDeleteToDoItem"
+      :actions="actions"
       @add-item="onAddToDoItem"
       @cell-edit-complete="onCellEditComplete"
       @reorder="onReorder"
-      @move-to-ideas="onMoveToIdeas"
     >
     </BaseTable>
   </div>
@@ -44,8 +38,7 @@
   import BaseTable from '@/components/tables/BaseTable.vue';
   
   // types
-  import { ToDoItem, ToDoTypes, BaseTableGridRow } from '@/types';
-  import { DataTableCellEditCompleteEvent } from 'primevue';
+  import { ToDoItem, ToDoTypes, BaseTableGridRow, CellEditCompleteEvent } from '@/types';
 
   // store
   const campaignStore = useCampaignStore();
@@ -75,6 +68,11 @@
         return '';
     }
   }
+
+  const actions = computed(() => [
+    { icon: 'fa-trash', callback: (data) => onDeleteToDoItem(data.uuid), tooltip: localize('tooltips.deleteToDo') },
+    { icon: 'fa-arrow-left', callback: (data) => onMoveToIdeas(data.uuid), tooltip: localize('tooltips.moveToIdeas') },
+  ])
   const mappedToDoRows = computed(() => (
     toDoRows.value.map((row) => ({
       ...row,
@@ -109,16 +107,15 @@
     }
   };
 
-  const onCellEditComplete = async (event: DataTableCellEditCompleteEvent) => {
-    const { data, newValue, field, originalEvent } = event;
+  const onCellEditComplete = async (event: CellEditCompleteEvent) => {
+    const { data, newValue, field, } = event;
 
     switch (field) {
       case 'text':
-        await campaignStore.updateToDoItem(data.uuid, newValue);
+        await campaignStore.updateToDoItem(data.uuid, newValue as string);
         break;
 
       default:
-        originalEvent?.preventDefault();
         break;
     }  
   }

@@ -7,14 +7,12 @@
       :show-filter="true"
       :filter-fields="['name', 'campaignName']"
       :allow-edit="false"
-      :delete-item-label="localize('tooltips.deleteSession')"
       :edit-item-label="localize('tooltips.editSession')"
       :add-button-label="''"
-      :track-delivery="false"
       :extra-add-text="''"
       :allow-drop-row="false"
-      :show-move-to-campaign="false"
       :draggable-rows="false"
+
     />
   </div>
 </template>

@@ -3,7 +3,7 @@
  */
 
 import { Entry } from '@/classes';
-import { RelatedItemDetails } from '@/types';
+import { RelatedEntryDetails } from '@/types';
 import { getParentId } from './hierarchy';
 
 /**
@@ -61,7 +61,7 @@ export async function getRelatedEntries(addedUUIDs: string[], removedUUIDs: stri
       acc[details.uuid] = details;
     });
     return acc;
-  }, {} as Record<string, RelatedItemDetails<any, any>>);
+  }, {} as Record<string, RelatedEntryDetails<any, any>>);
 
   // also remove ourself (just in case) and our parent (because that seems like a common
   // thing you'd type but not want to connect since you can see it right there anyway and

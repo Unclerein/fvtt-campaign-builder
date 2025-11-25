@@ -56,7 +56,9 @@
       "showTypesInTree": "Typen im Einstellungsbaum anzeigen",
       "showTypesInTreeHelp": "Wenn wahr, zeigt es den Typ jedes Eintrags im Baum an, wenn das Einstellungsverzeichnis nicht nach Typ gruppiert ist.",
       "showRolePlayingNotes": "Rollenspielnotizen bei Einträgen anzeigen",
-      "showRolePlayingNotesHelp": "Wenn wahr, wird ein separates Feld für Rollenspielnotizen getrennt von der Eintragsbeschreibung angezeigt."
+      "showRolePlayingNotesHelp": "Wenn wahr, wird ein separates Feld für Rollenspielnotizen getrennt von der Eintragsbeschreibung angezeigt.",
+      "useFronts": "Fronten verwenden",
+      "useFrontsHelp": "Aktivieren Sie die Kampagnenfunktion \"Front\"."
     },
     "applications": {
       "sessionNotes": {
@@ -106,7 +108,9 @@
             "name": "Tiefling",
             "description": "Gezeichnet durch infernalisches Erbe, besitzen Tieflinge teuflische Merkmale, eine angeborene Feuerresistenz und ein Talent für Magie. Sie haben Hörner, Schwänze und ungewöhnliche Augen- und Hautfarben, die von tiefem Rot bis zu Violett und Blau reichen."
           }
-        }
+        },
+        "newSpecies": "Neue Spezies",
+        "newDescription": "Beschreibung für neue Spezies"
       },
       "advancedSettings": {
         "title": "Erweiterte Einstellungen konfigurieren",
@@ -224,7 +228,8 @@
           "roleplay": "Rollenspielnotizen",
           "both": "Beides"
         },
-        "background": "Hintergrund"
+        "background": "Hintergrund",
+        "role": "Rolle"
       },
       "addTopic": {
         "character": "Charakter hinzufügen",
@@ -241,8 +246,7 @@
       "entry": {
         "topic": "Themenordner",
         "type": "Typ",
-        "relationships": "Beziehungen",
-        "sessions": "Sitzungen"
+        "relationships": "Beziehungen"
       },
       "session": {
         "session": "Sitzung",
@@ -269,7 +273,9 @@
         "vignetteHelpText": "Szenen, die eine Lösung bringen, neue Wege öffnen, die Geschichte verändern. 1 pro 45 Minuten. Klicken Sie, um mehr von Lazy DM zu lesen.",
         "locationHelpText": "Detaillierte, denkwürdige, fantastische Orte, die die Charaktere erkunden können. Klicken Sie, um mehr von Lazy DM zu lesen.",
         "strongStart": "Starker Start",
-        "strongStartHelpText": "Ein starker Start ist ein kurzes, eindrucksvolles Ereignis, das den Ton für die Sitzung angibt. Klicken Sie, um mehr von Lazy DM zu lesen."
+        "strongStartHelpText": "Ein starker Start ist ein kurzes, eindrucksvolles Ereignis, das den Ton für die Sitzung angibt. Klicken Sie, um mehr von Lazy DM zu lesen.",
+        "addJournal": "Journal hinzufügen",
+        "addJournalDrag": "(oder ziehen/ablegen eines Journals oder einer Journalseite)"
       },
       "campaign": {
         "addPC": "PC hinzufügen",
@@ -296,10 +302,6 @@
           "locationChildren": "Untergeordnete Orte",
           "organizations": "Organisationen",
           "organizationChildren": "Unterorganisationen",
-          "scenes": "Szenen",
-          "actors": "Schauspieler",
-          "sessions": "Sitzungen",
-          "journals": "Journale",
           "pcs": "PCs"
         },
         "campaign": {
@@ -307,8 +309,7 @@
           "pcs": "PCs",
           "lore": "Überlieferung",
           "toDo": "Zu erledigen",
-          "ideas": "Ideen",
-          "journals": "Journale"
+          "ideas": "Ideen"
         },
         "session": {
           "notes": "Notizen",
@@ -324,8 +325,21 @@
           "noteBox": "Notizbox"
         },
         "setting": {
+          "description": "Beschreibung"
+        },
+        "front": {
           "description": "Beschreibung",
-          "journals": "Journale"
+          "createNewDanger": "Neue Gefahr erstellen"
+        },
+        "arc": {
+          "arc": "Bogen",
+          "description": "Beschreibung",
+          "pcs": "SCs",
+          "lore": "Überlieferung",
+          "locations": "Orte",
+          "participants": "Teilnehmer",
+          "monsters": "Monster",
+          "ideas": "Ideen"
         }
       },
       "noResults": "Nichts hier",
@@ -350,7 +364,10 @@
         "name": "Name",
         "location": "Ort",
         "journalName": "Journal",
-        "pageName": "Journalseite"
+        "pageName": "Journalseite",
+        "type": "Typ",
+        "role": "Rolle",
+        "description": "Beschreibung"
       },
       "locations": {
         "compendium": "Kompendium",
@@ -360,7 +377,32 @@
         "addJournal": "Journal hinzufügen",
         "dropToAdd": "(oder ein Journal oder eine Journalseite ziehen/ablegen)"
       },
-      "add": "Hinzufügen"
+      "add": "Hinzufügen",
+      "description": "Beschreibung",
+      "addParticipant": "Teilnehmer hinzufügen",
+      "addParticipantDrag": "(oder einen Eintrag per Drag & Drop hinzufügen)",
+      "front": {
+        "motivation": "Motivation",
+        "grimPortents": "Düstere Vorzeichen",
+        "participants": "Teilnehmer",
+        "impendingDoom": "Drohendem Untergang",
+        "addPortent": "Düsteres Vorzeichen hinzufügen",
+        "portentHelpText": "Düstere Vorzeichen sind die Ereignisse, die eintreten werden, wenn die Gefahr nicht beseitigt wird. Sie können eine Lösung bringen, neue Wege eröffnen, die Geschichte verändern.",
+        "front": "Vorderseite"
+      },
+      "actors": "Schauspieler",
+      "sessions": "Sitzungen",
+      "scenes": "Szenen",
+      "arc": {
+        "addParticipant": "Teilnehmer hinzufügen",
+        "addParticipantDrag": "(oder ziehen/ablegen eines Charakters/Organisation)",
+        "participantHelpText": "Charaktere und Organisationen, die wahrscheinlich während des Bogens auftauchen"
+      },
+      "complete": "Vollständig",
+      "danger": {
+        "addParticipant": "Teilnehmer hinzufügen",
+        "addParticipantDrag": "(oder ziehen/ablegen eines Charakters/Organisation)"
+      }
     },
     "placeholders": {
       "search": "Suche",
@@ -374,11 +416,10 @@
       "sessionDate": "Datum",
       "sessionNumber": "Sitzungsnummer",
       "linkToActor": "Mit Schauspieler verknüpfen",
-      "pcName": "PC-Name"
-    },
-    "compendia": {
-      "entry": "Einträge",
-      "session": "Sitzungen"
+      "pcName": "PC-Name",
+      "frontName": "Frontname",
+      "dangerName": "Gefahrenname",
+      "arcName": "Bogenname"
     },
     "topics": {
       "character": "Charakter",
@@ -436,37 +477,33 @@
         "description": "Wählen Sie die Namensstile aus, die Sie für von KI generierte Namen in dieser Einstellung verwenden möchten. Sie können unten Beispiele für jeden Stil basierend auf Genre und Stimmung dieser Einstellung anzeigen.",
         "errorMessage": "Es gab einen Fehler:"
       },
-      "relatedItems": {
+      "relatedEntries": {
         "additionalInformation": "Zusätzliche Informationen",
         "allItemsConnected": "Alle möglichen verwandten Elemente sind bereits verbunden.",
         "character": {
           "title": "Einen Charakter hinzufügen",
-          "editTitle": "Charakter bearbeiten",
           "createButtonTitle": "Charakter erstellen",
-          "buttonTitle": "Beziehung hinzufügen",
-          "editButtonTitle": "Charakter speichern"
+          "buttonTitle": "Beziehung hinzufügen"
         },
         "location": {
           "title": "Einen Ort hinzufügen",
-          "editTitle": "Ort bearbeiten",
           "createButtonTitle": "Ort erstellen",
-          "buttonTitle": "Beziehung hinzufügen",
-          "editButtonTitle": "Ort speichern"
+          "buttonTitle": "Beziehung hinzufügen"
         },
         "organization": {
           "title": "Eine Organisation hinzufügen",
-          "editTitle": "Organisation bearbeiten",
           "createButtonTitle": "Organisation erstellen",
-          "buttonTitle": "Beziehung hinzufügen",
-          "editButtonTitle": "Organisation speichern"
+          "buttonTitle": "Beziehung hinzufügen"
         },
         "addToSession": "Zur Sitzung hinzufügen",
         "pc": {
           "title": "Einen PC hinzufügen",
-          "editTitle": "PC bearbeiten",
           "createButtonTitle": "PC erstellen",
-          "buttonTitle": "Beziehung hinzufügen",
-          "editButtonTitle": "PC speichern"
+          "buttonTitle": "Beziehung hinzufügen"
+        },
+        "entry": {
+          "title": "Einen Eintrag hinzufügen",
+          "buttonTitle": "Eintrag hinzufügen"
         }
       },
       "relatedDocuments": {
@@ -479,11 +516,6 @@
         "title": "Verwandte Einträge verwalten",
         "addedItems": "Beziehungen zu diesen hinzufügen?",
         "removedItems": "Beziehungen von diesen entfernen?"
-      },
-      "contextMenus": {
-        "cannotActivateFromCompendium": "Kann nicht aus dem Kompendium aktiviert werden",
-        "cannotToggleNavigationFromCompendium": "Navigation kann nicht aus einer Szene im Kompendium umgeschaltet werden",
-        "cannotToggleNavigationWhileActive": "Navigation kann nicht umgeschaltet werden, während die Szene aktiv ist"
       },
       "saveSessionNotes": {
         "title": "Änderungen speichern?",
@@ -499,6 +531,34 @@
         "save": "Änderungen speichern",
         "discard": "Änderungen verwerfen",
         "cancel": "Abbrechen"
+      },
+      "confirmDeleteParticipant": {
+        "title": "Diesen Teilnehmer entfernen?",
+        "message": "Sind Sie sicher, dass Sie diesen Teilnehmer aus der Gefahr entfernen möchten?"
+      },
+      "createFront": {
+        "title": "Front erstellen",
+        "frontName": "Frontname"
+      },
+      "createArc": {
+        "title": "Bogen erstellen",
+        "arcName": "Bogenname"
+      },
+      "arcManager": {
+        "title": "Bögen verwalten",
+        "labels": {
+          "edit": "Bogen bearbeiten",
+          "delete": "Bogen löschen",
+          "addArc": "Bogen hinzufügen"
+        },
+        "missingSession": "Fehlende Sitzung",
+        "warning": {
+          "mustBeBlank": "Es gibt keine Sitzungen in der Kampagne, daher müssen Anfang und Ende leer sein",
+          "invalidSessionNumber": "Ungültige Sitzungsnummer",
+          "startTooHigh": "Die Anfangssitzung muss kleiner als die Endesitzung sein",
+          "bothBlank": "Anfangs- und Endesitzungsnummern müssen entweder beide leer oder beide nicht leer sein",
+          "allSessionsCovered": "Alle Sitzungen müssen von einem Bogen abgedeckt sein"
+        }
       }
     },
     "contextMenus": {
@@ -513,7 +573,10 @@
         "createSession": "Sitzung erstellen",
         "delete": "Kampagne löschen",
         "markComplete": "Kampagne als abgeschlossen markieren",
-        "markActive": "Kampagne als aktiv markieren"
+        "markActive": "Kampagne als aktiv markieren",
+        "createFront": "Eine Front erstellen",
+        "createArc": "Einen Bogen erstellen",
+        "manageArcs": "Bögen verwalten"
       },
       "session": {
         "delete": "Sitzung löschen"
@@ -527,7 +590,8 @@
         "addImage": "Bild hinzufügen",
         "generateImage": "Bild generieren",
         "copyToClipboard": "In die Zwischenablage kopieren",
-        "copyLinkToClipboard": "Link in die Zwischenablage kopieren"
+        "copyLinkToClipboard": "Link in die Zwischenablage kopieren",
+        "showToPlayers": "Spielern zeigen"
       },
       "topicFolder": {
         "create": {
@@ -556,6 +620,18 @@
       "settingFolder": {
         "delete": "Einstellung löschen",
         "createCampaign": "Kampagne erstellen"
+      },
+      "arcFolder": {
+        "createSession": "Eine Sitzung erstellen",
+        "delete": "Bogen löschen"
+      },
+      "dialogs": {
+        "cannotActivateFromCompendium": "Kann nicht aus dem Kompendium aktiviert werden",
+        "cannotToggleNavigationFromCompendium": "Kann die Navigation von einer Szene im Kompendium nicht umschalten",
+        "cannotToggleNavigationWhileActive": "Kann die Navigation nicht umschalten, während die Szene aktiv ist"
+      },
+      "front": {
+        "delete": "Vorderseite löschen"
       }
     },
     "tooltips": {
@@ -617,7 +693,16 @@
       "moveToToDo": "Zur Aufgabenliste verschieben",
       "moveToIdeas": "Zur Ideenliste verschieben",
       "cannotChangeSettingInPlayMode": "Einstellung kann im Spielmodus nicht geändert werden",
-      "campaignComplete": "Kampagne abgeschlossen"
+      "campaignComplete": "Kampagne abgeschlossen",
+      "arcComplete": "Bogen abgeschlossen",
+      "editParticipant": "Teilnehmer bearbeiten",
+      "editPortent": "Düsteres Vorzeichen bearbeiten",
+      "deletePortent": "Düsteres Vorzeichen löschen",
+      "deleteParticipant": "Teilnehmer löschen",
+      "editNotes": "Notizen bearbeiten",
+      "copyToNextSession": "In die nächste Sitzung kopieren",
+      "moveToArc": "Zum späteren Gebrauch in den Bogen verschieben",
+      "movetoLastArc": "Zum neuesten Bogen verschieben"
     },
     "errors": {
       "duplicateBookmark": "Bereits als Lesezeichen gespeichert",
@@ -638,12 +723,17 @@
       "migration": {
         "minimumVersionRequired": "Campign Builder kann nicht von Version {0} migrieren. Sie müssen zuerst auf Version {1} oder höher aktualisieren, bevor Sie auf {2} upgraden.",
         "cannotOpen": "Campaign Builder kann nicht geöffnet werden, da die Migration fehlgeschlagen ist. Bitte überprüfen Sie die Konsole auf Details und beheben Sie das Migrationsproblem."
-      }
+      },
+      "participantCopiedToNextSession": "Teilnehmer in die nächste Sitzung kopiert",
+      "locationCopiedToNextSession": "Ort in die nächste Sitzung kopiert",
+      "monsterCopiedToNextSession": "Monster in die nächste Sitzung kopiert"
     },
     "contentFolders": {
       "campaigns": "Kampagnen",
       "entries": "Einträge",
-      "sessions": "Sitzungen"
+      "sessions": "Sitzungen",
+      "fronts": "Fronten",
+      "arcs": "Bögen"
     }
   }
 }

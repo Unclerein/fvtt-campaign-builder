@@ -7,32 +7,28 @@
     :extra-add-text="newItemDragLabel"
     :addButtonLabel="newItemLabel"
     :filterFields="filterFields"
-    :allowEdit="extraColumns.length > 0"
-    :edit-item-label="localize('tooltips.editRelationship')"
-    :delete-item-label="localize('tooltips.deleteRelationship')"
+    :actions="actions"
 
     @add-item="onAddItemClick"
-    @delete-item="onDeleteItemClick"
     @drop-new="onDropNew"
     @dragover="onDragover"
     @cell-edit-complete="onCellEditComplete"
   />
 
-  <RelatedItemDialog
+  <RelatedEntryDialog
     v-if="extraColumns.length > 0"
     v-model="editDialogShow"
     :topic="props.topic"
-    :mode="RelatedItemDialogModes.Edit"
+    :mode="RelatedEntryDialogModes.Edit"
     :item-id="editItem.itemId"
     :item-name="editItem.itemName"
-    :extra-field-values="editItem.extraFields"
   />
-  <RelatedItemDialog
+  <RelatedEntryDialog
     v-model="addDialogShow"
     :topic="props.topic"
     :item-id="editItem.itemId"
     :item-name="editItem.itemName"
-    :mode="RelatedItemDialogModes.Add"
+    :mode="RelatedEntryDialogModes.Add"
   />
 </template>
 
@@ -51,13 +47,13 @@
   // library components
 
   // local components
-  import RelatedItemDialog from './RelatedItemDialog.vue';
+  import RelatedEntryDialog from './RelatedEntryDialog.vue';
   import BaseTable from '@/components/tables/BaseTable.vue';
 
   // types
-  import { Topics, ValidTopic, RelatedItemDetails, RelatedItemDialogModes, EntryNodeDragData, ValidTopicRecord } from '@/types';
+  import { Topics, ValidTopic, RelatedEntryDetails, RelatedEntryDialogModes, EntryNodeDragData, ValidTopicRecord, ActionButtonDefinition, CellEditCompleteEvent } from '@/types';
   
-  interface RelatedItemGridRow extends Record<string, any> { 
+  interface RelatedEntryGridRow extends Record<string, any> { 
     uuid: string; 
     name: string; 
     type: string;
@@ -82,7 +78,7 @@
   const navigationStore = useNavigationStore();
 
   const { currentEntryTopic } = storeToRefs(mainStore);
-  const { relatedItemRows, } = storeToRefs(relationshipStore);
+  const { relatedEntryRows, } = storeToRefs(relationshipStore);
   const extraFields = relationshipStore.extraFields;
 
   ////////////////////////////////
@@ -109,6 +105,15 @@
     return base;
   });
 
+  const actions = computed(() => {
+    const actions: ActionButtonDefinition[] = [{ icon: 'fa-trash', callback: (data) => onDeleteItemClick(data.uuid), tooltip: localize('tooltips.deleteRelationship') }];
+
+    if (extraColumns.value.length > 0)
+      actions.push({ icon: 'fa-pen', isEdit: true, callback: async () => {}, tooltip: localize('tooltips.editRelationship') });
+
+    return actions;
+  });
+
   const newItemLabel = computed(() => {
     switch (props.topic) {
       case Topics.Character: return localize('labels.addTopic.character'); 
@@ -127,8 +132,8 @@
     }
   });
 
-  const rows = computed((): RelatedItemGridRow[] => 
-    relatedItemRows.value.map((item: RelatedItemDetails<any, any>) => {
+  const rows = computed((): RelatedEntryGridRow[] => 
+    relatedEntryRows.value.map((item: RelatedEntryDetails<any, any>) => {
       const base = { uuid: item.uuid, name: item.name, type: item.type };
 
       extraColumns.value.forEach((field) => {
@@ -156,7 +161,7 @@
     const actionColumn = { field: 'actions', style: 'text-align: left; width: 100px; max-width: 100px', header: 'Actions' };
     const nameColumn = { field: 'name', style: 'text-align: left', header: 'Name', sortable: true, onClick: onNameClick }; 
     const typeColumn = { field: 'type', style: 'text-align: left', header: 'Type', sortable: true }; 
-    const dateColumn = { field: 'date', style: 'text-align: left', header: 'Date', format: (val: string) => (/*dateText(calendar.value, val)*/ val), sortable: true}; 
+    // const dateColumn = { field: 'date', style: 'text-align: left', header: 'Date', format: (val: string) => (/*dateText(calendar.value, val)*/ val), sortable: true}; 
 
     const columns = {
       [Topics.Character]: [
@@ -274,25 +279,24 @@
     }
   };
 
-  const onCellEditComplete = async (event: { data: { uuid: string }; field: string; newValue: any; /* other PrimeVue event fields */ }) => {
-    const uuid = event.data.uuid;
-    const fieldChanged = event.field;
-    const newFieldValue = event.newValue;
+  const onCellEditComplete = async (event: CellEditCompleteEvent) => {
+    const { data, field, newValue } = event;
+    const uuid = data.uuid as string;
 
-    const currentFullRow = relatedItemRows.value.find(r => r.uuid === uuid);
+    const currentFullRow = relatedEntryRows.value.find(r => r.uuid === uuid);
     if (!currentFullRow) {
-      throw new Error('Cannot find row in RelatedItemTable.onCellEditComplete:', uuid);
+      throw new Error('Cannot find row in RelatedEntryTable.onCellEditComplete:' + uuid);
     }
 
     const relevantExtraFieldDefs = extraFields[currentEntryTopic.value]?.[props.topic] || [];
     if (!relevantExtraFieldDefs.length) {
-      throw new Error('Call to RelatedItemTable.onCellEditComplete without an extra field:', uuid);
+      throw new Error('Call to RelatedEntryTable.onCellEditComplete without an extra field:' + uuid);
     }
 
     const extraFieldsToSave: Record<string, string> = { ...currentFullRow.extraFields }; // Start with existing extra fields
 
     // Update the changed field
-    extraFieldsToSave[fieldChanged] = newFieldValue;
+    extraFieldsToSave[field] = newValue as string;
     
     // Ensure all defined extra fields are present, defaulting to empty string if not set
     relevantExtraFieldDefs.forEach(def => {

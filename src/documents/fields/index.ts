@@ -12,10 +12,19 @@ import { SessionLoreSchema } from './SessionLore';
 import { SessionLocationSchema } from './SessionLocation';
 import { TagsSchema } from './Tags';
 import { TopicSchema } from './Topic';
-import { TopicFolderSchema } from './TopicFolder';
-import { RelationshipsSchema, RelatedItemDetailsSchema } from './Relationships';
+import { TopicBasicIndexSchema } from './TopicBasicIndex';
+import { RelationshipsSchema, RelatedEntryDetailsSchema } from './Relationships';
 import { EntryBasicIndexSchema } from './EntryBasicIndex';
 import { SessionBasicIndexSchema } from './SessionBasicIndex';
+import { ArcBasicIndexSchema } from './ArcBasicIndex';
+import { CampaignBasicIndexSchema } from './CampaignBasicIndex';
+import { DangerSchema } from './Danger';
+import { ArcParticipantSchema } from './ArcParticipant';
+import { ArcLocationSchema } from './ArcLocation';
+import { ArcMonsterSchema } from './ArcMonster';
+import { ArcLoreSchema } from './ArcLore';
+
+export type * from './Danger';
 
 export const schemas = {
   ToDoItem: ToDoItemSchema,
@@ -32,9 +41,17 @@ export const schemas = {
   SessionLore: SessionLoreSchema,
   SessionLocation: SessionLocationSchema,
   Topic: TopicSchema,
-  TopicFolder: TopicFolderSchema,
-  RelatedItemDetails: RelatedItemDetailsSchema,
+  TopicBasicIndex: TopicBasicIndexSchema,
+  RelatedEntryDetails: RelatedEntryDetailsSchema,
   Relationships: RelationshipsSchema,
   EntryBasicIndex: EntryBasicIndexSchema,
   SessionBasicIndex: SessionBasicIndexSchema,
+  ArcBasicIndex: ArcBasicIndexSchema,
+  CampaignBasicIndex: CampaignBasicIndexSchema,
+  Danger: DangerSchema,
+  ArcParticipant: ArcParticipantSchema,
+  ArcLocation: ArcLocationSchema,
+  ArcMonster: ArcMonsterSchema,
+  ArcLore: ArcLoreSchema,
 }
+

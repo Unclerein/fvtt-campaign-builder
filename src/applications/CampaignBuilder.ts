@@ -258,6 +258,8 @@ export class CampaignBuilderApplication extends VueApplicationMixin(DocumentShee
         [DOCUMENT_TYPES.Campaign]: WindowTabType.Campaign,
         [DOCUMENT_TYPES.Session]: WindowTabType.Session,
         [DOCUMENT_TYPES.Setting]: WindowTabType.Setting,
+        [DOCUMENT_TYPES.Front]: WindowTabType.Front,
+        [DOCUMENT_TYPES.Arc]: WindowTabType.Arc,
       };
       
       const windowTabType = docTypeToWindowTabType[docType];
@@ -300,11 +302,17 @@ export class CampaignBuilderApplication extends VueApplicationMixin(DocumentShee
         case DOCUMENT_TYPES.Session:
           useNavigationStore().openSession(uuid);
           break;
+        case DOCUMENT_TYPES.Arc:
+          useNavigationStore().openArc(uuid);
+          break;
         case DOCUMENT_TYPES.Setting:
           useNavigationStore().openSetting(uuid);
           break;
         case DOCUMENT_TYPES.Entry:
           useNavigationStore().openEntry(uuid);
+          break;
+        case DOCUMENT_TYPES.Front:
+          useNavigationStore().openFront(uuid);
           break;
       }
     }

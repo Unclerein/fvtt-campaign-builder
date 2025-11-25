@@ -20,21 +20,17 @@ export type * from './generators.ts';
 export * from './customFields.ts';
 export type * from './customFields.ts';
 
-// used to determine which component to display in the tab
-export enum ContentType {
-  Entry,
-  Campaign,
-  Session,
-  Setting,
-}
+// get all the ones defined in the schemas
+export type * from '@/documents/fields/index.ts';
 
-// should match ContentType plus NewTab
 export enum WindowTabType  {
   NewTab,
   Entry,
   Campaign,
   Session,
   Setting,
+  Front,
+  Arc,
 }
 
 export interface WindowTabHistory {
@@ -105,10 +101,13 @@ export enum SessionDisplayMode {
   Name = 'name'
 }
 
-export enum RelatedItemDialogModes {
+export enum RelatedEntryDialogModes {
   Add = 'add',
   Edit = 'edit',
-  Session = 'session' // for adding to sessions
+  Session = 'session', // for adding to sessions
+  Danger = 'danger', // for adding any topic item (ex. for front participants)
+  ArcParticipant = 'arcParticipant',  // for adding participants (character/org) to arcs
+  ArcLocation = 'arcLocation',  // for adding locations to arcs
 }
 
 export enum ToDoTypes {
@@ -157,16 +156,51 @@ export interface EntryBasicIndex {
   type: string; 
 };
 
+export interface TopicBasicIndex { 
+  topic: string; 
+  types: string[]; 
+  topNodes: string[]; 
+  entries: EntryBasicIndex[];
+};
+
 /** This is the format of how our sessions are stored in campaigns */
 export interface SessionBasicIndex { 
   uuid: string;
   name: string; 
   number: number; 
+
+  /** ISO string */
   date: string | null;
-};
+}
+
+
+/** Index of an arc for in-memory storage */
+export interface ArcBasicIndex {
+  uuid: string;
+  name: string;
+  startSessionNumber: number;
+  endSessionNumber: number;
+  sortOrder: number;
+}
+
+/** Index of a campaign for in-memory storage */
+export interface CampaignBasicIndex {
+  uuid: string;
+  name: string;
+  completed: boolean;
+  arcs: ArcBasicIndex[];
+}
 
 export type ValidDocType = 
   typeof DOCUMENT_TYPES.Setting | 
   typeof DOCUMENT_TYPES.Campaign | 
   typeof DOCUMENT_TYPES.Entry | 
-  typeof DOCUMENT_TYPES.Session;
+  typeof DOCUMENT_TYPES.Session |
+  typeof DOCUMENT_TYPES.Front |
+  typeof DOCUMENT_TYPES.Arc;
+
+export interface ContentTabDescriptor {
+  id: string;
+  label: string;
+}
+  

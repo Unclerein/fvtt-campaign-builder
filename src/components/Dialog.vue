@@ -76,6 +76,12 @@
       required: false,
       default: '',
     },
+    /** desired width in px */
+    width: {
+      type: Number,
+      required: false,
+      default: 500,
+    },
     // buttons are an object with name as the key and a label and callback
     // also have ok and cancel props to 
     buttons: {
@@ -107,7 +113,7 @@
   //    gets put in the body, so we need to keep this below that
   const style = computed(() => ({
     "z-index": `1000`,
-    width: `500px`,
+    width: `${props.width}px`,
     left: `${position.left}px`,
     top: `${position.top}px`,
   }));
@@ -254,7 +260,7 @@
           gap: 8px;
           min-width: 100px;
           font-size: var(--fcb-font-size-large);
-          color: var(--fcb-button-text);
+          color: var(--fcb-button-color);
           background: var(--fcb-button-bg);
           border-radius: 3px;
           padding: 1px 6px;
@@ -267,7 +273,7 @@
               border-color: var(--fcb-button-border-hover);
               box-shadow: 0 0 5px var(--fcb-accent);
               background: var(--fcb-button-bg-hover);
-              color: var(--fcb-button-text-hover);
+              color: var(--fcb-button-color-hover);
             }
 
           &.default {

@@ -2,7 +2,7 @@
   <!-- PCs use their own thing because their image works differently -->
   <PCContent v-if="topic===Topics.PC" />
   <form v-else>
-    <div ref="contentRef" class="fcb-sheet-container flexcol">
+    <div class="fcb-sheet-container flexcol">
       <header class="fcb-name-header flexrow">
         <i :class="`fas ${icon} sheet-icon`"></i>
         <InputText
@@ -48,201 +48,166 @@
           @tag-removed="onTagChange"
         />
       </div>
-      <div class="fcb-sheet-subtab-container flexrow">
-        <div class="fcb-subtab-wrapper">
-          <nav class="fcb-sheet-navigation flexrow tabs" data-group="primary">
-            <a class="item" data-tab="description">{{ localize('labels.tabs.entry.description') }}</a>
-            <a class="item" data-tab="journals">{{ localize('labels.tabs.entry.journals') }}</a>
-            <!-- TODO-PC - only show the PC tab if there's already a connection... rare that we'd need to add from here -->
-            <a 
-              v-for="relationship in relationships"
-              :key="relationship.tab"
-              class="item" 
-              :data-tab="relationship.tab"
-            >
-              {{ localize(relationship.label) }}
-            </a>
-            <a 
-              v-if="topic===Topics.Character"
-              class="item" 
-              data-tab="actors"
-            >
-              {{ localize('labels.tabs.entry.actors') }}
-            </a>
-            <a 
-              v-if="topic===Topics.Location"
-              class="item" 
-              data-tab="scenes"
-            >
-              {{ localize('labels.tabs.entry.scenes') }}
-            </a>
-            <a 
-              v-if="topic!==Topics.PC"
-              class="item" 
-              data-tab="sessions"
-            >
-              {{ localize('labels.tabs.entry.sessions') }}
-            </a>
-          </nav>
-          <div class="fcb-tab-body flexrow">
-            <DescriptionTab 
-              :name="currentEntry?.name || 'Entry'"
-              :image-url="currentEntry?.img"
-              :window-type="WindowTabType.Entry"
-              :topic="topic as ValidTopic"
-              @image-change="onImageChange"
-            >
-              <div class="flexrow form-group">
-                <LabelWithHelp
-                  label-text="labels.fields.type"
-                />
-                <TypeSelect
-                  :initial-value="currentEntry?.type || ''"
-                  :topic="topic as ValidTopic"
-                  @type-selection-made="onTypeSelectionMade"
-                />
-              </div>
-
-              <!-- show the species for characters -->
-              <div 
-                v-if="topic===Topics.Character"
-                class="flexrow form-group"
-              >
-                <LabelWithHelp
-                  label-text="labels.fields.species"
-                />
-                <SpeciesSelect
-                  :initial-value="currentEntry?.speciesId || ''"
-                  :allow-new-items="false"
-                  @species-selection-made="onSpeciesSelectionMade"
-                />
-              </div>
-
-              <div 
-                v-if="showHierarchy"
-                class="flexrow form-group"
-              >
-                <LabelWithHelp
-                  label-text="labels.fields.parent"
-                />
-                <TypeAhead 
-                  :initial-list="validParents"
-                  :initial-value="parentId || ''"
-                  :allow-new-items="false"
-                  @selection-made="onParentSelectionMade"
-                />
-              </div>
-
-              <!-- Above description if we're in play mode -->
-              <div 
-                v-if="roleplayAboveDescription"
-                class="flexrow form-group"
-              >
-                <LabelWithHelp
-                  label-text="labels.fields.entryRolePlayingNotes"
-                  top-label
-                />
-              </div>
-              <div 
-                v-if="roleplayAboveDescription"
-                class="flexrow form-group"
-              >
-                <Editor
-                    :initial-content="currentEntry?.roleplayingNotes || ''"
-                    :style="{ 'height': '180px', 'margin-bottom': '.375rem'}"
-                    :current-entity-uuid="currentEntry?.uuid"
-                    @editor-saved="onRolePlayingNotesSaved"
-                  />
-              </div>
-
-              <div class="flexrow form-group">
-                <LabelWithHelp
-                  label-text="labels.fields.entryDescription"
-                  top-label
-                />
-              </div>
-              <div class="flexrow form-group description">
-                <Editor
-                  :initial-content="currentEntry?.description || ''"
-                  :current-entity-uuid="currentEntry?.uuid"
-                  :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
-                  :style="{ 'height': '240px', 'margin-bottom': '.375rem'}"
-                  @editor-saved="onDescriptionEditorSaved"
-                  @related-entries-changed="onRelatedEntriesChanged"
-                />
-              </div>
-
-              <!-- Below description if we're in prep mode -->
-              <div 
-                v-if="roleplayBelowDescription"
-                class="flexrow form-group"
-              >
-                <LabelWithHelp
-                  label-text="labels.fields.entryRolePlayingNotes"
-                  top-label
-                />
-              </div>
-              <div 
-                v-if="roleplayBelowDescription"
-                class="flexrow form-group"
-              >
-                <Editor
-                    :initial-content="currentEntry?.roleplayingNotes || ''"
-                    :style="{ 'height': '180px', 'margin-bottom': '.375rem'}"
-                    :current-entity-uuid="currentEntry?.uuid"
-                    :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
-                    @editor-saved="onRolePlayingNotesSaved"
-                    @related-entries-changed="onRelatedEntriesChanged"
-                  />
-              </div>
-
-            </DescriptionTab>
-            <JournalTab
-              v-if="currentEntry"
-              :initial-journals="currentEntry.journals"
-              @journals-updated="onJournalsUpdate"
+      <ContentTabStrip 
+        :tabs="tabs" 
+        default-tab="description"
+      >
+        <DescriptionTab 
+          :name="currentEntry?.name || 'Entry'"
+          :image-url="currentEntry?.img"
+          :window-type="WindowTabType.Entry"
+          :topic="topic as ValidTopic"
+          @image-change="onImageChange"
+        >
+          <div class="flexrow form-group">
+            <LabelWithHelp
+              label-text="labels.fields.type"
             />
-            <div 
-              v-for="relationship in relationships"
-              :key="relationship.tab"
-              class="tab flexcol" 
-              data-group="primary" 
-              :data-tab="relationship.tab"
-            >
-              <div class="tab-inner">
-                <RelatedItemTable :topic="relationship.topic as ValidTopic" />
-              </div>
-            </div>
-            <div 
-              v-if="topic===Topics.Location"
-              class="tab flexcol" 
-              data-group="primary" 
-              data-tab="scenes"
-            >
-              <div class="tab-inner">
-                <RelatedDocumentTable 
-                  :document-link-type="DocumentLinkType.Scenes"
-                />
-              </div>
-            </div>
-            <div 
-              v-if="topic===Topics.Character"
-              class="tab flexcol" 
-              data-group="primary" 
-              data-tab="actors"
-            >
-              <div class="tab-inner">
-                <RelatedDocumentTable 
-                  :document-link-type="DocumentLinkType.Actors"
-                />
-              </div>
-            </div>
-            <div class="tab flexcol" data-group="primary" data-tab="sessions">
-              <SessionsTab />
-            </div>
+            <TypeSelect
+              :initial-value="currentEntry?.type || ''"
+              :topic="topic as ValidTopic"
+              @type-selection-made="onTypeSelectionMade"
+            />
+          </div>
+
+          <!-- show the species for characters -->
+          <div 
+            v-if="topic===Topics.Character"
+            class="flexrow form-group"
+          >
+            <LabelWithHelp
+              label-text="labels.fields.species"
+            />
+            <SpeciesSelect
+              :initial-value="currentEntry?.speciesId || ''"
+              :allow-new-items="false"
+              @species-selection-made="onSpeciesSelectionMade"
+            />
+          </div>
+
+          <div 
+            v-if="showHierarchy"
+            class="flexrow form-group"
+          >
+            <LabelWithHelp
+              label-text="labels.fields.parent"
+            />
+            <TypeAhead 
+              :initial-list="validParents"
+              :initial-value="parentId || ''"
+              :allow-new-items="false"
+              @selection-made="onParentSelectionMade"
+            />
+          </div>
+
+          <!-- Above description if we're in play mode -->
+          <div 
+            v-if="roleplayAboveDescription"
+            class="flexrow form-group"
+          >
+            <LabelWithHelp
+              label-text="labels.fields.entryRolePlayingNotes"
+              top-label
+            />
+          </div>
+          <div 
+            v-if="roleplayAboveDescription"
+            class="flexrow form-group"
+          >
+            <Editor
+                :initial-content="currentEntry?.roleplayingNotes || ''"
+                :style="{ 'height': '180px', 'margin-bottom': '.375rem'}"
+                :current-entity-uuid="currentEntry?.uuid"
+                @editor-saved="onRolePlayingNotesSaved"
+              />
+          </div>
+
+          <div class="flexrow form-group">
+            <LabelWithHelp
+              label-text="labels.fields.entryDescription"
+              top-label
+            />
+          </div>
+          <div class="flexrow form-group description">
+            <Editor
+              :initial-content="currentEntry?.description || ''"
+              :current-entity-uuid="currentEntry?.uuid"
+              :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
+              fixed-height="240px"
+              @editor-saved="onDescriptionEditorSaved"
+              @related-entries-changed="onRelatedEntriesChanged"
+            />
+          </div>
+
+          <!-- Below description if we're in prep mode -->
+          <div 
+            v-if="roleplayBelowDescription"
+            class="flexrow form-group"
+          >
+            <LabelWithHelp
+              label-text="labels.fields.entryRolePlayingNotes"
+              top-label
+            />
+          </div>
+          <div 
+            v-if="roleplayBelowDescription"
+            class="flexrow form-group"
+          >
+            <Editor
+                :initial-content="currentEntry?.roleplayingNotes || ''"
+                fixed-height="180px"
+                :current-entity-uuid="currentEntry?.uuid"
+                :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
+                @editor-saved="onRolePlayingNotesSaved"
+                @related-entries-changed="onRelatedEntriesChanged"
+              />
+          </div>
+
+        </DescriptionTab>
+        <JournalTab
+          v-if="currentEntry"
+          :initial-journals="currentEntry.journals"
+          @journals-updated="onJournalsUpdate"
+        />
+        <div 
+          v-for="relationship in relationships"
+          :key="relationship.tab"
+          class="tab flexcol" 
+          data-group="primary" 
+          :data-tab="relationship.tab"
+        >
+          <div class="tab-inner">
+            <RelatedEntryTable :topic="relationship.topic as ValidTopic" />
           </div>
         </div>
-      </div>
+        <div 
+          v-if="topic===Topics.Location"
+          class="tab flexcol" 
+          data-group="primary" 
+          data-tab="scenes"
+        >
+          <div class="tab-inner">
+            <RelatedDocumentTable 
+              :document-link-type="DocumentLinkType.Scenes"
+            />
+          </div>
+        </div>
+        <div 
+          v-if="topic===Topics.Character"
+          class="tab flexcol" 
+          data-group="primary" 
+          data-tab="actors"
+        >
+          <div class="tab-inner">
+            <RelatedDocumentTable 
+              :document-link-type="DocumentLinkType.Actors"
+            />
+          </div>
+        </div>
+        <div class="tab flexcol" data-group="primary" data-tab="sessions">
+          <SessionsTab />
+        </div>
+      </ContentTabStrip>
     </div>
 
     <!-- Related Items Management Dialog -->
@@ -258,7 +223,7 @@
 <script setup lang="ts">
 
   // library imports
-  import { computed, nextTick, onMounted, ref, watch, } from 'vue';
+  import { computed, ref, watch, } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
@@ -270,6 +235,7 @@
   import { ModuleSettings, SettingKey } from '@/settings';
   import { notifyInfo, notifyWarn } from '@/utils/notifications';  
   import { updateEntryDialog } from '@/dialogs/createEntry';
+  import { getRelatedEntries } from '@/utils/uuidExtraction';
 
   // library components
   import InputText from 'primevue/inputtext';
@@ -279,7 +245,7 @@
   import DescriptionTab from '@/components/ContentTab/DescriptionTab.vue';
   import JournalTab from '@/components/ContentTab/JournalTab.vue';
   import PCContent from '@/components/ContentTab/PCContent.vue';
-  import RelatedItemTable from '@/components/tables/RelatedItemTable.vue';
+  import RelatedEntryTable from '@/components/tables/RelatedEntryTable.vue';
   import RelatedDocumentTable from '@/components/tables/RelatedDocumentTable.vue';
   import Editor from '@/components/Editor.vue';
   import TypeAhead from '@/components/TypeAhead.vue';
@@ -289,11 +255,11 @@
   import Tags from '@/components/Tags.vue';
   import SessionsTab from '@/components/ContentTab/EntryContent/SessionsTab.vue';
   import RelatedEntriesManagementDialog from '@/components/RelatedEntriesManagementDialog.vue';
-  import { getRelatedEntries } from '@/utils/uuidExtraction';
-
+  import ContentTabStrip from '@/components/ContentTab/ContentTabStrip.vue';
+  
   // types
-  import { DocumentLinkType, Topics, ValidTopic, WindowTabType, RelatedJournal } from '@/types';
-  import { FCBSetting, TopicFolder, Backend, Entry, Session } from '@/classes';
+  import { DocumentLinkType, Topics, ValidTopic, WindowTabType, RelatedJournal, ContentTabDescriptor } from '@/types';
+  import { FCBSetting, TopicFolder, Backend, Entry, Session, Campaign } from '@/classes';
   import { DOCUMENT_TYPES } from '@/documents';
 
 
@@ -310,7 +276,7 @@
   const navigationStore = useNavigationStore();
   const relationshipStore = useRelationshipStore();
   const playingStore = usePlayingStore();
-  const { currentEntry, currentSetting, currentContentTab, refreshCurrentEntry, } = storeToRefs(mainStore);
+  const { currentEntry, currentSetting, refreshCurrentEntry, } = storeToRefs(mainStore);
   const { currentPlayedCampaign } = storeToRefs(playingStore);
   const { isInPlayMode } = storeToRefs(mainStore);
 
@@ -329,11 +295,9 @@
     { tab: 'pcs', label: 'labels.tabs.entry.pcs', topic: Topics.PC },
   ] as { tab: string; label: string; topic: Topics }[];
 
-  const tabs = ref<foundry.applications.ux.Tabs>();
   const topic = ref<Topics | null>(null);
   const name = ref<string>('');
 
-  const contentRef = ref<HTMLElement | null>(null);
   const parentId = ref<string | null>(null);
   const validParents = ref<{id: string; label: string}[]>([]);
 
@@ -354,11 +318,32 @@
   const roleplayAboveDescription = computed(() => ModuleSettings.get(SettingKey.showRolePlayingNotes) && isInPlayMode.value);
   const roleplayBelowDescription = computed(() => ModuleSettings.get(SettingKey.showRolePlayingNotes) && !isInPlayMode.value);
 
+  const tabs = computed(() => {
+    let tabs = [
+      { id: 'description', label: localize('labels.tabs.entry.description') },
+      { id: 'journals', label: localize('labels.journals') },
+    ] as ContentTabDescriptor[];
+
+    // TODO-PC - only show the PC tab if there's already a connection... rare that we'd need to add from here 
+    for (const relationship of relationships) {
+      tabs.push({ id: relationship.tab, label: localize(relationship.label) });
+    }
+
+    if (topic.value===Topics.Character)
+      tabs.push({ id: 'actors', label: localize('labels.actors') });
+    if (topic.value===Topics.Location)
+      tabs.push({ id: 'scenes', label: localize('labels.scenes') });
+    if (topic.value!==Topics.PC)
+      tabs.push({ id: 'sessions', label: localize('labels.sessions') });
+
+    return tabs;
+  });
+
   ////////////////////////////////
   // methods
   const refreshEntry = async () => {
     // refresh this so we can capture changes to campaigns as soon as they happen
-    updatePushButton();
+    await updatePushButton();
 
     if (!currentEntry.value || !currentEntry.value.uuid) {
       topic.value = null;
@@ -387,27 +372,34 @@
     }
   };
 
-  /** how many campaigns have available sessions */
-  const numAvailableSessions = (): number => {
+  /** are there campaigns with available sessions? */
+  const availableCampaigns = async (): Promise<Campaign[]> => {
     if (!currentSetting.value)
-      return 0;
+      return [];
 
-    let num = 0;
+    const retval = [] as Campaign[];
+
     // otherwise check all campaigns until we find one with sessions that don't have it
-    for (const campaignId of Object.keys(currentSetting.value?.campaigns || {})) {
-      if (currentSetting.value?.campaigns[campaignId].currentSession && !currentSetting.value.campaigns[campaignId].currentSession.npcs.find((npc) => npc.uuid===currentEntry.value?.uuid)) {
-        num++;
+    for (const campaign of Object.values(currentSetting.value?.campaigns || {})) {
+      if (campaign.currentSessionNumber == null || !campaign.currentSessionId)
+        continue;
+
+      const session = await Session.fromUuid(campaign.currentSessionId);
+
+      if (!session)
+        continue;
+
+      if (!session.npcs.find((npc) => npc.uuid===currentEntry.value?.uuid)) {
+        retval.push(campaign);
       }
     }
 
-    return num;
+    return retval;
   };
 
   // this is a bit odd, but using computed functions doesn't work because they don't update when campaigns are added, etc. and it seemed like a lot of overhead to capture changes there just for this title
-  const updatePushButton = (): void => {
-    const numSessions = numAvailableSessions();
-    
-    if (numSessions===0) {
+  const updatePushButton = async (): Promise<void> => {    
+    if ((await availableCampaigns()).length === 0) {
       pushButtonTitle.value = localize('tooltips.sessionUnavailable');
       pushButtonDisabled.value = true;
     } else {
@@ -417,30 +409,6 @@
     }
   }
 
-  const mountTabs = async () => {
-    // Ensure DOM is fully ready before initializing tabs
-    await nextTick();
-    
-    tabs.value = new foundry.applications.ux.Tabs({ 
-      navSelector: '.tabs', 
-      contentSelector: '.fcb-tab-body', 
-      initial: 'description'
-    });
-
-    // update the store when tab changes
-    tabs.value.callback = () => {
-      currentContentTab.value = tabs.value?.active || null;
-    };
-
-    if (contentRef.value) {
-      tabs.value.bind(contentRef.value);
-    }
-
-    if (tabs.value) {
-      tabs.value.activate(currentContentTab.value || 'description');
-    }
-
-  }
 
   ////////////////////////////////
   // event handlers
@@ -493,14 +461,13 @@
       return;
     }
 
-    // e have more than one; now find all the campaigns with an active session
-    let campaignsWithSessions = [] as { uuid: string; name: string}[];
-
-    for (const campaignId of Object.keys(currentSetting.value.campaigns)) {
-      if (currentSetting.value?.campaigns[campaignId].currentSession && !currentSetting.value.campaigns[campaignId].currentSession.npcs.find((npc) => npc.uuid===currentEntry.value?.uuid)) {
-        campaignsWithSessions.push({ uuid: campaignId, name: currentSetting.value.campaigns[campaignId].name });
-      }
-    }
+    // we have more than one; now find all the campaigns with an active session
+    let campaignsWithSessions = (await availableCampaigns()).map((c) => ({
+      uuid: c.uuid,
+      name: c.name,
+      currentSessionId: c.currentSessionId,
+      currentSessionNumber: c.currentSessionNumber,
+    }));
 
     // if there aren't any, we're done (though this should never happen because the button shouldn't be enabled)
     if (campaignsWithSessions.length===0) {
@@ -508,8 +475,6 @@
     }
 
     // if there's more than one, we need the menu
-    const campaigns = currentSetting.value.campaigns;
-
     interface MenuItem {
       label: string;
       onClick: () => void | Promise<void>;
@@ -524,28 +489,31 @@
     let activeItem: MenuItem | null = null;
     if (currentPlayedCampaign.value?.currentSessionId) {
       currentCampaignId = currentPlayedCampaign.value.uuid;
-      
-      activeItem = {
-        label: `${campaigns[currentCampaignId].name} (#${campaigns[currentCampaignId].currentSessionNumber})`,        
-        customClass: 'push-to-active-campaign-menu-item',
-        onClick: async () => { await selectCampaignForPush(currentCampaignId as string); },
-        divided: campaignsWithSessions.length > 1 ? 'down' : undefined,
-      };
+      const currentCampaign = campaignsWithSessions.find((c) => c.uuid===currentCampaignId);
+
+      if (currentCampaign) {
+        activeItem = {
+          label: `${currentCampaign.name} (#${currentCampaign.currentSessionNumber})`,        
+          customClass: 'push-to-active-campaign-menu-item',
+          onClick: async () => { await selectCampaignForPush(currentCampaignId as string); },
+          divided: campaignsWithSessions.length > 1 ? 'down' : undefined,
+        };
+      }
     }
 
     // check for any other campaigns
-    for (const campaignId of Object.keys(campaigns)) {
+    for (const campaign of campaignsWithSessions) {
       // skip the one we added above
-      if (campaignId === currentCampaignId)
+      if (campaign.uuid === currentCampaignId)
         continue;
 
       // skip ones without sessions
-      if (!campaigns[campaignId].currentSessionId)
+      if (!campaign.currentSessionId)
         continue;
 
       menuItems.push({
-        label: `${campaigns[campaignId].name} (#${campaigns[campaignId].currentSessionNumber})`,        
-        onClick: async () => { await selectCampaignForPush(campaignId); },
+        label: `${campaign.name} (#${campaign.currentSessionNumber})`,        
+        onClick: async () => { await selectCampaignForPush(campaign.uuid); },
       });
     }
 
@@ -588,7 +556,7 @@
     }
 
     notifyInfo(`${currentEntry.value.name} ${localize('notifications.addedToSession')}`);
-    updatePushButton();// # of available changed
+    await updatePushButton();// # of available changed
   };
 
   const onGenerateButtonClick = (event: MouseEvent): void => {
@@ -769,13 +737,11 @@
 
   ////////////////////////////////
   // watchers
-  // in case the tab is changed externally
-  watch(currentContentTab, async (newTab: string | null, oldTab: string | null): Promise<void> => {
-    if (newTab !== oldTab && tabs.value) {
-      tabs.value.activate(newTab || 'description');    
-    }
+  
+  watch(currentEntry, async (): Promise<void> => {
+    await refreshEntry();
   });
-
+  
   // see if we want to force a full refresh (ex. when parent changes externally)
   watch(refreshCurrentEntry, async (newValue: boolean): Promise<void> => {
     if (newValue) {
@@ -784,32 +750,12 @@
     }
   });
   
-  watch(currentEntry, async (): Promise<void> => {
-    await refreshEntry();
-
-    if (!currentContentTab.value) {
-      currentContentTab.value = 'description';
-    }
-
-    await mountTabs(); 
-  });
-
   ////////////////////////////////
   // lifecycle events
-  onMounted(async () => {
-    await mountTabs();
-  });
 
 </script>
 
 <style lang="scss" scoped>
-  .fcb-generate-button, .fcb-push-to-session-button {
-    &:hover:disabled {
-      // prevent button from looking like you can click it if you can't
-      background: unset;
-    }
-  }
-
   .push-to-active-campaign-menu-item {
     font-weight: bold;
   }

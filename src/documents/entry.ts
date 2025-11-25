@@ -1,4 +1,4 @@
-import { RelatedItemDetails, ValidTopic, RelatedJournal, ValidTopicRecord } from '@/types';
+import { RelatedEntryDetails, ValidTopic, RelatedJournal, ValidTopicRecord } from '@/types';
 import { schemas } from './fields';
 import { cleanTopicKeysOnLoad } from '@/utils/cleanKeys';
 
@@ -62,7 +62,7 @@ export interface EntryDoc extends JournalEntryPage {
     /**
      * Keyed by topic, then entryId
      */
-    relationships: ValidTopicRecord<Record<string, RelatedItemDetails<any, any>>>;  // keyed by topic then by entryId
+    relationships: ValidTopicRecord<Record<string, RelatedEntryDetails<any, any>>>;  // keyed by topic then by entryId
 
     // for characters
     speciesId?: string | undefined;

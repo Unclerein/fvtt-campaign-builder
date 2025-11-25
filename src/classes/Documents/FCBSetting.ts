@@ -1,6 +1,5 @@
 import { toRaw } from 'vue';
 import { UserFlags, UserFlagKey, ModuleSettings, SettingKey, moduleId, JournalEntryFlagKey } from '@/settings'; 
-import { EntryFilterIndex, Hierarchy, RelatedJournal, SessionFilterIndex, SettingGeneratorConfig, Topics, ValidTopic, ValidTopicRecord } from '@/types';
 import { FCBDialog } from '@/dialogs';
 import { TopicFolder, RootFolder, Entry, Session, } from '@/classes';
 import { cleanTrees } from '@/utils/hierarchy';
@@ -9,59 +8,11 @@ import { initializeSettingRollTables, refreshSettingRollTables } from '@/utils/n
 import { Backend } from '@/classes';
 import { DOCUMENT_TYPES } from '@/documents/types';
 import { FCBJournalEntryPage, FCBJournalEntryPageStatic } from '@/classes/Documents/FCBJournalEntryPage';
-import { entryIndexFields, NameStyleExamples, sessionIndexFields, TopicFlatType } from '@/documents';
+import { entryIndexFields, NameStyleExamples, sessionIndexFields, } from '@/documents';
 import { cleanKeysOnSave, } from '@/utils/cleanKeys';
 import { Campaign } from './Campaign';
-
-// the global settings - the vast majority of users likely have a single setting
-// by keeping a global instance we can avoid the overhead in memory and time of having
-//    to continually load the setting over the network; since we'll always have one
-//    one setting in use anyway, this incurs no additional overhead when the world only
-//    contains one
-// even for worlds with multiple settings, the old way (loading setting as needed) 
-//    typically resulted in multiple (many) copies in memory at once
-let globalSettings: Record<string, FCBSetting> = {};
-
-export const getGlobalSetting = async (settingId: string): Promise<FCBSetting | null> => {
-  // see if we already have it
-  let setting: FCBSetting | undefined | null = globalSettings[settingId];
-
-  if (setting)
-    return setting;
-
-  // otherwise load it
-  try {
-    setting = await FCBSetting.fromUuid(settingId);
-  } catch (e) {
-    // do nothing
-  }
-
-  if (!setting) {
-    // the most likely cause here is that someone deleted the compendium; remove it from the index
-    // so we can just try again
-    let indexes = ModuleSettings.get(SettingKey.settingIndex);
-    indexes = indexes.filter(index => index.settingId !== settingId);
-    await ModuleSettings.set(SettingKey.settingIndex, indexes);
-
-    return null;
-  }
-  
-  if (setting)
-    globalSettings[settingId] = setting;
-  else 
-    delete globalSettings[settingId];
-  
-  return setting;
-}
-
-export const updateGlobalSetting = (setting: FCBSetting) => {
-  globalSettings[setting.uuid] = setting;
-}
-
-export const removeGlobalSetting = (settingId: string) => {
-  delete globalSettings[settingId];
-}
-
+import { ArcBasicIndex, CampaignBasicIndex, EntryFilterIndex, Hierarchy, RelatedJournal, TopicBasicIndex, SessionFilterIndex, SessionIndex, SettingGeneratorConfig, Topics, ValidTopic, ValidTopicRecord } from '@/types';
+import { updateGlobalSetting, removeGlobalSetting } from '@/utils/globalSettings';
 
 type SettingCompendium = CompendiumCollection<'JournalEntry'>;
 
@@ -77,7 +28,7 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
       [Topics.Organization]: { topic: Topics.Organization, topNodes: [], types: [], entries: {} },
       [Topics.PC]: { topic: Topics.PC, topNodes: [], types: [], entries: {} },
     },
-    campaignNames: {},  
+    campaigns: {},  
     expandedIds: {},  
     hierarchies: {},  
     genre: '',  
@@ -90,7 +41,7 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
   } as unknown as SettingDocClass['system'];
   
   // JournalEntries
-  public campaigns: Record<string, Campaign> = {};   // Campaigns keyed by uuid 
+  public campaigns: Record<string, Campaign>= {};   // Campaigns keyed by uuid 
 
   /** these are the the class objects - see topics for just the flattened system data */
   public topicFolders: ValidTopicRecord<TopicFolder> = {};  // we load them when we load the setting (using populate()), so we assume it's never empty
@@ -114,17 +65,6 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
       types: value.types.slice(),
       topic: value.topic,
     };
-  }
-
-  /**
-   * The name keyed by JournalEntry UUID.
-   */
-  public get campaignNames(): Record<string, string> {
-    return this._clone.system.campaignNames as Record<string, string>;
-  }
-
-  public set campaignNames(value: Record<string, string>) {
-    this._clone.system.campaignNames = value;
   }
 
   /**
@@ -161,14 +101,33 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
     };
   }
 
-  /** these are the the flattened system data for the topics (see topicFolders for the class objects) */
-  public get topics(): ValidTopicRecord<TopicFlatType> {
+  /** these are the the indexes for the topics (see topicFolders for the class objects) */
+  public get topics(): ValidTopicRecord<TopicBasicIndex> {
     return this._clone.system.topics;
   }
 
-  /** these are the the flattened system data for the topics (see topicFolders for the class objects) */
-  public set topics(value: ValidTopicRecord<TopicFlatType>) {
+  /** these are the the indexes for the campaigns (see campaigns for the class objects) */
+  public set topics(value: ValidTopicRecord<TopicBasicIndex>) {
     this._clone.system.topics = value;
+  }
+
+  /** indexes for campaigns/sessions */
+  public get campaignIndex(): CampaignBasicIndex[] {
+    return this._clone.system.campaignIndex;
+  }
+
+  public set campaignIndex(value: CampaignBasicIndex[]) {
+    this._clone.system.campaignIndex = value;
+  }
+
+  public getIndexForArc(uuid: string): ArcBasicIndex | null {
+    // search every campaign for it
+    for (const campaign of this._clone.system.campaignIndex) {
+      const arc = campaign.arcs.find(arc => arc.uuid === uuid);
+      if (arc)
+        return arc;
+    }
+    return null;
   }
 
   public get genre(): string {
@@ -236,28 +195,19 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
   */
   public async loadCampaigns(): Promise<Record<string, Campaign>> {
     // we clean up bad ones because various old versions may have stranded entries
-    for (const id in this.campaignNames) {
-      const campaign = await Campaign.fromUuid(id);
+    for (const index of this.campaignIndex) {
+      const campaign = await Campaign.fromUuid(index.uuid);
 
       if (!campaign) {
         // clean it up
-
-        // because we're going to save the changes, we'll put in these things to delete the keys and
-        //    then when save completes it will refresh so those won't be there any more
-        // @ts-ignore
-        // this.campaignNames[`-=${id}`] = null;
-
-        // clean up locally
-        delete this.campaignNames[id];
-        delete this.campaigns[id];
+        this.campaignIndex = this.campaignIndex.filter((c) => c.uuid !== index.uuid);
+        delete this.campaigns[index.uuid];
       } else {
-        this.campaignNames[id] = campaign.name;
-        this.campaigns[id] = campaign;
+        this.campaigns[index.uuid] = campaign;
       }
     }
 
     await this.save();
-
     return this.campaigns;
   }
 
@@ -384,7 +334,7 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
         [Topics.Location]: { topic: Topics.Location, topNodes: [], types: [], entries: {} },
         [Topics.Organization]: { topic: Topics.Organization, topNodes: [], types: [], entries: {} },
         [Topics.PC]: { topic: Topics.PC, topNodes: [], types: [], entries: {} },
-      } as unknown as ValidTopicRecord<TopicFlatType>;
+      } as unknown as ValidTopicRecord<TopicBasicIndex>;
     }
 
     // load the topics
@@ -401,10 +351,9 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
    * inside this setting
    * 
    * @param {(e: EntryFilterIndex) => boolean} filterFn - The filter function
-   * @param {boolean} fullEntry - return full Entry objects or just EntryFilterIndexes
-   * @returns {Entry[] | EntryFilterIndex[]} The entries that pass the filter (or simplified index versions, depending on fullEntry)
+   * @returns {Entry[]} The entries that pass the filter 
    */
-  public async filterEntries<T extends boolean>(filterFn: (e: EntryFilterIndex) => boolean, fullEntry: T): Promise<T extends true ? Entry[] : EntryFilterIndex[]> { 
+  public async filterEntries(filterFn: (e: EntryFilterIndex) => boolean): Promise<Entry[]> { 
     // get all the journal entries
     const indexEntries = await toRaw(this.compendium).getIndex(entryIndexFields());
 
@@ -417,17 +366,17 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
       ))
       .map((e) => ({ 
         name: e.name, 
+        id: e._id,
         uuid: e.uuid,
-        topic: e.pages![0].system.topic,
-        type: e.pages![0].system.type,
+        actorId: e.pages![0].system.actorId,
+        type: e.pages![0].system.type
       } as EntryFilterIndex))
 
       // now filter by the function passed in 
       .filter((e: EntryFilterIndex)=> filterFn(e)) || [];
 
-    if (!fullEntry || entries.length===0)
-      // @ts-ignore - we know it's false and entries is a EntryFilterIndex[] or it's an empty array
-      return entries;
+    if (entries.length===0)
+      return [];
 
     let retval = [] as Entry[];
     for (let i=0; i<entries.length; i++) {
@@ -436,7 +385,6 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
         retval.push(entry);
     }
 
-    // @ts-ignore - we know fullEntry is true and retval is an Entry[]
     return retval;
   }
 
@@ -445,10 +393,9 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
    * inside this setting
    * 
    * @param {(e: SessionFilterIndex) => boolean} filterFn - The filter function
-   * @param {boolean} fullSession - return full Session objects or just SessionFilterIndexes
-   * @returns {Session[] | SessionFilterIndex[]} The sessions that pass the filter (or simplified index versions, depending on fullSession)
+   * @returns {Session[]} The sessions that pass the filter 
    */
-  public async filterSessions<T extends boolean>(filterFn: (s: SessionFilterIndex) => boolean, fullSession: T): Promise<T extends true ? Session[] : SessionFilterIndex[]> { 
+  public async filterSessions(filterFn: (s: SessionFilterIndex) => boolean): Promise<Session[]> { 
     // get all the journal entries
     const indexSessions = await toRaw(this.compendium).getIndex(sessionIndexFields());
 
@@ -470,9 +417,8 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
       // now filter by the function passed in 
       .filter((s: SessionFilterIndex)=> filterFn(s)) || [];
 
-    if (!fullSession || sessions.length===0)
-      // @ts-ignore - we know it's false and sessions is a SessionFilterIndex[] or it's an empty array
-      return sessions;
+    if (sessions.length===0)
+      return [];
 
     let retval = [] as Session[];
     for (let i=0; i<sessions.length; i++) {
@@ -481,7 +427,6 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
         retval.push(session);
     }
 
-    // @ts-ignore - we know fullSession is true and retval is an Session[]
     return retval;
   }
 
@@ -490,8 +435,8 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
    * 
    * @returns {Entry[]} The entries
    */
-  public async allEntries<T extends boolean>(fullEntry: T): Promise<T extends true ? Entry[] : EntryFilterIndex[]> { 
-    return await this.filterEntries(() => true, fullEntry);
+  public async allEntries(): Promise<Entry[]> { 
+    return await this.filterEntries(() => true);
   }
 
   /**
@@ -499,8 +444,8 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
    * 
    * @returns {Session[]} The entries
    */
-  public async allSessions<T extends boolean>(fullSession: T): Promise<T extends true ? Session[] : SessionFilterIndex[]> { 
-    return await this.filterSessions(() => true, fullSession);
+  public async allSessions(): Promise<Session[]> { 
+    return await this.filterSessions(() => true);
   }
 
   public async collapseAll() {
@@ -518,7 +463,7 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
       delete this.campaigns[campaignId];
     }
 
-    delete this.campaignNames[campaignId];
+    this.campaignIndex = this.campaignIndex.filter((c) => c.uuid !== campaignId);
     delete this.expandedIds[campaignId];
 
     await this.save();
@@ -556,16 +501,15 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
     await this.save();
   }  
 
-  // remove a session from the setting metadata
-  public async deleteSessionFromSetting(sessionId: string) {
-    delete this.expandedIds[sessionId];    
+  
+  public async deleteIdFromExpandedList(id: string) {
+    delete this.expandedIds[id];
     await this.save();
-  }  
-
+  }
+  
   protected _prepData(data: SettingDocClass): void {
     // convert unsafe keys
     data.system.hierarchies = cleanKeysOnSave(data.system.hierarchies);
-    data.system.campaignNames = cleanKeysOnSave(data.system.campaignNames);
     data.system.expandedIds = cleanKeysOnSave(data.system.expandedIds);
   }
   
@@ -651,7 +595,7 @@ private async deleteRollTables() : Promise<void> {
   public async deleteActorFromSetting(actorId: string)
    {
     // remove from any PCs that are linked to it
-    for (let pc of (await this.topicFolders[Topics.PC]!.filterEntries((e)=>e.actorId === actorId, true))) {
+    for (let pc of (await this.topicFolders[Topics.PC]!.filterEntries((e)=>e.actorId === actorId))) {
       pc.actorId = '';
       await pc.save();
     }
@@ -670,7 +614,7 @@ private async deleteRollTables() : Promise<void> {
     }
 
     // remove from any Characters that are linked to it
-    for (let character of (await this.topicFolders[Topics.Character]!.allEntries(true))) {
+    for (let character of (await this.topicFolders[Topics.Character]!.allEntries())) {
       // check the related documents
       for (let i=0; i<character.actors.length; i++) {
         if (character.actors[i] === actorId) {
@@ -684,7 +628,7 @@ private async deleteRollTables() : Promise<void> {
 
   public async deleteSceneFromSetting(sceneId: string) {
     // remove from any Locations that are linked to it
-    for (let locations of (await this.topicFolders[Topics.Location]!.allEntries(true))) {
+    for (let locations of (await this.topicFolders[Topics.Location]!.allEntries())) {
       // check the related documents
       for (let i=0; i<locations.scenes.length; i++) {
         if (locations.scenes[i] === sceneId) {
@@ -731,7 +675,7 @@ private async deleteRollTables() : Promise<void> {
 
     // remove from any Entries that are linked to it
     for (let topic of Object.values(this.topicFolders)) {
-      for (let entry of (await topic.allEntries(true))) {
+      for (let entry of (await topic.allEntries())) {
         if (entry.journals.find(j => j.journalUuid === journalId)) {
           entry.journals = entry.journals.filter(j => j.journalUuid !== journalId);
           await entry.save();
@@ -758,7 +702,7 @@ private async deleteRollTables() : Promise<void> {
 
     // remove from any Entries that are linked to it
     for (let topic of Object.values(this.topicFolders)) {
-      for (let entry of (await topic.allEntries(true))) {
+      for (let entry of (await topic.allEntries())) {
         if (entry.journals.find(j => j.pageUuid === journalId)) {
           entry.journals = entry.journals.filter(j => j.pageUuid !== journalId);
           await entry.save();
@@ -799,6 +743,7 @@ const createCompendium = async(name: string): Promise<string> => {
     localize('contentFolders.sessions'),
     localize('contentFolders.campaigns'),
     localize('contentFolders.entries'),
+    localize('contentFolders.fronts'),
     // localize('contentFolders.settings'),  // we now put the settings in the top level
   ];
 

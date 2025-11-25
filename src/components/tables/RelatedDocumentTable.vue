@@ -7,11 +7,9 @@
     :addButtonLabel="addButtonLabel"
     :extraAddText="extraAddText"
     :filterFields="filterFields"
-    :allowEdit="false"
-    :delete-item-label="localize('tooltips.deleteRelationship')"
     :draggable-rows="[DocumentLinkType.Actors, DocumentLinkType.Items].includes(props.documentLinkType)"
+    :actions="[{ icon: 'fa-trash', callback: (data) => onDeleteItemClick(uuid), tooltip: localize('tooltips.deleteRelationship') }]"
 
-    @delete-item="onDeleteItemClick"
     @row-context-menu="onRowContextMenu"
     @drop-new="onDropNew"
     @dragover="onDragover"
@@ -201,7 +199,7 @@
         { 
           icon: 'fa-bullseye', 
           iconFontClass: 'fas',
-          label: localize('dialogs.contextMenus.cannotActivateFromCompendium'),
+          label: localize('contextMenus.dialogs.cannotActivateFromCompendium'),
           disabled: true,
           hidden: !data.packId,   // can't activate in compendium
         },
@@ -225,7 +223,7 @@
               throw new Error('Failed to load scene in RelatedDocumentTable.onRowContextMenu()');
             
             if (scene.active) {
-              alert(localize('dialogs.contextMenus.cannotToggleNavigationWhileActive'));
+              alert(localize('contextMenus.dialogs.cannotToggleNavigationWhileActive'));
             } else {
               await scene?.update({navigation: !scene.navigation});
             }
@@ -234,7 +232,7 @@
         { 
           icon: 'fa-compass', 
           iconFontClass: 'fas',
-          label: localize('dialogs.contextMenus.cannotToggleNavigationFromCompendium'), 
+          label: localize('contextMenus.dialogs.cannotToggleNavigationFromCompendium'), 
           disabled: true,
           hidden: !data.packId,   // can't nav in compendium
         },

@@ -117,80 +117,20 @@
               @dragleave="onDragLeaveRow(data.uuid)"
               @drop="onDropRow($event, data.uuid)"
             >
-              <a 
-                v-if="props.allowDelete"
-                class="fcb-action-icon" 
-                :data-testid="`table-delete-${data.uuid}`"
-                :data-tooltip="props.deleteItemLabel"
-                @click.stop="emit('deleteItem', data.uuid)" 
+              <template
+                v-for="(action, index) in actions"
+                :key="index"
               >
-                <i class="fas fa-trash"></i>
-              </a>
-              <a 
-                v-if="props.allowEdit"
-                class="fcb-action-icon" 
-                :data-testid="`table-edit-${data.uuid}`"
-                :data-tooltip="props.editItemLabel"
-                @click.stop="onEditButtonClick(data)" 
-              >
-                <i class="fas fa-pen"></i>
-              </a>
-              <a 
-                v-if="props.showMoveToToDo"
-                class="fcb-action-icon" 
-                :data-testid="`table-move-to-todo-${data.uuid}`"
-                :data-tooltip="props.moveToToDoLabel"
-                @click.stop="emit('moveToToDo', data.uuid)" 
-              >
-                <i class="fas fa-arrow-right"></i>
-              </a>
-              <a 
-                v-if="props.showMoveToIdeas"
-                class="fcb-action-icon" 
-                :data-testid="`table-move-to-ideas-${data.uuid}`"
-                :data-tooltip="props.moveToIdeasLabel"
-                @click.stop="emit('moveToIdeas', data.uuid)" 
-              >
-                <i class="fas fa-arrow-left"></i>
-              </a>
-              <span v-if="props.trackDelivery">
-                <!-- this is a session one that's not delivered -->
-                <a 
-                  v-if="props.showMoveToCampaign && !data.delivered"
+                <a
+                  v-if="!action.display || action.display(data)"
                   class="fcb-action-icon" 
-                  :data-tooltip="localize('tooltips.moveToCampaign')"
-                  @click.stop="emit('moveToCampaign', data.uuid)" 
+                  :data-testid="`table-action-${index}-${data.uuid}`"
+                  :data-tooltip="action.tooltip"
+                  @click.stop="action.isEdit ? onEditButtonClick(data, action.callback) : action.callback(data)" 
                 >
-                  <i class="fas fa-arrow-up"></i>
+                  <i :class="`fas ${action.icon}`"></i>
                 </a>
-
-                <!-- we track delivery on campaign (delivered and not) and session lore lists -->
-                <!-- this is a delivered one -->
-                <a 
-                  v-if="data.delivered"
-                  class="fcb-action-icon" 
-                  :data-tooltip="localize('tooltips.unmarkAsDelivered')"
-                  @click.stop="emit('unmarkItemDelivered', data.uuid)" 
-                >
-                  <i class="fas fa-circle-xmark"></i>
-                </a>
-                <template v-else>
-                  <a 
-                    class="fcb-action-icon" 
-                    :data-tooltip="localize('tooltips.markAsDelivered')"
-                    @click.stop="emit('markItemDelivered', data.uuid)" 
-                  >
-                    <i class="fas fa-circle-check"></i>
-                  </a>
-                  <a 
-                    class="fcb-action-icon" 
-                    :data-tooltip="localize('tooltips.moveToNextSession')"
-                    @click.stop="emit('moveToNextSession', data.uuid)" 
-                  >
-                    <i class="fas fa-share"></i>
-                  </a>
-                </template>
-              </span>
+              </template>
             </div>
           </div>
 
@@ -335,7 +275,6 @@
   import DataTable, {
     DataTableRowContextMenuEvent,
     DataTableRowSelectEvent,
-    type DataTableCellEditCompleteEvent,
     type DataTableFilterMetaData,
   } from 'primevue/datatable';
   import Column from 'primevue/column';
@@ -346,7 +285,11 @@
   import Checkbox from 'primevue/checkbox';
 
   // types
-  import { TablePagination, BaseTableGridRow } from '@/types';
+  import { 
+    TablePagination, BaseTableGridRow, ActionButtonDefinition, 
+    CellEditCompleteEvent, RowEditCompleteEvent 
+  } from '@/types';
+
 
   ////////////////////////////////
   // props
@@ -362,11 +305,6 @@
     addButtonLabel: { 
       type: String, 
       default: '',
-    },
-    /** used for campaign/session tracking */
-    trackDelivery: {
-      type: Boolean,
-      default: false,
     },
     /** displays as text next to the add button (even if no button) */
     extraAddText: {   
@@ -395,42 +333,9 @@
       type: Array as PropType<any[]>,
       required: true,
     },
-    /** show the edit action icon */
-    allowEdit: {
-      type: Boolean,
-      default: false,
-    },
-    editItemLabel: {
-      type: String,
-      default: '',
-    },
-    allowDelete: {
-      type: Boolean,
-      default: true,
-    },
-    deleteItemLabel: {
-      type: String,
-      default: '',
-    },
-    showMoveToCampaign: {
-      type: Boolean,
-      default: false,
-    },
-    showMoveToToDo: {
-      type: Boolean,
-      default: false,
-    },
-    moveToToDoLabel: {
-      type: String,
-      default: '',
-    },
-    showMoveToIdeas: {
-      type: Boolean,
-      default: false,
-    },
-    moveToIdeasLabel: {
-      type: String,
-      default: '',
+    actions: {
+      type: Array as PropType<ActionButtonDefinition[]>,
+      default: [],
     },
     draggableRows: {
       type: Boolean,
@@ -453,24 +358,21 @@
   // emits
   const emit = defineEmits<{
     (e: 'rowSelect', originalEvent: DataTableRowSelectEvent): void;
-    (e: 'editItem', data: BaseTableGridRow): void;
-    (e: 'deleteItem', uuid: string): void;
     (e: 'addItem'): void;
     (e: 'rowContextMenu', originalEvent: DataTableRowContextMenuEvent): void;
-    (e: 'cellEditComplete', originalEvent: DataTableCellEditCompleteEvent): void;
+    (e: 'cellEditInit'): void;
+    (e: 'cellEditComplete', originalEvent: CellEditCompleteEvent): void;
+    (e: 'rowEditComplete', originalEvent: RowEditCompleteEvent): void;
     (e: 'markItemDelivered', uuid: string): void;
     (e: 'unmarkItemDelivered', uuid: string): void;
     (e: 'moveToNextSession', uuid: string): void;
-    (e: 'moveToCampaign', uuid: string): void;
-    (e: 'moveToToDo', uuid: string): void;
-    (e: 'moveToIdeas', uuid: string): void;
     (e: 'dragstart', event: DragEvent, uuid: string): void;
     (e: 'dragoverNew', event: DragEvent): void;
     (e: 'dragoverRow', event: DragEvent, uuid: string): void;
     (e: 'dropRow', event: DragEvent, uuid: string): void;
     (e: 'dropNew', event: DragEvent): void;
     (e: 'setEditingRow', uuid: string): void;
-    (e: 'reorder', reorderedRows: BaseTableGridRow[]): void;
+    (e: 'reorder', reorderedRows: BaseTableGridRow[], dragIndex: number, dropIndex: number): void;
     (e: 'cellClick', data: any, field: string): void;
   }>();
 
@@ -553,6 +455,7 @@
     }
 
     emit('setEditingRow', uuid);
+    emit('cellEditInit');
   };
 
   const cancelEdit = () => {
@@ -579,7 +482,6 @@
           if (input && originalRowData[col.field] !== input.value) {
             // pull the value from the input and fire an event to save it
             emit('cellEditComplete', {
-              originalEvent: new Event('change'),
               data: originalRowData,
               newData: {...editingRowData.value, [col.field]: input.value},
               value: originalRowData[col.field],
@@ -588,10 +490,18 @@
               field: col.field,
               index: props.rows.findIndex((r) => r.uuid === editingRow.value),
               type: 'enter',
-            });
+            } as CellEditCompleteEvent);
           }
         }
       }
+
+      // Emit the row editing event for the whole row
+      emit('rowEditComplete', {
+        data: originalRowData,
+        newData: editingRowData.value,
+        index: props.rows.findIndex((r) => r.uuid === editingRow.value),
+        type: 'enter',
+      });
     }
 
     // Turn off editing mode
@@ -610,11 +520,10 @@
       data: rowData,
       field: field,
       newValue: newValue,
-      originalEvent: new Event('change'),
       value: rowData[field],
       index: props.rows.findIndex((r) => r.uuid === rowData.uuid),
       type: 'edit',
-    };
+    } as CellEditCompleteEvent<boolean>;
     emit('cellEditComplete', event);
   };
 
@@ -703,10 +612,10 @@
       row.sortOrder = index;
     });
 
-    emit('reorder', reorderedRows);
+    emit('reorder', reorderedRows, dragIndex, dropIndex);
   }
 
-  const onEditButtonClick = (data: BaseTableGridRow) => {
+  const onEditButtonClick = (data: BaseTableGridRow, callback: (data: BaseTableGridRow) => void) => {
     // Check if there are any editable columns
     if (hasEditableColumns.value) {
       // If we were already editing a row, save it first
@@ -715,8 +624,7 @@
       // If there are editable columns, put the row in edit mode
       setEditingRow(data.uuid);
     } else {
-      // If no editable columns, emit the editItem event as before
-      emit('editItem', data);
+      callback(data);
     }
   }
 

@@ -6,22 +6,20 @@
     :show-add-button="true"
     :extra-add-text="localize('labels.campaign.addPCDrag')"
     :showFilter="false"
-    :allowEdit="false"
     :allow-drop-row="false"
-    :delete-item-label="localize('tooltips.deleteRelationship')"
     :add-button-label="localize('labels.campaign.addPC')"
+    :actions="[{ icon: 'fa-trash', callback: (data) => onDeleteItemClick(data.uuid), tooltip: localize('tooltips.deleteRelationship') }]"
     @add-item="onAddItemClick"
-    @delete-item="onDeleteItemClick"
     @drop-new="onDropNew"
     @dragover="onDragover"
   />
 
-  <RelatedItemDialog
+  <RelatedEntryDialog
     v-model="addDialogShow"
     :topic="Topics.PC"
     :item-id="editItem.itemId"
     :item-name="editItem.itemName"
-    :mode="RelatedItemDialogModes.Add"
+    :mode="RelatedEntryDialogModes.Add"
     :allow-create="false"
   />
 </template>
@@ -40,10 +38,10 @@
 
   // local components
   import BaseTable from '@/components/tables/BaseTable.vue';
-  import RelatedItemDialog from '@/components/tables/RelatedItemDialog.vue';
+  import RelatedEntryDialog from '@/components/tables/RelatedEntryDialog.vue';
   
   // types
-  import { RelatedPCDetails, RelatedItemDialogModes, Topics } from '@/types';
+  import { RelatedPCDetails, RelatedEntryDialogModes, Topics } from '@/types';
   import { Entry } from '@/classes';
   
   ////////////////////////////////

@@ -2,16 +2,20 @@
  * A class representing an node representing a campaign in the campaign tree structures
  */
 
-import { Campaign, CollapsibleNode, DirectorySessionNode, } from '@/classes';
-import { SessionBasicIndex, SessionFilterIndex } from '@/types';
+import { ArcBasicIndex, } from '@/types';
+import { Campaign, CollapsibleNode, DirectoryArcNode, DirectoryFrontFolder, DirectorySessionNode, } from '@/classes';
+import { ModuleSettings, SettingKey } from '@/settings';
 
-export class DirectoryCampaignNode extends CollapsibleNode<DirectorySessionNode> {
+export class DirectoryCampaignNode<
+  SessionNodes extends DirectorySessionNode | DirectoryArcNode,
+  PossibleNodes extends SessionNodes | DirectoryFrontFolder = SessionNodes | DirectoryFrontFolder 
+> extends CollapsibleNode<PossibleNodes> {
   name: string;
   completed: boolean;
   
-  // children are for the entries; loadedTypes is for the type nodes
   constructor(id: string, name: string, children: string[] = [], 
-    loadedChildren: DirectorySessionNode[] = [], expanded: boolean = false, completed: boolean = false
+    loadedChildren: (PossibleNodes)[] = [], expanded: boolean = false, 
+    completed: boolean = false
   ) {
 
     super(id, expanded, null, children, loadedChildren, []);
@@ -33,17 +37,30 @@ export class DirectoryCampaignNode extends CollapsibleNode<DirectorySessionNode>
       return;
     }
 
-    // we only want to load ones not already in _loadedNodes, unless its in updateIds
-    const uuidsToLoad = ids.filter((id)=>!CollapsibleNode._loadedNodes[id] || updateIds.includes(id));
+    // if we are using fronts, the first child is the front folder
+    if (ModuleSettings.get(SettingKey.useFronts)) {
+      // add the front folder
+      const newNode = await DirectoryFrontFolder.fromCampaign(this.id);
+      CollapsibleNode._loadedNodes[newNode.id] = newNode;
+    }
 
-    const campaign = await Campaign.fromUuid(this.id);
+    // the rest of the children are arcs
+    // const campaign = await Campaign.fromUuid(this.id);
+    //     // Get fresh campaign data from setting's campaigns cache (which was just refreshed)
+    const campaign = CollapsibleNode._currentSetting.campaigns[this.id] || await Campaign.fromUuid(this.id);
+
     if (!campaign)
       throw new Error('Bad campaign id in DirectoryCampaignNode._loadNodeList()');
 
-    const sessions = uuidsToLoad.length===0 ? [] : campaign.sessionIndex.filter((s: SessionBasicIndex)=> uuidsToLoad.includes(s.uuid));
+    // we only want to load ones not already in _loadedNodes, unless its in updateIds
+    const uuidsToLoad = ids.filter((id)=>!CollapsibleNode._loadedNodes[id] || updateIds.includes(id));
 
-    for (let i=0; i<sessions.length; i++) {
-      const newNode = DirectorySessionNode.fromSessionBasicIndex(sessions[i], this.id);
+    const arcs = uuidsToLoad.length===0 ? [] : 
+      CollapsibleNode._currentSetting.campaignIndex.find((c)=>c.uuid===this.id)
+        ?.arcs.filter((a: ArcBasicIndex)=> uuidsToLoad.includes(a.uuid)) || [];
+
+    for (let i=0; i<arcs.length; i++) {
+      const newNode = DirectoryArcNode.fromArcBasicIndex(arcs[i], campaign);
       CollapsibleNode._loadedNodes[newNode.id] = newNode;
     }
   }

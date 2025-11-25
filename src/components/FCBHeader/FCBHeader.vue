@@ -29,22 +29,24 @@
     <PlayModeNavigation />
 
     <div class="fcb-bookmark-bar flexrow">
-      <div 
+      <button
         id="fcb-history-back" 
-        :class="'nav-button ' + (canBack ? '' : 'disabled')" 
+        class="nav-button"
+        :disabled="!canBack"
         :title="localize('tooltips.historyBack')"
-        @click="onHistoryBackClick"
+        @click.stop.prevent="onHistoryBackClick"
       >
         <i class="fas fa-chevron-left"></i>
-      </div>
-      <div 
+      </button>
+      <button
         id="fcb-history-forward" 
-        :class="'nav-button ' + (canForward ? '' : 'disabled')" 
+        class="nav-button"
+        :disabled="!canForward"
         :title="localize('tooltips.historyForward')"
-        @click="onHistoryForwardClick"
+        @click.stop.prevent="onHistoryForwardClick"
       >
         <i class="fas fa-chevron-right"></i>
-      </div>
+      </button>
       <hr class="vertical" />
 
       <div 
@@ -149,13 +151,33 @@
     }
 
     const container = bookmarksContainer.value;
-    const containerWidth = container.offsetWidth;
+    
+    // Find the left splitter panel to get the actual available width
+    const leftPanel = container.closest('.fcb-left-panel');
+    const containerWidth = leftPanel ? leftPanel.offsetWidth : container.offsetWidth;
     
     // If container has no width yet, wait for layout
     if (containerWidth === 0) {
       visibleCount.value = 0;
       return;
     }
+    
+    // Account for padding and other elements in the bookmark bar
+    const bookmarkBar = container.closest('.fcb-bookmark-bar');
+    const bookmarkBarStyle = bookmarkBar ? getComputedStyle(bookmarkBar) : null;
+    const paddingAndBorders = bookmarkBarStyle ? 
+      parseInt(bookmarkBarStyle.paddingLeft || '0') + 
+      parseInt(bookmarkBarStyle.paddingRight || '0') : 0;
+    
+    // Account for navigation buttons and other fixed elements
+    const navButtons = bookmarkBar ? bookmarkBar.querySelectorAll('.nav-button, #fcb-add-bookmark, hr.vertical') : [];
+    const navButtonsWidth = Array.from(navButtons).reduce((total, el) => {
+      const element = el as HTMLElement;
+      return total + element.offsetWidth + parseInt(getComputedStyle(element).marginLeft || '0') + parseInt(getComputedStyle(element).marginRight || '0');
+    }, 0);
+    
+    // Calculate actual available width for bookmarks
+    const availableWidth = containerWidth - paddingAndBorders - navButtonsWidth - 10; // 10px for safety margin
     
     // Get all children but filter out the overflow button
     const allChildren = Array.from(container.children) as HTMLElement[];
@@ -189,7 +211,7 @@
       // Check if this bookmark would fit
       const widthNeeded = i < bookmarkElements.length - 1 ? totalWidth + elementWidth + overflowButtonWidth : totalWidth + elementWidth;
       
-      if (widthNeeded > containerWidth) {
+      if (widthNeeded > availableWidth) {
         break;
       }
       
@@ -361,6 +383,12 @@
     calculateVisibleBookmarks();
   }, { deep: true });
 
+  // Watch for splitter panel size changes
+  watch(() => root.value?.querySelector('.fcb-left-panel')?.offsetWidth, async () => {
+    await nextTick();
+    calculateVisibleBookmarks();
+  });
+
   ////////////////////////////////
   // lifecycle events
   onMounted(async () => {
@@ -376,7 +404,14 @@
         // Debounce resize calculations
         setTimeout(() => calculateVisibleBookmarks(), 10);
       });
+      
+      // Observe both the bookmarks container and the left panel
       resizeObserver.observe(bookmarksContainer.value);
+      
+      const leftPanel = root.value?.querySelector('.fcb-left-panel') as HTMLElement;
+      if (leftPanel) {
+        resizeObserver.observe(leftPanel);
+      }
       
       // Initial calculation immediately after mount
       requestAnimationFrame(() => calculateVisibleBookmarks());
@@ -425,7 +460,7 @@
   .fcb-bookmark-bar {
     padding-left: 2px;
     flex: 0 0 2.25rem;
-    color: var(--fcb-header-nav-btn-color);
+    color: var(--fcb-button-color);
     overflow: hidden;
     display: flex;
     flex-direction: row;
@@ -466,7 +501,7 @@
       &:hover {
         background: var(--fcb-button-bg-hover);
         border-color: var(--fcb-button-border-hover);
-        color: var(--fcb-button-text-hover);
+        color: var(--fcb-button-color-hover);
       }
     }
 
@@ -485,29 +520,10 @@
     .nav-button {
       flex: 0 0 auto;
       text-align: center;
-      line-height: 1.5rem;
-      font-size: var(--fcb-font-size-large);
       margin-right: 4px;
       width: 1.5rem;
       height: 1.5rem;
-      border-radius: 4px;
-      border: 1px solid var(--fcb-header-nav-btn-border);
-      background-color: var(--fcb-header-nav-btn-background);
       margin-top: 1px;
-
-      &:not(.disabled):hover {
-        box-shadow: 0 0 5px red;
-        cursor: pointer;
-        background: var(--fcb-button-bg-hover);
-        border-color: var(--fcb-button-border-hover);
-        color: var(--fcb-button-text-hover);
-      }
-
-      &.disabled {
-        color: var(--fcb-header-nav-btn-disabled);
-        background: var(--fcb-header-nav-btn-background-disabled);
-        border-color: var(--fcb-header-nav-btn-border-disabled);
-      }
     }
 
     #context-menu li {

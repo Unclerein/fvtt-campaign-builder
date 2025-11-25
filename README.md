@@ -39,11 +39,12 @@ It's totally possible to adapt your usage of the module to whatever your preferr
 - Create organizational hierarchies (ex. for religions, governing bodies, large families, criminal organizations, companies, etc.)
 - Define your world's species for assigning to characters (and using for AI prompts)
 - Directory view of all of your world entries
+- Manage your campaigns with story arcs, DungeonWorld-style fronts, and sessions
+- Easily plan your play sessions (in Lazy DM style) and track what happens to blend it back into your world
 - Powerful search based on names, descriptions, relationships, tags, etc.
 - AI-driven generation of characters, locations, and organizations (descriptions and images) - it's hard to overstate how well the image generation in particular works... you need to try it to believe it
 - Maintain connections to relevant Foundry documents (ex. Scenes and Actors) for quick reference
 - Quick links to AI-refreshed RollTables for creating NPC, town, store, and tavern names
-- Easily plan your play sessions (in Lazy DM style) and track what happens to blend it back into your world
 - Lots more - see more details below and in the [user documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/)
 
 ## How it works
