@@ -556,17 +556,30 @@
 
     // update the arcs and the indexes will get updated
     // first delete any arcs that we removed
+    let needToSave = false;
     for (const existingArc of foundry.utils.deepClone(campaign.value.arcIndex)) {
       if (!arcs.value.find(a => a.uuid === existingArc.uuid)) {
-        (await Arc.fromUuid(existingArc.uuid))?.delete();
+        const arc = await Arc.fromUuid(existingArc.uuid);
+        if (arc) {
+          await arc.delete();
+        } else {
+          // Arc doesn't exist, but we still need to clean up the index (just in case something broken)
+          campaign.value.arcIndex = campaign.value.arcIndex.filter(a => a.uuid !== existingArc.uuid);
+          await campaign.value.save();
+        }
+
+        needToSave = true;
 
         // update tabs/bookmarks
         await navigationStore.cleanupDeletedEntry(existingArc.uuid);
       }
-
-      // need to refresh the campaign to get the latest index
-      campaign.value = await Campaign.fromUuid(campaign.value!.uuid);
     }
+
+    if (needToSave)
+      await campaign.value.save();
+    
+    // need to refresh the campaign to get the latest index after deletions
+    campaign.value = await Campaign.fromUuid(campaign.value!.uuid);
 
     for (const arcIndex of arcs.value) {
       let arc = await Arc.fromUuid(arcIndex.uuid);
