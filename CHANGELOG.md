@@ -1,7 +1,7 @@
 # Change Log
-## v1.6.4.2 - One more migration fix
+## v1.6.5 - One more migration fix
 ![](https://img.shields.io/badge/release%20date-December%202%2C%202025-blue)
-![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.6.4.2/module.zip)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.6.5/module.zip)
 
 - Fixed a bug that was preventing migration from v1.5.1 to v1.6.0 for worlds that had a deleted campaign in them.
 
