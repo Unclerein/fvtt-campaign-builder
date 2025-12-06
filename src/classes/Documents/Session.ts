@@ -66,7 +66,7 @@ export class Session extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Session> 
     this.campaign = await Campaign.fromUuid(this._clone.system.campaignId);
 
     if (!this.campaign)
-      throw new Error('Invalid campaignId in Session.loadCampaign()');
+      throw new Error('Invalid campaignId in Session.loadCampaign(): ' + this.uuid + ' ' + this._clone.system.campaignId );
 
     return this.campaign;
   }
@@ -300,7 +300,7 @@ export class Session extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Session> 
     this._clone.system.lore = value.slice();     // we clone it so it can't be edited outside
   }
 
-  async addLore(description: string): Promise<string> {
+  async addLore(description: string, journalEntryPageId: string | null = null): Promise<string> {
     const uuid = foundry.utils.randomID();
 
     this._clone.system.lore.push({
@@ -308,7 +308,7 @@ export class Session extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Session> 
       description: description,
       delivered: false,
       significant: false,
-      journalEntryPageId: null,
+      journalEntryPageId: journalEntryPageId,
       sortOrder: this._clone.system.lore.length,
     });
 
@@ -535,7 +535,7 @@ export class Session extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Session> 
     
     await campaign.deleteSession(this);
     
-    await toRaw(this._doc).delete();
+    await super._delete();
 
     // Remove from search index
     searchService.removeSearchEntry(id);

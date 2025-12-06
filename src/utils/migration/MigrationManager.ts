@@ -139,6 +139,7 @@ export class MigrationManager {
     const neededMigrations = await this.getNeededMigrations();
     
     if (neededMigrations.length === 0) {
+      await VersionUtils.saveCurrentVersion();
       return {
         success: true,
         migratedCount: 0,
@@ -208,8 +209,8 @@ export class MigrationManager {
               console.error(errorMsg);
               progress.updateStatus(`Migration failed for version ${currentVersion}`);
               
-              // Re-throw to break out of the loop
-              throw error;
+              // break out of loop
+              break;
             }
 
             completedMigrations++;

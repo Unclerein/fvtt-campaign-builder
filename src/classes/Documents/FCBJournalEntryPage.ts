@@ -99,6 +99,12 @@ export class FCBJournalEntryPage<
     return setting;
   }
 
+  // handle deletes
+  protected async _delete(): Promise<void> {
+    // doc is the page - we need to delete the parent
+    await toRaw(this._doc.parent)?.delete();
+  }
+
   /** takes the uuid of the wrapper entry */
   static async fromUuid<
     DocType extends ValidDocType,
@@ -152,13 +158,16 @@ export class FCBJournalEntryPage<
       if (this._doc.name !== data.name) {
         // because the child class objects can get proxied by Vue, this might be proxied, 
         //   which can then cause issues with the update
+        // await toRaw(this._doc)?.parent?.update({ name: data.name }, {render: false});
         await toRaw(this._doc)?.parent?.update({ name: data.name });
       }
         
       // now save the page
       // need to pass false to toObject to use the current in memory version
       // we use recursive: false so that removed keys, etc. are removed from the database
-      const retval = await toRaw(this._doc)?.update(data, { recursive: false })  as DocClass | undefined;
+      // we use render: false so updates don't trigger a re-render of the FCB window (which has non-standard
+      //    handling of canRender() that results in an infinite loop when opening story webs (which save when they open))
+      const retval = await toRaw(this._doc)?.update(data, { recursive: false, render: false })  as DocClass | undefined;
 
       // no update done; should probably reload clone to avoid data loss
       if (!retval) {

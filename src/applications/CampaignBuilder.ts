@@ -233,7 +233,7 @@ export class CampaignBuilderApplication extends VueApplicationMixin(DocumentShee
     const originalUuid = doc.getFlag(moduleId, JournalEntryFlagKey.originalUuid) as string | undefined;
     if (originalUuid && originalUuid !== incomingDoc.uuid) {
       // This is a world copy, load the original compendium entry instead
-      const originalDoc = await fromUuid(originalUuid) as foundry.documents.JournalEntry | null;
+      const originalDoc = await fromUuid<JournalEntry>(originalUuid);
       if (originalDoc) {
         doc = originalDoc;
       }
@@ -260,6 +260,7 @@ export class CampaignBuilderApplication extends VueApplicationMixin(DocumentShee
         [DOCUMENT_TYPES.Setting]: WindowTabType.Setting,
         [DOCUMENT_TYPES.Front]: WindowTabType.Front,
         [DOCUMENT_TYPES.Arc]: WindowTabType.Arc,
+        [DOCUMENT_TYPES.StoryWeb]: WindowTabType.StoryWeb,
       };
       
       const windowTabType = docTypeToWindowTabType[docType];
@@ -313,6 +314,9 @@ export class CampaignBuilderApplication extends VueApplicationMixin(DocumentShee
           break;
         case DOCUMENT_TYPES.Front:
           useNavigationStore().openFront(uuid);
+          break;
+        case DOCUMENT_TYPES.StoryWeb:
+          useNavigationStore().openStoryWeb(uuid);
           break;
       }
     }

@@ -1,8 +1,8 @@
 import { toRaw } from 'vue';
 import { moduleId, ModuleSettings, SettingKey, } from '@/settings'; 
 import { DOCUMENT_TYPES, CampaignLore, frontIndexFields } from '@/documents';
-import { RelatedPCDetails, RelatedJournal, SessionFilterIndex, FrontFilterIndex, SessionBasicIndex, ArcBasicIndex, ToDoItem, ToDoTypes, Idea,} from '@/types';
-import { Entry, Session, FCBSetting, Front, Arc, } from '@/classes';
+import { RelatedPCDetails, RelatedJournal, SessionFilterIndex, FrontFilterIndex, SessionBasicIndex, ArcBasicIndex, StoryWebFilterIndex, ToDoItem, ToDoTypes, Idea,} from '@/types';
+import { Entry, Session, FCBSetting, Front, Arc, StoryWeb } from '@/classes';
 import { getArcForSession, getFirstArcWithSessions, getLastArcWithSessions } from '@/utils/arcIndex';
 import { FCBJournalEntryPage, FCBJournalEntryPageStatic, } from './FCBJournalEntryPage';
 import { JournalEntryFlagKey } from '@/settings';
@@ -28,6 +28,8 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
     customFields: {
      house_rules: '',  
     },
+    frontIds: [],
+    storyWebIds: [],
   } as unknown as CampaignDocClass['system'];
   
   public static override async fromUuid<
@@ -49,6 +51,11 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
   public async allFronts(): Promise<Front[]> {
     const allFronts = await this.filterFronts(()=>true);
     return allFronts;
+  }
+
+  public async allStoryWebs(): Promise<StoryWeb[]> {
+    const allStoryWebs = await this.filterStoryWebs(() => true);
+    return allStoryWebs;
   }
 
   /** Updates current session to highest numbered session without saving */
@@ -91,6 +98,10 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
 
   public get frontIds(): readonly string[] {
     return this._clone.system.frontIds;
+  }
+
+  public get storyWebIds(): readonly string[] {
+    return this._clone.system.storyWebIds;
   }
 
   /** connect the session to the end of the campaign; need to add to setting separately */
@@ -251,6 +262,11 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
     await this.save();
   }
 
+  public async addStoryWeb(storyWeb: StoryWeb): Promise<void> {
+    this._clone.system.storyWebIds.push(storyWeb.uuid);    
+    await this.save();
+  }
+
   public async deleteArc(arc: Arc): Promise<void> {    
     // Remove from index
     this._clone.system.arcIndex = this._clone.system.arcIndex.filter(a => a.uuid !== arc.uuid);
@@ -261,6 +277,12 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
  
   public async deleteFront(front: Front): Promise<void> {
     this._clone.system.frontIds = this._clone.system.frontIds.filter(s=> s!==front.uuid);
+    
+    await this.save();
+  }
+
+  public async deleteStoryWeb(storyWeb: StoryWeb): Promise<void> {
+    this._clone.system.storyWebIds = this._clone.system.storyWebIds.filter(s=> s!==storyWeb.uuid);
     
     await this.save();
   }
@@ -348,7 +370,7 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
   }
 
   // returns the uuid
-  public async addLore(description: string): Promise<string> {
+  public async addLore(description: string, journalEntryPageId: string | null = null): Promise<string> {
     const uuid = foundry.utils.randomID();
 
     this._clone.system.lore.push({
@@ -356,7 +378,7 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
       description: description,
       delivered: false,
       significant: true,
-      journalEntryPageId: null,
+      journalEntryPageId: journalEntryPageId,
       lockedToSessionId: null,
       lockedToSessionName: null,
       sortOrder: this._clone.system.lore.reduce((max, lore) => Math.max(max, lore.sortOrder), -1) + 1,
@@ -767,6 +789,47 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
   }
 
   /**
+   * Given a filter function, returns all the matching StoryWebs
+   * inside this campaign
+   * 
+   * @param {(e: StoryWebFilterIndex) => boolean} filterFn - The filter function
+   * @returns {StoryWeb[]} The entries that pass the filter
+   */
+  public async filterStoryWebs(filterFn: (s: StoryWebFilterIndex) => boolean): Promise<StoryWeb[]> { 
+    // get all the journal entries
+    const entries = await toRaw(this.compendium).getIndex();
+
+    // find the story webs connected to this campaign
+    const storyWebs = entries
+      // first find the relevant ones
+      .filter((e)=> (
+        e.flags?.[moduleId]?.[JournalEntryFlagKey.campaignBuilderType]===DOCUMENT_TYPES.StoryWeb &&
+        !!e.pages && e.pages!.length > 0 &&
+        this._clone.system.storyWebIds?.includes(e.uuid)
+      ))
+      .map((e) => ({ 
+        name: e.name, 
+        id: e._id,
+        uuid: e.uuid
+      } as StoryWebFilterIndex))
+
+      // now filter by the function passed in 
+      .filter((s: StoryWebFilterIndex)=> filterFn(s)) || [];
+
+    const idList = storyWebs.map((s)=> s.id);
+    const documentSet = await this.compendium.getDocuments({ _id__in: idList });
+
+    let retval = [] as StoryWeb[];
+    for (const doc of documentSet) {
+      const storyWeb = new StoryWeb(doc, this);
+      if (storyWeb)
+        retval.push(storyWeb);
+    }
+
+    return retval;
+  }
+
+  /**
    * Updates a campaign in the database 
    * 
    * @returns Promise that returns after the update
@@ -856,7 +919,7 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
     if (!setting)
       throw new Error('Invalid setting in Campaign.delete()');
 
-    await toRaw(this._doc)?.delete();
+    await super._delete();
 
     await setting.deleteCampaignFromSetting(id);
   }

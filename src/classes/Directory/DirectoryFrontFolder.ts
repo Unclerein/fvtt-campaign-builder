@@ -7,16 +7,14 @@ import { FrontFilterIndex } from '@/types';
 
 export class DirectoryFrontFolder extends CollapsibleNode<DirectoryFrontNode> {
   name: string;
-  completed: boolean;
   
   constructor(id: string, name: string, campaignId: string, children: string[] = [], 
-    loadedChildren: DirectoryFrontNode[] = [], expanded: boolean = false, completed: boolean = false
+    loadedChildren: DirectoryFrontNode[] = [], expanded: boolean = false
   ) {
 
     super(id, expanded, campaignId, children, loadedChildren, []);
 
     this.name = name;
-    this.completed = completed;
   }
 
   /**
@@ -48,19 +46,15 @@ export class DirectoryFrontFolder extends CollapsibleNode<DirectoryFrontNode> {
   }
 
   static async fromCampaign(campaignId: string): Promise<DirectoryFrontFolder> {
-    // for now, we fake it
     const campaign = await Campaign.fromUuid(campaignId);
     if (!campaign)
       throw new Error('Bad campaign id in DirectoryFrontFolder.fromCampaign()');
 
     return new DirectoryFrontFolder(
-      campaignId + ':front',
+      `${campaignId}:front`,
       'Fronts',
       campaignId,
-      campaign.frontIds.slice(),
-      [],
-      true,
-      false
+      campaign.frontIds.slice()
     );
   }
 }
