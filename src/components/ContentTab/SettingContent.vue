@@ -34,6 +34,7 @@
           :name="currentSetting.name || 'Setting'"
           :image-url="currentSetting.img"
           :window-type="WindowTabType.Setting"
+          :show-image="ModuleSettings.get(SettingKey.showImages)?.settings ?? true"
           @image-change="onImageChange"
         >
           <div class="flexrow form-group">
@@ -105,8 +106,9 @@
   import { localize } from '@/utils/game';
   import { useMainStore, useNavigationStore, useSettingDirectoryStore } from '@/applications/stores';
   import { updateWindowTitle } from '@/utils/titleUpdater';
-  import { Backend } from '@/classes';
+  import { useBackendStore } from '@/applications/stores';
   import { notifyWarn } from '@/utils/notifications';
+  import { ModuleSettings, SettingKey } from '@/settings/ModuleSettings';
 
   // library components
   import InputText from 'primevue/inputtext';
@@ -135,18 +137,20 @@
   const mainStore = useMainStore();
   const navigationStore = useNavigationStore();
   const settingDirectoryStore = useSettingDirectoryStore();
+  const backendStore = useBackendStore();
   const { currentSetting } = storeToRefs(mainStore);
+  const { available } = storeToRefs(backendStore);
 
   ////////////////////////////////
   // data
   const name = ref<string>('');
-  const icon =  getTabTypeIcon(WindowTabType.Setting);
+  const icon = getTabTypeIcon(WindowTabType.Setting);
   const showConfigureNamesDialog = ref<boolean>(false);
 
   ////////////////////////////////
   // computed data
   const namePlaceholder = computed((): string => (localize('placeholders.settingName') || ''));
-  const generateDisabled = computed(() => !Backend.available);
+  const generateDisabled = computed(() => !available.value);
   
   const tabs = computed(() => [
     { id: 'description', label: localize('labels.tabs.setting.description') },
