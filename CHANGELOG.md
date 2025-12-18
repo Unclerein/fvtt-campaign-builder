@@ -1,6 +1,6 @@
 # Change Log
 ## 1.7.0 - Relationship graphs and better tab history!
-![](https://img.shields.io/badge/release%20date-December%20____%2C%202025-blue)
+![](https://img.shields.io/badge/release%20date-December%2018%2C%202025-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.7.0/module.zip)
 
 - You can now create graphs tracking the relationships between your characters, locations, PCs, dangers, etc.  Right click on the new "Story webs" folder to create one and get started.
