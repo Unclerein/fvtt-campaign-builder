@@ -244,7 +244,7 @@ export const useCampaignStore = defineStore('campaign', () => {
         return;
   
       // have a next session - add there and delete here
-      await lastSession.addLore(currentLore.description);
+      await lastSession.addLore(currentLore.description, currentLore.journalEntryPageId);
       await currentCampaign.value.deleteLore(uuid);
   
       await _refreshLoreRows();
@@ -269,7 +269,7 @@ export const useCampaignStore = defineStore('campaign', () => {
         return;
   
       // have a next session - add there and delete here
-      await lastArc.addLore(currentLore.description);
+      await lastArc.addLore(currentLore.description, currentLore.journalEntryPageId);
       await currentCampaign.value.deleteLore(uuid);
   
       await _refreshLoreRows();
@@ -652,6 +652,9 @@ export const useCampaignStore = defineStore('campaign', () => {
   ///////////////////////////////
   // watchers
   watch(()=> currentCampaign.value, async () => {
+    if (currentContentTab.value !== 'todo')
+      await _refreshToDoRows();
+
     await _refreshRowsForTab();
   });
 

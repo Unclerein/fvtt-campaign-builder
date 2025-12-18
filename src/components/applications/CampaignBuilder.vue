@@ -54,12 +54,13 @@
   // local imports
   import { pinia } from '@/applications/stores';
   import { getCurrentSetting, } from '@/compendia';
-  import { SettingKey, ModuleSettings, moduleId } from '@/settings';
-  import { useMainStore, useNavigationStore } from '@/applications/stores';
+  import { SettingKey, ModuleSettings, } from '@/settings';
+  import { useMainStore, useNavigationStore, useBackendStore } from '@/applications/stores';
   import { localize } from '@/utils/game';
   import { updateWindowTitle } from '@/utils/titleUpdater';
   import { theme } from '@/components/styles/primeVue';
   import { notifyWarn } from '@/utils/notifications';
+  import { closeCampaignBuilderApp } from '@/utils/appWindow';
   
   // library components
   import Splitter from 'primevue/splitter';
@@ -73,7 +74,7 @@
 
   // types
   import { WindowTabType, } from '@/types';
-  import { Backend, RootFolder, FCBSetting, } from '@/classes';
+  import { RootFolder, FCBSetting, } from '@/classes';
 
   
   ////////////////////////////////
@@ -86,8 +87,10 @@
   // store
   const mainStore = useMainStore();
   const navigationStore = useNavigationStore();
+  const backendStore = useBackendStore();
   const { currentSetting, rootFolder, isArcManagerOpen } = storeToRefs(mainStore);
-  
+  const { available, inProgress } = storeToRefs(backendStore);
+
   ////////////////////////////////
   // data
   // current sidebar collapsed state 
@@ -151,6 +154,9 @@
         break;
       case WindowTabType.Front:
         void navigationStore.openFront(target.dataset.uuid, { newTab: event.ctrlKey});
+        break;
+      case WindowTabType.StoryWeb:
+        void navigationStore.openStoryWeb(target.dataset.uuid, { newTab: event.ctrlKey});
         break;
       case WindowTabType.Setting:
         void navigationStore.openSetting(target.dataset.uuid, { newTab: event.ctrlKey});
@@ -250,30 +256,11 @@
     const setting = await getCurrentSetting();
     if (!setting) {
       // likely asked to create new one and was canceled - just close the window
-      // @ts-ignore
-      game.modules.get(moduleId)?.activeWindow?.close();
+      closeCampaignBuilderApp();
       return;
     }
 
     mainStore.setNewSetting(setting.uuid);
-
-    // Wait up to 5 seconds for the backend to finish configuring
-    for (let i = 0; i < 50; i++) {
-      if (!Backend.inProgress) break;
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-
-    // Check if backend is available and show warning if not
-    if (!Backend.available) {
-      if (!ModuleSettings.get(SettingKey.hideBackendWarning)) {
-        notifyWarn(localize('notifications.backend.rollTablesNotAvailable'));
-      }
-    } else {
-      // this is a convenient time to poll for email
-      await Backend.pollForEmail();
-    }
-
-    mainStore.refreshCurrentContent();
 
     // Add the prep/play toggle to the header
     // Use setTimeout to ensure the DOM is fully rendered
@@ -282,6 +269,24 @@
       // Initialize the window title with the current setting name
       updateWindowTitle(currentSetting.value?.name || null);
     }, 100);
+
+    // Wait up to 5 seconds for the backend to finish configuring
+    for (let i = 0; i < 50; i++) {
+      if (!inProgress.value) break;
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // Check if backend is available and show warning if not
+    if (!available.value) {
+      if (!ModuleSettings.get(SettingKey.hideBackendWarning)) {
+        notifyWarn(localize('notifications.backend.rollTablesNotAvailable'));
+      }
+    } else {
+      // this is a convenient time to poll for email
+      await backendStore.pollForEmail();
+    }
+
+    mainStore.refreshCurrentContent();
   });
 
 </script>

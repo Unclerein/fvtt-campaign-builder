@@ -20,6 +20,9 @@ export type * from './generators.ts';
 export * from './customFields.ts';
 export type * from './customFields.ts';
 
+export * from '@/documents/fields/StoryWebEdge';
+export * from '@/documents/fields/StoryWebNode';
+
 // get all the ones defined in the schemas
 export type * from '@/documents/fields/index.ts';
 
@@ -31,6 +34,7 @@ export enum WindowTabType  {
   Setting,
   Front,
   Arc,
+  StoryWeb,
 }
 
 export interface WindowTabHistory {
@@ -105,8 +109,6 @@ export enum RelatedEntryDialogModes {
   Add = 'add',
   Edit = 'edit',
   Session = 'session', // for adding to sessions
-  Danger = 'danger', // for adding any topic item (ex. for front participants)
-  ArcParticipant = 'arcParticipant',  // for adding participants (character/org) to arcs
   ArcLocation = 'arcLocation',  // for adding locations to arcs
 }
 
@@ -197,7 +199,8 @@ export type ValidDocType =
   typeof DOCUMENT_TYPES.Entry | 
   typeof DOCUMENT_TYPES.Session |
   typeof DOCUMENT_TYPES.Front |
-  typeof DOCUMENT_TYPES.Arc;
+  typeof DOCUMENT_TYPES.Arc |
+  typeof DOCUMENT_TYPES.StoryWeb;
 
 export interface ContentTabDescriptor {
   id: string;

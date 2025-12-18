@@ -3,8 +3,10 @@ import { moduleId, ModuleSettings, SettingKey } from '@/settings';
 import { renderCampaignBuilderApp } from '@/applications/CampaignBuilder';
 import { isClientGM, localize } from '@/utils/game';
 import { refreshAllSettingRollTables } from '@/utils/nameGenerators';
-import { Backend, ExternalAPI } from '@/classes';
+import { useBackendStore } from '@/applications/stores';
+import { ExternalAPI } from '@/classes';
 import { MigrationManager } from '@/utils/migration';
+import { attachGlobalScripts } from '@/utils/globalScripts';
 
 export function registerForReadyHook() {
   Hooks.once('ready', ready);
@@ -14,12 +16,13 @@ async function ready(): Promise<void> {
   if (!isClientGM())
     return;
   
-  // check the backend
-  await Backend.configure();
-  
   // Mount the external API
   const module = game.modules.get(moduleId);
+  // @ts-ignore
   module.api = new ExternalAPI();
+
+  // mount the internal api
+  attachGlobalScripts();
 
   // setup the enricher
   setupEnricher();
@@ -41,9 +44,12 @@ async function ready(): Promise<void> {
 
   await addMainButton();
 
+  // check the backend
+  await useBackendStore().configure();
+  
   // If auto-refresh is enabled, populate tables in background
   const autoRefresh = ModuleSettings.get(SettingKey.autoRefreshRollTables);
-  if (autoRefresh && Backend.available && Backend.api) {
+  if (autoRefresh && useBackendStore().available) {
     void refreshAllSettingRollTables();
   }
 }
@@ -90,6 +96,6 @@ async function addMainButton(): Promise<void> {
 
   button.on('click', null, async (): Promise<void> => {
     // create the instance and render 
-    await renderCampaignBuilderApp(true);
+    renderCampaignBuilderApp();
   });
 }

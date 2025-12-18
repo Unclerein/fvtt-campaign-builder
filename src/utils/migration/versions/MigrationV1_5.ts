@@ -68,7 +68,7 @@ export class MigrationV1_5 implements Migration {
           continue;
 
         for (const topicId of Object.values(topicIds)) {
-          const topic = await fromUuid(topicId) as JournalEntry | null;
+          const topic = await fromUuid<JournalEntry>(topicId);
           if (topic) {
             totalEntries += await topic?.pages?.contents?.length;
           }
@@ -415,7 +415,6 @@ async function migrateCampaign(oldCampaign: JournalEntry, setting: FCBSetting): 
 
     arc.startSessionNumber = minSessionNumber;
     arc.endSessionNumber = maxSessionNumber;
-    console.warn('Arc before save:', JSON.stringify(arc));
     await arc.save();
 
     const arcIndex = {

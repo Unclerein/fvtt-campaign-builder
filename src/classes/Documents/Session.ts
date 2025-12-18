@@ -26,6 +26,7 @@ export class Session extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Session> 
     lore: [],  
     img: '',   
     tags: [],
+    storyWebs: [],
   } as unknown as SessionDocClass['system'];
 
   public campaign: Campaign | null;  // the campaign the session is in (if we don't setup up front, we can load it later)
@@ -66,7 +67,7 @@ export class Session extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Session> 
     this.campaign = await Campaign.fromUuid(this._clone.system.campaignId);
 
     if (!this.campaign)
-      throw new Error('Invalid campaignId in Session.loadCampaign()');
+      throw new Error('Invalid campaignId in Session.loadCampaign(): ' + this.uuid + ' ' + this._clone.system.campaignId );
 
     return this.campaign;
   }
@@ -124,6 +125,14 @@ export class Session extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Session> 
   set tags(value: string[]) {
     // @ts-ignore
     this._clone.system.tags = value;
+  }
+
+  get storyWebs(): string[] {
+    return (this._clone.system as any).storyWebs || [];
+  }
+
+  set storyWebs(value: string[] | readonly string[]) {
+    (this._clone.system as any).storyWebs = value.slice();
   }
 
   get notes(): string {
@@ -300,7 +309,7 @@ export class Session extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Session> 
     this._clone.system.lore = value.slice();     // we clone it so it can't be edited outside
   }
 
-  async addLore(description: string): Promise<string> {
+  async addLore(description: string, journalEntryPageId: string | null = null): Promise<string> {
     const uuid = foundry.utils.randomID();
 
     this._clone.system.lore.push({
@@ -308,7 +317,7 @@ export class Session extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Session> 
       description: description,
       delivered: false,
       significant: false,
-      journalEntryPageId: null,
+      journalEntryPageId: journalEntryPageId,
       sortOrder: this._clone.system.lore.length,
     });
 
@@ -535,7 +544,7 @@ export class Session extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Session> 
     
     await campaign.deleteSession(this);
     
-    await toRaw(this._doc).delete();
+    await super._delete();
 
     // Remove from search index
     searchService.removeSearchEntry(id);

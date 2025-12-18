@@ -8,7 +8,7 @@ import { storeToRefs } from 'pinia';
 // local imports
 import { localize } from '@/utils/game';
 import { getTopicIcon, getTabTypeIcon } from '@/utils/misc';
-import { UserFlagKey, UserFlags } from '@/settings';
+import { ModuleSettings, SettingKey, UserFlagKey, UserFlags } from '@/settings';
 import { useMainStore } from './mainStore';
 import { scrollToActiveEntry } from '@/utils/directoryScroll';
 import { hasUnsavedChanges, saveAndCloseAllActiveEditors, closeAllActiveEditors } from '@/utils/editorChangeDetection';
@@ -19,7 +19,7 @@ import { getGlobalSetting } from '@/utils/globalSettings';
 
 // types
 import { Bookmark, TabHeader, WindowTabType, } from '@/types';
-import { WindowTab, Entry, Campaign, Session, Front, Arc } from '@/classes';
+import { WindowTab, Entry, Campaign, Session, Front, Arc, StoryWeb } from '@/classes';
 
 // the store definition
 export const useNavigationStore = defineStore('navigation', () => {
@@ -48,6 +48,7 @@ export const useNavigationStore = defineStore('navigation', () => {
     newTab?: boolean;
     updateHistory?: boolean;
     contentTabId?: string;
+    forceTab?: boolean; // when true, use contentTabId even if subTabsSavePosition is false
   }
 
   interface ContentMetadata {
@@ -75,6 +76,7 @@ export const useNavigationStore = defineStore('navigation', () => {
       [WindowTabType.Front]: 'description',
       [WindowTabType.Session]: 'notes',
       [WindowTabType.Arc]: 'description',
+      [WindowTabType.StoryWeb]: '', // no tabs
       [WindowTabType.NewTab]: '',  // no tabs
     } as Record<WindowTabType, string>;
 
@@ -143,6 +145,16 @@ export const useNavigationStore = defineStore('navigation', () => {
           } else {
             name = arc.name;
             icon = getTabTypeIcon(WindowTabType.Arc);
+          }
+          break;
+        }
+        case WindowTabType.StoryWeb: {
+          const storyWeb = await StoryWeb.fromUuid(contentId);
+          if (!storyWeb) {
+            badId = true;
+          } else {
+            name = storyWeb.name;
+            icon = getTabTypeIcon(WindowTabType.StoryWeb);
           }
           break;
         }
@@ -255,6 +267,21 @@ export const useNavigationStore = defineStore('navigation', () => {
    */
   const openFront = async function(frontId = null as string | null, options?: OpenContentOptions) {
     await openContent(frontId, WindowTabType.Front, options);
+  };
+
+  /**
+   * Open a new tab to the given story web. If no story web is given, a blank "New Tab" is opened.
+   * 
+   * @param storyWebId The uuid of the story web to open in the tab. If null, a blank tab is opened.
+   * @param options Options for the tab.
+   * @param options.activate Should we switch to the tab after creating? Defaults to true.
+   * @param options.newTab Should the story web open in a new tab? Defaults to true.
+   * @param options.updateHistory Should the story web be added to the history of the tab? Defaults to true.
+   * @param options.contentTabId The id of the content tab to open. If null, defaults to the default content tab for the type.
+   * @returns The newly opened tab.
+   */
+  const openStoryWeb = async function(storyWebId = null as string | null, options?: OpenContentOptions) {
+    await openContent(storyWebId, WindowTabType.StoryWeb, options);
   }; 
 
   /**
@@ -276,6 +303,7 @@ export const useNavigationStore = defineStore('navigation', () => {
       newTab: true,
       updateHistory: true,
       contentTabId: undefined,
+      forceTab: false,
       ...options,
     };
 
@@ -296,6 +324,14 @@ export const useNavigationStore = defineStore('navigation', () => {
       contentType = metadata.contentType;
     }
 
+    // targetContentTab is either:
+    //  * if we are remembering tabs, then it's the tab passed in
+    //  * we aren't remembering tabs, but forceTab is set, then it's the tab passed in
+    //  * otherwise, its the default tab
+    const targetContentTab = 
+      ModuleSettings.get(SettingKey.subTabsSavePosition) ? options.contentTabId : 
+      options.forceTab && options.contentTabId ? options.contentTabId : metadata.defaultContentTab;
+
     const headerData: TabHeader = { uuid: contentId || null, name: metadata.name, icon: metadata.icon };
 
     // see if we need a new tab
@@ -307,12 +343,12 @@ export const useNavigationStore = defineStore('navigation', () => {
         headerData.uuid,
         contentType, 
         null,
-        options.contentTabId || metadata.defaultContentTab
+        targetContentTab
       );
 
       //add to tabs list
       tabs.value.push(tab);
-      tab.addToHistory(contentId, contentType, options.contentTabId || metadata.defaultContentTab);
+      tab.addToHistory(contentId, contentType, targetContentTab);
     } else {
       tab = getActiveTab(false);
 
@@ -322,11 +358,12 @@ export const useNavigationStore = defineStore('navigation', () => {
 
       // otherwise, just swap out the active tab info
       tab.header = headerData;
+      tab.contentTab = targetContentTab;
 
       // add to history -- it should go immediately after the current tab and all other forward history should go away
       // this is a new thing so the contentTab should always be the default
       if (headerData.uuid && options.updateHistory) {
-        tab.addToHistory(contentId, contentType, options.contentTabId || metadata.defaultContentTab);
+        tab.addToHistory(contentId, contentType, targetContentTab);
       }
 
       // force a refresh of reactivity
@@ -334,7 +371,7 @@ export const useNavigationStore = defineStore('navigation', () => {
     }
     
     if (options.activate)
-      await activateTab(tab.id);
+      await activateTab(tab.id, options.forceTab);
 
     // activating doesn't always save (ex. if we added a new entry to active tab)
     await _saveTabs();
@@ -440,7 +477,7 @@ export const useNavigationStore = defineStore('navigation', () => {
 
   // activate the given tab, first closing the current subsheet
   // tabId must exist
-  const activateTab = async function (tabId: string): Promise<void> {
+  const activateTab = async function (tabId: string, forceTab: boolean = false): Promise<void> {
     let newTab: WindowTab | undefined;
     if (!tabId || !(newTab = tabs.value.find((t)=>(t.id===tabId))))
       return;
@@ -459,6 +496,10 @@ export const useNavigationStore = defineStore('navigation', () => {
     
     newTab.active = true;
 
+    // reset the contenttab to the default if that's the mode we're in
+    if (!ModuleSettings.get(SettingKey.subTabsSavePosition) && !forceTab)
+      newTab.contentTab = null;
+    
     await _saveTabs();
 
     // add to recent, unless it's a "home page"
@@ -525,12 +566,7 @@ export const useNavigationStore = defineStore('navigation', () => {
     // Trigger reactivity by reassigning the tabs array
     tabs.value = [...tabs.value];
     
-    await openContent(tab.history[tab.historyIdx].contentId, tab.history[tab.historyIdx].tabType, { activate: false, newTab: false, updateHistory: false});  // will also save the tab and update recent
-
-    // Restore the content tab from history
-    if (tab.history[tab.historyIdx].contentTab) {
-      mainStore.currentContentTab = tab.history[tab.historyIdx].contentTab;
-    }
+    await openContent(tab.history[tab.historyIdx].contentId, tab.history[tab.historyIdx].tabType, { activate: false, newTab: false, contentTabId: tab.history[tab.historyIdx].contentTab || undefined, updateHistory: false});  // will also save the tab and update recent
   };
 
   /**
@@ -700,8 +736,12 @@ export const useNavigationStore = defineStore('navigation', () => {
       // if there are no tabs, add one
       await openEntry();
     } else {
-      // activate the active one
-      await mainStore.setNewTab(getActiveTab(true) as WindowTab);
+      // activate the active one but clear the content tab if needed
+      const tabToActivate = getActiveTab(true) as WindowTab;
+      if (!ModuleSettings.get(SettingKey.subTabsSavePosition))
+        tabToActivate.contentTab = null;
+      
+      await mainStore.setNewTab(tabToActivate);
       // Scroll to and expand the active entry in the directory tree
       await scrollToActiveEntry();
     }
@@ -797,6 +837,7 @@ export const useNavigationStore = defineStore('navigation', () => {
     openSetting,
     openContent,
     openArc,
+    openStoryWeb,
     updateContentTab,
     getActiveTab,
     loadTabs,

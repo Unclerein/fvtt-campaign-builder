@@ -18,12 +18,16 @@
   />
 
   <!-- note topic doesn't matter for this mode -->
-  <RelatedEntryDialog
+  <RelatedItemDialog
     v-model="addParticipantDialogShow"
-    :topic="Topics.Character"
+    :title="localize('dialogs.relatedEntries.entry.title')"
+    :main-button-label="localize('dialogs.relatedEntries.entry.buttonTitle')"
+    :options="addOptions"
+    :extra-fields="[{ field: 'role', header: 'Role' }]"
     :allow-create="false"
-    :mode="RelatedEntryDialogModes.Danger"
+    @main-button-click="onDialogSubmitClick"
   />
+
 </template>
 
 <script setup lang="ts">
@@ -33,15 +37,16 @@
   
   // local imports
   import { localize } from '@/utils/game';
-  import { useFrontStore } from '@/applications/stores';
+  import { useFrontStore, useMainStore } from '@/applications/stores';
   import { getValidatedData } from '@/utils/dragdrop';
+  import { mapEntryToOption } from '@/utils/misc';
   
   // local components
   import BaseTable from '@/components/tables/BaseTable.vue';
-  import RelatedEntryDialog from '@/components/tables/RelatedEntryDialog.vue';
+  import RelatedItemDialog from '@/components/dialogs/RelatedItemDialog.vue';
 
   // types
-  import { CellEditCompleteEvent, ActionButtonDefinition, DangerParticipant, RelatedEntryDialogModes, Topics, } from '@/types';
+  import { CellEditCompleteEvent, ActionButtonDefinition, DangerParticipant, Topics, } from '@/types';
   import { Entry } from '@/classes';
 
   ////////////////////////////////
@@ -53,12 +58,15 @@
   ////////////////////////////////
   // store
   const frontStore = useFrontStore();
+  const mainStore = useMainStore();
   const { participantRows } = storeToRefs(frontStore);
-
+  const { currentSetting } = storeToRefs(mainStore);
+  
   ////////////////////////////////
   // data
   const baseTableRef = ref<typeof BaseTable | null>(null);
   const addParticipantDialogShow = ref(false);
+  const addOptions = ref<{id: string; label: string}[]>([]);
 
   ////////////////////////////////
   // computed data
@@ -128,7 +136,27 @@
 
   ////////////////////////////////
   // event handlers
-  const onAddParticipant = async () => {
+  const onDialogSubmitClick = async (selectedItemId: string, extraFieldValues: Record<string, string>) => {
+    const fullEntry = await Entry.fromUuid(selectedItemId);
+
+    if (fullEntry) {
+      await frontStore.addParticipant(fullEntry, extraFieldValues);
+    }
+  };
+  
+  const onAddParticipant = () => {
+    if (!currentSetting.value)
+      return;
+
+    // characters and organizations only
+    let entries = [] as { id: string; label: string }[];
+    for (const topic of [Topics.Character, Topics.Location, Topics.Organization]) {
+      entries = entries.concat(
+        (currentSetting.value.topics[topic]?.entries || []).map(mapEntryToOption)
+      );
+    }
+    addOptions.value = entries;
+
     addParticipantDialogShow.value = true;
   };
 

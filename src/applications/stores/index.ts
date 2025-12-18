@@ -9,7 +9,9 @@ export * from './campaignStore';
 export * from './sessionStore';
 export * from './playingStore';
 export * from './frontStore';
+export * from './storyWebStore';
 export * from './arcStore';
+export * from './backendStore';
 
 // global pinia instance
 const pinia = createPinia();

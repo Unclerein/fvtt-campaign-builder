@@ -1,6 +1,5 @@
 // represents a game session 
 
-import { toRaw } from 'vue';
 import { ArcLocation, ArcLore, ArcMonster, ArcParticipant, DOCUMENT_TYPES, } from '@/documents';
 import { searchService } from '@/utils/search';
 import { FCBDialog } from '@/dialogs';
@@ -28,6 +27,7 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
     lore: [],  
     img: '',   
     tags: [],
+    storyWebs: [],
   } as unknown as ArcDocClass['system'];
 
   public campaign: Campaign | null;  // the campaign the front is in (if we don't setup up front, we can load it later)
@@ -68,7 +68,7 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
     this.campaign = await Campaign.fromUuid(this._clone.system.campaignId);
 
     if (!this.campaign)
-      throw new Error('Invalid campaignId in Arc.loadCampaign()');
+      throw new Error('Invalid campaignId in Arc.loadCampaign(): ' + this.uuid + ' ' + this._clone.system.campaignId );
 
     return this.campaign;
   }
@@ -211,6 +211,14 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
     this._clone.system.tags = value;
   }
 
+  get storyWebs(): string[] {
+    return (this._clone.system as any).storyWebs || [];
+  }
+
+  set storyWebs(value: string[] | readonly string[]) {
+    (this._clone.system as any).storyWebs = value.slice();
+  }
+
   get description(): string {
     return this._clone.text?.content || '';
   }
@@ -301,13 +309,13 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
     this._clone.system.lore = value.slice();     // we clone it so it can't be edited outside
   }
 
-  async addLore(description: string): Promise<string> {
+  async addLore(description: string, journalEntryPageId: string | null = null): Promise<string> {
     const uuid = foundry.utils.randomID();
 
     this._clone.system.lore.push({
       uuid: uuid,
       description: description,
-      journalEntryPageId: null,
+      journalEntryPageId: journalEntryPageId,
       sortOrder: this._clone.system.lore.length,
     });
 
@@ -447,16 +455,16 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
     const setting = await getGlobalSetting(this.settingId);
 
     if (!setting)
-      throw new Error('Setting not found in Front.delete()');
+      throw new Error('Setting not found in Arc.delete()');
     
     // remove from campaign
     const campaign = await Campaign.fromUuid(this.campaignId);
     if (!campaign)
-      throw new Error('Campaign not found in Front.delete()');
+      throw new Error('Campaign not found in Arc.delete()');
     
     await campaign.deleteArc(this);  // removes from setting, too
     
-    await toRaw(this._doc).delete();
+    await super._delete();
 
     // Remove from search index
     searchService.removeSearchEntry(id);

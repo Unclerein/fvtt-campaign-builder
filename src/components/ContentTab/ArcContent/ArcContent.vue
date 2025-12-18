@@ -32,6 +32,7 @@
           :name="currentArc?.name || 'Arc'"
           :image-url="currentArc?.img"
           :window-type="WindowTabType.Arc"
+          :show-image="ModuleSettings.get(SettingKey.showImages)?.arcs ?? true"
           alt-tab-id="description"
           @image-change="onImageChange"
         >
@@ -82,6 +83,11 @@
             />
           </div>  
         </div>
+        <div v-if="showStoryWebTab" class="tab flexcol" data-group="primary" data-tab="storyWebs">
+          <div class="tab-inner">
+            <StoryWebsTab mode="arc" />
+          </div>
+        </div>
       </ContentTabStrip>
     </div>
   </form>	 
@@ -97,14 +103,13 @@
   import { useMainStore, useCampaignDirectoryStore, useNavigationStore, } from '@/applications/stores';
   import { getTabTypeIcon } from '@/utils/misc';
   import { localize } from '@/utils/game'
-  import { SettingKey, } from '@/settings';
+  import { ModuleSettings, SettingKey } from '@/settings';
   import { notifyWarn } from '@/utils/notifications';
 
   // library components
   import InputText from 'primevue/inputtext';
   
   // local components
-  import CampaignPCsTab from '@/components/ContentTab/CampaignContent/CampaignPCsTab.vue';
   import Editor from '@/components/Editor.vue';
   import SessionLocationTab from '@/components/ContentTab/SessionContent/SessionLocationTab.vue';
   import ArcParticipantTab from '@/components/ContentTab/ArcContent/ArcParticipantTab.vue';
@@ -115,7 +120,8 @@
   import LabelWithHelp from '@/components/LabelWithHelp.vue';
   import Tags from '@/components/Tags.vue';
   import ContentTabStrip from '@/components/ContentTab/ContentTabStrip.vue';
-  
+  import StoryWebsTab from '@/components/ContentTab/StoryWebsTab.vue';
+
   // types
   import { ContentTabDescriptor, WindowTabType } from '@/types';
   import { Arc } from '@/classes';
@@ -140,13 +146,18 @@
 
   ////////////////////////////////
   // computed data
+  const showStoryWebTab = computed(() => {
+    return ModuleSettings.get(SettingKey.useWebs);
+  });
+
   const tabs = computed(() => [
     { id: 'description', label: localize('labels.tabs.arc.description')},
     { id: 'lore', label: localize('labels.tabs.arc.lore')},
     { id: 'locations', label: localize('labels.tabs.arc.locations')},
     { id: 'participants', label: localize('labels.tabs.arc.participants')},
     { id: 'monsters', label: localize('labels.tabs.arc.monsters')},
-    { id: 'ideas', label: localize('labels.tabs.arc.ideas')}
+    { id: 'ideas', label: localize('labels.tabs.arc.ideas')},
+    ...(showStoryWebTab.value ? [{ id: 'storyWebs', label: localize('contentFolders.storyWebs') }] : []),
   ] as ContentTabDescriptor[]);
 
   ////////////////////////////////

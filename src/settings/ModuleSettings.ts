@@ -2,9 +2,20 @@ import { localize } from '@/utils/game';
 import { moduleId } from './index';
 import { AdvancedSettingsApplication } from '@/applications/settings/AdvancedSettingsApplication';
 import { SpeciesListApplication } from '@/applications/settings/SpeciesListApplication';
+import { ImageSettingsApplication } from '@/applications/settings/ImageSettingsApplication';
 import { RollTableSettingsApplication } from '@/applications/settings/RollTableSettingsApplication';
-import { SessionDisplayMode, Species, TagList, GeneratorType, SettingIndex, CustomFieldContentType, CustomFieldDescription, defaultCustomFields } from '@/types';
+import { SessionDisplayMode, Species, TagList, GeneratorType, SettingIndex, CustomFieldContentType, CustomFieldDescription, defaultCustomFields, } from '@/types';
 import type { ApiLocationGenerateImagePostRequestImageModelEnum, ApiLocationGenerateImagePostRequestTextModelEnum } from '@/apiClient';
+
+export interface ImageVisibility {
+  settings: boolean;
+  entries: boolean;
+  campaigns: boolean;
+  arcs: boolean;
+  sessions: boolean;
+  fronts: boolean;
+}
+
 
 export enum SettingKey {
   // displayed in main settings window
@@ -18,6 +29,9 @@ export enum SettingKey {
   showTypesInTree = 'showTypesInTree', // show the type of the entry in the hierarchy tree
   showRolePlayingNotes = 'showRolePlayingNotes',  // whether to show role playing notes on entries
   useFronts = 'useFronts', // allow creation and viewing of fronts
+  useWebs = 'useWebs', // allow creation and viewing of story webs
+  subTabsSavePosition = 'subTabsSavePosition', // whether sub-tabs remember their last position
+  storyWebAutoArrange = 'storyWebAutoArrange', // whether to enable physics in story webs
 
   // internal only
   rootFolderId = 'rootFolderId',  // uuid of the root folder
@@ -49,6 +63,11 @@ export enum SettingKey {
 
   speciesListMenu = 'speciesListMenu',  // display the species list screen
   speciesList = 'speciesList',
+
+  // image visibility settings
+  imageMenu = 'imageMenu', // display the image visibility menu
+  showImages = 'showImages', // whether to show images on settings, campaigns, etc
+
 }
 
 export type SettingKeyType<K extends SettingKey> =
@@ -62,6 +81,9 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.showTypesInTree ? boolean :
     K extends SettingKey.showRolePlayingNotes ? boolean :
     K extends SettingKey.useFronts ? boolean :
+    K extends SettingKey.useWebs ? boolean :
+    K extends SettingKey.subTabsSavePosition ? boolean :
+    K extends SettingKey.storyWebAutoArrange ? boolean :
     K extends SettingKey.rpgStyle ? boolean :
     K extends SettingKey.advancedSettingsMenu ? never :
     K extends SettingKey.APIURL ? string :
@@ -74,6 +96,8 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.autoRefreshRollTables ? boolean :
     K extends SettingKey.generatorDefaultTypes ? Record<GeneratorType, string> :
     K extends SettingKey.speciesList ? Species[] :
+    K extends SettingKey.imageMenu ? never :
+    K extends SettingKey.showImages ? ImageVisibility :
     K extends SettingKey.entryTags ? TagList :
     K extends SettingKey.sessionTags ? TagList :
     K extends SettingKey.frontTags ? TagList :
@@ -145,6 +169,15 @@ export class ModuleSettings {
       icon: 'fas fa-bars',               // A Font Awesome icon used in the submenu button
       permissions: ['SETTINGS_WRITE'], // Optional: restrict to GM only
       type: RollTableSettingsApplication,
+    },
+    {
+      settingID: SettingKey.imageMenu,
+      name: 'settings.images',
+      label: 'fcb.settings.imagesLabel',   // localized by Foundry
+      hint: 'settings.imagesHelp',
+      icon: 'fas fa-image',               // A Font Awesome icon used in the submenu button
+      permissions: ['SETTINGS_WRITE'], // Optional: restrict to GM only
+      type: ImageSettingsApplication,
     }
   ];
 
@@ -162,6 +195,14 @@ export class ModuleSettings {
       settingID: SettingKey.useFronts,
       name: 'settings.useFronts',
       hint: 'settings.useFrontsHelp',
+      requiresReload: true,
+      default: true,
+      type: Boolean,
+    },
+    {
+      settingID: SettingKey.useWebs,
+      name: 'settings.useWebs',
+      hint: 'settings.useWebsHelp',
       requiresReload: true,
       default: true,
       type: Boolean,
@@ -217,6 +258,21 @@ export class ModuleSettings {
       name: 'settings.autoRelationships',
       hint: 'settings.autoRelationshipsHelp',
       default: true,
+      type: Boolean,
+    },
+    {
+      settingID: SettingKey.subTabsSavePosition,
+      name: 'settings.subTabsSavePosition',
+      hint: 'settings.subTabsSavePositionHelp',
+      default: true,
+      type: Boolean,
+    },
+    {
+      settingID: SettingKey.storyWebAutoArrange,
+      name: 'settings.storyWebAutoArrange',
+      hint: 'settings.storyWebAutoArrangeHelp',
+      default: true,
+      requiresReload: true,
       type: Boolean,
     },
     {
@@ -342,6 +398,18 @@ export class ModuleSettings {
       settingID: SettingKey.longDescriptionParagraphs,
       default: 1,
       type: Number,
+    },
+    {
+      settingID: SettingKey.showImages,
+      default: {
+        settings: true,
+        entries: true,
+        campaigns: true,
+        arcs: true,
+        sessions: true,
+        fronts: true,
+      },
+      type: Object,
     },
   ];
   

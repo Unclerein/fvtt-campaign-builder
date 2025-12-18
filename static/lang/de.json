@@ -7,7 +7,8 @@
       "entries": "Einträge",
       "sessions": "Sitzungen",
       "fronts": "Fronten",
-      "arcs": "Bögen"
+      "arcs": "Bögen",
+      "storyWebs": "Story-Netze"
     },
     "settings": {
       "startCollapsed": "Seitenleiste startet eingeklappt?",
@@ -49,7 +50,7 @@
       "enableToDoList": "ToDo-Liste aktivieren",
       "enableToDoListHelp": "Wenn deaktiviert, wird die ToDo-Listen-Funktion ausgeschaltet.",
       "autoRelationships": "Beziehungen automatisch vorschlagen",
-      "autoRelationshipsHelp": "Wenn aktiviert, schlägt der Editor automatisch Änderungen an den Beziehungen zwischen Einträgen basierend auf Änderungen in der Beschreibung vor.",
+      "autoRelationshipsHelp": "Wenn aktiviert, wird das System automatisch Änderungen an Beziehungen zwischen Einträgen vorschlagen, basierend auf Änderungen, die an der Beschreibung vorgenommen wurden.",
       "keybindings": {
         "closeTab": "Tab schließen",
         "closeTabHelp": "Den aktuellen Tab schließen",
@@ -65,7 +66,16 @@
       "showRolePlayingNotes": "Rollenspielnotizen bei Einträgen anzeigen",
       "showRolePlayingNotesHelp": "Wenn wahr, wird ein separates Feld für Rollenspielnotizen getrennt von der Eintragsbeschreibung angezeigt.",
       "useFronts": "Fronten verwenden",
-      "useFrontsHelp": "Aktivieren Sie die Kampagnenfunktion \"Front\"."
+      "useFrontsHelp": "Aktivieren Sie die Kampagnenfunktion \"Front\".",
+      "useWebs": "Story-Netze verwenden",
+      "useWebsHelp": "Aktivieren Sie die Funktionalität des Kampagnen-\"Story-Netzes\".",
+      "images": "Inhaltsbilder konfigurieren",
+      "imagesLabel": "Inhaltsbilder",
+      "imagesHelp": "Konfigurieren Sie die Sichtbarkeitseinstellungen für Bilder für verschiedene Inhaltstypen",
+      "subTabsSavePosition": "Unterregisterkarten speichern Position",
+      "subTabsSavePositionHelp": "Wenn aktiviert, merkt sich jede Registerkarte, welcher innere Unterregisterkarte geöffnet war, und kehrt zu dieser zurück, wenn Sie die Registerkarte erneut öffnen. Wenn deaktiviert, kehren die Registerkarten immer zur ersten zurück (normalerweise Beschreibung).",
+      "storyWebAutoArrange": "Automatisches Anordnen von Story-Webs",
+      "storyWebAutoArrangeHelp": "Wenn aktiviert, werden Story-Webs neu angeordnet, um ein sauberes Bild zu erhalten. Wenn deaktiviert, können Sie alles genau so positionieren, wie Sie es möchten."
     },
     "applications": {
       "sessionNotes": {
@@ -406,7 +416,23 @@
         "addParticipant": "Teilnehmer hinzufügen",
         "addParticipantDrag": "(oder ziehen/ablegen eines Charakters/Organisation)"
       },
-      "searching": "Suche"
+      "searching": "Suche",
+      "storyWeb": {
+        "addText": "Text hinzufügen",
+        "enterText": "Neuen Text eingeben",
+        "editText": "Text bearbeiten",
+        "editRelationship": "Beziehung bearbeiten",
+        "removeRelationship": "Beziehung entfernen",
+        "removeRelationshipConfirm": "Sind Sie sicher, dass Sie diese Beziehung löschen möchten? Dies wird die Beziehung bei den Einträgen entfernen, nicht nur im Diagramm.",
+        "addConnection": "Verbindung hinzufügen",
+        "newConnectionLabel": "Neues Beziehungslabel (kann leer sein)",
+        "createConnection": "Verbindung erstellen",
+        "createConnectionPrompt": "Sie haben einen Eintrag auf einen bestehenden Knoten gezogen. Möchten Sie eine Verbindung zwischen ihnen erstellen?",
+        "zoomIn": "Vergrößern",
+        "zoomOut": "Verkleinern",
+        "fitToWindow": "An Fenster anpassen",
+        "addStoryWebDrag": "(oder ein Story-Web ziehen/ablegen)"
+      }
     },
     "placeholders": {
       "search": "Suche",
@@ -424,7 +450,8 @@
       "dangerName": "Gefahrenname",
       "sessionDate": "Datum",
       "sessionNumber": "Sitzungsnummer",
-      "linkToActor": "Mit Schauspieler verknüpfen"
+      "linkToActor": "Mit Schauspieler verknüpfen",
+      "storyWebName": "Story-Netz-Name"
     },
     "topics": {
       "character": "Charakter",
@@ -564,6 +591,20 @@
           "bothBlank": "Anfangs- und Endesitzungsnummern müssen entweder beide leer oder beide nicht leer sein",
           "allSessionsCovered": "Alle Sitzungen müssen von einem Bogen abgedeckt sein"
         }
+      },
+      "createStoryWeb": {
+        "title": "Story-Netz erstellen",
+        "webName": "Story-Netz-Name"
+      },
+      "imageSettings": {
+        "title": "Einstellungen zur Bildsichtbarkeit",
+        "description": "Wählen Sie, welche Inhaltstypen Bilder auf ihren Beschreibungsseiten anzeigen sollen.",
+        "settings": "Einstellungen",
+        "entries": "Einträge",
+        "campaigns": "Kampagnen",
+        "arcs": "Bögen",
+        "sessions": "Sitzungen",
+        "fronts": "Fronten"
       }
     },
     "contextMenus": {
@@ -581,7 +622,8 @@
         "markActive": "Kampagne als aktiv markieren",
         "createFront": "Eine Front erstellen",
         "createArc": "Einen Bogen erstellen",
-        "manageArcs": "Bögen verwalten"
+        "manageArcs": "Bögen verwalten",
+        "createStoryWeb": "Ein Story-Netz erstellen"
       },
       "session": {
         "delete": "Sitzung löschen"
@@ -637,6 +679,24 @@
       },
       "front": {
         "delete": "Vorderseite löschen"
+      },
+      "storyWeb": {
+        "delete": "Story-Netz löschen"
+      },
+      "storyWebGraph": {
+        "delete": "Löschen",
+        "removeFromDiagram": "Aus dem Diagramm entfernen",
+        "addText": "Text hinzufügen",
+        "addEntry": "Eintrag hinzufügen",
+        "editText": "Text bearbeiten",
+        "editRelationship": "Beziehung bearbeiten",
+        "addConnection": "Verbindung hinzufügen",
+        "addEntryWithRelationships": "Eintrag mit Beziehungen hinzufügen",
+        "addDanger": "Gefahr hinzufügen",
+        "addDangerWithRelationships": "Gefahr mit Beziehungen hinzufügen",
+        "addTextPrompt": "Text eingeben, der dem Diagramm hinzugefügt werden soll",
+        "openEntryInNewTab": "Eintrag in neuem Tab öffnen",
+        "openDangerInNewTab": "Gefahr in neuem Tab öffnen"
       }
     },
     "tooltips": {
@@ -708,12 +768,13 @@
       "editNotes": "Notizen bearbeiten",
       "copyToNextSession": "In die nächste Sitzung kopieren",
       "moveToArc": "Zum späteren Gebrauch in den Bogen verschieben",
-      "movetoLastArc": "Zum neuesten Bogen verschieben",
+      "movetoLatestArc": "Zum neuesten Bogen verschieben",
       "editSession": "Sitzung bearbeiten"
     },
     "errors": {
       "duplicateBookmark": "Bereits als Lesezeichen gespeichert",
-      "nameRequired": "Name darf nicht leer sein"
+      "nameRequired": "Name darf nicht leer sein",
+      "failedToRepairIndexes": "Fehler beim Reparieren der Indizes. Überprüfen Sie die Konsole für Details."
     },
     "notifications": {
       "backend": {
@@ -733,7 +794,8 @@
       },
       "participantCopiedToNextSession": "Teilnehmer in die nächste Sitzung kopiert",
       "locationCopiedToNextSession": "Ort in die nächste Sitzung kopiert",
-      "monsterCopiedToNextSession": "Monster in die nächste Sitzung kopiert"
+      "monsterCopiedToNextSession": "Monster in die nächste Sitzung kopiert",
+      "documentIndexesRepaired": "Alle Dokumentindizes wurden erfolgreich repariert!"
     }
   }
 }

@@ -32,6 +32,7 @@
           :name="currentSession?.name || 'Session'"
           :image-url="currentSession?.img"
           :window-type="WindowTabType.Session"
+          :show-image="ModuleSettings.get(SettingKey.showImages)?.sessions ?? true"
           alt-tab-id="notes"
           @image-change="onImageChange"
         >
@@ -156,6 +157,11 @@
             <SessionItemTab />
           </div>  
         </div>
+        <div v-if="showStoryWebTab" class="tab flexcol" data-group="primary" data-tab="storyWebs">
+          <div class="tab-inner">
+            <StoryWebsTab mode="session" />
+          </div>
+        </div>
       </ContentTabStrip>
     </div>
   </form>	 
@@ -171,8 +177,8 @@
   import { useMainStore, useCampaignDirectoryStore, useNavigationStore, usePlayingStore, } from '@/applications/stores';
   import { getTabTypeIcon } from '@/utils/misc';
   import { localize } from '@/utils/game'
-  import { SettingKey, } from '@/settings';
   import { notifyWarn } from '@/utils/notifications';
+  import { ModuleSettings, SettingKey } from '@/settings';
 
   // library components
   import InputText from 'primevue/inputtext';
@@ -191,6 +197,7 @@
   import LabelWithHelp from '@/components/LabelWithHelp.vue';
   import Tags from '@/components/Tags.vue';
   import ContentTabStrip from '@/components/ContentTab/ContentTabStrip.vue';
+  import StoryWebsTab from '@/components/ContentTab/StoryWebsTab.vue';
   
   // types
   import { ContentTabDescriptor, WindowTabType } from '@/types';
@@ -229,6 +236,10 @@
     return campaignLastSessionNumber == null || !currentSession.value || currentSession.value.number === campaignLastSessionNumber; 
   });
 
+  const showStoryWebTab = computed(() => {
+    return ModuleSettings.get(SettingKey.useWebs);
+  });
+
   const tabs = computed(() => [
     { id: 'notes', label: localize('labels.tabs.session.notes')},
     { id: 'lore', label: localize('labels.tabs.session.lore')},
@@ -238,6 +249,7 @@
     { id: 'monsters', label: localize('labels.tabs.session.monsters')},
     { id: 'magic', label: localize('labels.tabs.session.magic')},
     { id: 'pcs', label: localize('labels.tabs.session.pcs')},
+    ...(showStoryWebTab.value ? [{ id: 'storyWebs', label: localize('contentFolders.storyWebs') }] : []),
   ] as ContentTabDescriptor[]);
 
   ////////////////////////////////

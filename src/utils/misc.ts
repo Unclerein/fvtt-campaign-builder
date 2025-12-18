@@ -1,4 +1,4 @@
-import { Topics, WindowTabType } from '@/types';
+import { EntryBasicIndex, StoryWebNodeTypes, Topics, WindowTabType } from '@/types';
 
 /**
  * Safely converts a topic value to the Topics enum type.  Sometimes topic ends up a string
@@ -71,6 +71,8 @@ export function getTabTypeIcon(type: string | number | WindowTabType | null | un
       return 'fa-skull';
     case WindowTabType.Arc:
       return 'fa-route';  //'fa-book-open';
+    case WindowTabType.StoryWeb:
+      return 'fa-diagram-project';
     case WindowTabType.Entry:
       throw new Error('Tried to use getTabTypeIcon() for Entry');
     default: 
@@ -87,3 +89,31 @@ export function formatDate(ISODate: string): string {
     minute: '2-digit',
   }).replace(/\s*([AP]M)/i, (_, p1) => p1.toLowerCase()); // replace AM/PM with am/pm
 }
+
+export function topicToNodeType(topic: Topics): StoryWebNodeTypes {
+  switch (topic) {
+    case Topics.Character: return StoryWebNodeTypes.Character;
+    case Topics.Location: return StoryWebNodeTypes.Location;
+    case Topics.Organization: return StoryWebNodeTypes.Organization;
+    case Topics.PC: return StoryWebNodeTypes.PC;
+    default: throw new Error('Invalid topic in storyWebStore.topicToNodeType()');
+  }
+}
+
+export function nodeTypeToTopic(type: StoryWebNodeTypes): Topics | null {
+  switch (type) {
+    case StoryWebNodeTypes.Character: return Topics.Character;
+    case StoryWebNodeTypes.Location: return Topics.Location;
+    case StoryWebNodeTypes.Organization: return Topics.Organization;
+    case StoryWebNodeTypes.PC: return Topics.PC;
+    default: return null;  // fronts, etc.
+  }
+}
+
+/** Maps an entry or an entry index to an option for a typeahead */
+export const mapEntryToOption = function(entry: EntryBasicIndex | Entry) {
+  return {
+    id: entry.uuid,
+    label: entry.type ? `${entry.name} (${entry.type})` : entry.name,
+  };
+};
