@@ -125,7 +125,7 @@
 
           <div class="flexrow form-group">
             <LabelWithHelp
-              label-text="labels.fields.entryDescription"
+              label-text="labels.description"
               top-label
             />
           </div>
@@ -163,6 +163,12 @@
                 @related-entries-changed="onRelatedEntriesChanged"
               />
           </div>
+
+          <CustomFieldsBlocks
+            v-if="customFieldContentType !== null && currentEntry"
+            :content-type="customFieldContentType"
+            :content="currentEntry"
+          />
 
         </DescriptionTab>
         <JournalTab
@@ -257,9 +263,10 @@
   import SessionsTab from '@/components/ContentTab/EntryContent/SessionsTab.vue';
   import RelatedEntriesManagementDialog from '@/components/RelatedEntriesManagementDialog.vue';
   import ContentTabStrip from '@/components/ContentTab/ContentTabStrip.vue';
+  import CustomFieldsBlocks from '@/components/CustomFieldsBlocks.vue';
   
   // types
-  import { DocumentLinkType, Topics, ValidTopic, WindowTabType, RelatedJournal, ContentTabDescriptor } from '@/types';
+  import { CustomFieldContentType, DocumentLinkType, Topics, ValidTopic, WindowTabType, RelatedJournal, ContentTabDescriptor } from '@/types';
   import { FCBSetting, TopicFolder, Entry, Session, Campaign } from '@/classes';
   import { DOCUMENT_TYPES } from '@/documents';
 
@@ -320,9 +327,24 @@
   const roleplayAboveDescription = computed(() => ModuleSettings.get(SettingKey.showRolePlayingNotes) && isInPlayMode.value);
   const roleplayBelowDescription = computed(() => ModuleSettings.get(SettingKey.showRolePlayingNotes) && !isInPlayMode.value);
 
+  const customFieldContentType = computed<CustomFieldContentType | null>(() => {
+    switch (topic.value) {
+      case Topics.Character:
+        return CustomFieldContentType.Character;
+      case Topics.Location:
+        return CustomFieldContentType.Location;
+      case Topics.Organization:
+        return CustomFieldContentType.Organization;
+      case Topics.PC:
+        return CustomFieldContentType.PC;
+      default:
+        return null;
+    }
+  });
+
   const tabs = computed(() => {
     let tabs = [
-      { id: 'description', label: localize('labels.tabs.entry.description') },
+      { id: 'description', label: localize('labels.description') },
       { id: 'journals', label: localize('labels.journals') },
     ] as ContentTabDescriptor[];
 
