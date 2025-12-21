@@ -1,4 +1,10 @@
 # Change Log
+## 1.7.2 - Just a version bump
+![](https://img.shields.io/badge/release%20date-December%2021%2C%202025-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.7.2/module.zip)
+
+- Version 1.7.1 was improperly reporting as version 1.7.0; bumping version to clean this up to ensure it doesn't cause migration issues at some point
+
 ## 1.7.1 - Story Web bug fix
 ![](https://img.shields.io/badge/release%20date-December%2019%2C%202025-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.7.1/module.zip)
