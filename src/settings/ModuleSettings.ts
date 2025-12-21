@@ -16,6 +16,13 @@ export interface ImageVisibility {
   fronts: boolean;
 }
 
+ export interface WindowBounds {
+   left: number;
+   top: number;
+   width: number;
+   height: number;
+ }
+
 
 export enum SettingKey {
   // displayed in main settings window
@@ -44,7 +51,8 @@ export enum SettingKey {
   lastKnownVersion = 'lastKnownVersion',  // tracks the last known module version - used for tracking migrations
   settingIndex = 'settingIndex',  // array of high-level setting info (name, packId)
   customFields = 'customFields',  // mapping of CustCustomFieldContentType to CustomFieldType
-  
+  mainWindowBounds = 'mainWindowBounds',
+
   // menus
   advancedSettingsMenu = 'advancedSettingsMenu',  // display the advanced setting menu
   APIURL = 'APIURL',   // URL of backend
@@ -110,6 +118,7 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.useGmailToDos ? boolean :
     K extends SettingKey.emailDefaultSetting ? string :
     K extends SettingKey.emailDefaultCampaign ? string :
+    K extends SettingKey.mainWindowBounds ? WindowBounds | null :
     never;  
 
 export class ModuleSettings {
@@ -424,6 +433,11 @@ export class ModuleSettings {
       settingID: SettingKey.isInPlayMode,
       default: false,
       type: Boolean,
+    },
+    {
+      settingID: SettingKey.mainWindowBounds,
+      default: null,
+      type: Object,
     },
   ];
 

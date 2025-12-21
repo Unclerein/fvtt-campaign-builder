@@ -1,4 +1,10 @@
 # Change Log
+## 1.7.3 - Stop moving your window around
+![](https://img.shields.io/badge/release%20date-December%2021%2C%202025-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.7.3/module.zip)
+
+- Your window size and position is now remembered so it will open to the same place next time.
+
 ## 1.7.2 - Just a version bump
 ![](https://img.shields.io/badge/release%20date-December%2021%2C%202025-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.7.2/module.zip)
