@@ -53,9 +53,17 @@ const i18nInit = () => {
     }
   ];
 
-  defaultCustomFields[CustomFieldContentType.Session] = [];
+  defaultCustomFields[CustomFieldContentType.Session] = [{
+      name: 'strong_start',
+      label: localize('labels.fields.strongStart'),
+      fieldType: FieldType.Editor,
+      sortOrder: 0,
+    }
+  ];
 
   defaultCustomFields[CustomFieldContentType.Front] = [];
+
+  defaultCustomFields[CustomFieldContentType.Arc] = [];
 
   defaultCustomFields[CustomFieldContentType.Campaign] = [{
       name: 'house_rules',

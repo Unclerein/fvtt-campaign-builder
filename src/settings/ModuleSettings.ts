@@ -1,6 +1,7 @@
 import { localize } from '@/utils/game';
 import { moduleId } from './index';
 import { AdvancedSettingsApplication } from '@/applications/settings/AdvancedSettingsApplication';
+import { CustomFieldsApplication } from '@/applications/settings/CustomFieldsApplication';
 import { SpeciesListApplication } from '@/applications/settings/SpeciesListApplication';
 import { ImageSettingsApplication } from '@/applications/settings/ImageSettingsApplication';
 import { RollTableSettingsApplication } from '@/applications/settings/RollTableSettingsApplication';
@@ -55,6 +56,7 @@ export enum SettingKey {
 
   // menus
   advancedSettingsMenu = 'advancedSettingsMenu',  // display the advanced setting menu
+  customFieldsMenu = 'customFieldsMenu',
   APIURL = 'APIURL',   // URL of backend
   APIToken = 'APIToken',
   selectedTextModel = 'selectedTextModel', // selected text generation model
@@ -94,6 +96,7 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.storyWebAutoArrange ? boolean :
     K extends SettingKey.rpgStyle ? boolean :
     K extends SettingKey.advancedSettingsMenu ? never :
+    K extends SettingKey.customFieldsMenu ? never :
     K extends SettingKey.APIURL ? string :
     K extends SettingKey.APIToken ? string :
     K extends SettingKey.selectedTextModel ? ApiLocationGenerateImagePostRequestTextModelEnum :
@@ -160,6 +163,15 @@ export class ModuleSettings {
       icon: 'fas fa-bars',               // A Font Awesome icon used in the submenu button
       permissions: ['SETTINGS_WRITE'], // Optional: restrict to GM only
       type: AdvancedSettingsApplication,
+    },
+    {
+      settingID: SettingKey.customFieldsMenu,
+      name: 'settings.customFields',
+      label: 'fcb.settings.customFieldsLabel',   // localized by Foundry
+      hint: 'settings.customFieldsHelp',
+      icon: 'fas fa-list',
+      permissions: ['SETTINGS_WRITE'],
+      type: CustomFieldsApplication,
     },
     {
       settingID: SettingKey.speciesListMenu,

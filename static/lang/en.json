@@ -76,6 +76,10 @@
       "subTabsSavePositionHelp": "When enabled, every tab will remember which interior sub-tab was open and return to it when you re-open that tab. When disabled, tabs will always revert to the first one (usually description).",
       "storyWebAutoArrange": "Auto-arrange story webs",
       "storyWebAutoArrangeHelp": "When enabled, story webs will rearrange to try to keep a clean picture.  When disabled, you can position everything exactly how you want."
+      ,
+      "customFields": "Custom Fields",
+      "customFieldsLabel": "Custom Fields",
+      "customFieldsHelp": "Configure additional fields for each content type"
     },
     "applications": {
       "sessionNotes": {
@@ -159,6 +163,38 @@
           "models": "AI Models",
           "content": "AI Content",
           "email": "Email"
+        }
+      },
+      "customFields": {
+        "title": "Configure Custom Fields",
+        "notifications": {
+          "missingLabel": "Each custom field must have a label",
+          "duplicateKey": "Two custom fields have the same name. Please rename one so keys are unique."
+        },
+        "labels": {
+          "contentType": "Content type",
+          "contentTypeHint": "Select a content type, then add, delete, and reorder fields.",
+          "selectType": "Select a type...",
+          "selectTypePrompt": "Select a content type to begin.",
+          "selectOptionsPlaceholder": "a;b;c",
+          "delete": "Delete"
+        },
+        "columns": {
+          "label": "Label",
+          "fieldKey": "Key",
+          "selectOptions": "Select options",
+          "helpText": "Help Text"
+        },
+        "fieldTypes": {
+          "text": "Text",
+          "select": "Select",
+          "editor": "Editor",
+          "boolean": "Boolean"
+        }
+      },
+      "customFieldsBlocks": {
+        "notifications": {
+          "saveFailed": "Failed to save custom fields"
         }
       },
       "rollTableSettings": {
@@ -265,7 +301,6 @@
         "name": "Name",
         "topic": "Topic",
         "species": "Species",
-        "entryDescription": "Description",
         "entryRolePlayingNotes": "Roleplaying Notes",
         "settingGenre": "Genre",
         "settingFeeling": "Setting Feeling",
@@ -274,7 +309,6 @@
         "role": "Role",
         "settingDescription": "Setting description",
         "startingDescription": "Starting description",
-        "description": "Description",
         "longDescriptions": "Generate long descriptions",
         "generateText": "What to generate",
         "generateChoice": {
@@ -369,9 +403,9 @@
         "fitToWindow": "Fit to Window"
       },
       "campaign": {
+        "campaign": "Campaign",
         "addPC": "Add PC",
         "addPCDrag": "(or drag/drop a PC)",
-        "description": "Description",
         "pcs": "PCs",
         "lore": "Lore",
         "loreHelpText": "Track big campaign-level secrets and smaller ones that you aren't ready to deliver. Click to read more from Lazy DM.",
@@ -384,32 +418,36 @@
         "linkToNewActor": "Link to new actor",
         "pc": "PC"
       },
+      "character": {
+        "character": "Character"
+      },
+      "organization": {
+        "organization": "Organization"
+      },
+      "location": {
+        "location": "Location"
+      },
+      "setting": {
+        "setting": "Setting"
+      },
       "groupTree": "Group tree by type",
       "tabs": {
         "entry": {
-          "description": "Description",
           "characters": "Characters",
           "locations": "Locations",
           "pcs": "PCs",
           "organizations": "Organizations"
         },
         "campaign": {
-          "description": "Description",
           "pcs": "PCs",
           "lore": "Lore",
           "toDo": "To-Do",
           "ideas": "Ideas"
         },
-        "setting": {
-          "description": "Description"
-        },
         "front": {
-          "description": "Description",
           "createNewDanger": "Create new Danger"
         },
         "arc": {
-          "arc": "Arc",
-          "description": "Description",
           "pcs": "PCs",
           "lore": "Lore",
           "locations": "Locations",

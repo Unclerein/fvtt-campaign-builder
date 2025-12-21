@@ -1,28 +1,28 @@
 import { VueApplicationMixin } from '@/libraries/fvtt-vue/VueApplicationMixin';
 import PrimeVue from 'primevue/config';
 
-import App from '@/components/applications/ImageSettingsDialog.vue';
+import App from '@/components/applications/CustomFieldsDialog.vue';
 import { theme } from '@/components/styles/primeVue';
 
 const { ApplicationV2 } = foundry.applications.api;
 
 // the most recent one; we track this so it can close itself
-export let imageSettingsApp: ImageSettingsApplication | null = null;
+export let customFieldsApp: CustomFieldsApplication | null = null;
 
-export class ImageSettingsApplication extends VueApplicationMixin(ApplicationV2) {
-  constructor() { super(); imageSettingsApp = this; }
+export class CustomFieldsApplication extends VueApplicationMixin(ApplicationV2) {
+  constructor() { super(); customFieldsApp = this; }
 
   static DEFAULT_OPTIONS = {
-    id: `app-fcb-image-settings`,
-    classes: ['fcb-image-settings', 'fcb-window'],
+    id: `app-fcb-custom-fields`,
+    classes: ['fcb-custom-fields', 'fcb-window'],
     window: {
-      title: 'fcb.settings.images',
-      icon: 'fa-solid fa-image',
+      title: 'fcb.settings.customFields',
+      icon: 'fa-solid fa-list',
       resizable: true,
     },
     position: {
-      width: 500,
-      height: "auto" as const,
+      width: 900,
+      height: 650,
     },
     actions: {}
   };
@@ -33,7 +33,7 @@ export class ImageSettingsApplication extends VueApplicationMixin(ApplicationV2)
 
   static PARTS = {
     app: {
-      id: 'fcb-image-settings-app',
+      id: 'fcb-custom-fields-app',
       component: App,
       props: {},
       use: {
