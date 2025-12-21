@@ -1,4 +1,12 @@
 # Change Log
+## 1.8.0 - [_____________________]
+![](https://img.shields.io/badge/release%20date-December%20__%2C%202025-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.8.0/module.zip)
+
+- The fields on the description tabs are now customizable!  This applies to Settings, Characters, Organizations, Locations, Campaigns, Arcs, Sessions, and Fronts.  Each one can have its own list of fields you want - text fields, full editors, drop-downs, and checkboxes.
+- Every field that used to be present on these tabs (other than the base descriptions/notes) has now been converted to a custom field, so you can delete/hide them if you want. 
+- Fixed styling on the various module settings submenu windows.
+
 ## 1.7.2 - Just a version bump
 ![](https://img.shields.io/badge/release%20date-December%2021%2C%202025-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.7.2/module.zip)

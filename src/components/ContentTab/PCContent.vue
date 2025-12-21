@@ -17,7 +17,7 @@
       <div class="fcb-sheet-subtab-container flexrow">
         <div class="fcb-subtab-wrapper">
           <nav class="fcb-sheet-navigation flexrow tabs" data-group="primary">
-            <a class="item" data-tab="description">{{ localize('labels.tabs.entry.description') }}</a>
+            <a class="item" data-tab="description">{{ localize('labels.description') }}</a>
             <a class="item" data-tab="journals">{{ localize('labels.journals') }}</a>
             <a 
               v-for="relationship in relationships"
@@ -39,7 +39,7 @@
                     @click="onActorImageClick"
                     @contextmenu.prevent="onImageContextMenu"
                   >
-                    <div v-if="currentEntry?.actorId">
+                    <div v-if="isPC && actorId">
                       <img 
                         class="profile"
                         :src="currentImage"
@@ -108,6 +108,13 @@
                         @editor-saved="onMagicItemsSaved"
                       />
                     </div>
+
+                    <CustomFieldsBlocks
+                      v-if="currentEntry"
+                      :content-type="CustomFieldContentType.PC"
+                      :content="currentEntry"
+                    />
+
                   </div>
                 </div>
               </div>
@@ -166,10 +173,11 @@
   import JournalTab from '@/components/ContentTab/JournalTab.vue';
   import RelatedEntryTable from '@/components/tables/RelatedEntryTable.vue';
   import RelatedEntriesManagementDialog from '@/components/RelatedEntriesManagementDialog.vue';
-  
+    import CustomFieldsBlocks from '@/components/CustomFieldsBlocks.vue';
+
   // types
   import { Entry } from '@/classes';
-  import { Topics, RelatedJournal } from '@/types';
+  import { Topics, RelatedJournal, ValidTopic, CustomFieldContentType } from '@/types';
   import { DOCUMENT_TYPES } from '@/documents';
 
   ////////////////////////////////
@@ -197,7 +205,7 @@
     { tab: 'characters', label: 'labels.tabs.entry.characters', topic: Topics.Character },
     { tab: 'locations', label: 'labels.tabs.entry.locations', topic: Topics.Location },
     { tab: 'organizations', label: 'labels.tabs.entry.organizations', topic: Topics.Organization },
-  ] as { tab: string; label: string; topic: Topics }[];
+  ] as { tab: string; label: string; topic: ValidTopic }[];
 
   const showRelatedEntriesDialog = ref<boolean>(false);
   const pendingAddedUUIDs = ref<string[]>([]);
@@ -206,16 +214,17 @@
   ////////////////////////////////
   // computed data
   const name = computed(() => (currentEntry.value?.name || ''));
-  const currentImage = computed(() => (currentEntry.value?.actor?.img || ''));
+  const isPC = computed(() => currentEntry.value?.topic === Topics.PC);
+  const actorId = computed(() => (isPC.value ? (currentEntry.value?.actorId || '') : ''));
+  const currentImage = computed(() => (isPC.value ? (currentEntry.value?.actor?.img || '') : ''));
 
   ////////////////////////////////
   // methods
   const refreshEntry = async () => {
-    if (!currentEntry.value)
+    if (!currentEntry.value || currentEntry.value.topic!==Topics.PC)
       return;
     
     // load starting data values
-    name.value = currentEntry.value.name || '';
     playerName.value = currentEntry.value.playerName || '';
     await currentEntry.value.getActor();
   };
@@ -259,7 +268,7 @@
     event.preventDefault();
     event.stopPropagation();
 
-    if (!currentEntry.value)
+    if (!currentEntry.value || currentEntry.value.topic !== Topics.PC)
       return;
 
     // parse the data
@@ -358,6 +367,9 @@
   };
 
   const onActorImageClick = async () => {
+    if (!currentEntry.value || currentEntry.value.topic !== Topics.PC)
+      return;
+
     const actor = await currentEntry.value?.getActor();
     if (actor)
       await toRaw(actor)?.sheet?.render(true);
@@ -436,7 +448,7 @@
   onMounted(async () => {
     await mountTabs();
 
-    if (currentEntry.value) {
+    if (currentEntry.value && currentEntry.value.topic===Topics.PC) {
       // load starting data values
       playerName.value = currentEntry.value.playerName || '';
 
