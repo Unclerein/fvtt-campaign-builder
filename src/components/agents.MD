@@ -1,16 +1,16 @@
-# agents.MD (Windwurf)
+# agents.MD (Windsurf)
 
-This repository uses **Windwurf** to work **directly in Vue SFCs**. Treat every `.vue` file as both UI and API surface.
+This repository uses **Windsurf** to work **directly in Vue SFCs**. Treat every `.vue` file as both UI and API surface.
 
 ## Scope
 
-Windwurf is allowed to:
+Windsurf is allowed to:
 - Create and modify Vue Single File Components (`.vue`)
 - Create and modify co-located component files (types, composables, tests) when needed
 - Refactor for readability, consistency, and performance without changing behavior (unless explicitly requested)
 - Introduce new dependencies without asking
 
-Windwurf is not allowed to:
+Windsurf is not allowed to:
 - Change public behavior, UX flows, or data contracts without an explicit request
 - Do broad drive-by formatting across unrelated files
 
@@ -35,6 +35,7 @@ Windwurf is not allowed to:
 
 - Avoid `any`. Use `unknown` and narrow whenever possible, unless it is a one-time use and narrowing would require significantly more code/complexity.
 - Prefer inline logic in templates over `computed` unless it requires more than 60 characters
+- Any method in the script that is called elsewhere in the script (i.e. not pure event handlers, watchers, etc.) should have full jsdoc comments preceeding it.
  
 ### Component structure
 - One component per file.
@@ -42,6 +43,11 @@ Windwurf is not allowed to:
   - Avoid deeply nested inline ternaries.
   - Extract repeated UI into smaller components.
 - Prefer small, named helper functions in the script for complex template logic.
+- All code should go in the appropriate section of the file as defined in the template below
+
+### Comments
+- Include one-line comments for all non-trivial logic in the script and for particularly complex parts of templates.
+- Every method in the 'methods' section (so not event handlers, watchers, etc.) should have full jsdoc comments preceeding it.
 
 ### Props, emits, and v-model
 - Props:
@@ -63,6 +69,10 @@ Windwurf is not allowed to:
 - Buttons and interactive elements must be keyboard accessible.
 - Ensure sensible focus states and tab order.
 
+### Localization
+- Localize any string presented to the user (but not strings just logged to the console).
+- Use localize function in @/utils/game rather than the default Foundry i18n
+
 ### Performance
 - Avoid unnecessary watchers.
 - Use `watchEffect` only when it improves clarity and you truly want implicit dependencies.
@@ -71,7 +81,9 @@ Windwurf is not allowed to:
 
 All new or significantly modified Vue component files **must follow** the following template structure.  Comments with **xx** are for your understanding and are not part of the template.
 
-> Windwurf: Do not invent missing details. Sections can be left blank if unused, but still include the section headers.  
+DO NOT insert new sections into the template.  Put everything where it belongs in this structure.
+
+> Windsurf: Do not invent missing details. Sections can be left blank if unused, but still include the section headers.  
 
 ### Required file template
 
@@ -137,12 +149,13 @@ Dependencies
   // **definitions of consts, variables, and refs**
 
   ////////////////////////////////
-  // computed
+  // computed data
   // **definitions of computed properties**
 
   ////////////////////////////////
   // methods
   // **general methods**
+  // **these should each have full jsdoc comments preceeding them**
 
   ////////////////////////////////
   // event handlers

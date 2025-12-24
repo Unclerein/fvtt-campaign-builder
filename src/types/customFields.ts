@@ -24,20 +24,22 @@ export interface CustomFieldDescription {
   label: string;
   fieldType: FieldType;
   options?: string[];  // for select fields
-  help?: string;  // displayed in a tooltip
+  editorHeight?: number;  // for editor fields
+  helpText?: string;  // displayed in a tooltip
+  helpLink?: string; // optional link opened when clicking help icon
+  aiEnabled?: boolean;
+  aiPromptTemplate?: string;
+  deleted?: boolean;
+  indexed?: boolean;
   sortOrder: number;   // order of display on description tab
+  configuration?: {
+    minWords: number;
+    maxWords: number;
+    tone: string;
+    tense: string;
+    pov: string;
+    includeBullets: boolean;
+    avoidListsLongerThan: number;
+  }
 }
 
-// this is the default custom field description for each type
-// this will be populated after i18n initialized
-export let defaultCustomFields: Record<CustomFieldContentType, CustomFieldDescription[]> = {
-  [CustomFieldContentType.Setting]: [],
-  [CustomFieldContentType.Character]: [],
-  [CustomFieldContentType.Location]: [],
-  [CustomFieldContentType.Organization]: [],
-  [CustomFieldContentType.PC]: [],
-  [CustomFieldContentType.Session]: [],
-  [CustomFieldContentType.Campaign]: [],
-  [CustomFieldContentType.Arc]: [],
-  [CustomFieldContentType.Front]: [],
-};

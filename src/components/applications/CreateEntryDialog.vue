@@ -112,41 +112,6 @@
             }
           }}"
         />
-        <div 
-          v-if="generateMode"
-          class="generation-option"
-        >
-          <div 
-            v-if="!useRoleplayNotes"
-            class="generation-option-wrapper"
-          >
-            <!-- <Checkbox 
-              v-model="longDescriptions" 
-              :binary="true"
-              inputId="long-description-checkbox"
-            />
-            <label for="long-description-checkbox" class="generation-label">
-              {{ localize('labels.fields.longDescriptions') }}
-              <i class="fas fa-info-circle tooltip-icon" :data-tooltip="localize('tooltips.createEntry.longDescriptions')"></i>
-            </label> -->
-          </div>
-          <div 
-            v-else
-            class="generation-option-wrapper"
-          >
-            <label for="generate-choices-select" class="generation-label" style="margin-right: 8px">
-                {{ localize('labels.fields.generateText') }}:
-            </label>
-            <Select 
-              id="generate-choices-select"
-              v-model="generateChoice"
-              :options="generateChoiceOptions"
-              optionLabel="label"
-              optionValue="value"
-              :pt="{ root: { style: { width: '200px' }}}"
-            />
-          </div>
-        </div>
         
         <template v-if="generateMode">
           <hr 
@@ -159,19 +124,13 @@
               <span class="error-label">{{ localize('dialogs.generateNameDialog.errorMessage') }}</span> {{ generateError }}
             </div>
             <template v-else-if="generateComplete">
-              <div v-if="!name && (generatedDescription || generatedRoleplayNotes)" class="generated-content" style="background: var(--fcb-surface-shaded)">
+              <div v-if="!name && generatedDescription" class="generated-content" style="background: var(--fcb-surface-shaded)">
                 <div><span class="label">{{ localize('dialogs.createEntry.generatedName')}}:</span> {{ generatedName }}</div>
               </div>
               <div v-if="generatedDescription" class="generated-content" style="background: var(--fcb-surface-shaded)">
                 <div class="fcb-description">
                   <p><span class="label">{{ localize('dialogs.createEntry.generatedDescription')}}:</span></p>
                   {{ generatedDescription }}
-                </div>
-              </div>
-              <div v-if="generatedRoleplayNotes" class="generated-content" style="background: var(--fcb-surface-shaded)">
-                <div class="fcb-description">
-                  <p><span class="label">{{ localize('dialogs.createEntry.generatedRoleplayNotes')}}</span></p>
-                  {{ generatedRoleplayNotes }}
                 </div>
               </div>
             </template>
@@ -238,7 +197,6 @@
   import ProgressSpinner from 'primevue/progressspinner';
   import Textarea from 'primevue/textarea';
   import Checkbox from 'primevue/checkbox';
-  import Select from 'primevue/select';
   
   // local components
   import TypeSelect from '@/components/ContentTab/EntryContent/TypeSelect.vue';
@@ -322,20 +280,12 @@
   const startingDescription = ref<string>('');
   const generatedName = ref<string>('');
   const generatedDescription = ref<string>('');
-  const generatedRoleplayNotes = ref<string>('');
   const generateComplete = ref<boolean>(false);
   const loading = ref<boolean>(false);
   const generateError = ref<string>('');
   const generateImageAfterAccept = ref<boolean>(false);
   const show = ref<boolean>(true);
-  const generateChoice = ref<string>('both');
 
-  const generateChoiceOptions = ref<{label: string; value: string}[]>([
-    {label: localize('labels.fields.generateChoice.description'), value: 'description'},
-    {label: localize('labels.fields.generateChoice.roleplay'), value: 'roleplay'},
-    {label: localize('labels.fields.generateChoice.both'), value: 'both'},
-  ]);
-  
   // for characters
   const speciesId = ref<string>(props.initialSpeciesId);
   const speciesName = ref<string>('');
@@ -361,10 +311,6 @@
 
   const generateMode = computed((): boolean => {
     return props.generateMode && available.value;
-  });
-
-  const useRoleplayNotes = computed((): boolean => {
-    return ModuleSettings.get(SettingKey.showRolePlayingNotes);
   });
 
   ////////////////////////////////
@@ -398,9 +344,6 @@
     loading.value = true;
     generateComplete.value = false;
     generateError.value = '';
-    generatedRoleplayNotes.value = '';
-
-    const choice = generateChoice.value || 'both';
 
     try {
       if (!currentSetting.value) 
@@ -429,14 +372,14 @@
 
         result = await backendStore.generateCharacter({
           genre: currentSetting.value.genre,
-          rpgStyle: ModuleSettings.get(SettingKey.rpgStyle),
+          rpgStyle: false,
           settingFeeling: currentSetting.value.settingFeeling,
           type: type.value,
           species: speciesName.value,
           speciesDescription: speciesDescription,
           name: name.value,
           briefDescription: startingDescription.value,
-          longDescriptionParagraphs: ModuleSettings.get(SettingKey.longDescriptionParagraphs),
+          longDescriptionParagraphs: 1,
           nameStyles: selectedNameStyles.value,
           textModel: ModuleSettings.get(SettingKey.selectedTextModel),
         });
@@ -458,7 +401,7 @@
         // pull the other things we need  
         const options = {
           genre: currentSetting.value.genre,
-          rpgStyle: ModuleSettings.get(SettingKey.rpgStyle),
+          rpgStyle: false,
           settingFeeling: currentSetting.value.settingFeeling,
           type: type.value,
           parentName: parent?.name || '',
@@ -469,9 +412,9 @@
           grandparentDescription: grandparent?.description || '',
           name: name.value,
           briefDescription: startingDescription.value,
-          longDescriptionParagraphs: ModuleSettings.get(SettingKey.longDescriptionParagraphs),
+          longDescriptionParagraphs: 1,
           nameStyles: selectedNameStyles.value,
-          textModel: ModuleSettings.get(SettingKey.selectedTextModel) as any,
+          textModel: ModuleSettings.get(SettingKey.selectedTextModel),
         };
 
         if (props.topic === Topics.Location) {
@@ -489,16 +432,7 @@
         name.value = result!.data.name;
       }
 
-      if (['description', 'both'].includes(choice)) {        
-        generatedDescription.value = result!.data.description.long;
-      } else {
-        generatedDescription.value = '';
-      }
-      if (useRoleplayNotes.value && ['roleplay', 'both'].includes(choice)) {        
-        generatedRoleplayNotes.value = result!.data.description.roleplayNotes;
-      } else {
-        generatedRoleplayNotes.value = '';
-      }
+      generatedDescription.value = result!.data.description.long;
     } catch (error) {
       generateError.value = (error as Error).message;
     } finally {
@@ -511,7 +445,6 @@
     if (!currentSetting.value)
       return;
 
-    const choice = generateChoice.value || 'both';
     if (!currentSetting.value)
       return;
 
@@ -519,24 +452,8 @@
     // if we haven't generated a description, use whatever's in brief description
     // the idea is that - especially when we're dealing with a RollTable name - user can use this form as a sort of quick create
     let details: CharacterDetails | LocationDetails | OrganizationDetails | null = null;
-    let descriptionToUse = '';
-    let roleplayToUse = '';
 
-    if (!useRoleplayNotes.value) {
-      descriptionToUse = generatedTextToHTML(generatedDescription.value);
-      roleplayToUse = ''      
-    } else {
-      if (choice === 'description') {
-        descriptionToUse = generatedTextToHTML(generateComplete.value ? generatedDescription.value : startingDescription.value);
-        roleplayToUse = '';
-      } else if (choice === 'roleplay') {
-        descriptionToUse = generatedTextToHTML(startingDescription.value);
-        roleplayToUse = generateComplete.value ? generatedTextToHTML(generatedRoleplayNotes.value) : '';
-      } else if (choice === 'both') {
-        descriptionToUse = generatedTextToHTML(generateComplete.value ? generatedDescription.value : startingDescription.value);
-        roleplayToUse = generateComplete.value ? generatedTextToHTML(generatedRoleplayNotes.value) : '';
-      }
-    }
+    let descriptionToUse = generatedTextToHTML(generateComplete.value ? generatedDescription.value : startingDescription.value);
 
     if (props.topic === Topics.Character) {
       // see if speciesId was made up or is an existing one
@@ -556,7 +473,6 @@
         name: generateComplete.value ? generatedName.value : name.value,
         type: type.value,
         description: descriptionToUse,
-        roleplayingNotes: roleplayToUse,
         speciesId: validSpecies.includes(speciesId.value) ? speciesId.value : '',
         generateImage: generateImageAfterAccept.value
       }
@@ -566,7 +482,6 @@
         type: type.value,
         parentId: parentId.value,
         description: descriptionToUse,
-        roleplayingNotes: roleplayToUse,
         generateImage: generateImageAfterAccept.value
       }
     }

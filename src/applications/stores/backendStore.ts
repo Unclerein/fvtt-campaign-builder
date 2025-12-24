@@ -4,7 +4,7 @@
 import { defineStore } from 'pinia';
 
 // local imports
-import { ApiCharacterGenerateImagePostRequest, ApiCharacterGeneratePostRequest, ApiLocationGenerateImagePostRequest, ApiLocationGeneratePostRequest, ApiNameCharactersPostRequest, ApiNameStoresPostRequest, ApiNameTavernsPostRequest, ApiNameTownsPostRequest, ApiOrganizationGenerateImagePostRequest, ApiOrganizationGeneratePostRequest, ApiPollEmailTodoGet200Response, Configuration, FCBApi } from '@/apiClient';
+import { ApiCharacterGenerateImagePostRequest, ApiCharacterGeneratePostRequest, ApiCustomGeneratePostRequest, ApiLocationGenerateImagePostRequest, ApiLocationGeneratePostRequest, ApiNameCharactersPostRequest, ApiNameStoresPostRequest, ApiNameTavernsPostRequest, ApiNameTownsPostRequest, ApiOrganizationGenerateImagePostRequest, ApiOrganizationGeneratePostRequest, ApiPollEmailTodoGet200Response, Configuration, FCBApi } from '@/apiClient';
 import { ModuleSettings, SettingKey } from '@/settings';
 import { notifyError, notifyInfo, notifyWarn } from '@/utils/notifications';
 import { isClientGM, localize } from '@/utils/game';
@@ -17,7 +17,7 @@ import { reactive, ref } from 'vue';
 
 // this is the backend version that needs to be used with this version of the module
 // generally, we'll try to keep them more or less in sync, at least at the minor release level
-const REQUIRED_VERSION = '1.4';
+const REQUIRED_VERSION = '1.8';
 
 export const useBackendStore = defineStore('backend', () => {
   ///////////////////////////////
@@ -214,6 +214,10 @@ export const useBackendStore = defineStore('backend', () => {
     return await api?.apiNameTownsPost(options);
   } 
 
+  const generateCustom = async (options: ApiCustomGeneratePostRequest) => {
+    return await api?.apiCustomGeneratePost(options);
+  }
+
   ///////////////////////////////
   // watchers
 
@@ -243,5 +247,6 @@ export const useBackendStore = defineStore('backend', () => {
     generateStoreNames,
     generateTavernNames,
     generateTownNames,
+    generateCustom,
   }
 });
