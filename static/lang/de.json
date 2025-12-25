@@ -75,8 +75,8 @@
       "storyWebAutoArrange": "Automatisches Anordnen von Story-Webs",
       "storyWebAutoArrangeHelp": "Wenn aktiviert, werden Story-Webs neu angeordnet, um ein sauberes Bild zu erhalten. Wenn deaktiviert, können Sie alles genau so positionieren, wie Sie es möchten.",
       "customFields": "Benutzerdefinierte Felder",
-      "customFieldsLabel": "Benutzerdefinierte Felder",
-      "customFieldsHelp": "Zusätzliche Felder für jeden Inhaltstyp konfigurieren"
+      "customFieldsLabel": "Benutzerdefinierte Felder konfigurieren",
+      "customFieldsHelp": "Zusätzliche Felder und KI-Anweisungen für jeden Inhaltstyp konfigurieren"
     },
     "applications": {
       "sessionNotes": {
@@ -202,9 +202,7 @@
         },
         "labels": {
           "contentType": "Inhaltstyp",
-          "contentTypeHint": "Wählen Sie einen Inhaltstyp aus, dann fügen Sie Felder hinzu, löschen und ordnen Sie sie neu.",
           "selectType": "Typ auswählen...",
-          "selectTypePrompt": "Wählen Sie einen Inhaltstyp, um zu beginnen.",
           "selectOptionsPlaceholder": "a;b;c",
           "delete": "Löschen",
           "aiTemplate": "KI-Vorlage"
@@ -225,11 +223,10 @@
           "title": "KI-Vorlage",
           "labels": {
             "enabled": "Kann von KI generiert werden",
-            "enabledHint": "Wenn aktiviert, kann dieses Feld von KI unter Verwendung der unten stehenden Eingabeaufforderungsvorlage generiert werden.",
             "fieldToken": "Feld-Token einfügen",
             "selectField": "Wählen Sie ein Feld...",
             "insert": "Einfügen",
-            "fieldTokenHint": "Verwenden Sie {FIELD}, um auf ein anderes Feld zu verweisen, wenn Sie die Eingabeaufforderung erstellen. Gültige Felder werden im Dropdown-Menü angezeigt.",
+            "fieldTokenHint": "Verwenden Sie {FIELD}, um ein anderes Feld beim Erstellen der Aufforderung zu referenzieren. Verfügbare Felder werden im Dropdown-Menü angezeigt. Alle Standardfelder werden automatisch übergeben, sodass Sie sie nur referenzieren müssen, wenn Sie eine spezifische Anweisung in Bezug auf eines von ihnen geben möchten.",
             "promptTemplate": "Eingabeaufforderungsvorlage"
           },
           "errors": {
@@ -240,6 +237,25 @@
             "short": "Kurz",
             "detailed": "Detailliert",
             "bullets": "Aufzählungspunkte"
+          }
+        },
+        "tabs": {
+          "fields": "Felder",
+          "images": "Bilder"
+        },
+        "images": {
+          "labels": {
+            "prompt": "Bildaufforderung",
+            "promptTemplate": "Bildaufforderungsvorlage",
+            "selectField": "Ein Feld auswählen...",
+            "insert": "Einfügen",
+            "fieldToken": "Feld-Token einfügen"
+          },
+          "promptHint": "Erstellen Sie eine Vorlage für die KI-Bilderzeugung. Verwenden Sie {FIELD}, um Feldwerte in Ihrer Aufforderung zu referenzieren. Verfügbare Felder werden im Dropdown-Menü angezeigt. Alle Standardfelder werden automatisch übergeben, sodass Sie sie nur referenzieren müssen, wenn Sie eine spezifische Anweisung in Bezug auf eines von ihnen geben möchten."
+        },
+        "aiImage": {
+          "errors": {
+            "invalidTokens": "Ungültige Vorlagen-Token:"
           }
         }
       },
