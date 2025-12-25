@@ -50,12 +50,10 @@ export enum SettingKey {
   arcTags = 'arcTags',
   lastKnownVersion = 'lastKnownVersion',  // tracks the last known module version - used for tracking migrations
   settingIndex = 'settingIndex',  // array of high-level setting info (name, packId)
-  customFields = 'customFields',  // mapping of CustCustomFieldContentType to CustomFieldType
   mainWindowBounds = 'mainWindowBounds',
 
   // menus
   advancedSettingsMenu = 'advancedSettingsMenu',  // display the advanced setting menu
-  customFieldsMenu = 'customFieldsMenu',
   APIURL = 'APIURL',   // URL of backend
   APIToken = 'APIToken',
   selectedTextModel = 'selectedTextModel', // selected text generation model
@@ -63,6 +61,10 @@ export enum SettingKey {
   useGmailToDos = 'useGmailToDos', // whether to use Gmail for todos
   emailDefaultSetting = 'emailDefaultWorld', // default setting for email features
   emailDefaultCampaign = 'emailDefaultCampaign', // default campaign for email features
+
+  customFieldsMenu = 'customFieldsMenu',
+  customFields = 'customFields',  // mapping of CustCustomFieldContentType to CustomFieldType
+  aiImagePrompts = 'aiImagePrompts', // AI image generation prompts per content type
 
   rollTableSettingsMenu = 'rollTableSettingsMenu',  // display the roll table settings menu
   autoRefreshRollTables = 'autoRefreshRollTables',  // should roll tables be automatically refreshed on load
@@ -103,6 +105,7 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.speciesList ? Species[] :
     K extends SettingKey.imageMenu ? never :
     K extends SettingKey.showImages ? ImageVisibility :
+    K extends SettingKey.aiImagePrompts ? Record<CustomFieldContentType, string> :
     K extends SettingKey.entryTags ? TagList :
     K extends SettingKey.sessionTags ? TagList :
     K extends SettingKey.frontTags ? TagList :
@@ -407,6 +410,11 @@ export class ModuleSettings {
         sessions: true,
         fronts: true,
       },
+      type: Object,
+    },
+    {
+      settingID: SettingKey.aiImagePrompts,
+      default: {},
       type: Object,
     },
   ];

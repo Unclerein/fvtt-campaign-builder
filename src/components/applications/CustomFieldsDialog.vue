@@ -1,7 +1,7 @@
 <template>
   <section class="standard-form">
     <div class="fcb-sheet-container flexcol primevue-only">
-      <div class="standard-form" style="padding: 0.5rem 0.75rem;">
+      <div class="standard-form" style="padding: 0.5rem 0;">
         <div class="form-group">
           <label>{{ localize('applications.customFields.labels.contentType') }}</label>
           <div class="form-fields">
@@ -13,135 +13,189 @@
               :placeholder="localize('applications.customFields.labels.selectType')"
             />
           </div>
-          <p class="hint">{{ localize('applications.customFields.labels.contentTypeHint') }}</p>
         </div>
       </div>
 
-      <div style="flex: 1; min-height: 0; padding: 0 0.75rem 0.75rem 0.75rem;">
-        <DataTable
-          v-if="selectedType !== null"
-          :value="visibleRows"
-          data-key="uuid"
-          size="small"
-          scrollable
-          scroll-height="flex"
-          :pt="{
-            header: { style: 'border: none' },
-            table: { style: 'margin: 0px; table-layout: fixed;' },
-            thead: { style: 'font-family: var(--font-primary); text-shadow: none; background: inherit;' },
-            row: {
-              style: 'font-family: var(--font-primary); text-shadow: none; background: inherit;',
-            },
-          }"
-          @row-reorder="onRowReorder"
-        >
-          <template #header>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div style="display: flex; gap: 0.5rem;">
-                <Button
-                  unstyled
-                  :label="localize('labels.add')"
-                  style="flex: initial; width:auto;"
-                  @click="onAddField"
+      <div class="fcb-sheet-subtab-container flexcol">
+        <div class="fcb-subtab-wrapper">
+          <nav class="fcb-sheet-navigation flexrow tabs" data-group="primary">
+            <a class="item active" data-tab="fields">{{ localize('applications.customFields.tabs.fields') }}</a>
+            <a v-if="backendAvailable" class="item" data-tab="images">{{ localize('applications.customFields.tabs.images') }}</a>
+          </nav>
+          <div class="fcb-tab-body flexrow">
+            <!-- Fields Tab -->
+            <div class="tab active flexcol" data-group="primary" data-tab="fields">
+              <div style="flex: 1; min-height: 0; padding: 0 0.75rem 0.75rem 0.75rem;">
+                <DataTable
+                  v-if="selectedType !== null"
+                  :value="visibleRows"
+                  data-key="uuid"
+                  size="small"
+                  scrollable
+                  scroll-height="flex"
+                  :pt="{
+                    header: { style: 'border: none' },
+                    table: { style: 'margin: 0px; table-layout: fixed;' },
+                    thead: { style: 'font-family: var(--font-primary); text-shadow: none; background: inherit;' },
+                    row: {
+                      style: 'font-family: var(--font-primary); text-shadow: none; background: inherit;',
+                    },
+                  }"
+                  @row-reorder="onRowReorder"
                 >
-                  <template #icon>
-                    <i class="fas fa-plus"></i>
+                  <template #header>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div style="display: flex; gap: 0.5rem;">
+                        <Button
+                          unstyled
+                          :label="localize('labels.add')"
+                          style="flex: initial; width:auto;"
+                          @click="onAddField"
+                        >
+                          <template #icon>
+                            <i class="fas fa-plus"></i>
+                          </template>
+                        </Button>
+                      </div>
+                    </div>
                   </template>
-                </Button>
+
+                  <template #empty>
+                    {{ localize('labels.noResults') }}
+                  </template>
+
+                  <Column :rowReorder="true" headerStyle="width: 3rem" :reorderableColumn="false" />
+
+                  <Column field="actions" :header="localize('labels.tableHeaders.actions')" style="width: 4rem">
+                    <template #body="{ data }">
+                      <a
+                        v-if="backendAvailable && data.fieldType === FieldType.Editor"
+                        class="fcb-action-icon"
+                        :data-tooltip="localize('applications.customFields.labels.aiTemplate')"
+                        @click.stop="onOpenAiTemplateDialog(data)"
+                      >
+                        <i class="fas fa-head-side-virus"></i>
+                      </a>
+                      <a
+                        class="fcb-action-icon"
+                        :data-tooltip="localize('applications.customFields.labels.delete')"
+                        @click.stop="onDeleteField(data.uuid)"
+                      >
+                        <i class="fas fa-trash"></i>
+                      </a>
+                    </template>
+                  </Column>
+
+                  <Column field="label" :header="localize('applications.customFields.columns.label')" style="width: 18%">
+                    <template #body="{ data }">
+                      <InputText v-model="data.label" unstyled style="width: 100%" />
+                    </template>
+                  </Column>
+
+                  <Column field="fieldType" :header="localize('labels.fields.type')" style="width: 15%">
+                    <template #body="{ data }">
+                      <Select
+                        v-model="data.fieldType"
+                        :options="fieldTypeOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        @update:model-value="() => onFieldTypeChanged(data)"
+                      />
+                    </template>
+                  </Column>
+
+                  <Column field="options" :header="localize('applications.customFields.columns.selectOptions')" style="width: 25%">
+                    <template #body="{ data }">
+                      <InputText
+                        v-model="data.optionsText"
+                        unstyled
+                        style="width: 100%"
+                        :disabled="data.fieldType !== FieldType.Select"
+                        :placeholder="data.fieldType === FieldType.Select ? localize('applications.customFields.labels.selectOptionsPlaceholder') : ''"
+                      />
+                    </template>
+                  </Column>
+
+                  <Column v-if="showIndexedColumn" field="indexed" header="Search?" style="width: 7%">
+                    <template #body="{ data }">
+                      <Checkbox
+                        v-model="data.indexed"
+                        binary
+                        :disabled="data.fieldType === FieldType.Boolean"
+                        @update:model-value="onIndexedCheckboxChange"
+                      />
+                    </template>
+                  </Column>
+
+                  <Column field="editorHeight" header="Height" style="width: 8%">
+                    <template #body="{ data }">
+                      <InputNumber
+                        v-model="data.editorHeight"
+                        unstyled
+                        fluid
+                        :min="1"
+                        :max="MAX_EDITOR_SIZE"
+                        :max-fraction-digits="1"
+                        :disabled="data.fieldType !== FieldType.Editor"
+                      />
+                    </template>
+                  </Column>
+
+                  <Column field="help" :header="localize('applications.customFields.columns.helpText')" style="width: 18%">
+                    <template #body="{ data }">
+                      <InputText v-model="data.helpText" unstyled style="width: 100%" />
+                    </template>
+                  </Column>
+                </DataTable>
               </div>
             </div>
-          </template>
 
-          <template #empty>
-            {{ localize('labels.noResults') }}
-          </template>
+            <!-- Images Tab -->
+            <div v-if="backendAvailable" class="tab flexcol" data-group="primary" data-tab="images">
+              <div style="flex: 1; min-height: 0;">
+                <div class="standard-form">
+                  <div class="form-group" style="padding-top: .75rem">
+                    <p class="hint">{{ localize('applications.customFields.images.promptHint') }}</p>
+                  </div>
+                  <div class="form-group">
+                    <label>{{ localize('applications.customFields.images.labels.fieldToken') }}</label>
+                    <div class="form-fields" style="display: flex; gap: 0.5rem; align-items: center;">
+                      <Select
+                        v-model="selectedAiImageTokenKey"
+                        :options="aiImageTokenOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        :placeholder="localize('applications.customFields.images.labels.selectField')"
+                        style="flex: 1; min-width: 0;"
+                      />
+                      <button type="button" @click="onInsertAiImageTokenClick" :disabled="!selectedAiImageTokenKey">
+                        <i class="fas fa-plus"></i>
+                        <label>{{ localize('applications.customFields.images.labels.insert') }}</label>
+                      </button>
+                    </div>
+                  </div>
 
-          <Column :rowReorder="true" headerStyle="width: 3rem" :reorderableColumn="false" />
+                  <div v-if="aiImagePromptValidationError" class="form-group">
+                    <p class="hint" style="color: red;">
+                      {{ aiImagePromptValidationError }}
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-          <Column field="actions" :header="localize('labels.tableHeaders.actions')" style="width: 4rem">
-            <template #body="{ data }">
-              <a
-                v-if="backendAvailable && data.fieldType === FieldType.Editor"
-                class="fcb-action-icon"
-                :data-tooltip="localize('applications.customFields.labels.aiTemplate')"
-                @click.stop="onOpenAiTemplateDialog(data)"
-              >
-                <i class="fas fa-head-side-virus"></i>
-              </a>
-              <a
-                class="fcb-action-icon"
-                :data-tooltip="localize('applications.customFields.labels.delete')"
-                @click.stop="onDeleteField(data.uuid)"
-              >
-                <i class="fas fa-trash"></i>
-              </a>
-            </template>
-          </Column>
-
-          <Column field="label" :header="localize('applications.customFields.columns.label')" style="width: 18%">
-            <template #body="{ data }">
-              <InputText v-model="data.label" unstyled style="width: 100%" />
-            </template>
-          </Column>
-
-          <Column field="fieldType" :header="localize('labels.fields.type')" style="width: 15%">
-            <template #body="{ data }">
-              <Select
-                v-model="data.fieldType"
-                :options="fieldTypeOptions"
-                optionLabel="label"
-                optionValue="value"
-                @update:model-value="() => onFieldTypeChanged(data)"
-              />
-            </template>
-          </Column>
-
-          <Column field="options" :header="localize('applications.customFields.columns.selectOptions')" style="width: 25%">
-            <template #body="{ data }">
-              <InputText
-                v-model="data.optionsText"
-                unstyled
-                style="width: 100%"
-                :disabled="data.fieldType !== FieldType.Select"
-                :placeholder="data.fieldType === FieldType.Select ? localize('applications.customFields.labels.selectOptionsPlaceholder') : ''"
-              />
-            </template>
-          </Column>
-
-          <Column v-if="showIndexedColumn" field="indexed" header="Search?" style="width: 7%">
-            <template #body="{ data }">
-              <Checkbox
-                v-model="data.indexed"
-                binary
-                :disabled="data.fieldType === FieldType.Boolean"
-                @update:model-value="onIndexedCheckboxChange"
-              />
-            </template>
-          </Column>
-
-          <Column field="editorHeight" header="Height" style="width: 8%">
-            <template #body="{ data }">
-              <InputNumber
-                v-model="data.editorHeight"
-                unstyled
-                fluid
-                :min="1"
-                :max="MAX_EDITOR_SIZE"
-                :max-fraction-digits="1"
-                :disabled="data.fieldType !== FieldType.Editor"
-              />
-            </template>
-          </Column>
-
-          <Column field="help" :header="localize('applications.customFields.columns.helpText')" style="width: 18%">
-            <template #body="{ data }">
-              <InputText v-model="data.helpText" unstyled style="width: 100%" />
-            </template>
-          </Column>
-        </DataTable>
-
-        <div v-else class="standard-form" style="padding: 1rem;">
-          {{ localize('applications.customFields.labels.selectTypePrompt') }}
+              <div class="form-group stacked">
+                <label>{{ localize('applications.customFields.images.labels.prompt') }}</label>
+                <div class="form-fields">
+                  <textarea
+                    ref="aiImagePromptRef"
+                    v-model="aiImagePrompt"
+                    rows="8"
+                    style="width: 100%;"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -172,7 +226,6 @@
         <div class="form-fields">
           <Checkbox v-model="aiDialogEnabled" binary />
         </div>
-        <p class="hint">{{ localize('applications.customFields.aiDialog.labels.enabledHint') }}</p>
       </div>
 
       <div v-if="!!aiDialogEnabled" class="form-group">
@@ -200,7 +253,7 @@
           <textarea
             ref="aiPromptTextareaRef"
             v-model="aiDialogPromptTemplate"
-            rows="10"
+            rows="8"
             style="width: 100%;"
           />
         </div>
@@ -406,6 +459,12 @@
   const selectedAiTokenKey = ref<string | null>(null);
   const aiPromptTextareaRef = ref<HTMLTextAreaElement | null>(null);
 
+  // AI Image prompts
+  const aiImagePromptRef = ref<HTMLTextAreaElement | null>(null);
+  const aiImagePrompt = ref<string>('');
+  const selectedAiImageTokenKey = ref<string | null>(null);
+  const aiImagePrompts = ref<Record<CustomFieldContentType, string>>({} as any);
+
 
   ////////////////////////////////
   // computed data
@@ -566,6 +625,75 @@
 
     if (!invalid.length) return '';
     return `${localize('applications.customFields.aiDialog.errors.invalidTokens')} ${invalid.join(', ')}`;
+  });
+
+  // AI Image prompts computed properties
+  const aiImageTokenOptions = computed<AiTokenOption[]>(() => {
+    if (selectedType.value == null) return [];
+
+    const type = selectedType.value;
+    const rows = (workingRowsByType.value[type] || []).filter(r => !r.deleted);
+    const seen = new Set<string>();
+
+    const result: AiTokenOption[] = [];
+
+    const builtIns = builtInAiTokensByType[type] || [];
+    for (const t of builtIns) {
+      const key = (t.key || '').trim();
+      if (!key) continue;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const label = `${localize(t.labelKey)} (${key})`;
+      result.push({ label, value: key });
+    }
+
+    for (const r of rows) {
+      const key = (r.name || '').trim() || toCustomFieldKey(r.label || '');
+      if (!key) continue;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const label = (r.label || '').trim() ? `${r.label.trim()} (${key})` : key;
+      result.push({ label, value: key });
+    }
+
+    return result;
+  });
+
+  const aiImagePromptValidationError = computed<string>(() => {
+    if (selectedType.value == null) return '';
+
+    const template = aiImagePrompt.value || '';
+    if (!template.trim()) return '';
+
+    const validKeys = new Set<string>(aiImageTokenOptions.value.map((o) => o.value));
+    const tokenKeyPattern = /^[a-z0-9_+]+$/;
+
+    const invalid: string[] = [];
+    const seen = new Set<string>();
+    const tokenRegex = /\{([^{}]*)\}/g;
+    for (const match of template.matchAll(tokenRegex)) {
+      const inner = (match?.[1] ?? '').trim();
+      const raw = match?.[0] ?? '';
+
+      if (!inner) {
+        if (!seen.has(raw)) {
+          invalid.push(raw);
+          seen.add(raw);
+        }
+        continue;
+      }
+
+      if (!tokenKeyPattern.test(inner) || !validKeys.has(inner)) {
+        if (!seen.has(raw)) {
+          invalid.push(raw);
+          seen.add(raw);
+        }
+      }
+    }
+
+    if (!invalid.length) return '';
+    return `${localize('applications.customFields.aiImage.errors.invalidTokens')} ${invalid.join(', ')}`;
   });
 
   const aiDialogButtons = computed(() => [
@@ -786,6 +914,24 @@
     el.setSelectionRange(nextPos, nextPos);
   };
 
+  const insertIntoAiImageTemplate = async (text: string) => {
+    const el = aiImagePromptRef.value;
+    if (!el) {
+      aiImagePrompt.value = (aiImagePrompt.value || '') + text;
+      return;
+    }
+
+    const current = aiImagePrompt.value || '';
+    const start = el.selectionStart ?? current.length;
+    const end = el.selectionEnd ?? current.length;
+    aiImagePrompt.value = current.slice(0, start) + text + current.slice(end);
+
+    await nextTick();
+    const nextPos = start + text.length;
+    el.focus();
+    el.setSelectionRange(nextPos, nextPos);
+  };
+
   ////////////////////////////////
   // event handlers
 
@@ -870,6 +1016,11 @@
     await insertIntoAiTemplate(aiTokenForKey(selectedAiTokenKey.value));
   };
 
+  const onInsertAiImageTokenClick = async () => {
+    if (!selectedAiImageTokenKey.value) return;
+    await insertIntoAiImageTemplate(aiTokenForKey(selectedAiImageTokenKey.value));
+  };
+
   const onAddField = () => {
     if (selectedType.value == null) return;
 
@@ -951,10 +1102,18 @@
 
     // Reset only the currently-selected type to the last saved configuration.
     workingRowsByType.value[selectedType.value] = rowsFromDescriptions(allCustomFields.value?.[selectedType.value] || []);
+    
+    // Reset the AI Image prompt to the last saved value
+    aiImagePrompt.value = aiImagePrompts.value[selectedType.value] || '';
   };
 
   const onSaveClick = async () => {
     if (selectedType.value === null) return;
+
+    // Save the current AI Image prompt before saving
+    if (selectedType.value !== null) {
+      aiImagePrompts.value[selectedType.value] = aiImagePrompt.value;
+    }
 
     // Validate and normalize all content types so this dialog saves everything in one operation.
     for (const opt of typeOptions) {
@@ -998,6 +1157,9 @@
     // Persist all custom field definitions for all content types.
     await ModuleSettings.set(SettingKey.customFields, allCustomFields.value);
 
+    // Save AI Image prompts
+    await ModuleSettings.set(SettingKey.aiImagePrompts, aiImagePrompts.value);
+
     if (isCampaignBuilderAppOpen()) {
       await mainStore.refreshCurrentContent();
     }
@@ -1017,7 +1179,14 @@
   // watchers
 
   watch(() => selectedType.value, (newType) => {
-    if (newType === null) return;
+    if (newType === null) {
+      aiImagePrompt.value = '';
+      return;
+    }
+    
+    // Load the AI Image prompt for the new type
+    aiImagePrompt.value = aiImagePrompts.value[newType] || '';
+    
     // Ensure the newly-selected type has a working copy initialized from the last saved settings.
     ensureWorkingRowsForType(newType);
   });
@@ -1029,10 +1198,35 @@
     // Load the last-saved custom fields from module settings.
     allCustomFields.value = ModuleSettings.get(SettingKey.customFields);
 
+    // Load AI Image prompts
+    aiImagePrompts.value = ModuleSettings.get(SettingKey.aiImagePrompts) || {} as any;
+
     // Initialize working copies for all types so switching does not lose changes.
     for (const opt of typeOptions) {
       ensureWorkingRowsForType(opt.value);
     }
+
+    // Initialize the AI Image prompt for the default selected type
+    if (selectedType.value !== null) {
+      aiImagePrompt.value = aiImagePrompts.value[selectedType.value] || '';
+    }
+
+    // Initialize tabs
+    const tabs = $(document).find('.tabs[data-group="primary"]');
+    tabs.on('click', 'a.item', (e) => {
+      e.preventDefault();
+      const btn = e.currentTarget;
+      const tab = btn.dataset.tab;
+      if (!tab) return;
+
+      // Set active state on tab buttons
+      tabs.find('a.item').removeClass('active');
+      $(btn).addClass('active');
+
+      // Show/hide tab content
+      $(document).find('.tab[data-group="primary"]').removeClass('active');
+      $(document).find(`.tab[data-group="primary"][data-tab="${tab}"]`).addClass('active');
+    });
   });
 </script>
 
