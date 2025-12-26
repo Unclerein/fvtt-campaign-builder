@@ -75,8 +75,8 @@
       "storyWebAutoArrange": "Réorganisation automatique des réseaux d'histoires",
       "storyWebAutoArrangeHelp": "Lorsqu'elle est activée, les réseaux d'histoires se réorganiseront pour essayer de garder une image propre. Lorsqu'elle est désactivée, vous pouvez positionner tout exactement comme vous le souhaitez.",
       "customFields": "Champs personnalisés",
-      "customFieldsLabel": "Champs personnalisés",
-      "customFieldsHelp": "Configurer des champs supplémentaires pour chaque type de contenu"
+      "customFieldsLabel": "Configurer les champs personnalisés",
+      "customFieldsHelp": "Configurer des champs supplémentaires et des instructions AI pour chaque type de contenu"
     },
     "applications": {
       "sessionNotes": {
@@ -202,9 +202,7 @@
         },
         "labels": {
           "contentType": "Type de contenu",
-          "contentTypeHint": "Sélectionnez un type de contenu, puis ajoutez, supprimez et réorganisez les champs.",
           "selectType": "Sélectionnez un type...",
-          "selectTypePrompt": "Sélectionnez un type de contenu pour commencer.",
           "selectOptionsPlaceholder": "a;b;c",
           "delete": "Supprimer",
           "aiTemplate": "Modèle IA"
@@ -225,11 +223,10 @@
           "title": "Modèle IA",
           "labels": {
             "enabled": "Peut être généré par IA",
-            "enabledHint": "Lorsqu'il est activé, ce champ peut être généré par IA en utilisant le modèle de prompt ci-dessous.",
             "fieldToken": "Insérer le jeton de champ",
             "selectField": "Sélectionner un champ...",
             "insert": "Insérer",
-            "fieldTokenHint": "Utilisez {FIELD} pour référencer un autre champ lors de la création du prompt. Les champs valides sont affichés dans le menu déroulant.",
+            "fieldTokenHint": "Utilisez {FIELD} pour référencer un autre champ lors de la création de l'invite. Les champs disponibles sont affichés dans le menu déroulant. Tous les champs par défaut sont transmis automatiquement, vous n'avez donc besoin de les référencer que si vous souhaitez donner une instruction spécifique liée à l'un d'eux.",
             "promptTemplate": "Modèle de prompt"
           },
           "errors": {
@@ -240,6 +237,25 @@
             "short": "Court",
             "detailed": "Détaillé",
             "bullets": "À puces"
+          }
+        },
+        "tabs": {
+          "fields": "Champs",
+          "images": "Images"
+        },
+        "images": {
+          "labels": {
+            "prompt": "Invite d'image",
+            "promptTemplate": "Modèle d'invite d'image",
+            "selectField": "Sélectionnez un champ...",
+            "insert": "Insérer",
+            "fieldToken": "Insérer un jeton de champ"
+          },
+          "promptHint": "Créez un modèle pour la génération d'images AI. Utilisez {FIELD} pour référencer les valeurs des champs dans votre invite. Les champs disponibles sont affichés dans le menu déroulant. Tous les champs par défaut sont transmis automatiquement, vous n'avez donc besoin de les référencer que si vous souhaitez donner une instruction spécifique liée à l'un d'eux."
+        },
+        "aiImage": {
+          "errors": {
+            "invalidTokens": "Jeton(s) de modèle invalide(s) :"
           }
         }
       },
