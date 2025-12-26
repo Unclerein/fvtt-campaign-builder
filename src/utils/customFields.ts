@@ -1,6 +1,8 @@
-import { CustomFieldContentType, FieldType } from '@/types';
+import { CustomFieldContentType, FieldType, Topics, WindowTabType } from '@/types';
 import { localize } from '@/utils/game';
 import { ModuleSettings, SettingKey } from '@/settings';
+import type { ImageConfiguration } from '@/settings';
+import { Entry } from '@/classes';
 
 export function toCustomFieldKey(text: string): string {
   const lowered = (text || '').toLowerCase();
@@ -234,4 +236,136 @@ export const resetDefaultCustomFields = async () => {
   };
 
   await ModuleSettings.set(SettingKey.customFields, defaultCustomFields);
+  
+  // Also initialize default image configurations
+  await initializeDefaultImageConfigurations(boxedTextKey);
+}
+
+/** 
+ * Set the default image configurations for the first time.
+ */
+export const initializeDefaultImageConfigurations = async (boxedTextKey: string) => {
+  // Default image configuration for all content types
+  const defaultConfig: ImageConfiguration = {
+    artStyle: 'fantasy illustration, digital painting, professional TTRPG art style',
+    medium: 'digital art, high resolution',
+    modelStyle: 'cinematic, detailed, professional illustration',
+    contentRating: 'PG-13',
+    composition: 'dynamic composition, rule of thirds, professional layout',
+    lighting: 'dramatic lighting, rich colors, full color illustration',
+    colorPalette: 'rich vibrant colors, professional color grading, full color',
+    camera: 'eye level, dramatic angle, professional composition',
+    mood: 'epic, adventurous, immersive',
+    negativePrompt: 'blurry, low quality, amateur, sketch, monochrome, black and white, simple, cartoon, anime, manga, photo, realistic',
+    descriptionField: 'description',
+    providerOptions: {},
+  };
+  
+  // Default prompts for each content type
+  const defaultPrompts: Record<CustomFieldContentType, string> = {
+    [CustomFieldContentType.Setting]: 'Cover art for a TTRPG campaign setting book.',
+    [CustomFieldContentType.Character]: 'Portrait of a character from a TTRPG campaign.',
+    [CustomFieldContentType.Location]: 'Image of a location from a TTRPG campaign.',
+    [CustomFieldContentType.Organization]: 'Image to be used alongside the description of an organization in a TTRPG campaign book.',
+    [CustomFieldContentType.Arc]: 'Cover art for a chapter of a TTRPG campaign book.',
+    [CustomFieldContentType.Front]: 'Art of a dramatic or threatening scene for a section of a TTRPG campaign book to to be used to describe the {name} front.',
+    [CustomFieldContentType.PC]: '',
+    [CustomFieldContentType.Session]: 'Art of the most exciting or dramatic moment for a section of a TTRPG campaign book to to be used to describe a particular section of an adventure.  Here is how it starts:\n{strong_start}',
+    [CustomFieldContentType.Campaign]: 'Cover art for a TTRPG campaign book.'
+  };
+  
+  const defaultDescriptions: Record<CustomFieldContentType, string> = {
+    [CustomFieldContentType.Setting]: 'description',
+    [CustomFieldContentType.Character]: boxedTextKey,
+    [CustomFieldContentType.Location]: boxedTextKey,
+    [CustomFieldContentType.Organization]: boxedTextKey,
+    [CustomFieldContentType.PC]: '',
+    [CustomFieldContentType.Arc]: 'description',
+    [CustomFieldContentType.Front]: 'description',
+    [CustomFieldContentType.Session]: 'description',
+    [CustomFieldContentType.Campaign]: 'description'
+  };
+
+  // Create configurations for all content types
+  const configurations: Record<CustomFieldContentType, ImageConfiguration> = {
+    [CustomFieldContentType.Setting]: { 
+      ...{...defaultConfig, descriptionField: defaultDescriptions[CustomFieldContentType.Setting]},
+      composition: 'epic landscape composition, wide angle view, establishing shot, cover art layout',
+      camera: 'wide angle shot, aerial view, cinematic establishing shot',
+    },
+    [CustomFieldContentType.Character]: { 
+      ...{...defaultConfig, descriptionField: defaultDescriptions[CustomFieldContentType.Character]},
+      composition: 'character portrait composition, centered subject, rule of thirds, dynamic pose',
+      camera: 'medium shot, character view, slightly low angle to show heroism',
+    },
+    [CustomFieldContentType.Location]: { 
+      ...{...defaultConfig, descriptionField: defaultDescriptions[CustomFieldContentType.Location]},
+      composition: 'environmental composition, depth of field, leading lines, atmospheric perspective',
+      camera: 'establishing shot, eye level, wide view to show scale',
+    },
+    [CustomFieldContentType.Organization]: { 
+      ...{...defaultConfig, descriptionField: defaultDescriptions[CustomFieldContentType.Organization]},
+      composition: 'symbolic composition, emblematic layout, centered focal point, heraldic design',
+      camera: 'straight on view, symmetrical composition, professional presentation',
+    },
+    [CustomFieldContentType.Arc]: { 
+      ...{...defaultConfig, descriptionField: defaultDescriptions[CustomFieldContentType.Arc]},
+      composition: 'chapter cover composition, dramatic scene, narrative focus, action layout',
+      camera: 'dynamic angle, action shot, cinematic composition',
+    },
+    [CustomFieldContentType.Front]: { 
+      ...{...defaultConfig, descriptionField: defaultDescriptions[CustomFieldContentType.Front]},
+      composition: 'tension-filled composition, dramatic lighting, foreboding atmosphere, action scene',
+      camera: 'low angle shot to emphasize threat, dramatic perspective',
+    },
+    [CustomFieldContentType.PC]: { 
+      ...defaultConfig,
+      composition: 'character portrait composition, heroic pose, player character focus',
+      camera: 'medium close shot, eye level, character-focused',
+    },
+    [CustomFieldContentType.Session]: { 
+      ...{...defaultConfig, descriptionField: defaultDescriptions[CustomFieldContentType.Session]},
+      composition: 'action scene composition, dynamic layout, multiple focal points, dramatic moment',
+      camera: 'action shot, dynamic angle, in-the-moment perspective',
+    },
+    [CustomFieldContentType.Campaign]: { 
+      ...{...defaultConfig, descriptionField: defaultDescriptions[CustomFieldContentType.Campaign]},
+      composition: 'epic cover art composition, heroic scale, multiple elements, cinematic layout',
+      camera: 'cinematic wide shot, epic perspective, cover art angle',
+    },
+  };
+  
+  await ModuleSettings.set(SettingKey.aiImagePrompts, defaultPrompts);
+  await ModuleSettings.set(SettingKey.aiImageConfigurations, configurations);
+};
+
+export const windowTabToCustomContentType = (windowTabType: WindowTabType, entry?: any) => {
+  switch (windowTabType) {
+    case WindowTabType.Entry:
+      switch ((entry as Entry).topic) {
+        case Topics.Character:
+          return CustomFieldContentType.Character;
+        case Topics.Location:
+          return CustomFieldContentType.Location;
+        case Topics.Organization:
+          return CustomFieldContentType.Organization;
+        case Topics.PC:
+          return CustomFieldContentType.PC;
+        default:
+          throw new Error(`Unsupported entry topic: ${entry.topic}`);
+      }
+      break;
+    case WindowTabType.Campaign:
+      return CustomFieldContentType.Campaign;
+    case WindowTabType.Arc:
+      return CustomFieldContentType.Arc;
+    case WindowTabType.Session:
+      return CustomFieldContentType.Session;
+    case WindowTabType.Front:
+      return CustomFieldContentType.Front;
+    case WindowTabType.Setting:
+      return CustomFieldContentType.Setting;
+    default:
+      throw new Error(`Unsupported window type: ${windowTabType}`);
+  }
 }
