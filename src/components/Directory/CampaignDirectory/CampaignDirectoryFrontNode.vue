@@ -24,8 +24,9 @@
   import { storeToRefs } from 'pinia';
 
   // local imports
-  import { useCampaignDirectoryStore, useMainStore, useNavigationStore, } from '@/applications/stores';
+  import { useCampaignDirectoryStore, useMainStore, useNavigationStore, useStoryWebStore } from '@/applications/stores';
   import { localize } from '@/utils/game';
+  import { setCombinedDragData } from '@/utils/dragdrop';
   
   // library components
   import ContextMenu from '@imengyu/vue3-context-menu';
@@ -53,7 +54,8 @@
   const navigationStore = useNavigationStore();
   const campaignDirectoryStore = useCampaignDirectoryStore();
   const mainStore = useMainStore();
-  const { currentFront, isInPlayMode, } = storeToRefs(mainStore);
+  const storyWebStore = useStoryWebStore();
+  const { currentFront, isInPlayMode, currentStoryWeb } = storeToRefs(mainStore);
   // const { filterNodes } = storeToRefs(settingDirectoryStore);
   
   ////////////////////////////////
@@ -70,17 +72,19 @@
   ////////////////////////////////
   // event handlers
 
-  // handle session dragging
-  const onDragStart = (event: DragEvent): void => {
+  // handle front dragging
+  const onDragStart = async (event: DragEvent): Promise<void> => {
     event.stopPropagation();
 
-    const dragData = {
+    // Create the FCB data
+    const fcbData = {
       type: 'fcb-front',
       frontId: props.frontNode.id,
       name: props.frontNode.name
     } as FrontNodeDragData;
 
-    event.dataTransfer?.setData('text/plain', JSON.stringify(dragData));
+    // Set combined drag data for both canvas drops and internal operations
+    setCombinedDragData(event, props.frontNode.id, fcbData);
   };
 
   const onFrontClick = async (event: MouseEvent) => {
@@ -102,6 +106,24 @@
       y: event.y,
       zIndex: 300,
       items: [
+        { 
+          icon: 'fa-diagram-project',
+          iconFontClass: 'fas',
+          label: localize('contextMenus.addToStoryWeb'),
+          disabled: !currentStoryWeb.value,
+          onClick: async () => {
+            await storyWebStore.addFront(props.frontNode.id, null, false);
+          }
+        },
+        { 
+          icon: 'fa-sitemap',
+          iconFontClass: 'fas',
+          label: localize('contextMenus.addWithRelationships'),
+          disabled: !currentStoryWeb.value,
+          onClick: async () => {
+            await storyWebStore.addFront(props.frontNode.id, null, true);
+          }
+        },
         { 
           icon: 'fa-trash',
           iconFontClass: 'fas',

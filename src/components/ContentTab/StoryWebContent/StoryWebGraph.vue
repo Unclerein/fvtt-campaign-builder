@@ -53,7 +53,7 @@
 
   // local imports
   import { useStoryWebStore } from '@/applications/stores';
-  import { getValidatedData } from '@/utils/dragdrop';
+  import { getType, getValidatedData } from '@/utils/dragdrop';
   import { localize } from '@/utils/game';
   
   // library components
@@ -62,6 +62,7 @@
   // local components
 
   // types
+  import { EntryNodeDragData, FrontNodeDragData } from '@/types';
 
   ////////////////////////////////
   // props
@@ -143,11 +144,36 @@
     event.preventDefault();
 
     const data = getValidatedData(event);
-    if (!data || !currentNetwork.value)
+    if (!data || !currentNetwork.value) {
       return;
+    }
 
-    // we can drop entries
-    if (data.type === 'fcb-entry') {
+    const dataType = getType(data);
+    
+    // Handle front drops
+    if (dataType === 'fcb-front') {
+      const fcbData = 'fcbData' in data && data.fcbData as FrontNodeDragData | undefined;
+      if (!fcbData) {
+        return;
+      }
+
+      // we can drop fronts
+      const withRelationships = event.ctrlKey;
+      const domPosition = { x: event.offsetX, y: event.offsetY };
+      const convertedPosition = toRaw(currentNetwork.value).DOMtoCanvas(domPosition);
+
+      await storyWebStore.addFront(fcbData.frontId, convertedPosition, withRelationships);
+      return;
+    }
+
+    // Handle entry drops
+    if (dataType === 'fcb-entry') {
+      const fcbData = 'fcbData' in data && data.fcbData as EntryNodeDragData | undefined;
+      if (!fcbData) {
+        return;
+      }
+
+      // we can drop entries
       const withRelationships = event.ctrlKey;
       const domPosition = { x: event.offsetX, y: event.offsetY };
       const convertedPosition = toRaw(currentNetwork.value).DOMtoCanvas(domPosition);
@@ -157,10 +183,10 @@
       
       if (nodeUnderCursor) {
         // Handle the drop on node using the store method
-        await storyWebStore.handleDropOnNode(data.childId as string, nodeUnderCursor, convertedPosition, withRelationships);
+        await storyWebStore.handleDropOnNode(fcbData.childId, nodeUnderCursor, convertedPosition, withRelationships);
       } else {
         // Normal drop - just add the entry
-        await storyWebStore.addEntry(data.childId as string, convertedPosition, withRelationships);      
+        await storyWebStore.addEntry(fcbData.childId, convertedPosition, withRelationships);      
       }
     }
   };
