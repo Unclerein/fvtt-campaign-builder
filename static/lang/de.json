@@ -226,8 +226,18 @@
             "fieldToken": "Feld-Token einfügen",
             "selectField": "Wählen Sie ein Feld...",
             "insert": "Einfügen",
-            "fieldTokenHint": "Verwenden Sie {FIELD}, um ein anderes Feld beim Erstellen der Aufforderung zu referenzieren. Verfügbare Felder werden im Dropdown-Menü angezeigt. Alle Standardfelder werden automatisch übergeben, sodass Sie sie nur referenzieren müssen, wenn Sie eine spezifische Anweisung in Bezug auf eines von ihnen geben möchten.",
-            "promptTemplate": "Eingabeaufforderungsvorlage"
+            "fieldTokenHint": "Verwenden Sie {FIELD}, um auf ein anderes Feld zu verweisen, wenn Sie die Eingabeaufforderung erstellen. Gültige Felder werden im Dropdown-Menü angezeigt.",
+            "promptTemplate": "Eingabeaufforderungsvorlage",
+            "descriptionField": "Beschreibungsfeld",
+            "descriptionFieldPlaceholder": "Wählen Sie ein Feld zur Verwendung als Beschreibung...",
+            "configuration": "Konfiguration",
+            "minWords": "Minimale Wörter",
+            "maxWords": "Maximale Wörter",
+            "writingStyle": "Schreibstil",
+            "tense": "Zeitform",
+            "pointOfView": "Erzählperspektive",
+            "allowLists": "Listen erlauben",
+            "avoidListsLongerThan": "Listen länger als vermeiden"
           },
           "errors": {
             "invalidTokens": "Ungültige Vorlagen-Token:"
@@ -247,11 +257,33 @@
           "labels": {
             "prompt": "Bildaufforderung",
             "promptTemplate": "Bildaufforderungsvorlage",
-            "selectField": "Ein Feld auswählen...",
+            "selectField": "Wählen Sie ein Feld...",
             "insert": "Einfügen",
-            "fieldToken": "Feld-Token einfügen"
+            "fieldToken": "Feldtoken einfügen",
+            "descriptionField": "Feld, das die Beschreibung enthält, die für die Bilderzeugung verwendet wird",
+            "negativePrompt": "Negative Aufforderung",
+            "imageConfiguration": "Bildeinstellungen",
+            "artStyle": "Kunststil",
+            "artStylePlaceholder": "z.B., Aquarell, Ölgemälde",
+            "medium": "Medium",
+            "mediumPlaceholder": "z.B., Tinte, Bleistiftskizze",
+            "modelStyle": "Modellstil",
+            "modelStylePlaceholder": "z.B., filmisch, Anime",
+            "contentRating": "Inhaltsbewertung",
+            "contentRatingPlaceholder": "z.B., PG, PG-13",
+            "composition": "Komposition",
+            "compositionPlaceholder": "z.B., Nahaufnahme, Weitwinkelaufnahme",
+            "lighting": "Beleuchtung",
+            "lightingPlaceholder": "z.B., goldene Stunde, stimmungsvolles Gegenlicht",
+            "colorPalette": "Farbpalette",
+            "colorPalettePlaceholder": "z.B., gedämpfte Erdtöne",
+            "camera": "Kamera",
+            "cameraPlaceholder": "z.B., 35mm, Teleobjektiv",
+            "mood": "Stimmung",
+            "moodPlaceholder": "z.B., bedrohlich, verspielt",
+            "negativePromptPlaceholder": "Zu vermeidende Dinge"
           },
-          "promptHint": "Erstellen Sie eine Vorlage für die KI-Bilderzeugung. Verwenden Sie {FIELD}, um Feldwerte in Ihrer Aufforderung zu referenzieren. Verfügbare Felder werden im Dropdown-Menü angezeigt. Alle Standardfelder werden automatisch übergeben, sodass Sie sie nur referenzieren müssen, wenn Sie eine spezifische Anweisung in Bezug auf eines von ihnen geben möchten."
+          "promptHint": "Erstellen Sie eine Vorlage für die KI-Bilderzeugung. Verwenden Sie {FIELD}, um in Ihrer Aufforderung auf Feldwerte zu verweisen. Verfügbare Felder werden im Dropdown-Menü angezeigt. Alle Standardfelder werden automatisch übergeben, sodass Sie nur dann darauf verweisen müssen, wenn Sie eine spezifische Anweisung zu einem von ihnen geben möchten."
         },
         "aiImage": {
           "errors": {
