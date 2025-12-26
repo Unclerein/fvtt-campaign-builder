@@ -75,8 +75,8 @@
       "storyWebAutoArrange": "Automatisches Anordnen von Story-Webs",
       "storyWebAutoArrangeHelp": "Wenn aktiviert, werden Story-Webs neu angeordnet, um ein sauberes Bild zu erhalten. Wenn deaktiviert, können Sie alles genau so positionieren, wie Sie es möchten.",
       "customFields": "Benutzerdefinierte Felder",
-      "customFieldsLabel": "Benutzerdefinierte Felder",
-      "customFieldsHelp": "Zusätzliche Felder für jeden Inhaltstyp konfigurieren"
+      "customFieldsLabel": "Benutzerdefinierte Felder konfigurieren",
+      "customFieldsHelp": "Zusätzliche Felder und KI-Anweisungen für jeden Inhaltstyp konfigurieren"
     },
     "applications": {
       "sessionNotes": {
