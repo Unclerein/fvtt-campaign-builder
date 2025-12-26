@@ -202,9 +202,7 @@
         },
         "labels": {
           "contentType": "Type de contenu",
-          "contentTypeHint": "Sélectionnez un type de contenu, puis ajoutez, supprimez et réorganisez les champs.",
           "selectType": "Sélectionnez un type...",
-          "selectTypePrompt": "Sélectionnez un type de contenu pour commencer.",
           "selectOptionsPlaceholder": "a;b;c",
           "delete": "Supprimer",
           "aiTemplate": "Modèle IA"
@@ -225,12 +223,21 @@
           "title": "Modèle IA",
           "labels": {
             "enabled": "Peut être généré par IA",
-            "enabledHint": "Lorsqu'il est activé, ce champ peut être généré par IA en utilisant le modèle de prompt ci-dessous.",
             "fieldToken": "Insérer le jeton de champ",
             "selectField": "Sélectionner un champ...",
             "insert": "Insérer",
             "fieldTokenHint": "Utilisez {FIELD} pour référencer un autre champ lors de la création du prompt. Les champs valides sont affichés dans le menu déroulant.",
-            "promptTemplate": "Modèle de prompt"
+            "promptTemplate": "Modèle de prompt",
+            "descriptionField": "Champ de description",
+            "descriptionFieldPlaceholder": "Sélectionnez le champ à utiliser comme description...",
+            "configuration": "Configuration",
+            "minWords": "Mots minimum",
+            "maxWords": "Mots maximum",
+            "writingStyle": "Style d'écriture",
+            "tense": "Temps",
+            "pointOfView": "Point de vue",
+            "allowLists": "Autoriser les listes",
+            "avoidListsLongerThan": "Éviter les listes plus longues que"
           },
           "errors": {
             "invalidTokens": "Jeton(s) de modèle invalide(s) :"
@@ -240,6 +247,47 @@
             "short": "Court",
             "detailed": "Détaillé",
             "bullets": "À puces"
+          }
+        },
+        "tabs": {
+          "fields": "Champs",
+          "images": "Images"
+        },
+        "images": {
+          "labels": {
+            "prompt": "Invite à l'image",
+            "promptTemplate": "Modèle d'invite à l'image",
+            "selectField": "Sélectionnez un champ...",
+            "insert": "Insérer",
+            "fieldToken": "Insérer un jeton de champ",
+            "descriptionField": "Champ qui contient la description utilisée pour la génération d'images",
+            "negativePrompt": "Invite négative",
+            "imageConfiguration": "Configuration de l'image",
+            "artStyle": "Style artistique",
+            "artStylePlaceholder": "par exemple, aquarelle, peinture à l'huile",
+            "medium": "Médium",
+            "mediumPlaceholder": "par exemple, encre, croquis au crayon",
+            "modelStyle": "Style de modèle",
+            "modelStylePlaceholder": "par exemple, cinématographique, anime",
+            "contentRating": "Classification du contenu",
+            "contentRatingPlaceholder": "par exemple, PG, PG-13",
+            "composition": "Composition",
+            "compositionPlaceholder": "par exemple, portrait en gros plan, plan large",
+            "lighting": "Éclairage",
+            "lightingPlaceholder": "par exemple, heure dorée, lumière de bordure sombre",
+            "colorPalette": "Palette de couleurs",
+            "colorPalettePlaceholder": "par exemple, tons terreux atténués",
+            "camera": "Caméra",
+            "cameraPlaceholder": "par exemple, 35mm, téléobjectif",
+            "mood": "Ambiance",
+            "moodPlaceholder": "par exemple, sinistre, fantaisiste",
+            "negativePromptPlaceholder": "Choses à éviter"
+          },
+          "promptHint": "Créez un modèle pour la génération d'images par IA. Utilisez {FIELD} pour référencer les valeurs des champs dans votre invite. Les champs disponibles sont affichés dans le menu déroulant. Tous les champs par défaut sont passés automatiquement, donc vous n'avez besoin de les référencer que si vous souhaitez donner une instruction spécifique liée à l'un d'eux."
+        },
+        "aiImage": {
+          "errors": {
+            "invalidTokens": "Jeton(s) de modèle invalide(s) :"
           }
         }
       },

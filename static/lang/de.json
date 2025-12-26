@@ -202,9 +202,7 @@
         },
         "labels": {
           "contentType": "Inhaltstyp",
-          "contentTypeHint": "Wählen Sie einen Inhaltstyp aus, dann fügen Sie Felder hinzu, löschen und ordnen Sie sie neu.",
           "selectType": "Typ auswählen...",
-          "selectTypePrompt": "Wählen Sie einen Inhaltstyp, um zu beginnen.",
           "selectOptionsPlaceholder": "a;b;c",
           "delete": "Löschen",
           "aiTemplate": "KI-Vorlage"
@@ -225,12 +223,21 @@
           "title": "KI-Vorlage",
           "labels": {
             "enabled": "Kann von KI generiert werden",
-            "enabledHint": "Wenn aktiviert, kann dieses Feld von KI unter Verwendung der unten stehenden Eingabeaufforderungsvorlage generiert werden.",
             "fieldToken": "Feld-Token einfügen",
             "selectField": "Wählen Sie ein Feld...",
             "insert": "Einfügen",
             "fieldTokenHint": "Verwenden Sie {FIELD}, um auf ein anderes Feld zu verweisen, wenn Sie die Eingabeaufforderung erstellen. Gültige Felder werden im Dropdown-Menü angezeigt.",
-            "promptTemplate": "Eingabeaufforderungsvorlage"
+            "promptTemplate": "Eingabeaufforderungsvorlage",
+            "descriptionField": "Beschreibungsfeld",
+            "descriptionFieldPlaceholder": "Wählen Sie ein Feld zur Verwendung als Beschreibung...",
+            "configuration": "Konfiguration",
+            "minWords": "Minimale Wörter",
+            "maxWords": "Maximale Wörter",
+            "writingStyle": "Schreibstil",
+            "tense": "Zeitform",
+            "pointOfView": "Erzählperspektive",
+            "allowLists": "Listen erlauben",
+            "avoidListsLongerThan": "Listen länger als vermeiden"
           },
           "errors": {
             "invalidTokens": "Ungültige Vorlagen-Token:"
@@ -240,6 +247,47 @@
             "short": "Kurz",
             "detailed": "Detailliert",
             "bullets": "Aufzählungspunkte"
+          }
+        },
+        "tabs": {
+          "fields": "Felder",
+          "images": "Bilder"
+        },
+        "images": {
+          "labels": {
+            "prompt": "Bildaufforderung",
+            "promptTemplate": "Bildaufforderungsvorlage",
+            "selectField": "Wählen Sie ein Feld...",
+            "insert": "Einfügen",
+            "fieldToken": "Feldtoken einfügen",
+            "descriptionField": "Feld, das die Beschreibung enthält, die für die Bilderzeugung verwendet wird",
+            "negativePrompt": "Negative Aufforderung",
+            "imageConfiguration": "Bildeinstellungen",
+            "artStyle": "Kunststil",
+            "artStylePlaceholder": "z.B., Aquarell, Ölgemälde",
+            "medium": "Medium",
+            "mediumPlaceholder": "z.B., Tinte, Bleistiftskizze",
+            "modelStyle": "Modellstil",
+            "modelStylePlaceholder": "z.B., filmisch, Anime",
+            "contentRating": "Inhaltsbewertung",
+            "contentRatingPlaceholder": "z.B., PG, PG-13",
+            "composition": "Komposition",
+            "compositionPlaceholder": "z.B., Nahaufnahme, Weitwinkelaufnahme",
+            "lighting": "Beleuchtung",
+            "lightingPlaceholder": "z.B., goldene Stunde, stimmungsvolles Gegenlicht",
+            "colorPalette": "Farbpalette",
+            "colorPalettePlaceholder": "z.B., gedämpfte Erdtöne",
+            "camera": "Kamera",
+            "cameraPlaceholder": "z.B., 35mm, Teleobjektiv",
+            "mood": "Stimmung",
+            "moodPlaceholder": "z.B., bedrohlich, verspielt",
+            "negativePromptPlaceholder": "Zu vermeidende Dinge"
+          },
+          "promptHint": "Erstellen Sie eine Vorlage für die KI-Bilderzeugung. Verwenden Sie {FIELD}, um in Ihrer Aufforderung auf Feldwerte zu verweisen. Verfügbare Felder werden im Dropdown-Menü angezeigt. Alle Standardfelder werden automatisch übergeben, sodass Sie nur dann darauf verweisen müssen, wenn Sie eine spezifische Anweisung zu einem von ihnen geben möchten."
+        },
+        "aiImage": {
+          "errors": {
+            "invalidTokens": "Ungültige Vorlagen-Token:"
           }
         }
       },
