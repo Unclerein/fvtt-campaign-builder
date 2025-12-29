@@ -6,7 +6,6 @@
           <nav class="fcb-sheet-navigation flexrow tabs" data-group="primary">
             <a class="item" data-tab="backend">{{ localize('applications.advancedSettings.tabs.backend') }}</a>
             <a class="item" data-tab="models">{{ localize('applications.advancedSettings.tabs.models') }}</a>
-            <a class="item" data-tab="content">{{ localize('applications.advancedSettings.tabs.content') }}</a>
            <a class="item" data-tab="email">{{ localize('applications.advancedSettings.tabs.email') }}</a>
           </nav>
           <div class="fcb-tab-body flexrow">
@@ -94,39 +93,9 @@
               </div>
             </div>
 
-            <!-- Content Settings Tab -->
-            <div class="tab flexcol" data-group="primary" data-tab="content">
+            <!-- Email Settings Tab -->
+            <div class="tab flexcol" data-group="primary" data-tab="email">
               <div class="standard-form scrollable">
-                <div class="form-group">
-                  <label>{{ localize('applications.advancedSettings.labels.rpgStyle') }}</label>
-                  <div class="form-fields">
-                    <Checkbox 
-                        v-model="rpgStyle" 
-                        data-testid="rpg-style-checkbox"
-                        :binary="true"
-                      />
-                  </div>
-                  <p class="hint">
-                    {{ localize('applications.advancedSettings.labels.rpgStyleHint') }}
-                  </p>
-                </div>
-
-                <div class="form-group">
-                  <label>{{ localize('applications.advancedSettings.labels.longDescriptionParagraphs') }}</label>
-                  <div class="form-fields">
-                    <RangePicker
-                      v-model="longDescriptionParagraphs"
-                      name="longDescriptionParagraphs"
-                      :min="1"
-                      :max="4"
-                      :step="1"
-                    />
-                  </div>
-                  <p class="hint">
-                    {{ localize('applications.advancedSettings.labels.longDescriptionParagraphsHint') }}
-                  </p>
-                </div>
-
                 <div class="form-group">
                   <label>{{ localize('applications.advancedSettings.labels.useGmailIdeas') }}</label>
                   <div class="form-fields">
@@ -140,12 +109,7 @@
                     {{ localize('applications.advancedSettings.labels.useGmailIdeasHint') }}
                   </p>
                 </div>
-              </div>
-            </div>
-
-            <!-- Email Settings Tab -->
-            <div class="tab flexcol" data-group="primary" data-tab="email">
-              <div class="standard-form scrollable">
+                
                 <div class="form-group">
                   <label>{{ localize('applications.advancedSettings.labels.emailDefaultSetting') }}</label>
                   <div class="form-fields">
@@ -213,9 +177,11 @@
   // local imports
   import { ModuleSettings, SettingKey } from '@/settings';
   import { useBackendStore } from '@/applications/stores';
+  import { useMainStore } from '@/applications/stores';
   import { advancedSettingsApp } from '@/applications/settings/AdvancedSettingsApplication';
   import { localize } from '@/utils/game';
   import { getGlobalSetting } from '@/utils/globalSettings';
+  import { isCampaignBuilderAppOpen } from '@/utils/appWindow';
   
   // library components
   import InputText from 'primevue/inputtext';
@@ -243,8 +209,6 @@
   // data
   const APIURL = ref<string>('');
   const APIToken = ref<string>('');
-  const rpgStyle = ref<boolean>(true);
-  const longDescriptionParagraphs = ref<number>(1);
   const useGmailToDos = ref<boolean>(false);
   const emailDefaultSetting = ref<string>('');
   const emailDefaultCampaign = ref<string>('');
@@ -319,8 +283,6 @@
   const onSubmitClick = async () => {
     await ModuleSettings.set(SettingKey.APIURL, APIURL.value);
     await ModuleSettings.set(SettingKey.APIToken, APIToken.value);
-    await ModuleSettings.set(SettingKey.rpgStyle, rpgStyle.value);
-    await ModuleSettings.set(SettingKey.longDescriptionParagraphs, longDescriptionParagraphs.value);
     await ModuleSettings.set(SettingKey.useGmailToDos, useGmailToDos.value);
     await ModuleSettings.set(SettingKey.emailDefaultSetting, emailDefaultSetting.value);
     await ModuleSettings.set(SettingKey.emailDefaultCampaign, emailDefaultCampaign.value);
@@ -330,6 +292,10 @@
     // reset the backend
     await useBackendStore().configure(true);
 
+    if (isCampaignBuilderAppOpen()) {
+      await useMainStore().refreshCurrentContent();
+    }
+
     // close
     advancedSettingsApp?.close();
   }
@@ -337,8 +303,6 @@
   const onResetClick = async () => {
     APIURL.value = ModuleSettings.get(SettingKey.APIURL);
     APIToken.value = ModuleSettings.get(SettingKey.APIToken);
-    rpgStyle.value = ModuleSettings.get(SettingKey.rpgStyle);
-    longDescriptionParagraphs.value = ModuleSettings.get(SettingKey.longDescriptionParagraphs);
     useGmailToDos.value = ModuleSettings.get(SettingKey.useGmailToDos);
     emailDefaultSetting.value = ModuleSettings.get(SettingKey.emailDefaultSetting);
     emailDefaultCampaign.value = ModuleSettings.get(SettingKey.emailDefaultCampaign);
@@ -366,8 +330,6 @@
     // load the settings
     APIURL.value = ModuleSettings.get(SettingKey.APIURL);
     APIToken.value = ModuleSettings.get(SettingKey.APIToken);
-    rpgStyle.value = ModuleSettings.get(SettingKey.rpgStyle);
-    longDescriptionParagraphs.value = ModuleSettings.get(SettingKey.longDescriptionParagraphs);
     useGmailToDos.value = ModuleSettings.get(SettingKey.useGmailToDos);
     emailDefaultSetting.value = ModuleSettings.get(SettingKey.emailDefaultSetting);
     emailDefaultCampaign.value = ModuleSettings.get(SettingKey.emailDefaultCampaign);

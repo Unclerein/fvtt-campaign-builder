@@ -1,5 +1,3 @@
-import { toRaw } from 'vue';
-
 import { DOCUMENT_TYPES, } from '@/documents';
 import { RelatedJournal, RelatedEntryDetails, ValidTopic, Topics, ToDoTypes, ValidTopicRecord, } from '@/types';
 import { FCBDialog } from '@/dialogs';
@@ -39,13 +37,8 @@ export class Entry extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Entry> {
     speciesId: undefined,
     playerName: '',
     actorId: null,
-    background: '',
     img: '',
-    customFields: {
-      other_plot_points: '',
-      desired_magic_items: '',
-      roleplaying_notes: '',
-    },
+    customFields: {},
   } as unknown as EntryDocClass['system'];
 
   private _actor: Actor | null;  // for pcs
@@ -216,34 +209,6 @@ export class Entry extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Entry> {
     this._clone.system.playerName = value;
   }
 
-  get plotPoints(): string {
-    // @ts-ignore - fvtt bug
-    return this._clone.system.customFields.other_plot_points || '';
-  }
-
-  set plotPoints(value: string | null) {
-    // @ts-ignore - fvtt bug
-    this._clone.system.customFields.other_plot_points = value;
-  }
-
-  get background(): string {
-    return this._clone.system.background || '';
-  }
-
-  set background(value: string | null) {
-    this._clone.system.background = value;
-  }
-
-  get magicItems(): string {
-    // @ts-ignore - fvtt bug
-    return this._clone.system.customFields.desired_magic_items || '';
-  }
-  
-  set magicItems(value: string | null) {
-    // @ts-ignore - fvtt bug
-    this._clone.system.customFields.desired_magic_items = value;
-  }
-  
   get speciesId(): string | undefined {
     if (!this._clone.system.speciesId)
       return undefined;
@@ -294,16 +259,6 @@ export class Entry extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Entry> {
 
   set description(value: string) {
     this._clone.text.content = value;
-  }
-
-  get roleplayingNotes(): string {
-    // @ts-ignore - fvtt bug
-    return this._clone.system.customFields.roleplaying_notes || '';
-  }
-
-  set roleplayingNotes(value: string) {
-    // @ts-ignore - fvtt bug
-    this._clone.system.customFields.roleplaying_notes = value;
   }
 
   get img(): string | undefined {

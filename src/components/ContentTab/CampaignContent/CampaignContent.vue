@@ -41,20 +41,12 @@
               @editor-saved="onDescriptionEditorSaved"
             />
           </div>
-          <div class="flexrow form-group">
-            <LabelWithHelp
-              label-text="labels.fields.houseRules"
-              top-label
-            />
-          </div>
-          <div class="flexrow form-group">
-            <Editor 
-              :initial-content="currentCampaign?.houseRules || ''"
-              fixed-height="240px"
-              :current-entity-uuid="currentCampaign?.uuid"
-              @editor-saved="onHouseRulesEditorSaved"
-            />
-          </div>
+
+          <CustomFieldsBlocks
+            v-if="currentCampaign"
+            :content-type="CustomFieldContentType.Campaign"
+            :content="currentCampaign"
+          />
         </DescriptionTab>
         <JournalTab
           v-if="currentCampaign"
@@ -118,9 +110,10 @@
   import CampaignToDoTab from '@/components/ContentTab/CampaignContent/CampaignToDoTab.vue';
   import ContentTabStrip from '@/components/ContentTab/ContentTabStrip.vue';
   import StoryWebsTab from '@/components/ContentTab/StoryWebsTab.vue';
-  
+  import CustomFieldsBlocks from '@/components/CustomFieldsBlocks.vue';
+
   // types
-  import { RelatedJournal, WindowTabType, } from '@/types';
+  import { CustomFieldContentType, RelatedJournal, WindowTabType, } from '@/types';
   
   ////////////////////////////////
   // props
@@ -160,7 +153,7 @@
 
   const tabs = computed(() => {
     let baseTabs = [
-      { id: 'description', label: localize('labels.tabs.campaign.description') },
+      { id: 'description', label: localize('labels.description') },
       { id: 'journals', label: localize('labels.journals') },
       { id: 'pcs', label: localize('labels.tabs.campaign.pcs') },
       { id: 'lore', label: localize('labels.tabs.campaign.lore') },
@@ -221,14 +214,6 @@
       return;
 
     currentCampaign.value.description = newContent;
-    await currentCampaign.value.save();
-  };
-
-  const onHouseRulesEditorSaved = async (newContent: string) => {
-    if (!currentCampaign.value)
-      return;
-
-    currentCampaign.value.houseRules = newContent;
     await currentCampaign.value.save();
   };
 

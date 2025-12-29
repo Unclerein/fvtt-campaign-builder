@@ -63,8 +63,6 @@
       },
       "showTypesInTree": "Afficher les types dans l'arborescence des paramètres",
       "showTypesInTreeHelp": "Lorsque c'est vrai, si le répertoire des paramètres n'est pas groupé par type, il affichera le type de chaque entrée dans l'arborescence.",
-      "showRolePlayingNotes": "Afficher les notes de jeu de rôle sur les entrées",
-      "showRolePlayingNotesHelp": "Lorsque c'est vrai, un champ séparé pour les notes de jeu de rôle sera affiché séparément de la description de l'entrée.",
       "useFronts": "Utiliser les fronts",
       "useFrontsHelp": "Activer la fonctionnalité de \"front\" de campagne.",
       "useWebs": "Utiliser les toiles d'histoires",
@@ -75,7 +73,10 @@
       "subTabsSavePosition": "Enregistrer la position des sous-onglets",
       "subTabsSavePositionHelp": "Lorsqu'il est activé, chaque onglet se souviendra du sous-onglet intérieur qui était ouvert et y retournera lorsque vous rouvrirez cet onglet. Lorsqu'il est désactivé, les onglets reviendront toujours au premier (généralement la description).",
       "storyWebAutoArrange": "Réorganisation automatique des réseaux d'histoires",
-      "storyWebAutoArrangeHelp": "Lorsqu'elle est activée, les réseaux d'histoires se réorganiseront pour essayer de garder une image propre. Lorsqu'elle est désactivée, vous pouvez positionner tout exactement comme vous le souhaitez."
+      "storyWebAutoArrangeHelp": "Lorsqu'elle est activée, les réseaux d'histoires se réorganiseront pour essayer de garder une image propre. Lorsqu'elle est désactivée, vous pouvez positionner tout exactement comme vous le souhaitez.",
+      "customFields": "Champs personnalisés",
+      "customFieldsLabel": "Configurer les champs personnalisés",
+      "customFieldsHelp": "Configurer des champs supplémentaires et des instructions AI pour chaque type de contenu"
     },
     "applications": {
       "sessionNotes": {
@@ -142,16 +143,12 @@
           "emailDefaultCampaignHint": "La campagne à utiliser par défaut pour les fonctionnalités d'email (ex. envoyer des éléments à faire par email)",
           "selectSetting": "Sélectionnez un paramètre...",
           "selectCampaign": "Sélectionnez une campagne...",
-          "longDescriptionParagraphs": "Paragraphes de longue description",
-          "longDescriptionParagraphsHint": "Nombre de paragraphes à générer pour les longues descriptions (pour le style non-RPG (1-4).",
           "useGmailIdeas": "Utiliser Gmail pour les idées",
           "useGmailIdeasHint": "Lorsqu'il est activé, les éléments d'idée seront créés à partir de la boîte de réception Gmail",
           "textModel": "Modèle de génération de texte",
           "textModelHint": "Sélectionnez le modèle d'IA à utiliser pour la génération de texte",
           "imageModel": "Modèle de génération d'image",
           "imageModelHint": "Sélectionnez le modèle d'IA à utiliser pour la génération d'images",
-          "rpgStyle": "Descriptions de style RPG",
-          "rpgStyleHint": "Lorsqu'il est activé, les longues descriptions seront de style RPG (texte encadré + notes) par opposition à une description plus narrative, en plusieurs paragraphes.",
           "add": "Ajouter"
         },
         "tabs": {
@@ -196,6 +193,108 @@
           "generatedName": "Nom généré",
           "generatedDescription": "Description générée"
         }
+      },
+      "customFields": {
+        "title": "Configurer les champs personnalisés",
+        "notifications": {
+          "missingLabel": "Chaque champ personnalisé doit avoir une étiquette",
+          "duplicateKey": "Deux champs personnalisés ont le même nom. Veuillez renommer l'un d'eux pour que les clés soient uniques."
+        },
+        "labels": {
+          "contentType": "Type de contenu",
+          "selectType": "Sélectionnez un type...",
+          "selectOptionsPlaceholder": "a;b;c",
+          "delete": "Supprimer",
+          "aiTemplate": "Modèle IA"
+        },
+        "columns": {
+          "label": "Étiquette",
+          "fieldKey": "Clé",
+          "selectOptions": "Options de sélection",
+          "helpText": "Texte d'aide"
+        },
+        "fieldTypes": {
+          "select": "Sélectionner",
+          "editor": "Éditeur",
+          "input": "Entrée",
+          "checkbox": "Case à cocher"
+        },
+        "aiDialog": {
+          "title": "Modèle IA",
+          "labels": {
+            "enabled": "Peut être généré par IA",
+            "fieldToken": "Insérer le jeton de champ",
+            "selectField": "Sélectionner un champ...",
+            "insert": "Insérer",
+            "fieldTokenHint": "Utilisez {FIELD} pour référencer un autre champ lors de la création du prompt. Les champs valides sont affichés dans le menu déroulant.",
+            "promptTemplate": "Modèle de prompt",
+            "descriptionField": "Champ de description",
+            "descriptionFieldPlaceholder": "Sélectionnez le champ à utiliser comme description...",
+            "configuration": "Configuration",
+            "minWords": "Mots minimum",
+            "maxWords": "Mots maximum",
+            "writingStyle": "Style d'écriture",
+            "tense": "Temps",
+            "pointOfView": "Point de vue",
+            "allowLists": "Autoriser les listes",
+            "avoidListsLongerThan": "Éviter les listes plus longues que"
+          },
+          "errors": {
+            "invalidTokens": "Jeton(s) de modèle invalide(s) :"
+          },
+          "presets": {
+            "custom": "Personnalisé",
+            "short": "Court",
+            "detailed": "Détaillé",
+            "bullets": "À puces"
+          }
+        },
+        "tabs": {
+          "fields": "Champs",
+          "images": "Images"
+        },
+        "images": {
+          "labels": {
+            "prompt": "Invite à l'image",
+            "promptTemplate": "Modèle d'invite à l'image",
+            "selectField": "Sélectionnez un champ...",
+            "insert": "Insérer",
+            "fieldToken": "Insérer un jeton de champ",
+            "descriptionField": "Champ qui contient la description à utiliser pour la génération d'images",
+            "negativePrompt": "Invite négative",
+            "imageConfiguration": "Configuration de l'image",
+            "artStyle": "Style artistique",
+            "artStylePlaceholder": "par exemple, aquarelle, peinture à l'huile",
+            "medium": "Médium",
+            "mediumPlaceholder": "par exemple, encre, croquis au crayon",
+            "modelStyle": "Style de modèle",
+            "modelStylePlaceholder": "par exemple, cinématographique, anime",
+            "contentRating": "Classification du contenu",
+            "contentRatingPlaceholder": "par exemple, PG, PG-13",
+            "composition": "Composition",
+            "compositionPlaceholder": "par exemple, portrait en gros plan, plan large",
+            "lighting": "Éclairage",
+            "lightingPlaceholder": "par exemple, heure dorée, lumière de bordure sombre",
+            "colorPalette": "Palette de couleurs",
+            "colorPalettePlaceholder": "par exemple, tons terreux atténués",
+            "camera": "Caméra",
+            "cameraPlaceholder": "par exemple, 35mm, téléobjectif",
+            "mood": "Ambiance",
+            "moodPlaceholder": "par exemple, sinistre, fantaisiste",
+            "negativePromptPlaceholder": "Choses à éviter"
+          },
+          "promptHint": "Créez un modèle pour la génération d'images par IA. Utilisez {FIELD} pour référencer les valeurs des champs dans votre invite. Les champs disponibles sont affichés dans le menu déroulant. Tous les champs par défaut sont passés automatiquement, donc vous n'avez besoin de les référencer que si vous souhaitez donner une instruction spécifique liée à l'un d'eux."
+        },
+        "aiImage": {
+          "errors": {
+            "invalidTokens": "Jeton(s) de modèle invalide(s) :"
+          }
+        }
+      },
+      "customFieldsBlocks": {
+        "notifications": {
+          "saveFailed": "Échec de l'enregistrement des champs personnalisés"
+        }
       }
     },
     "help": {
@@ -227,26 +326,23 @@
         "settingGenre": "Genre",
         "campaignDescription": "Description de la campagne, notes, idées, etc...",
         "name": "Nom",
-        "longDescriptions": "Générer des descriptions longues",
         "generateImage": "Générer une image",
-        "description": "Description",
         "campaign": "Campagne",
         "houseRules": "Règles de maison",
         "addToCurrentSession": "Ajouter à la session en cours",
         "topic": "Sujet",
         "settingFeeling": "Ambiance du cadre",
         "startingDescription": "Description de départ",
-        "entryDescription": "Description",
         "entryRolePlayingNotes": "Notes de jeu de rôle",
         "settingDescription": "Description du paramètre",
-        "generateText": "Que générer",
-        "generateChoice": {
-          "description": "Description",
-          "roleplay": "Notes de jeu de rôle",
-          "both": "Les deux"
-        },
         "background": "Contexte",
-        "role": "Rôle"
+        "role": "Rôle",
+        "strongStart": "Début Fort",
+        "aiDescription": "Description Détaillée",
+        "strongStartHelpText": "Un début fort est un événement court et percutant qui donne le ton à la session. Cliquez pour en savoir plus de Lazy DM.",
+        "notes": "Notes",
+        "boxedText": "Texte Encadré",
+        "gmNotes": "Notes du MJ"
       },
       "addTopic": {
         "character": "Ajouter un Personnage",
@@ -289,22 +385,20 @@
         "monsterHelpText": "Monstres qui conviennent à la situation et au lieu. Cliquez pour en savoir plus de Lazy DM.",
         "vignetteHelpText": "Scènes qui apportent une résolution, ouvrent de nouveaux chemins, modifient l'histoire. 1 par 45 minutes. Cliquez pour en savoir plus de Lazy DM.",
         "locationHelpText": "Lieux détaillés, mémorables et fantastiques que les personnages peuvent explorer. Cliquez pour en savoir plus de Lazy DM.",
-        "strongStart": "Début fort",
-        "strongStartHelpText": "Un début fort est un événement court et percutant qui donne le ton à la session. Cliquez pour en savoir plus de Lazy DM.",
         "addJournal": "Ajouter un journal",
         "addJournalDrag": "(ou glisser/déposer un journal ou une page de journal)"
       },
       "campaign": {
         "addPC": "Ajouter un PJ",
         "addPCDrag": "(ou glisser/déposer un PC)",
-        "description": "Description",
         "pcs": "PJ",
         "lore": "Tradition",
         "todo": "À faire",
         "addToDo": "Créer un nouveau 'À faire'",
         "loreHelpText": "Suivez les grands secrets au niveau de la campagne et les plus petits que vous n'êtes pas prêt à révéler. Cliquez pour en savoir plus de Lazy DM.",
         "ideas": "Idées",
-        "addIdea": "Ajouter une idée"
+        "addIdea": "Ajouter une idée",
+        "campaign": "Campagne"
       },
       "pc": {
         "linkToNewActor": "Lier à un nouvel acteur",
@@ -313,14 +407,12 @@
       "groupTree": "Grouper par type",
       "tabs": {
         "entry": {
-          "description": "Description",
           "characters": "Personnages",
           "locations": "Lieux",
           "organizations": "Organisations",
           "pcs": "PCs"
         },
         "campaign": {
-          "description": "Description",
           "pcs": "PJs",
           "lore": "Savoir",
           "toDo": "À faire",
@@ -339,16 +431,10 @@
           "todo": "À faire",
           "noteBox": "Boîte à notes"
         },
-        "setting": {
-          "description": "Description"
-        },
         "front": {
-          "description": "Description",
           "createNewDanger": "Créer un nouveau danger"
         },
         "arc": {
-          "arc": "Arc",
-          "description": "Description",
           "pcs": "PJ",
           "lore": "Lore",
           "locations": "Lieux",
@@ -432,6 +518,18 @@
         "zoomOut": "Dézoomer",
         "fitToWindow": "Ajuster à la fenêtre",
         "addStoryWebDrag": "(ou glisser/déposer un réseau d'histoires)"
+      },
+      "character": {
+        "character": "Personnage"
+      },
+      "organization": {
+        "organization": "Organisation"
+      },
+      "location": {
+        "location": "Lieu"
+      },
+      "setting": {
+        "setting": "Paramètre"
       }
     },
     "placeholders": {
@@ -497,8 +595,7 @@
         "generatedName": "Nom généré",
         "generatedDescription": "Description générée",
         "generatePrompt": "Appuyez sur générer pour obtenir des résultats",
-        "generatePrompt2": "Sinon, \"Brève Description\" sera utilisée comme nouvelle description de l'entrée.",
-        "generatedRoleplayNotes": "Notes de jeu de rôle générées"
+        "generatePrompt2": "Sinon, \"Brève Description\" sera utilisée comme nouvelle description de l'entrée."
       },
       "addToDo": {
         "title": "Ajouter une tâche",
@@ -605,6 +702,37 @@
         "arcs": "Arcs",
         "sessions": "Sessions",
         "fronts": "Fronts"
+      },
+      "migrationProgress": {
+        "title": "Migration de Campaign Builder vers la nouvelle version",
+        "message": "Migration de vos données de campagne vers la dernière version...",
+        "warnings": {
+          "noMigrationsNeeded": "Aucune migration nécessaire"
+        },
+        "status": {
+          "initializing": "Initialisation...",
+          "runningMigrationForVersion": "Exécution de la migration pour la version {version}...",
+          "completedMigrationForVersion": "Migration terminée pour la version {version}",
+          "failedMigrationForVersion": "Échec de la migration pour la version {version}",
+          "completedMigrationsProgress": "Migrations terminées {completed}/{total}",
+          "processedSetting": "Paramètre traité : {name}",
+          "migratedDocumentsProgress": "Documents migrés ({migrated}/{total})"
+        },
+        "progress": {
+          "percent": "{percent}%"
+        },
+        "errors": {
+          "migrationFailedForVersion": "Échec de la migration pour la version {version} : {error}"
+        },
+        "completion": {
+          "completeTitle": "Migration Terminée",
+          "failedTitle": "Échec de la Migration",
+          "successMigratedItems": "{count} éléments migrés avec succès.",
+          "noMigrationNeeded": "Aucune migration n'était nécessaire.",
+          "failureSummary": "Échec de la migration. {migrated} éléments migrés, {failed} échoués.",
+          "errorDetails": "Détails de l'erreur",
+          "warnings": "Avertissements"
+        }
       }
     },
     "contextMenus": {
@@ -655,10 +783,10 @@
         "create": "Créer un nouveau"
       },
       "generate": {
-        "description": "Générer une description",
         "image": "Générer une image",
         "inProgress": "en cours",
-        "configureNames": "Configurer les noms"
+        "configureNames": "Configurer les noms",
+        "nameAndDescription": "Générer un nom ou une description"
       },
       "tabs": {
         "closeAll": "Fermer tous les onglets",
@@ -697,7 +825,9 @@
         "addTextPrompt": "Entrer le texte à ajouter au diagramme",
         "openEntryInNewTab": "Ouvrir l'entrée dans un nouvel onglet",
         "openDangerInNewTab": "Ouvrir le danger dans un nouvel onglet"
-      }
+      },
+      "addToStoryWeb": "Ajouter à l'histoire Web actuelle",
+      "addWithRelationships": "Ajouter avec les relations"
     },
     "tooltips": {
       "mainButton": "Lancer le Créateur de Campagne",
@@ -742,7 +872,7 @@
       "createEntry": {
         "name": "Si laissé vide, un nom sera généré automatiquement",
         "type": "Si vous créez un nouveau type, il sera ajouté à la liste principale",
-        "description": "Facultatif. Utilisez pour spécifier les caractéristiques physiques ou traits de personnalité que vous souhaitez inclure",
+        "description": "Optionnel. Utilisez pour spécifier les caractéristiques physiques ou traits de personnalité que vous souhaitez inclure. Peut être très bref.",
         "parent": "Peut influencer le texte généré dans certains cas",
         "species": "Si vide, une espèce aléatoire de votre Paramètre sera utilisée pour la génération par IA. Les entrées personnalisées seront transmises à l'IA mais ne seront pas ajoutées à votre liste d'espèces",
         "longDescriptions": "Générer une description détaillée ou un court résumé ?",
@@ -769,7 +899,8 @@
       "copyToNextSession": "Copier à la session suivante",
       "moveToArc": "Déplacer vers l'arc pour une utilisation ultérieure",
       "movetoLatestArc": "Déplacer vers le dernier arc",
-      "editSession": "Modifier la session"
+      "editSession": "Modifier la session",
+      "generateAIContent": "Générer du contenu IA"
     },
     "errors": {
       "duplicateBookmark": "Déjà enregistré comme favori",

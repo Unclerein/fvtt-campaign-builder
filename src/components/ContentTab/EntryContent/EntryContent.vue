@@ -101,31 +101,9 @@
             />
           </div>
 
-          <!-- Above description if we're in play mode -->
-          <div 
-            v-if="roleplayAboveDescription"
-            class="flexrow form-group"
-          >
-            <LabelWithHelp
-              label-text="labels.fields.entryRolePlayingNotes"
-              top-label
-            />
-          </div>
-          <div 
-            v-if="roleplayAboveDescription"
-            class="flexrow form-group"
-          >
-            <Editor
-                :initial-content="currentEntry?.roleplayingNotes || ''"
-                :style="{ 'height': '180px', 'margin-bottom': '.375rem'}"
-                :current-entity-uuid="currentEntry?.uuid"
-                @editor-saved="onRolePlayingNotesSaved"
-              />
-          </div>
-
           <div class="flexrow form-group">
             <LabelWithHelp
-              label-text="labels.fields.entryDescription"
+              label-text="labels.description"
               top-label
             />
           </div>
@@ -140,29 +118,13 @@
             />
           </div>
 
-          <!-- Below description if we're in prep mode -->
-          <div 
-            v-if="roleplayBelowDescription"
-            class="flexrow form-group"
-          >
-            <LabelWithHelp
-              label-text="labels.fields.entryRolePlayingNotes"
-              top-label
-            />
-          </div>
-          <div 
-            v-if="roleplayBelowDescription"
-            class="flexrow form-group"
-          >
-            <Editor
-                :initial-content="currentEntry?.roleplayingNotes || ''"
-                fixed-height="180px"
-                :current-entity-uuid="currentEntry?.uuid"
-                :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
-                @editor-saved="onRolePlayingNotesSaved"
-                @related-entries-changed="onRelatedEntriesChanged"
-              />
-          </div>
+          <CustomFieldsBlocks
+            v-if="customFieldContentType !== null && currentEntry"
+            :content-type="customFieldContentType"
+            :content="currentEntry"
+            :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
+            @related-entries-changed="onRelatedEntriesChanged"
+          />
 
         </DescriptionTab>
         <JournalTab
@@ -257,9 +219,10 @@
   import SessionsTab from '@/components/ContentTab/EntryContent/SessionsTab.vue';
   import RelatedEntriesManagementDialog from '@/components/RelatedEntriesManagementDialog.vue';
   import ContentTabStrip from '@/components/ContentTab/ContentTabStrip.vue';
+  import CustomFieldsBlocks from '@/components/CustomFieldsBlocks.vue';
   
   // types
-  import { DocumentLinkType, Topics, ValidTopic, WindowTabType, RelatedJournal, ContentTabDescriptor } from '@/types';
+  import { CustomFieldContentType, DocumentLinkType, Topics, ValidTopic, WindowTabType, RelatedJournal, ContentTabDescriptor } from '@/types';
   import { FCBSetting, TopicFolder, Entry, Session, Campaign } from '@/classes';
   import { DOCUMENT_TYPES } from '@/documents';
 
@@ -279,7 +242,6 @@
   const backendStore = useBackendStore();
   const { currentEntry, currentSetting, refreshCurrentEntry, } = storeToRefs(mainStore);
   const { currentPlayedCampaign } = storeToRefs(playingStore);
-  const { isInPlayMode } = storeToRefs(mainStore);
   const { isGeneratingImage, available } = storeToRefs(backendStore); 
 
   ////////////////////////////////
@@ -317,12 +279,25 @@
   const canGenerate = computed(() => topic.value && [Topics.Character, Topics.Location, Topics.Organization].includes(topic.value));
   const generateDisabled = computed(() => !available.value);
   const showHierarchy = computed((): boolean => (topic.value===null ? false : hasHierarchy(topic.value)));
-  const roleplayAboveDescription = computed(() => ModuleSettings.get(SettingKey.showRolePlayingNotes) && isInPlayMode.value);
-  const roleplayBelowDescription = computed(() => ModuleSettings.get(SettingKey.showRolePlayingNotes) && !isInPlayMode.value);
+
+  const customFieldContentType = computed<CustomFieldContentType | null>(() => {
+    switch (topic.value) {
+      case Topics.Character:
+        return CustomFieldContentType.Character;
+      case Topics.Location:
+        return CustomFieldContentType.Location;
+      case Topics.Organization:
+        return CustomFieldContentType.Organization;
+      case Topics.PC:
+        return CustomFieldContentType.PC;
+      default:
+        return null;
+    }
+  });
 
   const tabs = computed(() => {
     let tabs = [
-      { id: 'description', label: localize('labels.tabs.entry.description') },
+      { id: 'description', label: localize('labels.description') },
       { id: 'journals', label: localize('labels.journals') },
     ] as ContentTabDescriptor[];
 
@@ -575,7 +550,7 @@
       {
         icon: 'fa-file-lines',
         iconFontClass: 'fas',
-        label: localize('contextMenus.generate.description'),        
+        label: localize('contextMenus.generate.nameAndDescription'),        
         onClick: async () => {
           if (currentEntry.value)
             await updateEntryDialog(currentEntry.value);
@@ -592,7 +567,7 @@
         disabled: isGeneratingImage.value[currentEntry.value?.uuid as string],
         onClick: async () => {
           if (currentSetting.value && currentEntry.value) {
-            await generateImage(currentSetting.value, currentEntry.value);
+            await generateImage(currentSetting.value, WindowTabType.Entry, currentEntry.value);
           }
         }
       });
@@ -652,15 +627,6 @@
       return;
 
     currentEntry.value.description = newContent;
-    await currentEntry.value.save();
-  };
-
-
-  const onRolePlayingNotesSaved = async (newContent: string) => {
-    if (!currentEntry.value)
-      return;
-
-    currentEntry.value.roleplayingNotes = newContent;
     await currentEntry.value.save();
   };
 

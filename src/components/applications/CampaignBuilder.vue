@@ -47,18 +47,15 @@
 
 <script setup lang="ts">
   // library imports
-  import { onMounted, watch, ref, createApp, h, } from 'vue';
+  import { onMounted, watch, ref, } from 'vue';
   import { storeToRefs } from 'pinia';
-  import PrimeVue from 'primevue/config';
 
   // local imports
-  import { pinia } from '@/applications/stores';
   import { getCurrentSetting, } from '@/compendia';
   import { SettingKey, ModuleSettings, } from '@/settings';
   import { useMainStore, useNavigationStore, useBackendStore } from '@/applications/stores';
   import { localize } from '@/utils/game';
   import { updateWindowTitle } from '@/utils/titleUpdater';
-  import { theme } from '@/components/styles/primeVue';
   import { notifyWarn } from '@/utils/notifications';
   import { closeCampaignBuilderApp } from '@/utils/appWindow';
   
@@ -188,8 +185,9 @@
     const headerElement = appElement.querySelector('.window-header');
     if (!headerElement) return;
 
-    // Check if toggle already exists
-    if (headerElement.querySelector('#fcb-prep-play-toggle')) return;
+    // Check if toggle already exists - if so, we're done
+    if (headerElement.querySelector('#fcb-prep-play-toggle')) 
+      return;
 
     // Create a container for our Vue component
     const toggleContainer = document.createElement('div');
@@ -204,20 +202,18 @@
       headerElement.appendChild(toggleContainer);
     }
 
-    // Create and mount the Vue component
-    const app = createApp({
-      render() {
-        return h(TitleBarComponents, {});
-      }
-    });
+    // Import VueHost to use the singleton app
+    const { vueHost } = await import('@/libraries/fvtt-vue/VueHost');
 
-    
-    // Use the same plugins as the main app
-    app.use(PrimeVue, { theme: theme });
-    app.use(pinia);
+    // Register the title bar component as a portal with VueHost
+    await vueHost.registerPortal(
+      TitleBarComponents,
+      {},
+      toggleContainer,
+      () => {} // No ref callback needed for title bar
+    );
 
     // this fixes a vue dev tools bug
-    // @ts-ignore
     if (import.meta.env.MODE === 'development') {
       // need to set _customProperties on all stores - use dynamic import to avoid the import in production
       const module = await import('@/applications/stores/index.ts');
@@ -231,9 +227,6 @@
       useCampaignStore()._customProperties = new Set();
       useSessionStore()._customProperties = new Set();
     }
-
-    // Mount the component to the container
-    app.mount(toggleContainer);
   };
 
   ////////////////////////////////
@@ -319,6 +312,15 @@
           color: var(--fcb-list-highlight-text) !important;
         }
       }
+    }
+  }
+
+  .fcb-window {
+    @include style-base-components;
+
+    .window-content {
+      background-color: var(--fcb-surface);
+      color: var(--fcb-text);
     }
   }
 

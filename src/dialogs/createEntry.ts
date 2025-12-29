@@ -3,7 +3,7 @@ import PrimeVue from 'primevue/config';
 import App from '@/components/applications/CreateEntryDialog.vue';
 import { hasHierarchy, } from '@/utils/hierarchy';
 import { useMainStore, useSettingDirectoryStore, useRelationshipStore, useNavigationStore, } from '@/applications/stores'; 
-import { CharacterDetails, EntryBasicIndex, LocationDetails, OrganizationDetails, Topics, ValidTopic } from '@/types';
+import { CharacterDetails, EntryBasicIndex, LocationDetails, OrganizationDetails, Topics, ValidTopic, WindowTabType } from '@/types';
 import { Entry, TopicFolder } from '@/classes';
 import { generateImage, handleGeneratedEntry } from '@/utils/generation';
 import { localize } from '@/utils/game';
@@ -180,7 +180,7 @@ async function updateEntryDialog(entry: Entry): Promise<Entry | null> {
 }
 
 const updatedCallback = async (entry: Entry, details: AnyDetails | null): Promise<Entry | null> => {
-  const { name, type, description, roleplayingNotes } = details ?? {};
+  const { name, type, description, } = details ?? {};
   
   const currentSetting = useMainStore().currentSetting;
   
@@ -198,8 +198,6 @@ const updatedCallback = async (entry: Entry, details: AnyDetails | null): Promis
 
   if (description)
     entry.description = description;
-  if (roleplayingNotes)
-    entry.roleplayingNotes = roleplayingNotes;
 
   if (entry.topic===Topics.Character) {
     entry.speciesId = (details as CharacterDetails).speciesId;
@@ -225,7 +223,7 @@ const updatedCallback = async (entry: Entry, details: AnyDetails | null): Promis
     await mainStore.refreshCurrentContent();
 
   if (details.generateImage)
-    void generateImage(await currentSetting, entry);  
+    void generateImage(currentSetting, WindowTabType.Entry, entry);  
 
   return entry || null;
 }

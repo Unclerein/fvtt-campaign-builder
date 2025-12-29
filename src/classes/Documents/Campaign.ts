@@ -17,7 +17,6 @@ type CampaignDocClass = JournalEntryPage<typeof DOCUMENT_TYPES.Campaign>;
 export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign> {
   static override _documentType = DOCUMENT_TYPES.Campaign;
   static override _defaultSystem = { 
-    description: '',  
     sessions: [],
     lore: [],  
     img: '',   
@@ -25,9 +24,7 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
     ideas: [],   
     journals: [], 
     pcs: [],
-    customFields: {
-     house_rules: '',  
-    },
+    customFields: {},
     frontIds: [],
     storyWebIds: [],
     storyWebs: [],
@@ -351,11 +348,14 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
   }
 
   public get description(): string {
-    return this._clone.system.description;
+    return this._clone.text?.content || '';
   }
 
   public set description(value: string) {
-    this._clone.system.description = value;
+    this._clone.text = {
+      ...this._clone.text,
+      content: value
+    };
   }
 
   public get currentSessionNumber(): number | null {
@@ -372,16 +372,6 @@ export class Campaign extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Campaign
 
   public set currentSessionId(value: string | null) {
     this._clone.system.currentSessionId = value;
-  }
-
-  public get houseRules(): string {
-    // @ts-ignore - fvtt bug
-    return this._clone.system.customFields.house_rules;
-  }
-
-  public set houseRules(value: string) {
-    // @ts-ignore - fvtt bug
-    this._clone.system.customFields.house_rules = value;
   }
 
   public get img(): string {

@@ -38,7 +38,7 @@
         >
           <div class="flexrow form-group">
             <LabelWithHelp
-              label-text="labels.tabs.arc.description"
+              label-text="labels.description"
             />
           </div>
           <div class="flexrow form-group">
@@ -49,6 +49,12 @@
               @editor-saved="onDescriptionEditorSaved"
             />
           </div>
+
+          <CustomFieldsBlocks
+            v-if="currentArc"
+            :content-type="CustomFieldContentType.Arc"
+            :content="currentArc"
+          />
         </DescriptionTab>
         <div class="tab flexcol" data-group="primary" data-tab="participants">
           <div class="tab-inner">
@@ -121,9 +127,10 @@
   import Tags from '@/components/Tags.vue';
   import ContentTabStrip from '@/components/ContentTab/ContentTabStrip.vue';
   import StoryWebsTab from '@/components/ContentTab/StoryWebsTab.vue';
+  import CustomFieldsBlocks from '@/components/CustomFieldsBlocks.vue';
 
   // types
-  import { ContentTabDescriptor, WindowTabType } from '@/types';
+  import { ContentTabDescriptor, CustomFieldContentType, WindowTabType } from '@/types';
   import { Arc } from '@/classes';
   
   ////////////////////////////////
@@ -151,7 +158,7 @@
   });
 
   const tabs = computed(() => [
-    { id: 'description', label: localize('labels.tabs.arc.description')},
+    { id: 'description', label: localize('labels.description')},
     { id: 'lore', label: localize('labels.tabs.arc.lore')},
     { id: 'locations', label: localize('labels.tabs.arc.locations')},
     { id: 'participants', label: localize('labels.tabs.arc.participants')},

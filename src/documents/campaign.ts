@@ -5,9 +5,6 @@ import { schemas } from './fields';
 
 const fields = foundry.data.fields;
 export const CampaignSchema = {
-  /** campaign description */
-  description: new fields.StringField({ required: true, nullable: false, initial: '' }),  
-
   /** the session number of latest session */
   currentSessionNumber: new fields.NumberField({ required: true, nullable: true, integer: true, initial: null }),
 
@@ -16,6 +13,9 @@ export const CampaignSchema = {
 
   /** map from field name to value */
   customFields: new fields.ObjectField({ required: true, nullable: false, initial: {} }),
+
+  // we have to leave this until 1.8 migration is gone because otherwise the migration doesn't have access to it
+  description: new fields.StringField({ required: true, nullable: true, initial: null, textSearch: true, }),
 
   /** high-level info for every contained session */
   sessionIndex: new fields.ArrayField(schemas.SessionBasicIndex(), 
@@ -113,7 +113,6 @@ export interface CampaignDocModel extends Omit<JournalEntryPage<typeof DOCUMENT_
   system: {
     currentSessionNumber: number;
     currentSessionId: string;
-    description: string;
     customFields: Record<string, string>;
     sessionIndex: SessionBasicIndex[];
     arcIndex: ArcBasicIndex[];

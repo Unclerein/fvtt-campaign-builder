@@ -17,7 +17,7 @@
       <div class="fcb-sheet-subtab-container flexrow">
         <div class="fcb-subtab-wrapper">
           <nav class="fcb-sheet-navigation flexrow tabs" data-group="primary">
-            <a class="item" data-tab="description">{{ localize('labels.tabs.entry.description') }}</a>
+            <a class="item" data-tab="description">{{ localize('labels.description') }}</a>
             <a class="item" data-tab="journals">{{ localize('labels.journals') }}</a>
             <a 
               v-for="relationship in relationships"
@@ -39,7 +39,7 @@
                     @click="onActorImageClick"
                     @contextmenu.prevent="onImageContextMenu"
                   >
-                    <div v-if="currentEntry?.actorId">
+                    <div v-if="isPC && actorId">
                       <img 
                         class="profile"
                         :src="currentImage"
@@ -65,49 +65,15 @@
                         }" 
                       />
                     </div>
-                    <div class="flexrow form-group">
-                      <LabelWithHelp
-                        label-text="labels.fields.background"
-                      />
-                    </div>
-                    <div class="flexrow form-group">
-                      <Editor 
-                        :initial-content="currentEntry?.background || ''"
-                        :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
-                        fixed-height="240px"
-                        :current-entity-uuid="currentEntry?.uuid"
-                        @editor-saved="onBackgroundSaved"
-                        @related-entries-changed="onRelatedEntriesChanged"
-                        />
-                    </div>
-                    <div class="flexrow form-group">
-                      <LabelWithHelp
-                        label-text="labels.fields.otherPlotPoints"
-                      />
-                    </div>
-                    <div class="flexrow form-group">
-                      <Editor 
-                        :initial-content="currentEntry?.plotPoints || ''"
-                        :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
-                        :current-entity-uuid="currentEntry?.uuid"
-                        fixed-height="240px"
-                        @editor-saved="onPlotPointsSaved"
-                        @related-entries-changed="onRelatedEntriesChanged"
-                        />
-                    </div>
-                    <div class="flexrow form-group">
-                      <LabelWithHelp
-                        label-text="labels.fields.desiredMagicItems"
-                      />
-                    </div>
-                    <div class="flexrow form-group">
-                      <Editor 
-                        :initial-content="currentEntry?.magicItems || ''"
-                        :current-entity-uuid="currentEntry?.uuid"
-                        fixed-height="240px"
-                        @editor-saved="onMagicItemsSaved"
-                      />
-                    </div>
+
+                    <CustomFieldsBlocks
+                      v-if="currentEntry"
+                      :content-type="CustomFieldContentType.PC"
+                      :content="currentEntry"
+                      :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
+                      @related-entries-changed="onRelatedEntriesChanged"
+                    />
+
                   </div>
                 </div>
               </div>
@@ -161,15 +127,15 @@
   import InputText from 'primevue/inputtext';
 
   // local components
-  import Editor from '@/components/Editor.vue';
   import LabelWithHelp from '@/components/LabelWithHelp.vue';
   import JournalTab from '@/components/ContentTab/JournalTab.vue';
   import RelatedEntryTable from '@/components/tables/RelatedEntryTable.vue';
   import RelatedEntriesManagementDialog from '@/components/RelatedEntriesManagementDialog.vue';
-  
+  import CustomFieldsBlocks from '@/components/CustomFieldsBlocks.vue';
+
   // types
   import { Entry } from '@/classes';
-  import { Topics, RelatedJournal } from '@/types';
+  import { FoundryDragType, Topics, RelatedJournal, ValidTopic, CustomFieldContentType } from '@/types';
   import { DOCUMENT_TYPES } from '@/documents';
 
   ////////////////////////////////
@@ -197,7 +163,7 @@
     { tab: 'characters', label: 'labels.tabs.entry.characters', topic: Topics.Character },
     { tab: 'locations', label: 'labels.tabs.entry.locations', topic: Topics.Location },
     { tab: 'organizations', label: 'labels.tabs.entry.organizations', topic: Topics.Organization },
-  ] as { tab: string; label: string; topic: Topics }[];
+  ] as { tab: string; label: string; topic: ValidTopic }[];
 
   const showRelatedEntriesDialog = ref<boolean>(false);
   const pendingAddedUUIDs = ref<string[]>([]);
@@ -206,16 +172,17 @@
   ////////////////////////////////
   // computed data
   const name = computed(() => (currentEntry.value?.name || ''));
-  const currentImage = computed(() => (currentEntry.value?.actor?.img || ''));
+  const isPC = computed(() => currentEntry.value?.topic === Topics.PC);
+  const actorId = computed(() => (isPC.value ? (currentEntry.value?.actorId || '') : ''));
+  const currentImage = computed(() => (isPC.value ? (currentEntry.value?.actor?.img || '') : ''));
 
   ////////////////////////////////
   // methods
   const refreshEntry = async () => {
-    if (!currentEntry.value)
+    if (!currentEntry.value || currentEntry.value.topic!==Topics.PC)
       return;
     
     // load starting data values
-    name.value = currentEntry.value.name || '';
     playerName.value = currentEntry.value.playerName || '';
     await currentEntry.value.getActor();
   };
@@ -259,11 +226,11 @@
     event.preventDefault();
     event.stopPropagation();
 
-    if (!currentEntry.value)
+    if (!currentEntry.value || currentEntry.value.topic !== Topics.PC)
       return;
 
-    // parse the data
-    let data = getValidatedData(event) as { type: string; uuid: string };
+    // parse the data - we're just looking for raw Foundry data here
+    let data = getValidatedData(event) as FoundryDragType;
     if (!data)
       return;
 
@@ -358,33 +325,12 @@
   };
 
   const onActorImageClick = async () => {
+    if (!currentEntry.value || currentEntry.value.topic !== Topics.PC)
+      return;
+
     const actor = await currentEntry.value?.getActor();
     if (actor)
       await toRaw(actor)?.sheet?.render(true);
-  }
-
-  const onBackgroundSaved = async (content: string) => {
-    if (!currentEntry.value)
-      return;
-
-    currentEntry.value.background = content;
-    await currentEntry.value.save();
-  }
-
-  const onPlotPointsSaved = async (content: string) => {
-    if (!currentEntry.value)
-      return;
-
-    currentEntry.value.plotPoints = content;
-    await currentEntry.value.save();
-  }
-
-  const onMagicItemsSaved = async (content: string) => {
-    if (!currentEntry.value)
-      return;
-
-    currentEntry.value.magicItems = content;
-    await currentEntry.value.save();
   }
 
   const onRelatedEntriesDialogUpdate = async (addedEntries: Entry[], removedEntries: Entry[]) => {
@@ -436,7 +382,7 @@
   onMounted(async () => {
     await mountTabs();
 
-    if (currentEntry.value) {
+    if (currentEntry.value && currentEntry.value.topic===Topics.PC) {
       // load starting data values
       playerName.value = currentEntry.value.playerName || '';
 

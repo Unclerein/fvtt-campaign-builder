@@ -9,11 +9,23 @@ import {
   LocationDetails, 
   OrganizationDetails, 
   Species, 
-  Topics, 
+  Topics,
+  CustomFieldContentType,
+  WindowTabType,
 } from '@/types';
-import { Entry, TopicFolder, FCBSetting, } from '@/classes';
+import { 
+  Entry, 
+  TopicFolder, 
+  FCBSetting, 
+  Campaign, 
+  Arc, 
+  Session, 
+  Front,
+} from '@/classes';
 import { ModuleSettings, SettingKey } from '@/settings';
 import { notifyError, notifyInfo } from './notifications';
+import { windowTabToCustomContentType } from './customFields';
+import { ApiCustomGenerateImagePostRequestContentTypeEnum } from '@/apiClient';
 
 /**
  * Union type representing all possible generated content details.
@@ -33,7 +45,7 @@ export type GeneratedDetails =
  * @returns A promise that resolves to the created entry, or undefined if creation failed
  */
 export const handleGeneratedEntry = async (details: GeneratedDetails, topicFolder: TopicFolder): Promise<Entry | undefined> => {
-  const { name, description, type, roleplayingNotes } = details;
+  const { name, description, type, } = details;
   const settingDirectoryStore = useSettingDirectoryStore();
   
   if (!topicFolder)
@@ -48,8 +60,6 @@ export const handleGeneratedEntry = async (details: GeneratedDetails, topicFolde
   // if they return empty string then don't set it
   if (description)
     entry.description = description;
-  if (roleplayingNotes)
-    entry.roleplayingNotes = details.roleplayingNotes;
 
   // add the other things based on topic
   switch (topicFolder.topic) {
@@ -71,23 +81,29 @@ export const handleGeneratedEntry = async (details: GeneratedDetails, topicFolde
   await entry.save();
   
   if (details.generateImage)
-    void generateImage(topicFolder.setting, entry);
+    void generateImage(topicFolder.setting, WindowTabType.Entry, entry);
 
   return entry;
 };
 
 /**
  * Generates an AI image for an entry based on its type, description, and setting context.
- * Handles different generation logic for characters, locations, and organizations.
+ * Uses the custom image generation endpoint for all content types except PCs.
  * Shows user notifications during the generation process and updates the entry with the result.
  * 
  * @param forSetting - The setting containing the entry (used for genre and setting feeling)
- * @param entry - The entry to generate an image for
+ * @param windowTabType - The type of window tab the entry is in
+ * @param entry - The entry to generate an image for (can be Entry, Campaign, Arc, Session, Front, or Setting)
  * @returns A promise that resolves when image generation is complete
  * @throws {Error} If image generation fails or the entry type is not supported
  */
-export const generateImage = async (forSetting: FCBSetting, entry: Entry): Promise<void> => {
-  if (!entry || !forSetting || ![Topics.Character, Topics.Location, Topics.Organization].includes(entry.topic)) {
+export const generateImage = async (forSetting: FCBSetting, windowTabType: WindowTabType, entry: Entry | Campaign | Arc | Session | Front | FCBSetting): Promise<void> => {
+  if (!entry || !forSetting) {
+    return;
+  }
+  
+  // Don't generate images for PCs
+  if (entry instanceof Entry && entry.topic === Topics.PC) {
     return;
   }
 
@@ -102,74 +118,99 @@ export const generateImage = async (forSetting: FCBSetting, entry: Entry): Promi
     // Show a notification that we're generating an image
     notifyInfo(`Generating image for ${entry.name}. This may take a minute...`);
 
-    // Get species name if this is a character
-    let species: Species | undefined;
-    const speciesList = ModuleSettings.get(SettingKey.speciesList);
-    if (entry.speciesId) {
-      species = speciesList.find(s => s.id === entry.speciesId);
-    }
+    // Get custom image prompt and configuration for this content type
+    const aiImagePrompts = ModuleSettings.get(SettingKey.aiImagePrompts) || {};
+    const aiImageConfigurations = ModuleSettings.get(SettingKey.aiImageConfigurations) || {};
+    
+    // Determine content type based on the document type
+    let contentType = windowTabToCustomContentType(windowTabType, entry);
+    
+    // Map the numeric CustomFieldContentType to the string values expected by the API
+    const contentTypeMap: Record<CustomFieldContentType, ApiCustomGenerateImagePostRequestContentTypeEnum> = {
+      [CustomFieldContentType.Setting]: ApiCustomGenerateImagePostRequestContentTypeEnum.Setting,
+      [CustomFieldContentType.Character]: ApiCustomGenerateImagePostRequestContentTypeEnum.Character,
+      [CustomFieldContentType.Location]: ApiCustomGenerateImagePostRequestContentTypeEnum.Location,
+      [CustomFieldContentType.Organization]: ApiCustomGenerateImagePostRequestContentTypeEnum.Organization,
+      [CustomFieldContentType.Arc]: ApiCustomGenerateImagePostRequestContentTypeEnum.Arc,
+      [CustomFieldContentType.Front]: ApiCustomGenerateImagePostRequestContentTypeEnum.Front,
+      [CustomFieldContentType.PC]: ApiCustomGenerateImagePostRequestContentTypeEnum.PC,
+      [CustomFieldContentType.Session]: ApiCustomGenerateImagePostRequestContentTypeEnum.Session,
+      [CustomFieldContentType.Campaign]: ApiCustomGenerateImagePostRequestContentTypeEnum.Campaign,
+    };
+    
+    const apiContentType = contentTypeMap[contentType];   
+    
+    const baseConfig = aiImageConfigurations[contentType] || {};
+    
+    // Get the description based on the configuration
+    let description: string;
+    if (baseConfig.descriptionField === 'description') {
+      description = (entry as any).description || '';
+    } else {
+      description = (entry as any).getCustomField(baseConfig.descriptionField);
+    }      
+    // get parent/grandparent for context (only for entries)
+    let parent: Entry | null = null;
+    let grandparent: Entry | null = null;
 
-    let result;
-    switch (entry.topic) {
-      case Topics.Character:
-        // Call the API to generate an image
-         result = await useBackendStore().generateCharacterImage({
-          genre: forSetting.genre,
-          settingFeeling: forSetting.settingFeeling,
-          name: entry.name,
-          type: entry.type,
-          species: species?.name || '',
-          speciesDescription: species?.description || '',
-          briefDescription: entry.description,
-          textModel: ModuleSettings.get(SettingKey.selectedTextModel),
-          imageModel: ModuleSettings.get(SettingKey.selectedImageModel),
-        });
-        break;
-      case Topics.Location:
-      case Topics.Organization:
-        // get parent/grandparent
-        let parent: Entry | null = null;
-        let grandparent: Entry | null = null;
+    if ([CustomFieldContentType.Location, CustomFieldContentType.Organization].includes(contentType)) {
+      let parentId = await (entry as Entry).getParentId();
+      if (parentId) {
+        parent = await Entry.fromUuid(parentId);
 
-        let parentId = await entry.getParentId();
-        if (parentId) {
-          parent = await Entry.fromUuid(parentId);
-
-          if (parent) {
-            const grandparentId = await parent.getParentId();
-            if (grandparentId) {
-              grandparent = await Entry.fromUuid(grandparentId);
-            }
+        if (parent) {
+          const grandparentId = await parent.getParentId();
+          if (grandparentId) {
+            grandparent = await Entry.fromUuid(grandparentId);
           }
         }
-
-        // Call the API to generate an image
-        const options = {
-          genre: forSetting.genre,
-          settingFeeling: forSetting.settingFeeling,
-          type: entry.type,
-          name: entry.name,
-          parentName: parent?.name,
-          parentType: parent?.type,
-          parentDescription: parent?.description,
-          grandparentName: grandparent?.name,
-          grandparentType: grandparent?.type,
-          grandparentDescription: grandparent?.description,
-          briefDescription: entry.description,
-          textModel: ModuleSettings.get(SettingKey.selectedTextModel),
-          imageModel: ModuleSettings.get(SettingKey.selectedImageModel),
-        };
-
-        if (entry.topic === Topics.Location)  {
-          result = await useBackendStore().generateLocationImage(options);
-        } else if (entry.topic === Topics.Organization) {
-          result = await useBackendStore().generateOrganizationImage(options);
-        }
-        break;
+      }
     }
 
+    // species for characters
+    let species: Species | undefined;
+    if (contentType === CustomFieldContentType.Character) {
+      if (entry instanceof Entry && entry.speciesId) {
+        const speciesList = ModuleSettings.get(SettingKey.speciesList);
+        species = speciesList.find(s => s.id === entry.speciesId);
+      }
+    }
+        
+    // Build the prompt by replacing tokens
+    let finalPrompt = promptReplace(
+      aiImagePrompts[contentType] || '', 
+      entry.name || '', 
+      (entry as any).description || '',
+      (entry as any).type || '',
+      species?.name || '', 
+      parent?.name || '', 
+      entry.customFields
+    );
+        
+    // Call the custom image generation API
+    const result = await useBackendStore().generateCustomImage({
+      contentType: apiContentType,
+      name: entry.name,
+      prompt: finalPrompt,
+      genre: forSetting.genre,
+      settingFeeling: forSetting.settingFeeling,
+      type: (entry as any).type,
+      species: species?.name,
+      speciesDescription: species?.description,
+      parentName: parent?.name,
+      parentType: parent?.type,
+      parentDescription: parent?.description,
+      grandparentName: grandparent?.name,
+      grandparentType: grandparent?.type,
+      grandparentDescription: grandparent?.description,
+      description: description,
+      textModel: ModuleSettings.get(SettingKey.selectedTextModel),
+      imageModel: ModuleSettings.get(SettingKey.selectedImageModel),
+      imageConfiguration: baseConfig,
+    });
+
     // Update the entry with the generated image
-    if (result.data.filePath) {
+    if (result?.data.filePath) {
       entry.img = result.data.filePath;
       await entry.save();
       notifyInfo(`Image completed for ${entry.name}.`);
@@ -186,4 +227,30 @@ export const generateImage = async (forSetting: FCBSetting, entry: Entry): Promi
   } finally {
     useBackendStore().isGeneratingImage[entryGenerated] = false;
   }
+};
+
+/**
+ * Swap out all the template fields in a prompt with their values
+ * @param template 
+ * @param values 
+ * @returns 
+ */
+export const promptReplace = (template: string, name: string, description: string, type: string, species: string, parent: string, customFields: Record<string, string | boolean>): string => {
+  const tokenMap: Record<string, string> = {
+    name,
+    description,
+    type,
+    species,
+    parent,
+  };
+
+  for (const key of Object.keys(customFields)) {
+    tokenMap[key] = typeof customFields[key] === 'boolean' ? (customFields[key] ? 'true' : 'false') : String(customFields[key] ?? '');
+  }
+
+  return template.replace(/\{([^{}]*)\}/g, (_match, inner) => {
+    const k = String(inner ?? '').trim();
+    if (!k) return '';
+    return tokenMap[k] ?? '';
+  });
 };

@@ -63,8 +63,6 @@
       },
       "showTypesInTree": "Typen im Einstellungsbaum anzeigen",
       "showTypesInTreeHelp": "Wenn wahr, zeigt es den Typ jedes Eintrags im Baum an, wenn das Einstellungsverzeichnis nicht nach Typ gruppiert ist.",
-      "showRolePlayingNotes": "Rollenspielnotizen bei Einträgen anzeigen",
-      "showRolePlayingNotesHelp": "Wenn wahr, wird ein separates Feld für Rollenspielnotizen getrennt von der Eintragsbeschreibung angezeigt.",
       "useFronts": "Fronten verwenden",
       "useFrontsHelp": "Aktivieren Sie die Kampagnenfunktion \"Front\".",
       "useWebs": "Story-Netze verwenden",
@@ -75,7 +73,10 @@
       "subTabsSavePosition": "Unterregisterkarten speichern Position",
       "subTabsSavePositionHelp": "Wenn aktiviert, merkt sich jede Registerkarte, welcher innere Unterregisterkarte geöffnet war, und kehrt zu dieser zurück, wenn Sie die Registerkarte erneut öffnen. Wenn deaktiviert, kehren die Registerkarten immer zur ersten zurück (normalerweise Beschreibung).",
       "storyWebAutoArrange": "Automatisches Anordnen von Story-Webs",
-      "storyWebAutoArrangeHelp": "Wenn aktiviert, werden Story-Webs neu angeordnet, um ein sauberes Bild zu erhalten. Wenn deaktiviert, können Sie alles genau so positionieren, wie Sie es möchten."
+      "storyWebAutoArrangeHelp": "Wenn aktiviert, werden Story-Webs neu angeordnet, um ein sauberes Bild zu erhalten. Wenn deaktiviert, können Sie alles genau so positionieren, wie Sie es möchten.",
+      "customFields": "Benutzerdefinierte Felder",
+      "customFieldsLabel": "Benutzerdefinierte Felder konfigurieren",
+      "customFieldsHelp": "Zusätzliche Felder und KI-Anweisungen für jeden Inhaltstyp konfigurieren"
     },
     "applications": {
       "sessionNotes": {
@@ -142,16 +143,12 @@
           "emailDefaultCampaignHint": "Die Kampagne, die standardmäßig für E-Mail-Funktionen verwendet wird (z. B. Aufgaben per E-Mail senden)",
           "selectSetting": "Wählen Sie eine Einstellung...",
           "selectCampaign": "Wählen Sie eine Kampagne...",
-          "longDescriptionParagraphs": "Lange Beschreibungsabsätze",
-          "longDescriptionParagraphsHint": "Anzahl der Absätze, die für lange Beschreibungen generiert werden sollen (für Nicht-RPG-Stil (1-4).",
           "useGmailIdeas": "Gmail für Ideen verwenden",
           "useGmailIdeasHint": "Wenn aktiviert, werden Ideenelemente aus dem Gmail-Posteingang erstellt",
           "textModel": "Textgenerierungsmodell",
           "textModelHint": "Wählen Sie das KI-Modell zur Textgenerierung aus",
           "imageModel": "Bildgenerierungsmodell",
           "imageModelHint": "Wählen Sie das KI-Modell zur Bildgenerierung aus",
-          "rpgStyle": "RPG-Stil Beschreibungen",
-          "rpgStyleHint": "Wenn aktiviert, sind lange Beschreibungen im RPG-Stil (Rahmentext + Notizen) im Gegensatz zu einer eher narrativen, mehrteiligen Beschreibung.",
           "add": "Hinzufügen"
         },
         "tabs": {
@@ -196,6 +193,108 @@
           "generatedName": "Generierter Name",
           "generatedDescription": "Generierte Beschreibung"
         }
+      },
+      "customFields": {
+        "title": "Benutzerdefinierte Felder konfigurieren",
+        "notifications": {
+          "missingLabel": "Jedes benutzerdefinierte Feld muss eine Bezeichnung haben",
+          "duplicateKey": "Zwei benutzerdefinierte Felder haben denselben Namen. Bitte benennen Sie eines um, damit die Schlüssel eindeutig sind."
+        },
+        "labels": {
+          "contentType": "Inhaltstyp",
+          "selectType": "Typ auswählen...",
+          "selectOptionsPlaceholder": "a;b;c",
+          "delete": "Löschen",
+          "aiTemplate": "KI-Vorlage"
+        },
+        "columns": {
+          "label": "Bezeichnung",
+          "fieldKey": "Schlüssel",
+          "selectOptions": "Optionen auswählen",
+          "helpText": "Hilfetext"
+        },
+        "fieldTypes": {
+          "select": "Auswählen",
+          "editor": "Editor",
+          "input": "Eingabe",
+          "checkbox": "Kontrollkästchen"
+        },
+        "aiDialog": {
+          "title": "KI-Vorlage",
+          "labels": {
+            "enabled": "Kann von KI generiert werden",
+            "fieldToken": "Feld-Token einfügen",
+            "selectField": "Wählen Sie ein Feld...",
+            "insert": "Einfügen",
+            "fieldTokenHint": "Verwenden Sie {FIELD}, um auf ein anderes Feld zu verweisen, wenn Sie die Eingabeaufforderung erstellen. Gültige Felder werden im Dropdown-Menü angezeigt.",
+            "promptTemplate": "Eingabeaufforderungsvorlage",
+            "descriptionField": "Beschreibungsfeld",
+            "descriptionFieldPlaceholder": "Wählen Sie ein Feld zur Verwendung als Beschreibung...",
+            "configuration": "Konfiguration",
+            "minWords": "Minimale Wörter",
+            "maxWords": "Maximale Wörter",
+            "writingStyle": "Schreibstil",
+            "tense": "Zeitform",
+            "pointOfView": "Erzählperspektive",
+            "allowLists": "Listen erlauben",
+            "avoidListsLongerThan": "Listen länger als vermeiden"
+          },
+          "errors": {
+            "invalidTokens": "Ungültige Vorlagen-Token:"
+          },
+          "presets": {
+            "custom": "Benutzerdefiniert",
+            "short": "Kurz",
+            "detailed": "Detailliert",
+            "bullets": "Aufzählungspunkte"
+          }
+        },
+        "tabs": {
+          "fields": "Felder",
+          "images": "Bilder"
+        },
+        "images": {
+          "labels": {
+            "prompt": "Bildaufforderung",
+            "promptTemplate": "Bildaufforderungsvorlage",
+            "selectField": "Wählen Sie ein Feld...",
+            "insert": "Einfügen",
+            "fieldToken": "Feldtoken einfügen",
+            "descriptionField": "Feld, das die Beschreibung für die Bilderzeugung enthält",
+            "negativePrompt": "Negative Aufforderung",
+            "imageConfiguration": "Bildeinstellungen",
+            "artStyle": "Kunststil",
+            "artStylePlaceholder": "z.B., Aquarell, Ölgemälde",
+            "medium": "Medium",
+            "mediumPlaceholder": "z.B., Tinte, Bleistiftskizze",
+            "modelStyle": "Modellstil",
+            "modelStylePlaceholder": "z.B., filmisch, Anime",
+            "contentRating": "Inhaltsbewertung",
+            "contentRatingPlaceholder": "z.B., PG, PG-13",
+            "composition": "Komposition",
+            "compositionPlaceholder": "z.B., Nahaufnahme, Weitwinkelaufnahme",
+            "lighting": "Beleuchtung",
+            "lightingPlaceholder": "z.B., goldene Stunde, stimmungsvolles Gegenlicht",
+            "colorPalette": "Farbpalette",
+            "colorPalettePlaceholder": "z.B., gedämpfte Erdtöne",
+            "camera": "Kamera",
+            "cameraPlaceholder": "z.B., 35mm, Teleobjektiv",
+            "mood": "Stimmung",
+            "moodPlaceholder": "z.B., bedrohlich, verspielt",
+            "negativePromptPlaceholder": "Zu vermeidende Dinge"
+          },
+          "promptHint": "Erstellen Sie eine Vorlage für die KI-Bilderzeugung. Verwenden Sie {FIELD}, um in Ihrer Aufforderung auf Feldwerte zu verweisen. Verfügbare Felder werden im Dropdown-Menü angezeigt. Alle Standardfelder werden automatisch übergeben, sodass Sie nur dann darauf verweisen müssen, wenn Sie eine spezifische Anweisung zu einem von ihnen geben möchten."
+        },
+        "aiImage": {
+          "errors": {
+            "invalidTokens": "Ungültige Vorlagen-Token:"
+          }
+        }
+      },
+      "customFieldsBlocks": {
+        "notifications": {
+          "saveFailed": "Speichern der benutzerdefinierten Felder fehlgeschlagen"
+        }
       }
     },
     "help": {
@@ -227,26 +326,23 @@
         "settingGenre": "Genre",
         "campaignDescription": "Kampagnenbeschreibung, Notizen, Ideen, etc...",
         "name": "Name",
-        "longDescriptions": "Lange Beschreibungen generieren",
         "generateImage": "Bild generieren",
-        "description": "Beschreibung",
         "campaign": "Kampagne",
         "houseRules": "Hausregeln",
         "addToCurrentSession": "Zur aktuellen Sitzung hinzufügen",
         "topic": "Thema",
         "settingFeeling": "Einstellung Gefühl",
         "startingDescription": "Anfangsbeschreibung",
-        "entryDescription": "Beschreibung",
         "entryRolePlayingNotes": "Rollenspielnotizen",
         "settingDescription": "Einstellung Beschreibung",
-        "generateText": "Was generieren",
-        "generateChoice": {
-          "description": "Beschreibung",
-          "roleplay": "Rollenspielnotizen",
-          "both": "Beides"
-        },
         "background": "Hintergrund",
-        "role": "Rolle"
+        "role": "Rolle",
+        "strongStart": "Starker Start",
+        "aiDescription": "Detaillierte Beschreibung",
+        "strongStartHelpText": "Ein starker Start ist ein kurzes, wirkungsvolles Ereignis, das den Ton für die Sitzung angibt. Klicken Sie, um mehr von Lazy DM zu lesen.",
+        "notes": "Notizen",
+        "boxedText": "Gerahmter Text",
+        "gmNotes": "GM-Notizen"
       },
       "addTopic": {
         "character": "Charakter hinzufügen",
@@ -289,22 +385,20 @@
         "monsterHelpText": "Monster, die zur Situation und zum Ort passen. Klicken Sie, um mehr von Lazy DM zu lesen.",
         "vignetteHelpText": "Szenen, die eine Lösung bringen, neue Wege öffnen, die Geschichte verändern. 1 pro 45 Minuten. Klicken Sie, um mehr von Lazy DM zu lesen.",
         "locationHelpText": "Detaillierte, denkwürdige, fantastische Orte, die die Charaktere erkunden können. Klicken Sie, um mehr von Lazy DM zu lesen.",
-        "strongStart": "Starker Start",
-        "strongStartHelpText": "Ein starker Start ist ein kurzes, eindrucksvolles Ereignis, das den Ton für die Sitzung angibt. Klicken Sie, um mehr von Lazy DM zu lesen.",
         "addJournal": "Journal hinzufügen",
         "addJournalDrag": "(oder ziehen/ablegen eines Journals oder einer Journalseite)"
       },
       "campaign": {
         "addPC": "PC hinzufügen",
         "addPCDrag": "(oder PC ziehen/ablegen)",
-        "description": "Beschreibung",
         "pcs": "SCs",
         "lore": "Überlieferung",
         "todo": "Zu erledigen",
         "addToDo": "Neues 'Zu erledigen' erstellen",
         "loreHelpText": "Verfolgen Sie große kampagnenweite Geheimnisse und kleinere, die Sie noch nicht preisgeben möchten. Klicken Sie, um mehr von Lazy DM zu lesen.",
         "ideas": "Ideen",
-        "addIdea": "Idee hinzufügen"
+        "addIdea": "Idee hinzufügen",
+        "campaign": "Kampagne"
       },
       "pc": {
         "linkToNewActor": "Mit neuem Schauspieler verknüpfen",
@@ -313,14 +407,12 @@
       "groupTree": "Baum nach Typ gruppieren",
       "tabs": {
         "entry": {
-          "description": "Beschreibung",
           "characters": "Charaktere",
           "locations": "Orte",
           "organizations": "Organisationen",
           "pcs": "PCs"
         },
         "campaign": {
-          "description": "Beschreibung",
           "pcs": "PCs",
           "lore": "Überlieferung",
           "toDo": "Zu erledigen",
@@ -339,16 +431,10 @@
           "todo": "Zu erledigen",
           "noteBox": "Notizbox"
         },
-        "setting": {
-          "description": "Beschreibung"
-        },
         "front": {
-          "description": "Beschreibung",
           "createNewDanger": "Neue Gefahr erstellen"
         },
         "arc": {
-          "arc": "Bogen",
-          "description": "Beschreibung",
           "pcs": "SCs",
           "lore": "Überlieferung",
           "locations": "Orte",
@@ -432,6 +518,18 @@
         "zoomOut": "Verkleinern",
         "fitToWindow": "An Fenster anpassen",
         "addStoryWebDrag": "(oder ein Story-Web ziehen/ablegen)"
+      },
+      "character": {
+        "character": "Charakter"
+      },
+      "organization": {
+        "organization": "Organisation"
+      },
+      "location": {
+        "location": "Ort"
+      },
+      "setting": {
+        "setting": "Einstellung"
       }
     },
     "placeholders": {
@@ -497,8 +595,7 @@
         "generatedName": "Generierter Name",
         "generatedDescription": "Generierte Beschreibung",
         "generatePrompt": "Drücken Sie auf generieren, um Ergebnisse zu erhalten",
-        "generatePrompt2": "Andernfalls wird \"Kurze Beschreibung\" als neue Eintragsbeschreibung verwendet.",
-        "generatedRoleplayNotes": "Generierte Rollenspielnotizen"
+        "generatePrompt2": "Andernfalls wird \"Kurze Beschreibung\" als neue Eintragsbeschreibung verwendet."
       },
       "addToDo": {
         "title": "Aufgabe hinzufügen",
@@ -605,6 +702,37 @@
         "arcs": "Bögen",
         "sessions": "Sitzungen",
         "fronts": "Fronten"
+      },
+      "migrationProgress": {
+        "title": "Kampagnen-Builder auf neue Version migrieren",
+        "message": "Ihre Kampagnendaten auf die neueste Version migrieren...",
+        "warnings": {
+          "noMigrationsNeeded": "Keine Migrationen erforderlich"
+        },
+        "status": {
+          "initializing": "Initialisierung...",
+          "runningMigrationForVersion": "Migration für Version {version} wird ausgeführt...",
+          "completedMigrationForVersion": "Migration für Version {version} abgeschlossen",
+          "failedMigrationForVersion": "Migration für Version {version} fehlgeschlagen",
+          "completedMigrationsProgress": "Abgeschlossene {completed}/{total} Migrationen",
+          "processedSetting": "Verarbeitetes Einstellung: {name}",
+          "migratedDocumentsProgress": "Migrierte Dokumente ({migrated}/{total})"
+        },
+        "progress": {
+          "percent": "{percent}%"
+        },
+        "errors": {
+          "migrationFailedForVersion": "Migration für Version {version} fehlgeschlagen: {error}"
+        },
+        "completion": {
+          "completeTitle": "Migration abgeschlossen",
+          "failedTitle": "Migration fehlgeschlagen",
+          "successMigratedItems": "{count} Elemente erfolgreich migriert.",
+          "noMigrationNeeded": "Keine Migration war erforderlich.",
+          "failureSummary": "Migration fehlgeschlagen. {migrated} Elemente migriert, {failed} fehlgeschlagen.",
+          "errorDetails": "Fehlerdetails",
+          "warnings": "Warnungen"
+        }
       }
     },
     "contextMenus": {
@@ -655,10 +783,10 @@
         "create": "Neu erstellen"
       },
       "generate": {
-        "description": "Beschreibung generieren",
         "image": "Bild generieren",
         "inProgress": "in Bearbeitung",
-        "configureNames": "Namen konfigurieren"
+        "configureNames": "Namen konfigurieren",
+        "nameAndDescription": "Name oder Beschreibung generieren"
       },
       "tabs": {
         "closeAll": "Alle Tabs schließen",
@@ -697,7 +825,9 @@
         "addTextPrompt": "Text eingeben, der dem Diagramm hinzugefügt werden soll",
         "openEntryInNewTab": "Eintrag in neuem Tab öffnen",
         "openDangerInNewTab": "Gefahr in neuem Tab öffnen"
-      }
+      },
+      "addToStoryWeb": "Zum aktuellen Story-Web hinzufügen",
+      "addWithRelationships": "Mit Beziehungen hinzufügen"
     },
     "tooltips": {
       "mainButton": "Kampagnen-Builder starten",
@@ -742,7 +872,7 @@
       "createEntry": {
         "name": "Wenn leer gelassen, wird automatisch ein Name generiert",
         "type": "Wenn Sie einen neuen Typ erstellen, wird er zur Hauptliste hinzugefügt",
-        "description": "Optional. Verwenden Sie es, um physische Merkmale oder Persönlichkeitseigenschaften anzugeben, die Sie einbeziehen möchten",
+        "description": "Optional. Verwenden Sie dies, um physische Merkmale oder Persönlichkeitseigenschaften anzugeben, die Sie einbeziehen möchten. Kann sehr kurz sein.",
         "parent": "Kann in einigen Fällen den generierten Text beeinflussen",
         "species": "Wenn leer, wird eine zufällige Art aus Ihrer Einstellung für die KI-Generierung verwendet. Benutzerdefinierte Einträge werden an die KI übergeben, aber nicht zu Ihrer Artenliste hinzugefügt",
         "longDescriptions": "Detaillierte Beschreibung oder kurze Zusammenfassung generieren?",
@@ -769,7 +899,8 @@
       "copyToNextSession": "In die nächste Sitzung kopieren",
       "moveToArc": "Zum späteren Gebrauch in den Bogen verschieben",
       "movetoLatestArc": "Zum neuesten Bogen verschieben",
-      "editSession": "Sitzung bearbeiten"
+      "editSession": "Sitzung bearbeiten",
+      "generateAIContent": "KI-Inhalt generieren"
     },
     "errors": {
       "duplicateBookmark": "Bereits als Lesezeichen gespeichert",

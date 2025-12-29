@@ -1,11 +1,16 @@
 import { localize } from '@/utils/game';
 import { moduleId } from './index';
 import { AdvancedSettingsApplication } from '@/applications/settings/AdvancedSettingsApplication';
+import { CustomFieldsApplication } from '@/applications/settings/CustomFieldsApplication';
 import { SpeciesListApplication } from '@/applications/settings/SpeciesListApplication';
 import { ImageSettingsApplication } from '@/applications/settings/ImageSettingsApplication';
 import { RollTableSettingsApplication } from '@/applications/settings/RollTableSettingsApplication';
-import { SessionDisplayMode, Species, TagList, GeneratorType, SettingIndex, CustomFieldContentType, CustomFieldDescription, defaultCustomFields, } from '@/types';
-import type { ApiLocationGenerateImagePostRequestImageModelEnum, ApiLocationGenerateImagePostRequestTextModelEnum } from '@/apiClient';
+import { SessionDisplayMode, Species, TagList, GeneratorType, SettingIndex, CustomFieldContentType, CustomFieldDescription, } from '@/types';
+import { ApiCustomGenerateImagePostRequestImageConfiguration, ApiCustomGenerateImagePostRequestImageModelEnum, ApiCustomGenerateImagePostRequestTextModelEnum } from '@/apiClient';
+
+export type ImageConfiguration = ApiCustomGenerateImagePostRequestImageConfiguration & {
+  descriptionField?: string;
+};
 
 export interface ImageVisibility {
   settings: boolean;
@@ -34,7 +39,6 @@ export enum SettingKey {
   enableToDoList = 'enableToDoList', // whether the to-do list feature is enabled
   autoRelationships = 'autoRelationships', // whether to automatically suggest relationship changes based on editor
   showTypesInTree = 'showTypesInTree', // show the type of the entry in the hierarchy tree
-  showRolePlayingNotes = 'showRolePlayingNotes',  // whether to show role playing notes on entries
   useFronts = 'useFronts', // allow creation and viewing of fronts
   useWebs = 'useWebs', // allow creation and viewing of story webs
   subTabsSavePosition = 'subTabsSavePosition', // whether sub-tabs remember their last position
@@ -50,7 +54,6 @@ export enum SettingKey {
   arcTags = 'arcTags',
   lastKnownVersion = 'lastKnownVersion',  // tracks the last known module version - used for tracking migrations
   settingIndex = 'settingIndex',  // array of high-level setting info (name, packId)
-  customFields = 'customFields',  // mapping of CustCustomFieldContentType to CustomFieldType
   mainWindowBounds = 'mainWindowBounds',
 
   // menus
@@ -59,11 +62,14 @@ export enum SettingKey {
   APIToken = 'APIToken',
   selectedTextModel = 'selectedTextModel', // selected text generation model
   selectedImageModel = 'selectedImageModel', // selected image generation model
-  rpgStyle = 'rpgStyle', // whether to generate RPG-Style long descriptions
-  longDescriptionParagraphs = 'longDescriptionParagraphs', // number of paragraphs for long descriptions (1-4)
   useGmailToDos = 'useGmailToDos', // whether to use Gmail for todos
   emailDefaultSetting = 'emailDefaultWorld', // default setting for email features
   emailDefaultCampaign = 'emailDefaultCampaign', // default campaign for email features
+
+  customFieldsMenu = 'customFieldsMenu',
+  customFields = 'customFields',  // mapping of CustCustomFieldContentType to CustomFieldType
+  aiImagePrompts = 'aiImagePrompts', // AI image generation prompts per content type
+  aiImageConfigurations = 'aiImageConfigurations', // AI image generation configurations per content type
 
   rollTableSettingsMenu = 'rollTableSettingsMenu',  // display the roll table settings menu
   autoRefreshRollTables = 'autoRefreshRollTables',  // should roll tables be automatically refreshed on load
@@ -87,18 +93,16 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.isInPlayMode ? boolean :
     K extends SettingKey.autoRelationships ? boolean :
     K extends SettingKey.showTypesInTree ? boolean :
-    K extends SettingKey.showRolePlayingNotes ? boolean :
     K extends SettingKey.useFronts ? boolean :
     K extends SettingKey.useWebs ? boolean :
     K extends SettingKey.subTabsSavePosition ? boolean :
     K extends SettingKey.storyWebAutoArrange ? boolean :
-    K extends SettingKey.rpgStyle ? boolean :
     K extends SettingKey.advancedSettingsMenu ? never :
+    K extends SettingKey.customFieldsMenu ? never :
     K extends SettingKey.APIURL ? string :
     K extends SettingKey.APIToken ? string :
-    K extends SettingKey.selectedTextModel ? ApiLocationGenerateImagePostRequestTextModelEnum :
-    K extends SettingKey.selectedImageModel ? ApiLocationGenerateImagePostRequestImageModelEnum :
-    K extends SettingKey.longDescriptionParagraphs ? number :
+    K extends SettingKey.selectedTextModel ? ApiCustomGenerateImagePostRequestTextModelEnum :
+    K extends SettingKey.selectedImageModel ? ApiCustomGenerateImagePostRequestImageModelEnum :
     K extends SettingKey.defaultAddToSession ? boolean :
     K extends SettingKey.rollTableSettingsMenu ? never :
     K extends SettingKey.autoRefreshRollTables ? boolean :
@@ -106,6 +110,8 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.speciesList ? Species[] :
     K extends SettingKey.imageMenu ? never :
     K extends SettingKey.showImages ? ImageVisibility :
+    K extends SettingKey.aiImagePrompts ? Record<CustomFieldContentType, string> :
+    K extends SettingKey.aiImageConfigurations ? Record<CustomFieldContentType, ImageConfiguration> :
     K extends SettingKey.entryTags ? TagList :
     K extends SettingKey.sessionTags ? TagList :
     K extends SettingKey.frontTags ? TagList :
@@ -122,7 +128,7 @@ export type SettingKeyType<K extends SettingKey> =
     never;  
 
 export class ModuleSettings {
-  // note that this returns the object directly, so if it's an object or array, if a reference
+  // note that this returns the object directly, so if it's an object or array, it's a reference
   public static get<T extends SettingKey>(setting: T): SettingKeyType<T> {
     return game.settings.get(moduleId, setting) as SettingKeyType<T>;
   }
@@ -160,6 +166,15 @@ export class ModuleSettings {
       icon: 'fas fa-bars',               // A Font Awesome icon used in the submenu button
       permissions: ['SETTINGS_WRITE'], // Optional: restrict to GM only
       type: AdvancedSettingsApplication,
+    },
+    {
+      settingID: SettingKey.customFieldsMenu,
+      name: 'settings.customFields',
+      label: 'fcb.settings.customFieldsLabel',   // localized by Foundry
+      hint: 'settings.customFieldsHelp',
+      icon: 'fas fa-list',
+      permissions: ['SETTINGS_WRITE'],
+      type: CustomFieldsApplication,
     },
     {
       settingID: SettingKey.speciesListMenu,
@@ -225,13 +240,6 @@ export class ModuleSettings {
       name: 'settings.showTypesInTree',
       hint: 'settings.showTypesInTreeHelp',
       default: false,
-      type: Boolean,
-    },
-    {
-      settingID: SettingKey.showRolePlayingNotes,
-      name: 'settings.showRolePlayingNotes',
-      hint: 'settings.showRolePlayingNotesHelp',
-      default: true,
       type: Boolean,
     },
     {
@@ -358,7 +366,7 @@ export class ModuleSettings {
     },
     {
       settingID: SettingKey.customFields,
-      default: defaultCustomFields,
+      default: {},  // note: this is important to default to this so that ready hook can know to reset it
       type: Object,
     },
     {
@@ -399,16 +407,6 @@ export class ModuleSettings {
       type: String,
     },
     {
-      settingID: SettingKey.rpgStyle,
-      default: true,
-      type: Boolean,
-    },
-    {
-      settingID: SettingKey.longDescriptionParagraphs,
-      default: 1,
-      type: Number,
-    },
-    {
       settingID: SettingKey.showImages,
       default: {
         settings: true,
@@ -418,6 +416,16 @@ export class ModuleSettings {
         sessions: true,
         fronts: true,
       },
+      type: Object,
+    },
+    {
+      settingID: SettingKey.aiImagePrompts,
+      default: {},
+      type: Object,
+    },
+    {
+      settingID: SettingKey.aiImageConfigurations,
+      default: {},
       type: Object,
     },
   ];

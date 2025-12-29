@@ -66,8 +66,6 @@
       "imagesHelp": "Configure image visibility settings for different content types",
       "showTypesInTree": "Show types in Setting tree",
       "showTypesInTreeHelp": "When true, if the Setting directory is not grouped by type, it will show the type of each Entry in the tree.",
-      "showRolePlayingNotes": "Show role playing notes on entries",
-      "showRolePlayingNotesHelp": "When true, a separate field for role playing notes will be shown separately from the Entry description.",
       "useFronts": "Use Fronts",
       "useFrontsHelp": "Turn on campaign \"front\" functionality.",
       "useWebs": "Use Story Webs",
@@ -76,6 +74,10 @@
       "subTabsSavePositionHelp": "When enabled, every tab will remember which interior sub-tab was open and return to it when you re-open that tab. When disabled, tabs will always revert to the first one (usually description).",
       "storyWebAutoArrange": "Auto-arrange story webs",
       "storyWebAutoArrangeHelp": "When enabled, story webs will rearrange to try to keep a clean picture.  When disabled, you can position everything exactly how you want."
+      ,
+      "customFields": "Custom Fields",
+      "customFieldsLabel": "Configure Custom Fields",
+      "customFieldsHelp": "Configure additional fields and AI instructions for each content type"
     },
     "applications": {
       "sessionNotes": {
@@ -137,10 +139,6 @@
           "backendURLHint": "Output from script to deploy the backend.",
           "APIToken": "API Token",
           "APITokenHint": "Output from script to deploy the backend.",
-          "rpgStyle": "RPG-style descriptions",
-          "rpgStyleHint": "When enabled, long descriptions with be RPG-style (boxed text + notes) vs. a more narrative, multi-paragraph description.",
-          "longDescriptionParagraphs": "Long description paragraphs",
-          "longDescriptionParagraphsHint": "Number of paragraphs to generate for long descriptions (for non-RPG style (1-4).",
           "useGmailIdeas": "Use Gmail for Ideas",
           "useGmailIdeasHint": "When enabled, idea items will be created from the Gmail inbox",
           "emailDefaultSetting": "Default Setting for email",
@@ -159,6 +157,108 @@
           "models": "AI Models",
           "content": "AI Content",
           "email": "Email"
+        }
+      },
+      "customFields": {
+        "title": "Configure Custom Fields",
+        "tabs": {
+          "fields": "Fields",
+          "images": "Images"
+        },
+        "notifications": {
+          "missingLabel": "Each custom field must have a label",
+          "duplicateKey": "Two custom fields have the same name. Please rename one so keys are unique."
+        },
+        "labels": {
+          "contentType": "Content type",
+          "selectType": "Select a type...",
+          "selectOptionsPlaceholder": "a;b;c",
+          "aiTemplate": "AI template",
+          "delete": "Delete"
+        },
+        "images": {
+          "labels": {
+            "prompt": "Image prompt",
+            "promptTemplate": "Image prompt template",
+            "selectField": "Select a field...",
+            "insert": "Insert",
+            "fieldToken": "Insert field token",
+            "descriptionField": "Field that holds the description to be used for image generation",
+            "negativePrompt": "Negative Prompt",
+            "imageConfiguration": "Image Configuration",
+            "artStyle": "Art Style",
+            "artStylePlaceholder": "e.g., watercolor, oil painting",
+            "medium": "Medium",
+            "mediumPlaceholder": "e.g., ink, pencil sketch",
+            "modelStyle": "Model Style",
+            "modelStylePlaceholder": "e.g., cinematic, anime",
+            "contentRating": "Content Rating",
+            "contentRatingPlaceholder": "e.g., PG, PG-13",
+            "composition": "Composition",
+            "compositionPlaceholder": "e.g., close-up portrait, wide shot",
+            "lighting": "Lighting",
+            "lightingPlaceholder": "e.g., golden hour, moody rim light",
+            "colorPalette": "Color Palette",
+            "colorPalettePlaceholder": "e.g., muted earth tones",
+            "camera": "Camera",
+            "cameraPlaceholder": "e.g., 35mm, telephoto",
+            "mood": "Mood",
+            "moodPlaceholder": "e.g., ominous, whimsical",
+            "negativePromptPlaceholder": "Things to avoid"
+          },
+          "promptHint": "Create a template for AI image generation. Use {FIELD} to reference field values in your prompt. Available fields are shown in the drop-down.  All default fields are passed automatically, so you only need to reference them if you want to give a specific instruction related to one of them."
+        },
+        "aiImage": {
+          "errors": {
+            "invalidTokens": "Invalid template token(s):"
+          }
+        },
+        "aiDialog": {
+          "title": "AI Template",
+          "labels": {
+            "enabled": "Can be AI generated",
+            "fieldToken": "Insert field token",
+            "selectField": "Select a field...",
+            "insert": "Insert",
+            "fieldTokenHint": "Use {FIELD} to reference another field when building the prompt.  Available fields are shown in the drop-down. All default fields are passed automatically, so you only need to reference them if you want to give a specific instruction related to one of them.",
+            "descriptionField": "Description field",
+            "descriptionFieldPlaceholder": "Select field to use as description...",
+            "promptTemplate": "Prompt template",
+            "configuration": "Configuration",
+            "minWords": "Min words",
+            "maxWords": "Max words",
+            "writingStyle": "Writing style",
+            "tense": "Tense",
+            "pointOfView": "Point of view",
+            "allowLists": "Allow lists",
+            "avoidListsLongerThan": "Avoid lists longer than"
+          },
+          "errors": {
+            "invalidTokens": "Invalid template token(s):"
+          },
+          "presets": {
+            "custom": "Custom",
+            "short": "Short",
+            "detailed": "Detailed",
+            "bullets": "Bulleted"
+          }
+        },
+        "columns": {
+          "label": "Label",
+          "fieldKey": "Key",
+          "selectOptions": "Select options",
+          "helpText": "Help Text"
+        },
+        "fieldTypes": {
+          "input": "Input",
+          "select": "Select",
+          "editor": "Editor",
+          "checkbox": "Checkbox"
+        }
+      },
+      "customFieldsBlocks": {
+        "notifications": {
+          "saveFailed": "Failed to save custom fields"
         }
       },
       "rollTableSettings": {
@@ -262,10 +362,13 @@
         "background": "Background",
         "otherPlotPoints": "Other Plot Points",
         "desiredMagicItems": "Desired Magic Items",
+        "strongStart": "Strong Start",
+        "aiDescription": "Detailed Description",
+        "strongStartHelpText": "A strong start is a short, impactful event that sets the tone for the session. Click to read more from Lazy DM.",
         "name": "Name",
         "topic": "Topic",
+        "notes": "Notes",
         "species": "Species",
-        "entryDescription": "Description",
         "entryRolePlayingNotes": "Roleplaying Notes",
         "settingGenre": "Genre",
         "settingFeeling": "Setting Feeling",
@@ -274,14 +377,8 @@
         "role": "Role",
         "settingDescription": "Setting description",
         "startingDescription": "Starting description",
-        "description": "Description",
-        "longDescriptions": "Generate long descriptions",
-        "generateText": "What to generate",
-        "generateChoice": {
-          "description": "Description",
-          "roleplay": "Roleplaying Notes",
-          "both": "Both"
-        },
+        "boxedText": "Boxed Text",
+        "gmNotes": "GM Notes",
         "generateImage": "Generate Image",
         "addToCurrentSession": "Add to current session"
       },
@@ -335,9 +432,7 @@
         "npcHelpText": "NPCs likely to be encountered in the session.",
         "monsterHelpText": "Monsters that fit the situation and location. Click to read more from Lazy DM.",
         "vignetteHelpText": "Scenes that bring resolution, open new paths, shift the story.  1 per 45 minutes. Click to read more from Lazy DM.",
-        "locationHelpText": "Detailed, memorable, fantastic locations the characters can explore. Click to read more from Lazy DM.",
-        "strongStart": "Strong Start",
-        "strongStartHelpText": "A strong start is a short, impactful event that sets the tone for the session. Click to read more from Lazy DM."
+        "locationHelpText": "Detailed, memorable, fantastic locations the characters can explore. Click to read more from Lazy DM."
       },
       "front": {
         "front": "Front",
@@ -369,9 +464,9 @@
         "fitToWindow": "Fit to Window"
       },
       "campaign": {
+        "campaign": "Campaign",
         "addPC": "Add PC",
         "addPCDrag": "(or drag/drop a PC)",
-        "description": "Description",
         "pcs": "PCs",
         "lore": "Lore",
         "loreHelpText": "Track big campaign-level secrets and smaller ones that you aren't ready to deliver. Click to read more from Lazy DM.",
@@ -384,32 +479,36 @@
         "linkToNewActor": "Link to new actor",
         "pc": "PC"
       },
+      "character": {
+        "character": "Character"
+      },
+      "organization": {
+        "organization": "Organization"
+      },
+      "location": {
+        "location": "Location"
+      },
+      "setting": {
+        "setting": "Setting"
+      },
       "groupTree": "Group tree by type",
       "tabs": {
         "entry": {
-          "description": "Description",
           "characters": "Characters",
           "locations": "Locations",
           "pcs": "PCs",
           "organizations": "Organizations"
         },
         "campaign": {
-          "description": "Description",
           "pcs": "PCs",
           "lore": "Lore",
           "toDo": "To-Do",
           "ideas": "Ideas"
         },
-        "setting": {
-          "description": "Description"
-        },
         "front": {
-          "description": "Description",
           "createNewDanger": "Create new Danger"
         },
         "arc": {
-          "arc": "Arc",
-          "description": "Description",
           "pcs": "PCs",
           "lore": "Lore",
           "locations": "Locations",
@@ -514,7 +613,6 @@
       "createEntry": {
         "generatedName": "Generated name",
         "generatedDescription": "Generated description",
-        "generatedRoleplayNotes": "Generated roleplaying notes",
         "generatePrompt": "Press generate for results",
         "generatePrompt2": "Otherwise, \"Brief Description\" will be used as the new Entry description."
       },
@@ -612,6 +710,37 @@
         "discard": "Discard Changes",
         "cancel": "Cancel"
       },
+      "migrationProgress": {
+        "title": "Migrating Campaign Builder to new version",
+        "message": "Migrating your campaign data to the latest version...",
+        "warnings": {
+          "noMigrationsNeeded": "No migrations needed"
+        },
+        "status": {
+          "initializing": "Initializing...",
+          "runningMigrationForVersion": "Running migration for version {version}...",
+          "completedMigrationForVersion": "Completed migration for version {version}",
+          "failedMigrationForVersion": "Migration failed for version {version}",
+          "completedMigrationsProgress": "Completed {completed}/{total} migrations",
+          "processedSetting": "Processed setting: {name}",
+          "migratedDocumentsProgress": "Migrated documents ({migrated}/{total})"
+        },
+        "progress": {
+          "percent": "{percent}%"
+        },
+        "errors": {
+          "migrationFailedForVersion": "Migration failed for version {version}: {error}"
+        },
+        "completion": {
+          "completeTitle": "Migration Complete",
+          "failedTitle": "Migration Failed",
+          "successMigratedItems": "Successfully migrated {count} items.",
+          "noMigrationNeeded": "No migration was needed.",
+          "failureSummary": "Migration failed. {migrated} items migrated, {failed} failed.",
+          "errorDetails": "Error Details",
+          "warnings": "Warnings"
+        }
+      },
       "imageSettings": {
         "title": "Image Visibility Settings",
         "description": "Choose which content types should display images on their description pages.",
@@ -629,6 +758,8 @@
       }
     },
     "contextMenus": {
+      "addToStoryWeb": "Add to current Story Web",
+      "addWithRelationships": "Add with Relationships",
       "tabs": {
         "closeAll": "Close All Tabs",
         "closeOther": "Close Other Tabs"
@@ -714,7 +845,7 @@
         "create": "Create new"
       },
       "generate":  {
-        "description": "Generate description",
+        "nameAndDescription": "Generate name or description",
         "image": "Generate image",
         "inProgress": "in progress",
         "configureNames": "Configure names"
@@ -732,6 +863,7 @@
       "arcComplete": "Arc complete",
       "historyBack": "Back",
       "historyForward": "Forward",
+      "generateAIContent": "Generate AI content",
       "editRelationship": "Edit relationship",
       "editNotes": "Edit notes",
       "editSession": "Edit session",
@@ -785,7 +917,7 @@
         "addToCurrentSession": "Add to current session",
         "name": "If left blank, a name will be generated automatically",
         "type": "If you create a new type, it will be added to the master list",
-        "description": "Optional. Use to specify physical features or personality traits you want included",
+        "description": "Optional. Use to specify physical features or personality traits you want included. Can be very brief.",
         "parent": "May influence generated text in some cases",
         "species": "If blank, a random species from your Setting will be used for AI generation. Custom entries will be passed to the AI but not added to your species list",
         "longDescriptions": "Generate detailed description or a short summary?",
