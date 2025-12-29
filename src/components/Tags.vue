@@ -44,7 +44,7 @@
       required: true,
     },
     tagSetting: {   // key of setting to pull tag counts from 
-      type: String as PropType<SettingKey.entryTags | SettingKey.sessionTags | SettingKey.frontTags | SettingKey.arcTags>,
+      type: String as PropType<SettingKey.contentTags>,
       required: true,
     },
   });
@@ -56,6 +56,7 @@
     (e: 'update:modelValue', newValue: string[]): void;
     (e: 'tagAdded', newValue: string): void;
     (e: 'tagRemoved', removedValue: string): void;
+    (e: 'tagClick', tag: string): void;
   }>();
 
   ////////////////////////////////
@@ -175,6 +176,14 @@
     emit('tagRemoved', value);  
   };
 
+  const onTagClick = async (event: CustomEvent<Tagify.AddEventData<any>>): Promise<void> => {
+    const tagInfo = event.detail.data as TagEventData;
+    const value = tagInfo.value;
+    
+    // Emit the tag click event to parent
+    emit('tagClick', value);
+  };
+
   ////////////////////////////////
   // watchers
   watch(props.modelValue, (newVal: string[]) => {
@@ -229,6 +238,7 @@
         callbacks: {
           add: (e) => { onTagAdded(e); },
           remove: (e) => { onTagRemoved(e); },
+          click: (e) => { onTagClick(e); },
         }
       });
       

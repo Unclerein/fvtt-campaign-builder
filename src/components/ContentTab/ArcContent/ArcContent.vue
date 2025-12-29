@@ -19,9 +19,10 @@
         <Tags
           v-if="currentArc"
           v-model="currentArc.tags"
-          :tag-setting="SettingKey.arcTags"
+          :tag-setting="SettingKey.contentTags"
           @tag-added="onTagChange"
           @tag-removed="onTagChange"
+          @tag-click="onTagClick"
         />
       </div>
       <ContentTabStrip 
@@ -222,6 +223,11 @@
     if (!currentArc.value)
       return;
     await currentArc.value.save();
+  }
+
+  const onTagClick = async (tagName: string): Promise<void> => {
+    // Open the tag results tab for the clicked tag
+    await navigationStore.openTagResults(tagName, { newTab: true, activate: true });
   }
 
   ////////////////////////////////

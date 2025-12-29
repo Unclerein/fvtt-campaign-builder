@@ -422,6 +422,7 @@
         "pc": "(or drag/drop a PC)"
       },
       "entry": {
+        "entry": "Entry",
         "topic": "TopicFolder",
         "type": "Type",
         "relationships": "Relationships"
@@ -950,6 +951,12 @@
         "longDescriptions": "Generate detailed description or a short summary?",
         "generateImage": "Generate a new image in the background after creating"
       }
+    },
+    "tags": {
+      "tag": "Tag",
+      "resultsFor": "Tag Results for",
+      "entryFound": "entry found",
+      "entriesFound": "entries found"
     },
     "errors": {
       "duplicateBookmark": "Already stored as a bookmark",
