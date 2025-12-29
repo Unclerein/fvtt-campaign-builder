@@ -2,7 +2,7 @@
 //
 // library imports
 import { defineStore, storeToRefs, } from 'pinia';
-import { watch, ref, toRaw, nextTick } from 'vue';
+import { watch, ref, toRaw, nextTick, h } from 'vue';
 import type { Edge, Network, Node } from 'vis-network';
 
 // local imports
@@ -11,6 +11,7 @@ import { nodeTypeToTopic, } from '@/utils/misc';
 import { FCBDialog } from '@/dialogs';
 import { localize } from '@/utils/game';
 import { ModuleSettings, SettingKey } from '@/settings';
+import { replaceUUIDsInText } from '@/utils/sanitizeHtml';
 
 // library componentns
 import ContextMenu from '@imengyu/vue3-context-menu';
@@ -45,8 +46,9 @@ window.fcbStoryWebPhysics = {
 };
 
 // types
-import { Danger, RelatedEntryDetails, StoryWebNodeSource, StoryWebNodeTypes, Topics } from '@/types';
+import { Danger, RelatedEntryDetails, STORYWEB_TO_CUSTOM_FIELD_MAP, StoryWebNodeSource, StoryWebNodeTypes, Topics } from '@/types';
 import { Campaign, Entry, Front } from '@/classes';
+import { FCBJournalEntryPage } from '@/classes/Documents/FCBJournalEntryPage';
 import { confirmDialog } from '@/dialogs/confirm';
 
 interface NetworkClickEventInfo {
@@ -160,6 +162,14 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
   ///////////////////////////////
   // external state
   const isWebLoading = ref<boolean>(false);
+  const LINE_STYLES = {
+    'solid': { name: 'Solid', pattern: false },
+    'dashed': { name: 'Dashed', pattern: [6, 6] },
+    'dotted': { name: 'Dotted', pattern: [1, 4] },
+    'dash_dot': { name: 'Dash-Dot', pattern: [6, 4, 1, 4] },
+    'long_dash': { name: 'Long Dash', pattern: [12, 6] },
+    'dense_dot': { name: 'Dense Dot', pattern: [1, 2] },
+  };
   
   ///////////////////////////////
   // actions
@@ -215,11 +225,12 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
 
             const positionInfo = currentStoryWeb.value?.positions?.[node.uuid] || {};            
             const format = node.source === StoryWebNodeSource.Explicit ? explicitNodeFormat : implicitNodeFormat;
+            const nodeTooltip = await getNodeTooltip(node.uuid, StoryWebNodeTypes.Danger);
             nodes.push({
               ...format,
               id: node.uuid,
               label: `${danger.name}\n(${front.name})`,
-              // title,
+              title: nodeTooltip,
               ...positionInfo,
               ...nodeConfig[StoryWebNodeTypes.Danger],
             });
@@ -235,6 +246,7 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
               const positionInfo = currentStoryWeb.value?.positions?.[index.uuid] || {};
               
               const format = node.source === StoryWebNodeSource.Explicit ? explicitNodeFormat : implicitNodeFormat;
+              const nodeTooltip = await getNodeTooltip(index.uuid, node.type);
 
               // titles may require additional css... not working and maybe not worth bigger package size
               // const title = getTopicText(topic) + '\n' + 
@@ -244,7 +256,7 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
                 ...format,
                 id: index.uuid,
                 label: `${index.name}${index.type ? `\n(${index.type})` : ''}`,
-                // title,
+                title: nodeTooltip,
                 ...positionInfo,
                 ...nodeConfig[node.type],
               });
@@ -292,12 +304,16 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
             //   relate to each other
             if (!edges.some(e => e.to === node.uuid && e.from === participant.uuid)) {
               const label = participant.role || '';
-              edges.push({
+              const edgeUuid = getEdgeUuid(node.uuid, participant.uuid, 'danger');
+              const baseEdge = {
                 from: node.uuid,
                 to: participant.uuid,
                 label,
+                title: getEdgeTooltip(edgeUuid),
                 ...(label ? edgeWithLabelConfig : edgeConfig),
-              });
+                ...getEdgeStyling(edgeUuid)
+              };
+              edges.push(baseEdge);
             }
           }
         } else {
@@ -321,13 +337,16 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
               //   relate to each other
               if (!edges.some(e => e.to === node.uuid && e.from === relatedEntry.uuid)) {
                 const label = relatedEntry.extraFields.role || relatedEntry.extraFields.relationship || '';
-
-                edges.push({
+                const edgeUuid = getEdgeUuid(node.uuid, relatedEntry.uuid, 'relationship');
+                const baseEdge = {
                   from: node.uuid,
                   to: relatedEntry.uuid,
                   label,
+                  title: getEdgeTooltip(edgeUuid),
                   ...(label ? edgeWithLabelConfig : edgeConfig),
-                });
+                  ...getEdgeStyling(edgeUuid)
+                };
+                edges.push(baseEdge);
               }
             }
           }
@@ -339,12 +358,16 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
         // Only add edge if both nodes exist in the graph
         if (nodes.some(n => n.id === edge.from) && nodes.some(n => n.id === edge.to)) {
           const label = edge.label || '';
-          edges.push({
+          const edgeUuid = getEdgeUuid(edge.from, edge.to, 'manual');
+          const baseEdge = {
             from: edge.from,
             to: edge.to,
             label,
+            title: getEdgeTooltip(edgeUuid),
             ...(label ? edgeWithLabelConfig : edgeConfig),
-          });
+            ...getEdgeStyling(edgeUuid)
+          };
+          edges.push(baseEdge);
         }
       }
       
@@ -352,6 +375,12 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
         configure: false,  // change to 'physics' to get a physics config panel
         // @ts-ignore
         physics: ModuleSettings.get(SettingKey.storyWebAutoArrange) ? window.fcbStoryWebPhysics : false,
+        interaction: {
+          hover: true,
+          hoverConnectedEdges: false,
+          selectConnectedEdges: false,
+          tooltipDelay: 50,
+        },
         edges: {
           smooth: {
             enabled: true,
@@ -656,12 +685,320 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
   ///////////////////////////////
   // methods
 
+  /** Generate a consistent UUID for an edge */
+  const getEdgeUuid = (fromNode: string, toNode: string, edgeType: 'manual' | 'relationship' | 'danger' = 'relationship'): string => {
+    const sorted = [fromNode, toNode].sort();
+    return `${edgeType}:${sorted[0]}|${sorted[1]}`;
+  };
+
+  /** Generate tooltip text for a node based on its content type and selected fields */
+  const getNodeTooltip = async (nodeId: string, nodeType: StoryWebNodeTypes): Promise<HTMLElement | undefined> => {
+    // Get the selected fields for this content type
+    const nodeFields = ModuleSettings.get(SettingKey.storyWebNodeFields) as Record<StoryWebNodeTypes, string[]>;
+    const selectedFields = nodeFields[nodeType] || [];
+    
+    if (selectedFields.length === 0) {
+      return undefined;
+    }
+
+    // Get the entry data
+    let entryData: FCBJournalEntryPage<any> | Danger | null = null;
+    let isDanger = false;
+
+    if (nodeType === StoryWebNodeTypes.Danger) {
+      isDanger = true;
+
+      // For dangers, we need to extract the data from the front
+      const [frontId, dangerIndex] = nodeId.split('|');
+      const front = await Front.fromUuid(frontId);
+      if (front && front.dangers[Number.parseInt(dangerIndex)]) {
+        entryData = front.dangers[Number.parseInt(dangerIndex)];
+      }
+    } else {
+      // For entries, get the entry document
+      const entry = await Entry.fromUuid(nodeId);
+      if (entry) {
+        entryData = entry;
+      }
+    }
+    
+    if (!entryData) {
+      return undefined;
+    }
+
+    // Build the tooltip from selected fields
+    const tooltipParts: string[] = [];
+    
+    for (const fieldKey of selectedFields) {
+      let value = '';
+      
+      // Handle danger-specific fields
+      switch (fieldKey) {
+        case 'name':
+        case 'description':
+        case 'type':
+        case 'impendingDoom':
+        case 'motivation':
+          value = entryData[fieldKey] || '';
+          break;
+        case 'species':
+          // need to get the species
+          const speciesId = (entryData as Entry).speciesId;
+          const allSpecies = ModuleSettings.get(SettingKey.speciesList);
+          const species = allSpecies.find(s => s.id === speciesId);
+          value = species?.name || '';
+          break;
+        case 'parent':
+          // need to get the parent
+          const entry = await Entry.fromUuid(nodeId);
+          const parentId = await entry?.getParentId();
+          if (!parentId)
+            value = '';
+          else {
+            const parent = await Entry.fromUuid(parentId);
+            value = parent?.name || '';
+          }
+          break;
+        default:
+          // Check custom fields (note: no support for custom fields on dangers
+          if (isDanger)
+            break;
+
+          if ((entryData as FCBJournalEntryPage<any>).customFields && (entryData as FCBJournalEntryPage<any>).getCustomField(fieldKey)) {
+            const tempValue = (entryData as FCBJournalEntryPage<any>).getCustomField(fieldKey);
+
+            // if it's a boolean, convert to yes/no
+            if (typeof tempValue === 'boolean')
+              value = localize(tempValue ? 'labels.yes' : 'labels.no');
+            else
+              value = tempValue || '';
+          }
+          break;
+      }
+      
+      // Get the field name for display
+      const allFields = getAllFieldsForContentType(nodeType);
+      const field = allFields.find(f => f.key === fieldKey);
+      const fieldName = field ? field.name : fieldKey;
+      
+      // Add to tooltip if value exists
+      if (value && value.trim()) {
+        // Replace UUIDs in the value with their names
+        value = await replaceUUIDsInText(value);
+        
+        // Strip HTML tags from the value
+        value = value.replace(/<[^>]*>/g, '');
+        
+        // Truncate long values
+        const maxLength = 200;
+        if (value.length > maxLength) {
+          value = value.substring(0, maxLength) + '...';
+        }
+        tooltipParts.push(`<strong>${fieldName}:</strong> ${value}`);
+      }
+    }
+    if (tooltipParts.length === 0)
+      return undefined;
+    
+    // need to put into a tag
+    return createHTMLTooltip(tooltipParts.join('<br>'));
+  };
+
+  const createHTMLTooltip = (text: string): HTMLElement => {
+    const container = document.createElement('div');
+    container.innerHTML = text;
+    return container;
+  }
+
+  /** Get all available fields for a content type (hardcoded + custom) */
+  const getAllFieldsForContentType = (contentType: StoryWebNodeTypes): { key: string; name: string }[] => {
+    const fields = [] as { key: string; name: string }[];
+    
+    // Hard-coded fields for each content type
+    const hardcodedFields: Partial<Record<StoryWebNodeTypes, { key: string; name: string }[]>> = {
+      [StoryWebNodeTypes.Character]: [
+        { key: 'name', name: 'Name' },
+        { key: 'type', name: 'Type' },
+        { key: 'description', name: 'Description' },
+        { key: 'gmNotes', name: 'GM Notes' },
+      ],
+      [StoryWebNodeTypes.Location]: [
+        { key: 'name', name: 'Name' },
+        { key: 'type', name: 'Type' },
+        { key: 'description', name: 'Description' },
+        { key: 'gmNotes', name: 'GM Notes' },
+      ],
+      [StoryWebNodeTypes.Organization]: [
+        { key: 'name', name: 'Name' },
+        { key: 'type', name: 'Type' },
+        { key: 'description', name: 'Description' },
+        { key: 'gmNotes', name: 'GM Notes' },
+      ],
+      [StoryWebNodeTypes.PC]: [
+        { key: 'name', name: 'Name' },
+        { key: 'type', name: 'Type' },
+        { key: 'description', name: 'Description' },
+        { key: 'gmNotes', name: 'GM Notes' },
+      ],
+      [StoryWebNodeTypes.Danger]: [
+        { key: 'name', name: 'Name' },
+        { key: 'description', name: 'Description' },
+        { key: 'type', name: 'Type' },
+        { key: 'impulse', name: 'Impulse' },
+        { key: 'cast', name: 'Cast' },
+        { key: 'moves', name: 'Moves' },
+      ],
+      // Custom nodes don't have configurable fields
+    };
+    
+    fields.push(...(hardcodedFields[contentType] || []));
+    
+    // Add custom fields if available
+    const customFields = ModuleSettings.get(SettingKey.customFields) as Record<string, any[]>;
+    const customContentType = STORYWEB_TO_CUSTOM_FIELD_MAP[contentType];
+    
+    if (customContentType && customFields && customFields[customContentType]) {
+      customFields[customContentType].forEach((field: any) => {
+        if (!fields.find(f => f.key === field.name)) {
+          fields.push({
+            key: field.name,
+            name: field.label || field.name,
+          });
+        }
+      });
+    }
+    
+    return fields;
+  };
+
+  /** Generate tooltip text for an edge based on its color and style */
+  const getEdgeTooltip = (edgeUuid: string): HTMLElement | undefined => {
+    const edgeStyles = currentStoryWeb.value?.edgeStyles?.[edgeUuid];
+    if (!edgeStyles)
+      return undefined;
+
+    const tooltipParts: string[] = [];
+
+    // Add color information
+    if (edgeStyles.colorId) {
+      const colors = ModuleSettings.get(SettingKey.storyWebConnectionColors) as { id: string; name: string; value: string }[];
+      const colorOption = colors.find(c => c.id === edgeStyles.colorId);
+      if (colorOption) {
+        tooltipParts.push(`<strong>Color:</strong> ${colorOption.name}`);
+      }
+    }
+
+    // Add style information
+    if (edgeStyles.styleId) {
+      const styles = ModuleSettings.get(SettingKey.storyWebConnectionStyles) as { id: string; name: string; value: string }[];
+      const styleOption = styles.find(s => s.id === edgeStyles.styleId);
+      if (styleOption) {
+        tooltipParts.push(`<strong>Style:</strong> ${styleOption.name}`);
+      }
+    }
+
+    if (tooltipParts.length === 0)
+      return undefined;
+
+    return createHTMLTooltip(tooltipParts.join('<br>'));
+  };
+
+  /** Apply edge styles from the story web to an edge configuration */
+  const getEdgeStyling = (edgeUuid: string): Partial<Edge> => {
+    let edgeStyles = currentStoryWeb.value?.edgeStyles?.[edgeUuid];
+
+    // Backward compatibility: check for old unprefixed format if new format not found and this is a manual edge
+    if (!edgeStyles && edgeUuid.startsWith('manual:')) {
+      const oldEdgeUuid = edgeUuid.replace('manual:', '');
+      edgeStyles = currentStoryWeb.value?.edgeStyles?.[oldEdgeUuid];
+      
+      // If found with old format, migrate it to new format
+      if (edgeStyles && currentStoryWeb.value?.edgeStyles) {
+        currentStoryWeb.value.edgeStyles[edgeUuid] = edgeStyles;
+        delete currentStoryWeb.value.edgeStyles[oldEdgeUuid];
+      }
+    }
+
+    if (!edgeStyles) {
+      return {};
+    }
+
+    const styledEdge = {} as Partial<Edge>;
+
+    // Apply color if specified
+    if (edgeStyles.colorId) {
+      const colors = ModuleSettings.get(SettingKey.storyWebConnectionColors) as { id: string; name: string; value: string }[];
+
+      const colorOption = colors.find(c => c.id === edgeStyles.colorId);
+      if (colorOption) {
+        styledEdge.color = colorOption.value;
+      }
+    }
+
+    // Apply style if specified
+    if (edgeStyles.styleId) {
+      const styles = ModuleSettings.get(SettingKey.storyWebConnectionStyles) as { id: string; name: string; value: string }[];
+      const styleOption = styles.find(s => s.id === edgeStyles.styleId);
+      if (styleOption) {
+        styledEdge.dashes = LINE_STYLES[styleOption.value]?.pattern || false;
+      }
+    }
+
+    return styledEdge;
+  };
+
+  /** Record a new color for an edge */
+  const setEdgeColor = async (edgeId: string, colorId: string) => {
+    if (!currentStoryWeb.value) return;
+    
+    if (!currentStoryWeb.value.edgeStyles) {
+      currentStoryWeb.value.edgeStyles = {};
+    }
+    
+    if (!currentStoryWeb.value.edgeStyles[edgeId]) {
+      currentStoryWeb.value.edgeStyles[edgeId] = {
+        colorId: colorId,
+        styleId: ''
+      };
+    } else {
+      currentStoryWeb.value.edgeStyles[edgeId].colorId = colorId;
+    }
+    
+    await currentStoryWeb.value.save();
+    
+    // Refresh the graph to apply the new color
+    await mainStore.refreshStoryWeb();
+  };
+
+  /** Record a new style for an edge */
+  const setEdgeStyle = async (edgeId: string, styleId: string) => {
+    if (!currentStoryWeb.value) return;
+    
+    if (!currentStoryWeb.value.edgeStyles) {
+      currentStoryWeb.value.edgeStyles = {};
+    }
+    
+    if (!currentStoryWeb.value.edgeStyles[edgeId]) {
+      currentStoryWeb.value.edgeStyles[edgeId] = {
+        colorId: '',
+        styleId: styleId
+      };
+    } else {
+      currentStoryWeb.value.edgeStyles[edgeId].styleId = styleId;
+    }
+    
+    await currentStoryWeb.value.save();
+    
+    // Refresh the graph to apply the new style
+    await mainStore.refreshStoryWeb();
+  };
+
   /** Some colors need to be different in dark mode but we can't use css variables in canvas.
    *   Instead we call then when we generate the graph to read the variables and set the right colors
    */
-  const getEdgeConfig = (hasLabel: boolean) => {
+  const getEdgeConfig = (hasLabel: boolean): Partial<Edge> => {
     // get the base
-    const config = hasLabel ? edgeWithLabelConfig : edgeConfig;
+    const config: Partial<Edge> = hasLabel ? edgeWithLabelConfig : edgeConfig;
 
     // use some computed variables to set the right style
     config.color = getComputedStyle(document.body).getPropertyValue('--fcb-primary');
@@ -677,6 +1014,9 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
         color: 'black'
       };
     }
+
+    // Add hover highlighting
+    config.hoverWidth = (config.width || 1) * 3;
 
     return config;
   }
@@ -797,8 +1137,20 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
   }
 
   const getManualEdge = (fromNode: string, toNode: string) => {
-    const edgeUuid = [fromNode, toNode].sort().join('|');
-    const manualEdge = currentStoryWeb.value?.edges.find(e => e.uuid === edgeUuid);
+    const edgeUuid = getEdgeUuid(fromNode, toNode, 'manual');
+    let manualEdge = currentStoryWeb.value?.edges.find(e => e.uuid === edgeUuid);
+    
+    // Backward compatibility: check for old unprefixed format if new format not found
+    if (!manualEdge) {
+      const oldEdgeUuid = [fromNode, toNode].sort().join('|');
+      manualEdge = currentStoryWeb.value?.edges.find(e => e.uuid === oldEdgeUuid);
+      
+      // If found with old format, update it to new format
+      if (manualEdge) {
+        manualEdge.uuid = edgeUuid;
+      }
+    }
+    
     return manualEdge;
   }
 
@@ -1080,9 +1432,6 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
         network.moveNode(node, positions[node].x + panOffset.x, positions[node].y + panOffset.y);
       }
       
-      // Log before network.moveTo
-      const viewportBefore = network.getViewPosition();
-      
       // Pan the viewport to keep nodes in view
       network.moveTo({
         position: {
@@ -1092,9 +1441,6 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
         animation: false
       });
       
-      // Log after network.moveTo
-      const viewportAfter = network.getViewPosition();
-
       // if we're still in pan mode, keep going
       if (autoPanAnimationId) {
         autoPanAnimationId = requestAnimationFrame(animate);
@@ -1315,7 +1661,7 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
         return;
 
       // Create the edge
-      const edgeUuid = [fromNode, toNode].sort().join('|');
+      const edgeUuid = getEdgeUuid(fromNode, toNode, 'manual');
       currentStoryWeb.value.edges.push({
         uuid: edgeUuid,
         from: fromNode,
@@ -1531,6 +1877,84 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
     toRaw(currentNetwork.value).unselectAll();
     toRaw(currentNetwork.value).selectEdges([edgeId]);
 
+    // Get the connected nodes to determine edge type
+    const connectedNodes = toRaw(currentNetwork.value).getConnectedNodes(edgeId) as string[];
+    const [fromNode, toNode] = connectedNodes;
+    const edgeUuid = getEdgeUuid(fromNode, toNode, getEdgeType(fromNode, toNode));
+
+    // Get predefined colors and styles from settings
+    const colors = ModuleSettings.get(SettingKey.storyWebConnectionColors);
+    const styles = ModuleSettings.get(SettingKey.storyWebConnectionStyles);
+
+    // Build color submenu items
+    const colorSubmenu = colors.map(color => ({
+      label: color.name,
+      icon: () => h('svg', { viewBox: '0 0 20 20', style: 'width: 16px; height: 16px;' }, [
+        h('rect', { x: 2, y: 2, width: 16, height: 16, rx: 3, ry: 3, fill: color.value })
+      ]),
+      onClick: async () => { await setEdgeColor(edgeUuid, color.id); }
+    }));
+
+    // Build style submenu items
+    const styleSubmenu = styles.map(style => {
+      // Create SVG icon based on line style pattern
+      let iconContent;
+      
+      // Use multiple lines to create visible patterns
+      switch (style.value) {
+        case 'dashed':
+          iconContent = [
+            h('line', { x1: 2, y1: 10, x2: 6, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' }),
+            h('line', { x1: 9, y1: 10, x2: 13, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' }),
+            h('line', { x1: 16, y1: 10, x2: 18, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' })
+          ];
+          break;
+        case 'dotted':
+          iconContent = [
+            h('line', { x1: 2, y1: 10, x2: 3, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' }),
+            h('line', { x1: 6, y1: 10, x2: 7, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' }),
+            h('line', { x1: 10, y1: 10, x2: 11, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' }),
+            h('line', { x1: 14, y1: 10, x2: 15, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' }),
+            h('line', { x1: 17, y1: 10, x2: 18, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' })
+          ];
+          break;
+        case 'dash_dot':
+          iconContent = [
+            h('line', { x1: 2, y1: 10, x2: 6, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' }),
+            h('line', { x1: 8, y1: 10, x2: 9, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' }),
+            h('line', { x1: 12, y1: 10, x2: 13, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' }),
+            h('line', { x1: 16, y1: 10, x2: 18, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' })
+          ];
+          break;
+        case 'long_dash':
+          iconContent = [
+            h('line', { x1: 2, y1: 10, x2: 9, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' }),
+            h('line', { x1: 13, y1: 10, x2: 18, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' })
+          ];
+          break;
+        case 'dense_dot':
+          iconContent = [
+            h('line', { x1: 2, y1: 10, x2: 3, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' }),
+            h('line', { x1: 5, y1: 10, x2: 6, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' }),
+            h('line', { x1: 8, y1: 10, x2: 9, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' }),
+            h('line', { x1: 11, y1: 10, x2: 12, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' }),
+            h('line', { x1: 14, y1: 10, x2: 15, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' }),
+            h('line', { x1: 17, y1: 10, x2: 18, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' })
+          ];
+          break;
+        default:
+          iconContent = [
+            h('line', { x1: 2, y1: 10, x2: 18, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' })
+          ];
+      }
+      
+      return {
+        label: style.name,
+        icon: () => h('svg', { viewBox: '0 0 20 20', style: 'width: 16px; height: 16px;' }, iconContent),
+        onClick: async () => { await setEdgeStyle(edgeUuid, style.id); }
+      };
+    });
+
     //show our menu
     ContextMenu.showContextMenu({
       customClass: 'fcb',
@@ -1538,6 +1962,19 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
       y: position.y,
       zIndex: 300,
       items: [
+        {
+          icon: 'fa-palette',
+          iconFontClass: 'fas',
+          label: localize('contextMenus.storyWebGraph.setColor'),
+          children: colorSubmenu
+        },
+        {
+          icon: 'fa-pen',
+          iconFontClass: 'fas',
+          label: localize('contextMenus.storyWebGraph.setStyle'),
+          children: styleSubmenu,
+          divided: 'down',
+        },
         {
           icon: 'fa-edit',
           iconFontClass: 'fas',
@@ -1553,6 +1990,26 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
       ]
     });
   }
+
+  /** Determine the type of an edge based on its nodes */
+  const getEdgeType = (fromNode: string, toNode: string): 'manual' | 'relationship' | 'danger' => {
+    const fromNodeData = currentStoryWeb.value?.nodes.find(n => n.uuid === fromNode);
+    const toNodeData = currentStoryWeb.value?.nodes.find(n => n.uuid === toNode);
+    
+    // Check if it's a danger participant edge
+    if (fromNodeData?.type === StoryWebNodeTypes.Danger || toNodeData?.type === StoryWebNodeTypes.Danger) {
+      return 'danger';
+    }
+    
+    // Check if it's a manual edge
+    const manualEdge = getManualEdge(fromNode, toNode);
+    if (manualEdge) {
+      return 'manual';
+    }
+    
+    // Default to relationship
+    return 'relationship';
+  };
 
   /** shows the context menu for right click on empty space */
   /** @param position - position to place the node at - relative to canvas */
@@ -1621,6 +2078,7 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
     currentContainer,
     currentNetwork,
     isWebLoading,
+    LINE_STYLES,
     
     addEntry,
     addDanger,
@@ -1628,6 +2086,9 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
     removeNode,
     removeEdge,
     handleDropOnNode,
+    setEdgeColor,
+    setEdgeStyle,
+    getNodeTooltip,
   };
 });
 

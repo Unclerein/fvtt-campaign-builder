@@ -73,11 +73,13 @@
       "subTabsSavePosition": "Sub-tabs save position",
       "subTabsSavePositionHelp": "When enabled, every tab will remember which interior sub-tab was open and return to it when you re-open that tab. When disabled, tabs will always revert to the first one (usually description).",
       "storyWebAutoArrange": "Auto-arrange story webs",
-      "storyWebAutoArrangeHelp": "When enabled, story webs will rearrange to try to keep a clean picture.  When disabled, you can position everything exactly how you want."
-      ,
+      "storyWebAutoArrangeHelp": "When enabled, story webs will rearrange to try to keep a clean picture.  When disabled, you can position everything exactly how you want.",
       "customFields": "Custom Fields",
       "customFieldsLabel": "Configure Custom Fields",
-      "customFieldsHelp": "Configure additional fields and AI instructions for each content type"
+      "customFieldsHelp": "Configure additional fields and AI instructions for each content type",
+      "storyWebSettings": "Story Web Settings",
+      "storyWebSettingsLabel": "Configure Settings",
+      "storyWebSettingsHelp": "Configure line colors/styles and element text for story webs"
     },
     "applications": {
       "sessionNotes": {
@@ -273,6 +275,29 @@
           "refreshStarted": "Generating new names for roll tables in the background",
           "refreshSuccess": "Roll tables refreshed successfully",
           "refreshError": "Failed to refresh roll tables. Check console for details."
+        }
+      },
+      "storyWebSettings": {
+        "title": "Configure Story Web Settings",
+        "tabs": {
+          "colors": "Connection Colors",
+          "styles": "Connection Styles",
+          "fields": "Fields"
+        },
+        "columns": {
+          "name": "Name",
+          "color": "Color",
+          "style": "Style",
+          "fieldName": "Field Name",
+          "fieldKey": "Field Key"
+        },
+        "fieldsHint": "The fields in this list will be displayed in the tooltip when hovering over entities in a Story Web.",
+        "contentType": "Content Type",
+        "selectField": "Select Field",
+        "notifications": {
+          "noAvailableFields": "No available fields to add",
+          "duplicateColorIds": "Duplicate color IDs found. Please ensure all color IDs are unique.",
+          "duplicateStyleIds": "Duplicate style IDs found. Please ensure all style IDs are unique."
         }
       },
       "createEntry": {
@@ -811,7 +836,9 @@
         "addDangerWithRelationships": "Add Danger with relationships",
         "addTextPrompt": "Enter text to add to the diagram",
         "openEntryInNewTab": "Open Entry in new tab",
-        "openDangerInNewTab": "Open Danger in new tab"
+        "openDangerInNewTab": "Open Danger in new tab",
+        "setColor": "Set Color",
+        "setStyle": "Set Style"
       },
       "dialogs": {
         "cannotActivateFromCompendium": "Cannot activate from compendium",

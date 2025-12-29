@@ -5,8 +5,9 @@ import { CustomFieldsApplication } from '@/applications/settings/CustomFieldsApp
 import { SpeciesListApplication } from '@/applications/settings/SpeciesListApplication';
 import { ImageSettingsApplication } from '@/applications/settings/ImageSettingsApplication';
 import { RollTableSettingsApplication } from '@/applications/settings/RollTableSettingsApplication';
-import { SessionDisplayMode, Species, TagList, GeneratorType, SettingIndex, CustomFieldContentType, CustomFieldDescription, } from '@/types';
+import { StoryWebSettingsApplication } from '@/applications/settings/StoryWebSettingsApplication';
 import { ApiCustomGenerateImagePostRequestImageConfiguration, ApiCustomGenerateImagePostRequestImageModelEnum, ApiCustomGenerateImagePostRequestTextModelEnum } from '@/apiClient';
+import { StoryWebNodeTypes, SessionDisplayMode, Species, TagList, GeneratorType, SettingIndex, CustomFieldContentType, CustomFieldDescription, } from '@/types';
 
 export type ImageConfiguration = ApiCustomGenerateImagePostRequestImageConfiguration & {
   descriptionField?: string;
@@ -27,7 +28,6 @@ export interface ImageVisibility {
    width: number;
    height: number;
  }
-
 
 export enum SettingKey {
   // displayed in main settings window
@@ -82,6 +82,11 @@ export enum SettingKey {
   imageMenu = 'imageMenu', // display the image visibility menu
   showImages = 'showImages', // whether to show images on settings, campaigns, etc
 
+  // story graph connections settings
+  storyWebSettingsMenu = 'storyWebSettingsMenu', // display the story graph connections menu
+  storyWebConnectionColors = 'storyWebConnectionColors', // predefined colors for edges
+  storyWebConnectionStyles = 'storyWebConnectionStyles', // predefined styles for edges
+  storyWebNodeFields = 'storyWebNodeFields', // selected fields to display in node tooltips by content type
 }
 
 export type SettingKeyType<K extends SettingKey> =
@@ -110,6 +115,10 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.speciesList ? Species[] :
     K extends SettingKey.imageMenu ? never :
     K extends SettingKey.showImages ? ImageVisibility :
+    K extends SettingKey.storyWebSettingsMenu ? never :
+    K extends SettingKey.storyWebConnectionColors ? { id: string; name: string; value: string }[] :
+    K extends SettingKey.storyWebConnectionStyles ? { id: string; name: string; value: string }[] :
+    K extends SettingKey.storyWebNodeFields ? Partial<Record<StoryWebNodeTypes, string[]>> :
     K extends SettingKey.aiImagePrompts ? Record<CustomFieldContentType, string> :
     K extends SettingKey.aiImageConfigurations ? Record<CustomFieldContentType, ImageConfiguration> :
     K extends SettingKey.entryTags ? TagList :
@@ -202,6 +211,15 @@ export class ModuleSettings {
       icon: 'fas fa-image',               // A Font Awesome icon used in the submenu button
       permissions: ['SETTINGS_WRITE'], // Optional: restrict to GM only
       type: ImageSettingsApplication,
+    },
+    {
+      settingID: SettingKey.storyWebSettingsMenu,
+      name: 'settings.storyWebSettings',
+      label: 'fcb.settings.storyWebSettingsLabel',   // localized by Foundry
+      hint: 'settings.storyWebSettingsHelp',
+      icon: 'fa-solid fa-project-diagram',
+      permissions: ['SETTINGS_WRITE'],
+      type: StoryWebSettingsApplication,
     }
   ];
 
@@ -425,6 +443,31 @@ export class ModuleSettings {
     },
     {
       settingID: SettingKey.aiImageConfigurations,
+      default: {},
+      type: Object,
+    },
+    {
+      settingID: SettingKey.storyWebConnectionColors,
+      default: [
+        // get the primary color from the theme
+        { id: 'normal', name: 'Normal', value: getComputedStyle(document.body).getPropertyValue('--fcb-primary') },
+      ],
+      type: Array,
+    },
+    {
+      settingID: SettingKey.storyWebConnectionStyles,
+      default: [
+        { id: 'solid', name: 'Solid', value: 'solid' },
+        { id: 'dashed', name: 'Dashed', value: 'dashed' },
+        { id: 'dotted', name: 'Dotted', value: 'dotted' },
+        { id: 'dash_dot', name: 'Dash-Dot', value: 'dash_dot' },
+        { id: 'long_dash', name: 'Long Dash', value: 'long_dash' },
+        { id: 'dense_dot', name: 'Dense Dot', value: 'dense_dot' },
+      ],
+      type: Array,
+    },
+    {
+      settingID: SettingKey.storyWebNodeFields,
       default: {},
       type: Object,
     },

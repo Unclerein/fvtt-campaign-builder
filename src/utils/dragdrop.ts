@@ -151,7 +151,7 @@ export const itemDragStart = async(event: DragEvent, uuid: string): Promise<void
           const existingPreview = document.getElementById("drag-preview");
           if (existingPreview) existingPreview.remove();
                    
-          const preview = foundry.applications.ux.DragDrop.implementation.createDragImage({ src: item.img }, w, h);
+          const preview = foundry.applications.ux.DragDrop.implementation.createDragImage({ src: item.img } as HTMLImageElement, w, h);
 
           event.dataTransfer.setDragImage(preview, w / 2, h / 2);
         }

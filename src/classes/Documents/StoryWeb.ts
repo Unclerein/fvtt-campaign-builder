@@ -1,4 +1,3 @@
-import { toRaw } from 'vue';
 import { DOCUMENT_TYPES } from '@/documents';
 import { FCBJournalEntryPage, FCBJournalEntryPageStatic } from './FCBJournalEntryPage';
 import { Campaign } from './Campaign';
@@ -18,6 +17,7 @@ export class StoryWeb extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.StoryWeb
     nodes: [],
     edges: [],
     positions: {},
+    edgeStyles: {},
   } as unknown as StoryWebDocClass['system'];
 
   public campaign: Campaign | null;
@@ -115,6 +115,14 @@ export class StoryWeb extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.StoryWeb
 
   set positions(value: Record<string, { x: number, y: number }>) {
     this._clone.system.positions = { ...value };
+  }
+
+  get edgeStyles(): {[x:string]: { colorId: string, styleId: string }} {
+    return this._clone.system.edgeStyles || {};
+  }
+
+  set edgeStyles(value: {[x:string]: { colorId: string, styleId: string }}) {
+    this._clone.system.edgeStyles = { ...value };
   }
 
   /** withRelationships will also bring in all the related entries */
@@ -280,6 +288,7 @@ export class StoryWeb extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.StoryWeb
   protected _prepData(data: StoryWebDocClass): void {
     // convert unsafe keys
     data.system.positions = cleanKeysOnSave(data.system.positions);
+    data.system.edgeStyles = cleanKeysOnSave(data.system.edgeStyles);
   }
 
   public async save(): Promise<void> {
