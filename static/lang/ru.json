@@ -79,7 +79,9 @@
       "customFieldsHelp": "Настройте дополнительные поля и инструкции ИИ для каждого типа контента",
       "storyWebSettings": "Story Web Settings",
       "storyWebSettingsLabel": "Configure Settings",
-      "storyWebSettingsHelp": "Configure line colors/styles and element text for story webs"
+      "storyWebSettingsHelp": "Configure line colors/styles and element text for story webs",
+      "genericFoundryTab": "Показать вкладку Foundry на записях",
+      "genericFoundryTabHelp": "Когда включено, записи будут иметь вкладку Foundry, которая может содержать любой тип документа Foundry (сцены, актёры, предметы и т.д.). Это полезно для проведения игровых сессий полностью из записей без использования кампаний/сессий."
     },
     "applications": {
       "sessionNotes": {
@@ -443,7 +445,8 @@
         "vignetteHelpText": "Сцены, которые приносят разрешение, открывают новые пути, изменяют историю. 1 на 45 минут. Нажмите, чтобы узнать больше от Lazy DM.",
         "locationHelpText": "Детализированные, запоминающиеся, фантастические локации, которые персонажи могут исследовать. Нажмите, чтобы узнать больше от Lazy DM.",
         "addJournal": "Добавить журнал",
-        "addJournalDrag": "(или перетащите журнал или страницу журнала)"
+        "addJournalDrag": "(или перетащите журнал или страницу журнала)",
+        "addDocumentDrag": "(перетащите любой документ Foundry)"
       },
       "campaign": {
         "addPC": "Добавить персонажа игрока",
@@ -467,7 +470,8 @@
           "characters": "Персонажи",
           "locations": "Локации",
           "pcs": "Персонаж игрока",
-          "organizations": "Организации"
+          "organizations": "Организации",
+          "foundry": "Foundry"
         },
         "campaign": {
           "pcs": "Персонаж игрока",

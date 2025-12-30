@@ -79,7 +79,9 @@
       "customFieldsHelp": "Zusätzliche Felder und KI-Anweisungen für jeden Inhaltstyp konfigurieren",
       "storyWebSettings": "Story Web Settings",
       "storyWebSettingsLabel": "Configure Settings",
-      "storyWebSettingsHelp": "Configure line colors/styles and element text for story webs"
+      "storyWebSettingsHelp": "Configure line colors/styles and element text for story webs",
+      "genericFoundryTab": "Zeige Foundry-Tab auf Einträgen",
+      "genericFoundryTabHelp": "Wenn aktiviert, haben Einträge einen Foundry-Tab, der jede Art von Foundry-Dokument (Szenen, Schauspieler, Gegenstände, etc.) enthalten kann. Dies ist nützlich, um Spielsitzungen vollständig von Einträgen aus zu steuern, ohne Kampagnen/Sitzungen zu verwenden."
     },
     "applications": {
       "sessionNotes": {
@@ -413,7 +415,8 @@
         "vignetteHelpText": "Szenen, die eine Lösung bringen, neue Wege öffnen, die Geschichte verändern. 1 pro 45 Minuten. Klicken Sie, um mehr von Lazy DM zu lesen.",
         "locationHelpText": "Detaillierte, denkwürdige, fantastische Orte, die die Charaktere erkunden können. Klicken Sie, um mehr von Lazy DM zu lesen.",
         "addJournal": "Journal hinzufügen",
-        "addJournalDrag": "(oder ziehen/ablegen eines Journals oder einer Journalseite)"
+        "addJournalDrag": "(oder ziehen/ablegen eines Journals oder einer Journalseite)",
+        "addDocumentDrag": "(ziehen/ablegen eines beliebigen Foundry-Dokuments)"
       },
       "campaign": {
         "addPC": "PC hinzufügen",
@@ -437,7 +440,8 @@
           "characters": "Charaktere",
           "locations": "Orte",
           "organizations": "Organisationen",
-          "pcs": "PCs"
+          "pcs": "PCs",
+          "foundry": "Foundry"
         },
         "campaign": {
           "pcs": "PCs",
