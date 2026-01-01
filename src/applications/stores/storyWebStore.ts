@@ -643,22 +643,34 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
     if (!currentStoryWeb.value || !currentNetwork.value)
       return;
 
-    // confirm
     const nodes = toRaw(currentNetwork.value).getConnectedNodes(edgeId) as string[];
-
-    // show confirmation if both are entries
     const node1 = currentStoryWeb.value?.nodes.find(n => n.uuid === nodes[0]);
     const node2 = currentStoryWeb.value?.nodes.find(n => n.uuid === nodes[1]);
 
     if (!node1 || !node2) 
       throw new Error('Missing node in storyWebStore.removeEdge()');
 
+    // first handle non-custom cases
     if (node1?.source !== StoryWebNodeSource.Custom && node2?.source !== StoryWebNodeSource.Custom) {
+      // show confirmation for non-custom ones
       const result = await FCBDialog.confirmDialog(localize('labels.storyWeb.removeRelationship'), localize('labels.storyWeb.removeRelationshipConfirm'));
       if (!result)
         return;
 
-      await relationshipStore.deleteArbitraryRelationship(node1.uuid, node2.uuid);
+      const node1Danger = node1.type === StoryWebNodeTypes.Danger;
+      const node2Danger = node2.type === StoryWebNodeTypes.Danger;
+
+      // Handle danger-entry connections
+      if (node1Danger || node2Danger) {
+        // Remove the entry from the danger's participants
+        await removeDangerParticipant(
+          node1Danger ? node1.uuid : node2.uuid,
+          node1Danger ? node2.uuid : node1.uuid
+        );
+      } else {
+        // Regular entry-entry relationship
+        await relationshipStore.deleteArbitraryRelationship(node1.uuid, node2.uuid);
+      }
     } 
 
     // if either edge was implicit, remove that one too - unless it's attached to something else
@@ -680,6 +692,30 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
     
     // refresh the drawing
     await mainStore.refreshStoryWeb();
+  };
+
+  /** Remove a participant from a danger */
+  const removeDangerParticipant = async (dangerId: string, participantUuid: string): Promise<void> => {
+    // dangerId is in format "frontUuid|dangerIndex"
+    const [frontId, dangerIndex] = dangerId.split('|');
+    const front = await Front.fromUuid(frontId);
+    if (!front)
+      throw new Error(`Front not found for danger ${dangerId}`);
+
+    const dangerNum = Number.parseInt(dangerIndex);
+    if (dangerNum < 0 || dangerNum >= front.dangers.length)
+      throw new Error(`Invalid danger index ${dangerIndex} for front ${frontId}`);
+
+    const danger = front.dangers[dangerNum];
+    if (!danger)
+      throw new Error(`Danger not found in storyWebStore.removeDangerParticipant() for danger ${dangerId}`);
+    
+    // Filter out the participant
+    danger.participants = danger.participants.filter(p => p.uuid !== participantUuid);
+    
+    // Update the danger
+    front.updateDanger(dangerNum, danger);
+    await front.save();
   };
 
   ///////////////////////////////
@@ -1242,6 +1278,9 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
   }
 
   const onNetworkDoubleClick = async (eventInfo: NetworkClickEventInfo) => {
+    if (isConnectionMode.value)
+      return;
+    
     // nodes is a list of nodes clicked on
     // edges is either edges clicked on or could be edges connected to nodes clicked
     const { nodes, edges, pointer } = eventInfo;
@@ -1258,6 +1297,9 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
   }
 
   const onDragStart = (eventInfo: NetworkClickEventInfo) => {
+    if (isConnectionMode.value)
+      return;
+    
     const network = toRaw(currentNetwork.value);
     if (!network)
       return;
@@ -1459,6 +1501,9 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
   };
 
   const onNetworkContentMenu = (eventInfo: NetworkClickEventInfo) => {
+    if (isConnectionMode.value)
+      return;
+
     // nodes is a list of nodes clicked on
     // edges is either edges clicked on or could be edges connected to nodes clicked
     const { pointer, event } = eventInfo;
@@ -1516,9 +1561,13 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
     };
 
     // Disable physics and node dragging during connection mode
+    // also turn off hover mode because we handle it ourselves
     toRaw(currentNetwork.value).setOptions({
       physics: { enabled: false },
-      interaction: { dragNodes: false }
+      interaction: { 
+        dragNodes: false,
+        hover: false
+      }
     });
 
     // Get canvas element and add DOM event listeners
@@ -1548,8 +1597,12 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
 
     // Re-enable physics and node dragging
     toRaw(currentNetwork.value).setOptions({
-      physics: { enabled: ModuleSettings.get(SettingKey.storyWebAutoArrange) },
-      interaction: { dragNodes: true }
+      // @ts-ignore
+      physics: ModuleSettings.get(SettingKey.storyWebAutoArrange) ? window.fcbStoryWebPhysics : false,      
+      interaction: { 
+        dragNodes: true,
+        hover: true
+      }
     });
 
     // Remove DOM event listeners from canvas
@@ -1749,8 +1802,10 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
     
     if (nodeUnderCursor && connectionStartNode.value) {
       const isValid = isValidConnection(connectionStartNode.value, nodeUnderCursor as string);
-      
-      if (isValid && highlightedNode.value !== nodeUnderCursor) {
+      if (!isValid) {
+        toRaw(currentNetwork.value).unselectAll();
+        highlightedNode.value = null;
+      } else if (highlightedNode.value !== nodeUnderCursor) {
         // Clear previous highlight
         if (highlightedNode.value) {
           toRaw(currentNetwork.value).unselectAll();
@@ -1758,13 +1813,9 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
         // Highlight new valid node
         toRaw(currentNetwork.value).selectNodes([nodeUnderCursor as string]);
         highlightedNode.value = nodeUnderCursor as string;
-      } else if (!isValid && highlightedNode.value) {
-        // Clear highlight if hovering over invalid node or empty space
-        toRaw(currentNetwork.value).unselectAll();
-        highlightedNode.value = null;
       }
-    } else if (highlightedNode.value) {
-      // Clear highlight if hovering over empty space
+    } else {
+      // Clear highlight if hovering over empty space or there's no start node
       toRaw(currentNetwork.value).unselectAll();
       highlightedNode.value = null;
     }
@@ -1799,8 +1850,9 @@ export const useStoryWebStore = defineStore('storyWeb', () => {
   };
 
   const onConnectionModeKeydown = (event: KeyboardEvent) => {
-    event.stopImmediatePropagation(); // make sure foundry doesn't handle it
     if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopImmediatePropagation(); // make sure foundry doesn't handle it
       endConnectionMode();
     }
   };
