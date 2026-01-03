@@ -35,7 +35,7 @@
                   <div 
                     class="fcb-sheet-image"
                     @drop="onDropActor"
-                    @dragover="onDragoverActor"
+                    @dragover="standardDragover"
                     @click="onActorImageClick"
                     @contextmenu.prevent="onImageContextMenu"
                   >
@@ -101,6 +101,7 @@
     <!-- Related Items Management Dialog -->
     <RelatedEntriesManagementDialog
       v-model="showRelatedEntriesDialog"
+      :description="localize('dialogs.relatedEntriesManagement.pcDescription')"
       :added-ids="pendingAddedUUIDs"
       :removed-ids="pendingRemovedUUIDs"
       @update="onRelatedEntriesDialogUpdate"
@@ -118,8 +119,8 @@
   import { useMainStore, useNavigationStore, useSettingDirectoryStore, useRelationshipStore } from '@/applications/stores';
   import { getTopicIcon, } from '@/utils/misc';
   import { localize } from '@/utils/game';
-  import { getValidatedData } from '@/utils/dragdrop';
-  import { getRelatedEntries } from '@/utils/uuidExtraction';
+  import { getValidatedData, standardDragover } from '@/utils/dragdrop';
+  import { getEntryRelatedEntries } from '@/utils/uuidExtraction';
   import { ModuleSettings, SettingKey } from '@/settings';
   
   // library components
@@ -213,14 +214,6 @@
 
   ////////////////////////////////
   // event handlers
-  const onDragoverActor = (event: DragEvent) => {
-    event.preventDefault();  
-    event.stopPropagation();
-
-    if (event.dataTransfer && !event.dataTransfer?.types.includes('text/plain'))
-      event.dataTransfer.dropEffect = 'none';
-  }
-
   const onDropActor = async (event: DragEvent) => {
     event.preventDefault();
     event.stopPropagation();
@@ -279,7 +272,7 @@
     }
 
     // check against current relationships
-    const { added, removed } = await getRelatedEntries(addedUUIDs, removedUUIDs, currentEntry.value);
+    const { added, removed } = await getEntryRelatedEntries(addedUUIDs, removedUUIDs, currentEntry.value);
 
     let invalidOnes: string[] = [];
 

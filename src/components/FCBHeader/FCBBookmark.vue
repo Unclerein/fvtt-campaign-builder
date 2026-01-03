@@ -1,13 +1,13 @@
 <template>
   <div 
     class="fcb-bookmark-button" 
-    :title="bookmark.header.name" 
+    :title="props.titleOverride ? props.titleOverride : bookmark.header.name" 
     draggable="true"
     @click.left="onBookmarkClick"
     @contextmenu="onBookmarkContextMenu"
     @dragstart="onDragStart"
     @drop="onDrop"
-    @dragover="onDragover"
+    @dragover="standardDragover"
   >
     <div>
       <i 
@@ -30,7 +30,7 @@
 
   // library components
   import ContextMenu from '@imengyu/vue3-context-menu';
-  import { getValidatedData } from '@/utils/dragdrop';
+  import { getValidatedData, standardDragover } from '@/utils/dragdrop';
 
   // local components
 
@@ -43,7 +43,11 @@
     bookmark: {
       type: Object as PropType<Bookmark>,
       required: true,
-    } 
+    },
+    titleOverride: {
+      type: String,
+      default: '',
+    },
   });
 
   ////////////////////////////////
@@ -66,6 +70,11 @@
   const onBookmarkContextMenu = (event: MouseEvent): void => {
     //prevent the browser's default menu
     event.preventDefault();
+
+    // Don't show context menu for session bookmark
+    if (props.bookmark.id.startsWith('session-')) {
+      return;
+    }
 
     //show our menu
     ContextMenu.showContextMenu({
@@ -107,6 +116,12 @@
 
   // handle a bookmark or tab dragging
   const onDragStart = (event: DragEvent): void => {
+    // Don't allow dragging session bookmarks
+    if (props.bookmark.id.startsWith('session-')) {
+      event.preventDefault();
+      return;
+    }
+
     const dragData = { 
       //from: this.object.uuid 
       type: 'fcb-bookmark',
@@ -116,16 +131,13 @@
     event.dataTransfer?.setData('text/plain', JSON.stringify(dragData));
   }; 
 
-  const onDragover = (event: DragEvent) => {
-    event.preventDefault();  
-    event.stopPropagation();
-
-    if (event.dataTransfer && !event.dataTransfer?.types.includes('text/plain'))
-      event.dataTransfer.dropEffect = 'none';
-  }
-
   const onDrop = async(event: DragEvent) => {
     event.preventDefault();  
+
+    // Don't allow dropping on the session bookmark
+    if (props.bookmark.id.startsWith('session-')) {
+      return;
+    }
 
     // parse the data - looking for bookmarks
     let data = getValidatedData(event) as BookmarkDragDropData | undefined;
@@ -169,6 +181,18 @@
     border: 1px solid var(--fcb-button-border);
     background: var(--fcb-button-bg);
     color: var(--fcb-button-color);
+
+    // Special styling for session bookmark
+    &.fcb-session-bookmark {
+      background: var(--fcb-primary);
+      color: var(--fcb-text-on-primary);
+      font-weight: 600;      
+
+      &:hover {
+        color: var(--fcb-primary);
+        background: var(--fcb-text-on-primary);
+      }
+    }
 
     &#fcb-add-bookmark {
       border-radius: 4px;
