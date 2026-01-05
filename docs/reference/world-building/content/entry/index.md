@@ -31,7 +31,7 @@ Among other fields, every Entry has a [^Type], which is used to categorize it.
 
 The Type is used in [search] results, and it can be used to group Entries in the [Setting Directory](/reference/navigation/sidebar#group-by-type).  
 
-The Type field is an autocomplete, and as you start typing it will prompt you with matching Types (specific to the category of Entry you are working with). So, for example, if you are in a Location and another Location has been tagged "Region", then you will see "Region" available as an auto-complete.  If you are in an Organization, you won't see that tag available. 
+The Type field is an autocomplete, and as you start typing it will prompt you with matching Types (specific to the category of Entry you are working with). So, for example, if you are in a Location and another Location has been given type "Region", then you will see "Region" available as an auto-complete.  If you are in an Organization, you won't see that type available. 
 
 To add a new Type to the list, just type it in the box and hit Enter (or leave the box).
 
@@ -42,5 +42,6 @@ There are several tabs on the Entry details screen:
   - [Description tab](./description) - overview information about the Entry
   - [Journals tab](./journals) - a place to track Foundry journal entries that relate to the Entry.  Good for tracking extra images or any other content that you want to keep track of and/or share with the player(s)
   - [Relationship tabs](./relationships) - show the connections between this entry and others
-  - Foundry document tabs: After the Entry relationship tabs, you'll find an [Actors tab](/reference/world-building/content/character/#actors) when looking at a Character and a [Scenes tab](/reference/world-building/content/location/#scenes) when looking at a Location.  
+  - Foundry document tabs: After the Entry relationship tabs, you'll find an [Actors tab](/reference/world-building/content/character/#actors) when looking at a Character and a [Scenes tab](/reference/world-building/content/location/#scenes) when looking at a Location.
   - [Sessions tab](./sessions) - a quick way to find game session notes that mention this entry
+  - [Generic Foundry Document tab](./generic-foundry) - When enabled in [Module Settings], provides a table for linking any type of Foundry document (Scenes, Actors, Items, RollTables, Playlists, etc.) to the entry. 

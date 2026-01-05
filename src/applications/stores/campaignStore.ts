@@ -9,10 +9,9 @@ import { useCampaignDirectoryStore, useMainStore, useNavigationStore, } from '@/
 import { FCBDialog } from '@/dialogs';
 
 // types
-import { RelatedPCDetails, FieldData, CampaignLoreDetails, ToDoItem, ToDoTypes, Idea,} from '@/types';
+import { RelatedPCDetails, BaseTableColumn, CampaignLoreDetails, ToDoItem, ToDoTypes, Idea,} from '@/types';
 import { Arc, Campaign, Entry, Session } from '@/classes';
 import { localize } from '@/utils/game';
-import Document from 'node_modules/@types/fvtt-types/src/foundry/common/abstract/document.mjs';
 import { notifyWarn } from '@/utils/notifications';
 
 export enum CampaignTableTypes {
@@ -61,7 +60,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     [CampaignTableTypes.Idea]: [
       { field: 'text', style: 'text-align: left', header: 'Idea', sortable: true, editable: true },
     ],
-  } as Record<CampaignTableTypes, FieldData[]>;
+  } as Record<CampaignTableTypes, BaseTableColumn[]>;
 
   ///////////////////////////////
   // other stores
@@ -465,7 +464,7 @@ export const useCampaignStore = defineStore('campaign', () => {
       const entry = await Entry.fromUuid(toDo.linkedUuid);
       if (!entry)  {
         // I don't think we currently link to documents, but just in case
-        const document = await fromUuid<Document<any, any>>(toDo.linkedUuid);
+        const document = await fromUuid<foundry.abstract.Document<any, any>>(toDo.linkedUuid);
         if (!document) {
           notifyWarn(localize('notifications.todoReferenceNotFound'));
           return;

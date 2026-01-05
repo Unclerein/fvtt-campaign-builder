@@ -3,18 +3,7 @@ import { localize } from '@/utils/game';
 import { ModuleSettings, SettingKey } from '@/settings';
 import type { ImageConfiguration } from '@/settings';
 import { Entry } from '@/classes';
-
-export function toCustomFieldKey(text: string): string {
-  const lowered = (text || '').toLowerCase();
-
-  // keep only letters, numbers, and spaces
-  const cleaned = lowered.replace(/[^a-z0-9 ]/g, '');
-
-  const underscored = cleaned.trim().replace(/\s+/g, '_');
-  if (!underscored) return '_';
-
-  return underscored;
-}
+import { generateIdFromName } from '@/utils/idGeneration';
 
 export function makeCustomFieldKeyUnique(baseKey: string, usedKeys: Set<string>): string {
   let key = baseKey;
@@ -29,31 +18,31 @@ export function makeCustomFieldKeyUnique(baseKey: string, usedKeys: Set<string>)
  */
 export const resetDefaultCustomFields = async () => {
   const entryRoleplayingNotesLabel = localize('labels.fields.entryRolePlayingNotes');
-  const entryRoleplayingNotesKey = toCustomFieldKey(entryRoleplayingNotesLabel);
+  const entryRoleplayingNotesKey = generateIdFromName(entryRoleplayingNotesLabel);
 
   const boxedTextLabel = localize('labels.fields.boxedText');
-  const boxedTextKey = toCustomFieldKey(boxedTextLabel);
+  const boxedTextKey = generateIdFromName(boxedTextLabel);
 
   const gmNotesLabel = localize('labels.fields.gmNotes');
-  const gmNotesKey = toCustomFieldKey(gmNotesLabel);
+  const gmNotesKey = generateIdFromName(gmNotesLabel);
 
   const backgroundLabel = localize('labels.fields.background');
-  const backgroundKey = toCustomFieldKey(backgroundLabel);
+  const backgroundKey = generateIdFromName(backgroundLabel);
 
   const otherPlotPointsLabel = localize('labels.fields.otherPlotPoints');
-  const otherPlotPointsKey = toCustomFieldKey(otherPlotPointsLabel);
+  const otherPlotPointsKey = generateIdFromName(otherPlotPointsLabel);
 
   const desiredMagicItemsLabel = localize('labels.fields.desiredMagicItems');
-  const desiredMagicItemsKey = toCustomFieldKey(desiredMagicItemsLabel);
+  const desiredMagicItemsKey = generateIdFromName(desiredMagicItemsLabel);
 
   const strongStartLabel = localize('labels.fields.strongStart');
-  const strongStartKey = toCustomFieldKey(strongStartLabel);
+  const strongStartKey = generateIdFromName(strongStartLabel);
 
   const houseRulesLabel = localize('labels.fields.houseRules');
-  const houseRulesKey = toCustomFieldKey(houseRulesLabel);
+  const houseRulesKey = generateIdFromName(houseRulesLabel);
 
   const characterPrompt = `
-    Generate a description of a location for GM use in a session.  Focus on immediate sensory impressions: Appearance (what they look like at first glance: clothing, posture, expression). Behavior / presence (mannerisms, how they carry themselves, the “vibe” they give off). Mood / emotional impression (how the characters make the PCs feel on meeting them).  Avoid backstory, stats, secret motives, or mechanical detail — keep it to what the PCs see, hear, and sense right now, before interacting with them. DO NOT describe anything about the location - just the character.
+    Generate a description of a character for GM use in a session.  Focus on immediate sensory impressions: Appearance (what they look like at first glance: clothing, posture, expression). Behavior / presence (mannerisms, how they carry themselves, the “vibe” they give off). Mood / emotional impression (how the characters make the PCs feel on meeting them).  Avoid backstory, stats, secret motives, or mechanical detail — keep it to what the PCs see, hear, and sense right now, before interacting with them. DO NOT describe anything about the location - just the character.
     It should have the following format: first line (don't include this header): a 1-sentence summary of who the NPC is and their general vibe.
     <br><b>Appearance:</b> a 1-2 sentence description of their appearance suitable for description to players in a game.
     <br><b>Voice:</b> generate a unique and easy-to-replicate voice style that does not rely on regional or ethnic accents. The voice should be suitable for tabletop roleplaying and easy for a Dungeon Master to repeat across sessions. Use the following elements to make it distinctive: 1) Pace: (e.g., slow, rapid, halting, smooth), 2) Tone: (e.g., gravelly, nasal, airy, booming, whispery), 3) Pitch: (e.g., high, low, medium), and 4) Rhythm or Quirk: (e.g., pauses often, speaks in rhyming phrases, repeats key words, ends sentences with a sigh or chuckle).  Combine those traits into a single sentence describes how the character sounds in a way that helps a DM perform the voice consistently. Avoid accents and instead focus on vocal characteristics and speech patterns.  For example: 
@@ -71,7 +60,7 @@ export const resetDefaultCustomFields = async () => {
     <br><b>Role-play hooks:</b> 2 ideas for how characters might interact with or feel about the location
   `;
   const organizationPrompt = `
-    Generate a description of a location for GM use in a session. Focus on how the organization is perceived publicly, the “surface layer” the PCs would know or sense. Think of what might be said in a tavern or seen in a city square. Include: Symbols / colors / uniforms / insignia. Reputation / rumors (what the average person thinks of them). Public presence (guards in the streets, banners, ceremonies, recruiters, pamphlets, etc.). Mood / impression (fearsome, respected, charitable, shadowy). Avoid inner workings, true motives, or mechanics — it’s just what PCs would pick up without special investigation.
+    Generate a description of an organization for GM use in a session. Focus on how the organization is perceived publicly, the “surface layer” the PCs would know or sense. Think of what might be said in a tavern or seen in a city square. Include: Symbols / colors / uniforms / insignia. Reputation / rumors (what the average person thinks of them). Public presence (guards in the streets, banners, ceremonies, recruiters, pamphlets, etc.). Mood / impression (fearsome, respected, charitable, shadowy). Avoid inner workings, true motives, or mechanics — it’s just what PCs would pick up without special investigation.
     It should have the following format: first line (don't include this header): a 1-sentence summary of who they are and what they want
     <br><b>Symbols, colors, or style:</b> a quick description of their visual identity
     <br><b>Core beliefs or goals:</b> list of 3 things that motivate them

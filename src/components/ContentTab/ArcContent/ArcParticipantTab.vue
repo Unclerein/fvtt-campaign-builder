@@ -8,8 +8,10 @@
     :extra-add-text="localize('labels.arc.addParticipantDrag')"
     :allow-edit="true"
     :help-text="localize('labels.arc.participantHelpText')"
+    :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
+    @related-entries-changed="(added, removed) => emit('relatedEntriesChanged', added, removed)"
     @add-item="onAddItem"
-    @dragoverNew="onDragoverNew"
+    @dragoverNew="standardDragover"
     @drop-new="onDropNew"
     @cell-edit-complete="onCellEditComplete"
   />
@@ -34,11 +36,12 @@
   import { ArcTableTypes, useArcStore, useMainStore } from '@/applications/stores';
   import { Topics, CellEditCompleteEvent, EntryNodeDragData,} from '@/types';
   import { localize } from '@/utils/game'
-  import { getType, getValidatedData } from '@/utils/dragdrop';
+  import { getType, getValidatedData, standardDragover } from '@/utils/dragdrop';
   import { getTopicText } from '@/compendia';
   import { notifyInfo } from '@/utils/notifications';
   import { mapEntryToOption } from '@/utils/misc';
-
+  import { FCBDragTypes } from '@/utils/dragdrop';
+  import { ModuleSettings, SettingKey } from '@/settings';
 
   // library components
 
@@ -47,6 +50,7 @@
   import RelatedItemDialog from '@/components/dialogs/RelatedItemDialog.vue';
   
   // types
+  import { BaseTableColumn } from '@/types';
   import { Entry } from '@/classes';
 
   ////////////////////////////////
@@ -54,6 +58,9 @@
 
   ////////////////////////////////
   // emits
+  const emit = defineEmits<{
+    (e: 'relatedEntriesChanged', addedUUIDs: string[], removedUUIDs: string[]): void;
+  }>();
 
   ////////////////////////////////
   // store
@@ -85,7 +92,7 @@
     });
   });
 
-  const columns = computed(() => {
+  const columns = computed((): BaseTableColumn[] => {
     const actionColumn = { field: 'actions', style: 'text-align: left; width: 100px; max-width: 100px', header: 'Actions' };
 
     const extraFields = arcStore.extraFields[ArcTableTypes.Participant]
@@ -96,8 +103,8 @@
   const actions = computed(() => ([
     {
       icon: 'fa-trash', 
-      callback: (data) => onDeleteParticipant(data.uuid), 
-      tooltip: localize('tooltips.deleteNPC') 
+      callback: (data, removedUUIDs) => onDeleteParticipant(data.uuid, removedUUIDs), 
+      tooltip: localize('tooltips.deleteNPC'),
     },
 
     {
@@ -128,8 +135,11 @@
 
   ////////////////////////////////
   // event handlers
-  const onDeleteParticipant = async (uuid: string) => {
-    await arcStore.deleteParticipant(uuid);
+  const onDeleteParticipant = async (uuid: string, removedUUIDs?: string[]) => {
+    const deleted = await arcStore.deleteParticipant(uuid);
+    if (deleted && removedUUIDs && removedUUIDs.length > 0) {
+      emit('relatedEntriesChanged', [], removedUUIDs);
+    }
   }
 
   const onCopyParticipantToSession = async (uuid: string) => {
@@ -143,20 +153,12 @@
     await arcStore.updateParticipantNotes(data.uuid, newValue as string);
   }
   
-  const onDragoverNew = (event: DragEvent) => {
-    event.preventDefault();  
-    event.stopPropagation();
-
-    if (event.dataTransfer && !event.dataTransfer?.types.includes('text/plain'))
-      event.dataTransfer.dropEffect = 'none';
-  }
-
   const onDropNew = async(event: DragEvent) => {
     event.preventDefault();  
 
     // parse the data - make sure its an entry
     const data = getValidatedData(event);
-    if (!data || getType(data) !== 'fcb-entry') {
+    if (!data || getType(data) !== FCBDragTypes.Entry) {
       return;
     }
 

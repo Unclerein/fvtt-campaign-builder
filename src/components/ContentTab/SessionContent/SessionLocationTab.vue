@@ -7,12 +7,14 @@
     :add-button-label="localize('labels.session.addLocation')" 
     :extra-add-text="localize('labels.session.addLocationDrag')"
     :allow-drop-row="false"
-    :allow-edit="props.arcMode"
+    :allow-edit="true"
     :help-text="localize('labels.session.locationHelpText')"
     help-link="https://slyflourish.com/designing_fantastic_locations.html"
     :can-reorder="false"
+    :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
+    @related-entries-changed="(added, removed) => emit('relatedEntriesChanged', added, removed)"
     @add-item="showLocationPicker=true"
-    @dragover-new="onDragoverNew"
+    @dragover-new="standardDragover"
     @dropNew="onDropNew"
     @cell-edit-complete="onCellEditComplete"
   />
@@ -32,10 +34,10 @@
 
   // local imports
   import { useSessionStore, SessionTableTypes, useArcStore, ArcTableTypes } from '@/applications/stores';
-  import { Topics, RelatedEntryDialogModes, CellEditCompleteEvent, EntryNodeDragData, } from '@/types';
   import { localize } from '@/utils/game'
-  import { getType, getValidatedData } from '@/utils/dragdrop';
+  import { getType, getValidatedData, standardDragover, FCBDragTypes } from '@/utils/dragdrop';
   import { notifyInfo } from '@/utils/notifications';
+  import { ModuleSettings, SettingKey } from '@/settings';
 
   // library components
 
@@ -44,6 +46,7 @@
   import RelatedEntryDialog from '@/components/dialogs/RelatedEntryDialog.vue';
 
   // types
+  import { BaseTableColumn, Topics, RelatedEntryDialogModes, CellEditCompleteEvent, EntryNodeDragData, } from '@/types';
   
   ////////////////////////////////
   // props
@@ -57,6 +60,9 @@
 
   ////////////////////////////////
   // emits
+  const emit = defineEmits<{
+    (e: 'relatedEntriesChanged', addedUUIDs: string[], removedUUIDs: string[]): void;
+  }>();
 
   ////////////////////////////////
   // store
@@ -80,7 +86,7 @@
     }))
   ));
 
-  const columns = computed(() => {
+  const columns = computed((): BaseTableColumn[] => {
     const actionColumn = { field: 'actions', style: 'text-align: left; width: 100px; max-width: 100px', header: 'Actions' };
 
     const extraFields = props.arcMode ? 
@@ -93,13 +99,12 @@
   const actions = computed(() => ([
     {
       icon: 'fa-trash', 
-      callback: (data) => onDeleteLocation(data.uuid), 
-      tooltip: localize('tooltips.deleteLocation') 
+      callback: (data, removedUUIDs) => onDeleteLocation(data.uuid, removedUUIDs), 
+      tooltip: localize('tooltips.deleteLocation'),
     },
     {
       icon: 'fa-pen', 
       isEdit: true, 
-      display: () => props.arcMode,
       callback: () => {},
       tooltip: localize('tooltips.editNotes') 
     },
@@ -132,8 +137,11 @@
 
   ////////////////////////////////
   // event handlers
-  const onDeleteLocation = async (uuid: string) => {
-    await store.value.deleteLocation(uuid);
+  const onDeleteLocation = async (uuid: string, removedUUIDs?: string[]) => {
+    const deleted = await store.value.deleteLocation(uuid);
+    if (deleted && removedUUIDs && removedUUIDs.length > 0) {
+      emit('relatedEntriesChanged', [], removedUUIDs);
+    }
   }
 
   const onMarkLocationDelivered = async (uuid: string) => {
@@ -156,25 +164,23 @@
   }
 
   const onCellEditComplete = async (event: CellEditCompleteEvent) => {
-    const { data, newValue, } = event;
+    const { data, newValue, field, } = event;
 
-    await arcStore.updateLocationNotes(data.uuid, newValue as string);
+    if (field === 'notes') {
+      if (props.arcMode) {
+        await arcStore.updateLocationNotes(data.uuid, newValue as string);
+      } else {
+        await sessionStore.updateLocationNotes(data.uuid, newValue as string);
+      }
+    }
   };
-
-  const onDragoverNew = (event: DragEvent) => {
-    event.preventDefault();  
-    event.stopPropagation();
-
-    if (event.dataTransfer && !event.dataTransfer?.types.includes('text/plain'))
-      event.dataTransfer.dropEffect = 'none';
-  }
 
   const onDropNew = async(event: DragEvent) => {
     event.preventDefault();  
 
     // parse the data - looking for location entries
     const data = getValidatedData(event);
-    if (!data || getType(data) !== 'fcb-entry')
+    if (!data || getType(data) !== FCBDragTypes.Entry)
       return;
 
     const fcbEntry = 'fcbData' in data && data.fcbData as EntryNodeDragData | undefined;

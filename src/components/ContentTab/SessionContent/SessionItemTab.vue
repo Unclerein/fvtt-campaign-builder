@@ -6,14 +6,17 @@
     :show-add-button="true"
     :add-button-label="localize('labels.session.addItem')"
     :extra-add-text="localize('labels.session.addItemDrag')"
-    :allow-edit="false"
+    :allow-edit="true"
     :draggable-rows="true"
     :help-text="localize('labels.session.itemHelpText')"
     help-link="https://slyflourish.com/lazy_magic_items.html"
+    :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
+    @related-entries-changed="(added, removed) => emit('relatedEntriesChanged', added, removed)"
     @add-item="showItemPicker=true"
-    @dragoverNew="onDragoverNew"
-    @dropNew="onDropNew"
+    @drop-new="onDropNew"
+    @dragoverNew="standardDragover"
     @dragstart="onDragStart"
+    @cell-edit-complete="onCellEditComplete"
   />
   <RelatedDocumentsDialog
     v-model="showItemPicker"
@@ -30,7 +33,8 @@
   // local imports
   import { useSessionStore, SessionTableTypes, } from '@/applications/stores';
   import { localize, } from '@/utils/game'
-  import { getValidatedData, itemDragStart } from '@/utils/dragdrop';
+  import { getValidatedData, itemDragStart, standardDragover } from '@/utils/dragdrop';
+  import { ModuleSettings, SettingKey } from '@/settings';
 
   // library components
 	
@@ -39,12 +43,16 @@
   import RelatedDocumentsDialog from '@/components/tables/RelatedDocumentsDialog.vue';
 
   // types
+  import { CellEditCompleteEvent, BaseTableColumn } from '@/types';
   
   ////////////////////////////////
   // props
 
   ////////////////////////////////
   // emits
+  const emit = defineEmits<{
+    (e: 'relatedEntriesChanged', addedUUIDs: string[], removedUUIDs: string[]): void;
+  }>();
 
   ////////////////////////////////
   // store
@@ -57,16 +65,13 @@
 
   ////////////////////////////////
   // computed data
-
-  ////////////////////////////////
-  // methods
   const mappedItemRows = computed(() => (
     relatedEntryRows.value.map((row) => ({
       ...row,
     }))
   ));
   
-  const columns = computed(() => {
+  const columns = computed((): BaseTableColumn[] => {
     const actionColumn = { field: 'actions', style: 'text-align: left; width: 100px; max-width: 100px', header: 'Actions' };
 
     const extraFields = sessionStore.extraFields[SessionTableTypes.Item]
@@ -77,8 +82,14 @@
   const actions = computed(() => ([
     {
       icon: 'fa-trash', 
-      callback: (data) => onDeleteItem(data.uuid), 
-      tooltip: localize('tooltips.deleteItem') 
+      callback: (data, removedUUIDs) => onDeleteItem(data.uuid, removedUUIDs), 
+      tooltip: localize('tooltips.deleteItem'),
+    },
+    {
+      icon: 'fa-pen', 
+      isEdit: true, 
+      callback: () => {},
+      tooltip: localize('tooltips.editNotes') 
     },
 
     // deliver/undeliver buttons
@@ -104,19 +115,13 @@
     }
   ]));
 
+  ////////////////////////////////
+  // methods
 
   ////////////////////////////////
   // event handlers
   const onItemAdded = async (documentUuid: string) => {
     await sessionStore.addItem(documentUuid);
-  }
-
-  const onDragoverNew = (event: DragEvent) => {
-    event.preventDefault();  
-    event.stopPropagation();
-
-    if (event.dataTransfer && !event.dataTransfer?.types.includes('text/plain'))
-      event.dataTransfer.dropEffect = 'none';
   }
 
   const onDropNew = async (event: DragEvent) => {
@@ -133,8 +138,24 @@
     }
   }
 
-  const onDeleteItem = async (uuid: string) => {
-    await sessionStore.deleteItem(uuid);
+  const onCellEditComplete = async (event: CellEditCompleteEvent) => {
+    const { data, newValue, field, } = event;
+
+    switch (field) {
+      case 'notes':
+        await sessionStore.updateItemNotes(data.uuid, newValue as string);
+        break;
+
+      default:
+        break;
+    }  
+  }
+
+  const onDeleteItem = async (uuid: string, removedUUIDs?: string[]) => {
+    const deleted = await sessionStore.deleteItem(uuid);
+    if (deleted && removedUUIDs && removedUUIDs.length > 0) {
+      emit('relatedEntriesChanged', [], removedUUIDs);
+    }
   }
 
   const onMarkItemDelivered = async (uuid: string) => {

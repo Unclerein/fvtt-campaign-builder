@@ -1,6 +1,4 @@
-// represents a game session 
 
-import { toRaw } from 'vue';
 import { DOCUMENT_TYPES, } from '@/documents';
 import { searchService } from '@/utils/search';
 import { FCBDialog } from '@/dialogs';
@@ -163,6 +161,19 @@ export class Front extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Front> {
     await this.save();
   }
 
+  /**
+   * Deletes a danger from the front at the specified index
+   * @param index - The index of the danger to delete
+   */
+  public async deleteDanger(index: number): Promise<void> {
+    if (index < 0 || index >= this._clone.system.dangers.length) {
+      throw new Error('Invalid danger index in Front.deleteDanger()');
+    }
+    
+    this._clone.system.dangers.splice(index, 1);
+    await this.save();
+  }
+
   get campaignId(): string {
     return this._clone.system.campaignId;
   }
@@ -190,7 +201,10 @@ export class Front extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Front> {
     }
   }
 
-  public async delete() {
+  /** 
+   * @param skipDelete - if true, don't delete the Foundry document itself; used when Foundry deletes something outside the app
+   */
+  public async delete(skipDelete = false) {
     const id = this.uuid;
     const setting = await getGlobalSetting(this.settingId);
 
@@ -204,7 +218,7 @@ export class Front extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Front> {
     
     await campaign.deleteFront(this);
     
-    await super._delete();
+    await super._delete(skipDelete);
 
     // Remove from search index
     searchService.removeSearchEntry(id);

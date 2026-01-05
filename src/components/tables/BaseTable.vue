@@ -94,7 +94,11 @@
         {{ localize('labels.loading') }}...
       </template>
 
-      <Column v-if="props.canReorder" :rowReorder="true" headerStyle="width: 3rem" :reorderableColumn="false" />
+      <Column v-if="props.canReorder" :rowReorder="true" headerStyle="width: 10px; whitespace: nowrap;" :reorderableColumn="false">
+        <template #rowreordericon>
+          <i class="fas fa-grip-vertical"></i>
+        </template>
+      </Column>
 
       <Column 
         v-for="col of props.columns" 
@@ -102,7 +106,6 @@
         :field="col.field" 
         :header="col.header" 
         :header-style="col.style"
-        :body-style="col.style"
         :sortable="props.canReorder ? false : col.sortable"
       >
         <template #body="{ data, field }">
@@ -126,7 +129,7 @@
                   class="fcb-action-icon" 
                   :data-testid="`table-action-${index}-${data.uuid}`"
                   :data-tooltip="action.tooltip"
-                  @click.stop="action.isEdit ? onEditButtonClick(data, action.callback) : action.callback(data)" 
+                  @click.stop="onActionButtonClick(data, action)" 
                 >
                   <i :class="`fas ${action.icon}`"></i>
                 </a>
@@ -134,7 +137,7 @@
             </div>
           </div>
 
-          <!-- DRAG HANDLE -->
+          <!-- DRAG HANDLE (FOR DRAGGING ELSEWHERE) -->
           <div v-else-if="field === 'drag'">
             <div 
               :class="['fcb-row-wrapper', isDragHoverRow===data.uuid ? 'valid-drag-hover' : '',
@@ -167,15 +170,17 @@
                 v-if="editingRow === data.uuid" 
                 class="fcb-table-body-text"
               >                
-                <Textarea 
+                <AdvancedTextArea 
                   v-if="!col.smallEditBox"
                   v-model="editingRowData[field]"
-                  style="width: 100%; font-size: inherit;"
                   :id="`${data.uuid}-${field}`" 
                   :data-testid="`table-textarea-${field}`"
-                  rows="2"
-                  unstyled
-                  @keydown.enter="saveCurrentlyEditingRow" 
+                  :setting-id="currentSetting?.uuid"
+                  :enable-entity-linking="true"
+                  :edit-mode="true"
+                  :rows="2"
+                  class="fcb-table-textarea"
+                  @keydown.enter="onEnterKeyInTextArea" 
                   @keydown.esc.stop="cancelEdit"
                 />
                 <InputText 
@@ -189,14 +194,23 @@
                   @keydown.esc.stop="cancelEdit"
                 />
               </div>
-              <!-- not editing this row but need to put a click event on it -->
+              <!-- not editing this row but need to put a click event on it to trigger editing -->
               <div 
                 v-else
                 class="fcb-table-body-text"
-                @click.stop="onClickEditableCell(data.uuid)"
+                @click="onClickEditableCell($event, data.uuid)"
               >
-                <!-- we're not editing this row, but need to put a click event on columns that are editable -->
-                {{ data[field] }} &nbsp;
+                <!-- Use AdvancedTextArea in display mode for enriched content -->
+                <AdvancedTextArea 
+                  v-if="!col.smallEditBox && data[field]"
+                  :model-value="data[field]"
+                  :setting-id="currentSetting?.uuid"
+                  :edit-mode="false"
+                  class="fcb-table-display-text"
+                />
+                <span v-else>
+                  {{ data[field] }} &nbsp;
+                </span>
               </div>
             </div>
           </div>
@@ -220,7 +234,7 @@
           </div>
 
           <!-- CLICKABLE -->
-          <div v-else-if="col.clickable">
+          <div v-else-if="col.onClick">
             <div 
               :class="['fcb-row-wrapper', isDragHoverRow===data.uuid ? 'valid-drag-hover' : '']"
               @dragover="onDragoverRow($event, data.uuid)"
@@ -228,10 +242,13 @@
               @drop="onDropRow($event, data.uuid)"
             >
               <div
-                :class="['fcb-table-body-text', 'clickable']"
-                @click.stop="emit('cellClick', data, field)"
+                class="fcb-table-body-text clickable"
+                @click.stop="col.onClick($event, data.uuid)"
               >
-                {{ data[field] }}
+                <span style="text-decoration: underline;">
+                  {{ data[field] }}               
+                </span>
+                &nbsp; <!-- nbsp because otherwise the cell will have 0 width and the mouse events won't work; here so it doesn't get underlined -->
               </div>
             </div>
           </div>
@@ -245,13 +262,11 @@
               @drop="onDropRow($event, data.uuid)"
             >
               <div
-                :class="['fcb-table-body-text', col.onClick ? 'clickable' : '']"
-                @click.stop="col.onClick && col.onClick($event, data.uuid)"
               >
-                <span :style="col.onClick ? 'text-decoration: underline;' : ''">
+                <span>
                   {{ data[field] }}               
                 </span>
-                &nbsp; <!-- nbsp because otherwise the cell will have 0 width and the mouse events won't work; here so it doesn't get underlined -->
+                &nbsp; <!-- nbsp because otherwise the cell will have 0 width and the mouse events won't work -->
               </div>
             </div>
           </div>
@@ -269,6 +284,11 @@
 
   // local imports
   import { localize } from '@/utils/game';
+  import { useMainStore } from '@/applications/stores';
+  import { storeToRefs } from 'pinia';
+  import { ModuleSettings, SettingKey } from '@/settings/ModuleSettings';
+  import { extractUUIDs, compareUUIDs } from '@/utils/uuidExtraction';
+  import { replaceEntityReferences } from '@/utils/entityLinking';
 
   // library components
   import Button from 'primevue/button';
@@ -279,15 +299,18 @@
   } from 'primevue/datatable';
   import Column from 'primevue/column';
   import InputText from 'primevue/inputtext';
-  import Textarea from 'primevue/textarea';
   import IconField from 'primevue/iconfield';
   import InputIcon from 'primevue/inputicon';
   import Checkbox from 'primevue/checkbox';
 
+  // local components
+  import AdvancedTextArea from '@/components/AdvancedTextArea.vue';
+
   // types
   import { 
     TablePagination, BaseTableGridRow, ActionButtonDefinition, 
-    CellEditCompleteEvent, RowEditCompleteEvent 
+    CellEditCompleteEvent, RowEditCompleteEvent, 
+    BaseTableColumn
   } from '@/types';
 
 
@@ -330,7 +353,7 @@
       required: true,
     },
     columns: {
-      type: Array as PropType<any[]>,
+      type: Array as PropType<BaseTableColumn[]>,
       required: true,
     },
     actions: {
@@ -351,6 +374,11 @@
     helpLink: {   
       type: String,
       default: '',
+    },
+    // if true, track UUIDs in editable columns and emit relatedEntriesChanged events
+    enableRelatedEntriesTracking: {
+      type: Boolean,
+      default: false,
     },
   });
 
@@ -373,11 +401,13 @@
     (e: 'dropNew', event: DragEvent): void;
     (e: 'setEditingRow', uuid: string): void;
     (e: 'reorder', reorderedRows: BaseTableGridRow[], dragIndex: number, dropIndex: number): void;
-    (e: 'cellClick', data: any, field: string): void;
+    (e: 'relatedEntriesChanged', addedUUIDs: string[], removedUUIDs: string[]): void;
   }>();
 
   ////////////////////////////////
   // store
+  const mainStore = useMainStore();
+  const { currentSetting } = storeToRefs(mainStore);
 
   ////////////////////////////////
   // data
@@ -406,6 +436,9 @@
   /** track if a valid drag is currently over a row - value is row uuid */
   const isDragHoverRow = ref<string | null>(null);
 
+  /** track initial UUIDs when a row enters edit mode */
+  const initialRowUUIDs = ref<string[]>([]);
+
   ////////////////////////////////
   // computed data
   /** Check if any columns are editable */
@@ -428,6 +461,11 @@
 
     editingRowData.value = { ...data };
     editingRow.value = uuid;
+
+    // Track UUIDs if autoRelationships is enabled
+    if (ModuleSettings.get(SettingKey.autoRelationships)) {
+      initialRowUUIDs.value = getCurrentUUIDs();
+    }
 
     // Find the index of the row
     const rowIndex = props.rows.findIndex((row) => row.uuid === uuid);
@@ -459,13 +497,25 @@
   };
 
   const cancelEdit = () => {
+    // Clean up UUID tracking if canceling
+    initialRowUUIDs.value = [];    
     editingRow.value = null;
     editingRowData.value = {};
+  };
+
+  const onEnterKeyInTextArea = (event: KeyboardEvent) => {
+    if (event.shiftKey) 
+      return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    saveCurrentlyEditingRow();
   };
 
   /**
    * Saves the currently editing row by extracting values from input fields
    * and emitting cellEditComplete events for each changed field
+   * 
    */
   const saveCurrentlyEditingRow = () => {
     // If we're not editing a row, do nothing
@@ -473,40 +523,89 @@
 
     // Find the row data
     const originalRowData = props.rows.find((row) => row.uuid === editingRow.value);
-    if (originalRowData) {
-      // Emit the cellEditComplete event for each changed field
-      for (const col of props.columns) {
-        if (col.editable) {
-          const id = `${editingRow.value}-${col.field}`;
-          const input = document.getElementById(id) as HTMLInputElement;          
-          if (input && originalRowData[col.field] !== input.value) {
-            // pull the value from the input and fire an event to save it
-            emit('cellEditComplete', {
-              data: originalRowData,
-              newData: {...editingRowData.value, [col.field]: input.value},
-              value: originalRowData[col.field],
-              newValue: input.value,
-              // newValue: editingRowData.value[col.field],
-              field: col.field,
-              index: props.rows.findIndex((r) => r.uuid === editingRow.value),
-              type: 'enter',
-            } as CellEditCompleteEvent);
+    if (!originalRowData) {
+      cancelEdit();
+      return;
+    }
+    
+    // Emit the cellEditComplete event for each changed field
+    for (const col of props.columns) {
+      if (col.editable) {
+        const id = `${editingRow.value}-${col.field}`;
+        const input = document.getElementById(id) as HTMLInputElement;          
+        if (input && originalRowData[col.field] !== input.value) {
+          // Apply entity linking for AdvancedTextArea columns (non-smallEditBox)
+          let newValue = input.value;
+          if (!col.smallEditBox) {
+            newValue = replaceEntityReferences(newValue, '');
+
+            // save it so we can use it later to check for uuid changes
+            editingRowData.value[col.field] = newValue;
           }
+
+          // pull the value from the input and fire an event to save it
+          emit('cellEditComplete', {
+            data: originalRowData,
+            newData: editingRowData.value,
+            value: originalRowData[col.field],
+            newValue: newValue,
+            field: col.field,
+            index: props.rows.findIndex((r) => r.uuid === editingRow.value),
+            type: 'enter',
+          } as CellEditCompleteEvent);
         }
       }
-
-      // Emit the row editing event for the whole row
-      emit('rowEditComplete', {
-        data: originalRowData,
-        newData: editingRowData.value,
-        index: props.rows.findIndex((r) => r.uuid === editingRow.value),
-        type: 'enter',
-      });
     }
+
+    // Check for UUID changes if autoRelationships is enabled
+    if (ModuleSettings.get(SettingKey.autoRelationships)) {
+      let uuidChanges: { added: string[]; removed: string[] } | null = null;
+      const currentUUIDs = getCurrentUUIDs();
+      
+      uuidChanges = compareUUIDs(initialRowUUIDs.value, currentUUIDs);
+
+      // Filter out self-references - the row's own UUID should never trigger add/remove prompts
+      // This handles the case where notes reference the same entry the row is for
+      const rowUuid = editingRow.value;
+      const added = uuidChanges.added.filter(uuid => uuid !== rowUuid);
+      const removed = uuidChanges.removed.filter(uuid => uuid !== rowUuid);
+
+      if (uuidChanges && (added.length > 0 || removed.length > 0)) {
+        emit('relatedEntriesChanged', added, removed);
+      }
+    }
+
+    // Emit the row editing event for the whole row
+    emit('rowEditComplete', {
+      data: originalRowData,
+      newData: editingRowData.value,
+      index: props.rows.findIndex((r) => r.uuid === editingRow.value),
+      type: 'enter',
+    });
 
     // Turn off editing mode
     cancelEdit();
   };
+
+  /** Extract UUIDs from all editable columns with editors
+   * 
+   */
+  const getCurrentUUIDs = () => (getRowUUIDs(editingRowData.value));
+
+  /**
+   * Extract UUIDs from a specific row's editable columns
+   * @param rowData The row data to extract UUIDs from
+   */
+  const getRowUUIDs = (rowData: BaseTableGridRow): string[] => (
+    props.columns.reduce((acc: string[], col: BaseTableColumn) => {
+      if (col.editable && !col.smallEditBox && rowData[col.field]) {
+        const uuids = extractUUIDs(rowData[col.field] as string);
+        acc.push(...uuids);
+      }
+
+      return acc;
+    }, [] as string[])
+  );
 
   // Expose the setEditingRow method to parent components
   defineExpose({
@@ -515,6 +614,19 @@
 
   ////////////////////////////////
   // event handlers
+  const onActionButtonClick = (data: BaseTableGridRow, action: ActionButtonDefinition) => {
+    if (action.isEdit) {
+      onEditButtonClick(data, action.callback);
+    } else if (action.icon === 'fa-trash' && props.enableRelatedEntriesTracking) {
+      // Extract UUIDs from the row being deleted and pass to callback
+      // Filter out self-references - the row's own UUID should not be included
+      const rowUUIDs = getRowUUIDs(data).filter(uuid => uuid !== data.uuid);
+      action.callback(data, rowUUIDs);
+    } else {
+      action.callback(data);
+    }
+  };
+
   const onCheckboxChange = (rowData: any, field: string, newValue: boolean) => {
     const event = {
       data: rowData,
@@ -527,7 +639,16 @@
     emit('cellEditComplete', event);
   };
 
-  const onClickEditableCell = (uuid: string) => {
+  const onClickEditableCell = (event: MouseEvent, uuid: string) => {
+    // Check if the click was on a content link - if so, let it bubble up to the application handler
+    const target = event.target as HTMLElement;
+    if (target.closest('.fcb-content-link')) {
+      return;
+    }
+
+    // Stop propagation for non-link clicks to enter edit mode
+    event.stopPropagation();
+
     // if we were already editing a row, save it first
     saveCurrentlyEditingRow();
 
@@ -704,8 +825,5 @@
   .fcb-table-help-icon {
     margin-left: 8px;
     margin-right: 8px;
-    // display: flex;
-    // align-items: center;
   }
-
 </style>

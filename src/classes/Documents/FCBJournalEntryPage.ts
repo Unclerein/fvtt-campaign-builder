@@ -56,7 +56,7 @@ export class FCBJournalEntryPage<
     return foundry.utils.deepClone(this._clone.system?.customFields) || {};
   }
   
-  public getCustomField(key: string): string | boolean {
+  public getCustomField(key: string): string | boolean | undefined {
     // @ts-ignore - not sure how to specify customFields exists on all of these
     return this._clone.system?.customFields?.[key];
   }
@@ -120,8 +120,17 @@ export class FCBJournalEntryPage<
     return setting;
   }
 
-  // handle deletes
-  protected async _delete(): Promise<void> {
+  /**
+   * Handles deletes.  Deletes the actual foundry document.
+   * 
+   * @param skipDelete - if true, don't delete the Foundry document itself; used when Foundry deletes something outside the app
+   *                     doesn't look like it makes sense but it prevents child classes from having to figure out 
+   *                     whether to call super.delete() or not
+   */
+  protected async _delete(skipDelete = false): Promise<void> {
+    if (skipDelete)
+      return;
+    
     // doc is the page - we need to delete the parent
     await toRaw(this._doc.parent)?.delete();
   }
@@ -285,7 +294,6 @@ export class FCBJournalEntryPage<
 
     return new this(journalEntry) as InstanceType<T>;
   }
-  
 }
 
 async function makeFolder(folderName: string, compendiumId: string, parentFolderId?: string): Promise<Folder<'JournalEntry'>> {

@@ -4,6 +4,8 @@ import { CustomFieldContentType, Topics, ValidTopic, } from '@/types';
 import { ModuleSettings, SettingKey } from '@/settings';
 import { ArcLore, SessionLore, SessionRelatedItem, SessionVignette } from '@/documents';
 import { FCBJournalEntryPage } from '@/classes/Documents/FCBJournalEntryPage';
+import { useMainStore } from '@/applications/stores';
+import { getTopicText } from '@/compendia';
 
 /**
  * Represents a searchable item in the index, containing all relevant search fields.
@@ -60,6 +62,10 @@ class SearchService {
   private _searchIndex: MiniSearch<SearchableItem> | null = null;
   /** Whether the service has been initialized */
   private _initialized = false;
+  /** Active setting id for the current search index (we only support one at a time) */
+  private _activeSettingId: string | null = null;
+  /** Cached UUID→name index for the active setting */
+  private _entryUuidNameIndexCache: Record<string, string> = {};
 
   /**
    * Creates a new SearchService instance and initializes the search index.
@@ -67,6 +73,47 @@ class SearchService {
   constructor() {
     // Initialize the search index when the service is created
     this.initIndex();
+  }
+
+  /**
+   * Rebuilds the UUID→name cache for the provided setting. 
+   */
+  private async resetCacheForSetting(setting: FCBSetting): Promise<Record<string, string>> {
+    if (this._activeSettingId === setting.uuid && this._entryUuidNameIndexCache != null) {
+      return this._entryUuidNameIndexCache;
+    } else {
+      this._activeSettingId = setting.uuid;
+      this._entryUuidNameIndexCache = buildEntryUuidNameIndex(setting);
+      return this._entryUuidNameIndexCache;
+    }
+  }
+
+  /**
+   * Removes HTML tags and replaces Entry UUID references with their display names 
+   * using the cached UUID→name index.
+   *
+   * If a UUID label is present, it is used as-is; otherwise we look up the UUID in the cache.
+   */
+  private cleanDescription(text: string): string {
+    if (!text || !this._entryUuidNameIndexCache)
+      return text;
+
+    // remove all HTML tags - not entirely safe because user might use <> for something
+    //    but that seems like a very rare edge case (that you'd also be searching for
+    //    whatever is in the brackets)
+    text = text.replace(/<[^>]*>/g, '');
+
+    // swap UUIDs for names
+    return text.replace(
+      /@UUID\[([^\]]+)\](?:\{([^}]+)\})?/g,
+      (match, uuid: string, braceLabel: string | undefined) => {
+        const label = (braceLabel ?? '').trim();
+        if (label.length > 0)
+          return label;
+
+        return this._entryUuidNameIndexCache?.[uuid] ?? match;
+      }
+    );
   }
 
   /**
@@ -83,8 +130,8 @@ class SearchService {
       // Fields to index for searching
       fields: ['name', 'tags', 'description', 'relationships', 'topic', 'type', 'species'],
 
-      // Fields to include in search results
-      storeFields: ['name', 'topic', 'type', 'description', 'resultType'],
+      // Fields to include in search results 
+      storeFields: ['name', 'topic', 'type', 'description', 'resultType', 'tags'],
 
       searchOptions: {
         boost: { 
@@ -129,6 +176,7 @@ class SearchService {
 
     // Collect all items first
     const items = [] as SearchableItem[];
+    await this.resetCacheForSetting(setting);
 
     // add all the entries
     const entries = await setting.allEntries();
@@ -174,10 +222,12 @@ class SearchService {
       }
     }
 
-    
     // Add all items to the index at once for better performance
     this._searchIndex.removeAll();      
     this._searchIndex.addAll(items);
+
+    // refresh tag results because they depend on the index
+    useMainStore().refreshTagResults();
   }
 
   /**
@@ -197,7 +247,7 @@ class SearchService {
     description = entry.description;
     species = entry.topic===Topics.Character && entry.speciesId ? ModuleSettings.get(SettingKey.speciesList)[entry.speciesId] : '';
     type = entry.type;
-    topic = Topics[entry.topic];
+    topic = getTopicText(entry.topic);
 
     // pcs have extra field - we put it in snippets
     if (entry.topic===Topics.PC) {
@@ -289,7 +339,7 @@ class SearchService {
       name: entry.name,
       resultType: 'entry',
       tags: !entry.tags ? '' : entry.tags.join(', '),
-      description: description,
+      description: this.cleanDescription(description),
       topic: topic,
       species: species,
       type: type,
@@ -327,7 +377,7 @@ class SearchService {
       name: session.name,
       resultType: 'session',
       tags: !session.tags ? '' : session.tags.join(', '),
-      description: description,
+      description: this.cleanDescription(description),
       topic: 'session',
       species: '',
       type: '',
@@ -372,7 +422,7 @@ class SearchService {
       name: front.name,
       resultType: 'front',
       tags: !front.tags ? '' : front.tags.join(', '),
-      description: description,
+      description: this.cleanDescription(description),
       topic: 'Front',
       species: '',
       type: '',
@@ -407,7 +457,7 @@ class SearchService {
       name: arc.name,
       resultType: 'arc',
       tags: !arc.tags ? '' : arc.tags.join(', '),
-      description: description,
+      description: this.cleanDescription(description),
       topic: 'Arc',
       species: '',
       type: '',
@@ -423,6 +473,88 @@ class SearchService {
    * @param numResults - Maximum number of results to return
    * @returns A promise that resolves to an array of search results
    */
+  /**
+   * Search for all entries that have a specific tag
+   * @param tag - The tag to search for
+   * @returns Array of search results with entries containing the tag
+   */
+  public async searchByTag(tag: string): Promise<FCBSearchResult[]> {
+    if (!this._initialized || !this._searchIndex) {
+      await this.initIndex();
+    }
+    
+    if (!this._searchIndex)
+      throw new Error('Couldn\'t create search index in search.addOrUpdateFrontIndex()');
+
+    if (!tag.trim()) {
+      return [];
+    }
+    
+    // Search for the tag in the tags field using MiniSearch
+    // We need to search for the exact tag, so we'll use a prefix search on tags:
+    const results = this._searchIndex.search(tag, { 
+      fields: ['tags'],
+      prefix: false,
+      fuzzy: false,
+    });
+        
+    // Map to FCBSearchResult format
+    return results.map(sr => ({
+      uuid: sr.id,
+      name: sr.name,
+      resultType: sr.resultType,
+      topic: sr.topic,
+      type: sr.type,
+    }));
+  }
+
+  /**
+   * Search for tags that match the query (case-insensitive)
+   * @param query - The search query
+   * @param maxResults - Maximum number of tag results to return
+   * @returns Array of matching tags with their entry counts
+   */
+  public async searchTags(query: string, maxResults: number = 5): Promise<Array<{tag: string, count: number}>> {
+    if (!this._initialized || !this._searchIndex) {
+      await this.initIndex();
+      return [];
+    }
+    
+    if (!query.trim()) {
+      return [];
+    }
+    
+    // Search across just tags field with MiniSearch
+    const results = this._searchIndex.search(query, { fields: ['tags'] });
+
+    // note: we could add tags to the result and go by that, but if an entry has 2 tags
+    //    that doesn't tell us which we matched so we end up including tags that don't 
+    //    match the search string
+    // instead, terms contains what actually matched
+
+    // collapse the results into a map of tag to count
+    const result: Record<string, number> = results.reduce((acc, result) => {
+      // we only want to match tags that look like the search string - not other random tags
+      //    that happen to be on the same record
+      // separate by commas
+      const tags = result.tags.split(',');
+      for (const tag of tags) {
+        const trimmed = tag.trim();
+
+        // do a case insensitive match of the search string into the tag
+        if (trimmed.toLowerCase().includes(query.toLowerCase())) {
+          acc[trimmed] = (acc[trimmed] || 0) + 1;
+        }
+      }
+      return acc;
+    }, {}); 
+
+    return Object.keys(result)
+      .map(tag => ({ tag, count: result[tag] }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, maxResults);
+  }
+
   public async search(query: string, numResults: number): Promise<FCBSearchResult[]> {
     if (!this._initialized || !this._searchIndex) {
       await this.initIndex();
@@ -459,9 +591,18 @@ class SearchService {
     if (!this._initialized || !this._searchIndex) {
       await this.initIndex();
     }
-    
+
     if (!this._searchIndex)
       throw new Error('Couldn\'t create search index in search.addOrUpdateEntryIndex()');
+
+    // If we're indexed for a different setting, do nothing.
+    // Setting changes are handled externally by calling `buildIndex()`.
+    if (this._activeSettingId && this._activeSettingId !== setting.uuid)
+      return;
+
+    // Keep the UUID→name cache fresh for this setting as entries are created/renamed
+    await this.resetCacheForSetting(setting);
+    this._entryUuidNameIndexCache[entry.uuid] = entry.name;
 
     // Create and add the new searchable item
     // @ts-ignore - can't get item to type right, but this should always work
@@ -470,6 +611,9 @@ class SearchService {
       this._searchIndex.replace(searchableItem);
     else
       this._searchIndex.add(searchableItem);
+
+    // refresh tag results because they depend on the index
+    useMainStore().refreshTagResults();
   }
 
   /**
@@ -484,6 +628,10 @@ class SearchService {
     if (await session.isCampaignCompleted())
       return;
     
+    // If we're indexed for a different setting, do nothing.
+    if (!this._activeSettingId || this._activeSettingId !== session.settingId)
+      return;
+
     if (!this._initialized || !this._searchIndex) {
       await this.initIndex();
     }
@@ -498,6 +646,9 @@ class SearchService {
       this._searchIndex.replace(searchableItem);
     else
       this._searchIndex.add(searchableItem);
+
+    // refresh tag results because they depend on the index
+    useMainStore().refreshTagResults();
   }
 
   /**
@@ -512,6 +663,10 @@ class SearchService {
     if (await front.isCampaignCompleted())
       return;
     
+    // If we're indexed for a different setting, do nothing.
+    if (!this._activeSettingId || this._activeSettingId !== front.settingId)
+      return;
+
     if (!this._initialized || !this._searchIndex) {
       await this.initIndex();
     }
@@ -526,6 +681,9 @@ class SearchService {
       this._searchIndex.replace(searchableItem);
     else
       this._searchIndex.add(searchableItem);
+
+    // refresh tag results because they depend on the index
+    useMainStore().refreshTagResults();
   }
 
   /**
@@ -540,6 +698,10 @@ class SearchService {
     if (await arc.isCampaignCompleted())
       return;
     
+    // If we're indexed for a different setting, do nothing.
+    if (!this._activeSettingId || this._activeSettingId !== arc.settingId)
+      return;
+
     if (!this._initialized || !this._searchIndex) {
       await this.initIndex();
     }
@@ -554,6 +716,9 @@ class SearchService {
       this._searchIndex.replace(searchableItem);
     else
       this._searchIndex.add(searchableItem);
+
+    // refresh tag results because they depend on the index
+    useMainStore().refreshTagResults();
   }
 
   /**
@@ -570,6 +735,9 @@ class SearchService {
     // Remove from the index
     if (this._searchIndex.has(uuid))
       this._searchIndex.discard(uuid);
+
+    // refresh tag results because they depend on the index
+    useMainStore().refreshTagResults();
   }
 
 /**
@@ -661,31 +829,66 @@ function addSessionShortSnippet(snippets: string[], relatedItems: readonly Sessi
     if (!relatedItem.delivered) 
       continue;
 
-    snippets.push(`${relatedItem?.description}`);
+    snippets.push(`${relatedItem?.description || ''}`);
   }
 };
 
 // vignettes, lore
 function addArcShortSnippet(snippets: string[], relatedItems: readonly ArcLore[]) {
   for (const relatedItem of relatedItems) {
-    snippets.push(`${relatedItem?.description}`);
+    snippets.push(`${relatedItem?.description || ''}`);
   }
 };
 
-function addCustomFieldsToDescription(description: string, contentType: CustomFieldContentType, item: FCBJournalEntryPage<any>): string {
+/**
+ * Appends indexed custom fields to a description string.
+ * Note: UUID→name replacement is handled once at the end when building the final SearchableItem.
+ */
+function addCustomFieldsToDescription(
+  description: string,
+  contentType: CustomFieldContentType,
+  item: FCBJournalEntryPage<any>,
+): string {
   // custom fields get added to description so they get a higher priority than snippets
   const customFieldDefinitions = ModuleSettings.get(SettingKey.customFields)[contentType];
 
   if (customFieldDefinitions == null)
-    throw new Error('Tried bad contentType in search.addCustomFieldsToDescrtipion()');
+    throw new Error('Tried bad contentType in search.addCustomFieldsToDescription()');
 
   for (let i=0; i<customFieldDefinitions.length; i++) {
     if (!customFieldDefinitions[i].deleted && customFieldDefinitions[i].indexed) {
-      description += `|${item.getCustomField(customFieldDefinitions[i].name)}`;
+      const rawValue = item.getCustomField(customFieldDefinitions[i].name);
+      const valueForIndex = typeof rawValue === 'string' ? rawValue : '';
+      if (valueForIndex) {
+        description += `|${valueForIndex}`;
+      }
     }
   }
 
   return description;
+}
+
+/**
+ * Builds an Entry UUID → Entry name index from the setting's topic folder entry indexes.
+ * This is fast and avoids document loads.
+ */
+function buildEntryUuidNameIndex(setting: FCBSetting | null): Record<string, string> {
+  const uuidToName = {};
+
+  if (!setting)
+    return uuidToName;
+
+  for (const topicFolder of Object.values(setting.topicFolders)) {
+    if (!topicFolder)
+      continue;
+
+    for (const entry of topicFolder.entryIndex) {
+      if (entry?.uuid)
+        uuidToName[entry.uuid] = entry?.name || '';
+    }
+  }
+
+  return uuidToName;
 }
 
 /**

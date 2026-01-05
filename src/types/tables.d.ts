@@ -12,8 +12,8 @@ export interface TablePagination {
 export interface ActionButtonDefinition {
   icon: string;
 
-  /** receives the row */
-  callback: ((data: Record<string, any> & { uuid: string }) => void) | (() => void);
+  /** receives the row data and optionally removedUUIDs (for delete actions with related entries tracking) */
+  callback: ((data: Record<string, any> & { uuid: string }, removedUUIDs?: string[]) => void) | (() => void);
 
   tooltip: string;
 
@@ -24,12 +24,15 @@ export interface ActionButtonDefinition {
   isEdit?: boolean;
 }
 
-export interface FieldData {
+export interface BaseTableColumn {
   field:string; 
   header: string;
   editable?: boolean;
   style?: string;
   sortable?: boolean;
+  smallEditBox?: boolean;
+  type?: string;  
+  onClick?: (event: MouseEvent, uuid: string) => void | Promise<void>;  // should a specific fn be called when the cell is clicked (also underlines the text)
 };
 
 export interface PaginationResult<T extends AnyRow> {
@@ -45,7 +48,7 @@ export interface SessionLocationDetails {
   type: string;
   parent: string;
   parentId: string | null;
-  description: string;
+  notes: string;
   delivered: boolean;
 }
 export interface ArcLocationDetails {
@@ -61,7 +64,7 @@ export interface SessionNPCDetails {
   uuid: string;   // the character entry
   name: string;
   type: string;
-  description: string;
+  notes: string;
   delivered: boolean;
 }
 
@@ -76,6 +79,7 @@ export interface SessionItemDetails {
   uuid: string;   // the Item document
   name: string;
   delivered: boolean;
+  notes: string;
   dragTooltip?: string;
 }
 
@@ -84,6 +88,7 @@ export interface SessionMonsterDetails {
   name: string;
   number: number;
   delivered: boolean;
+  notes: string;
   dragTooltip?: string;
 }
 

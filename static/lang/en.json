@@ -17,6 +17,8 @@
       "displaySessionNotesHelp": "When enabled, a session notes window will automatically open when a play session starts",
       "defaultAddToSession": "Default 'Add to current session'",
       "defaultAddToSessionHelp": "When in play mode, should the checkbox when creating an entry default to on or off?",
+      "sessionBookmark": "Display Session bookmark",
+      "sessionBookmarkHelp": "When enabled, a bookmark for the current Session will be shown at the front of the bookmark bar",
       "sessionDisplayMode": "Session display format",
       "sessionDisplayModeHelp": "Choose how sessions are displayed in the campaign directory",
       "sessionDisplayModeOptions": {
@@ -36,6 +38,8 @@
       },
       "autoRefreshRollTables": "Automatically refresh RollTables",
       "autoRefreshRollTablesHelp": "When enabled, generator roll tables will be automatically refreshed with new values when the module loads",
+      "genericFoundryTab": "Show Foundry tab on Entries",
+      "genericFoundryTabHelp": "When enabled, Entries will have a Foundry tab that can hold any type of Foundry document (scenes, actors, items, etc.). This is useful for driving play sessions entirely from Entries without using Campaigns/Sessions.",
       "rollTableSettings": "Roll Table Settings",
       "rollTableSettingsLabel": "Roll Table Settings",
       "rollTableSettingsHelp": "Configure settings for the random generators",
@@ -73,11 +77,13 @@
       "subTabsSavePosition": "Sub-tabs save position",
       "subTabsSavePositionHelp": "When enabled, every tab will remember which interior sub-tab was open and return to it when you re-open that tab. When disabled, tabs will always revert to the first one (usually description).",
       "storyWebAutoArrange": "Auto-arrange story webs",
-      "storyWebAutoArrangeHelp": "When enabled, story webs will rearrange to try to keep a clean picture.  When disabled, you can position everything exactly how you want."
-      ,
+      "storyWebAutoArrangeHelp": "When enabled, story webs will rearrange to try to keep a clean picture.  When disabled, you can position everything exactly how you want.",
       "customFields": "Custom Fields",
       "customFieldsLabel": "Configure Custom Fields",
-      "customFieldsHelp": "Configure additional fields and AI instructions for each content type"
+      "customFieldsHelp": "Configure additional fields and AI instructions for each content type",
+      "storyWebSettings": "Story Web Settings",
+      "storyWebSettingsLabel": "Configure Settings",
+      "storyWebSettingsHelp": "Configure line colors/styles and element text for story webs"
     },
     "applications": {
       "sessionNotes": {
@@ -275,6 +281,29 @@
           "refreshError": "Failed to refresh roll tables. Check console for details."
         }
       },
+      "storyWebSettings": {
+        "title": "Configure Story Web Settings",
+        "tabs": {
+          "colors": "Connection Colors",
+          "styles": "Connection Styles",
+          "fields": "Fields"
+        },
+        "columns": {
+          "name": "Name",
+          "color": "Color",
+          "style": "Style",
+          "fieldName": "Field Name",
+          "fieldKey": "Field Key"
+        },
+        "fieldsHint": "The fields in this list will be displayed in the tooltip when hovering over entities in a Story Web.",
+        "contentType": "Content Type",
+        "selectField": "Select Field",
+        "notifications": {
+          "noAvailableFields": "No available fields to add",
+          "duplicateColorIds": "Duplicate color IDs found. Please ensure all color IDs are unique.",
+          "duplicateStyleIds": "Duplicate style IDs found. Please ensure all style IDs are unique."
+        }
+      },
       "createEntry": {
         "titles": {
           "create": {
@@ -397,6 +426,7 @@
         "pc": "(or drag/drop a PC)"
       },
       "entry": {
+        "entry": "Entry",
         "topic": "TopicFolder",
         "type": "Type",
         "relationships": "Relationships"
@@ -414,6 +444,7 @@
         "addLocationDrag": "(or drag/drop a location)",
         "addVignette": "Add vignette",
         "addLore": "Add lore",
+        "addDocumentDrag": "(drag/drop any Foundry document)",
         "addLoreDrag": "(or drag/drop a journal entry)",
         "addNPC": "Add NPC",
         "addNPCDrag": "(or drag/drop a character)",
@@ -497,7 +528,8 @@
           "characters": "Characters",
           "locations": "Locations",
           "pcs": "PCs",
-          "organizations": "Organizations"
+          "organizations": "Organizations",
+          "foundry": "Foundry"
         },
         "campaign": {
           "pcs": "PCs",
@@ -706,6 +738,7 @@
       "saveChanges": {
         "title": "Unsaved Changes",
         "message": "You have unsaved changes in one or more open editors. What would you like to do?",
+        "uuidChangesMessage": "You've added or removed references to other entries. Would you like to update the related entries?",
         "save": "Save Changes",
         "discard": "Discard Changes",
         "cancel": "Cancel"
@@ -753,8 +786,13 @@
       },
       "relatedEntriesManagement": {
         "title": "Manage Related Entries",
-        "addedItems": "Add relationships to these?",
-        "removedItems": "Remove relationships from these?"
+        "entryDescription": "Select Entries to link or unlink to this Entry based on your changes.",
+        "sessionDescription": "Select Entries to link or unlink to the Session based on your changes.",
+        "arcDescription": "Select Entries to link or unlink to this Arc based on your changes.",
+        "pcDescription": "Select Entries to link or unlink to this PC based on your changes.",
+        "dangerDescription": "Select Participants to add to/remove from this Danger based on your changes.",
+        "addedItems": "New References Found",
+        "removedItems": "References Removed"
       }
     },
     "contextMenus": {
@@ -795,6 +833,9 @@
       "front": {
         "delete": "Delete front"
       },
+      "danger": {
+        "delete": "Delete danger"
+      },
       "storyWeb": {
         "delete": "Delete Story Web"
       },
@@ -811,7 +852,9 @@
         "addDangerWithRelationships": "Add Danger with relationships",
         "addTextPrompt": "Enter text to add to the diagram",
         "openEntryInNewTab": "Open Entry in new tab",
-        "openDangerInNewTab": "Open Danger in new tab"
+        "openDangerInNewTab": "Open Danger in new tab",
+        "setColor": "Set Color",
+        "setStyle": "Set Style"
       },
       "dialogs": {
         "cannotActivateFromCompendium": "Cannot activate from compendium",
@@ -856,9 +899,12 @@
       "createSetting": "Create Setting",
       "expandDirectory": "Expand directory",
       "collapseDirectory": "Collapse directory",
+      "maximizeWindow": "Maximize window",
+      "restoreWindow": "Restore window",
       "collapseAllTopics": "Collapse all",
       "addBookmark": "Add bookmark",
       "moreBookmarks": "More bookmarks",
+      "currentSession": "current session",
       "campaignComplete": "Campaign complete",
       "arcComplete": "Arc complete",
       "historyBack": "Back",
@@ -923,6 +969,12 @@
         "longDescriptions": "Generate detailed description or a short summary?",
         "generateImage": "Generate a new image in the background after creating"
       }
+    },
+    "tags": {
+      "tag": "Tag",
+      "resultsFor": "Tag Results for",
+      "entryFound": "entry found",
+      "entriesFound": "entries found"
     },
     "errors": {
       "duplicateBookmark": "Already stored as a bookmark",

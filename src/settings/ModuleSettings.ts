@@ -5,8 +5,9 @@ import { CustomFieldsApplication } from '@/applications/settings/CustomFieldsApp
 import { SpeciesListApplication } from '@/applications/settings/SpeciesListApplication';
 import { ImageSettingsApplication } from '@/applications/settings/ImageSettingsApplication';
 import { RollTableSettingsApplication } from '@/applications/settings/RollTableSettingsApplication';
-import { SessionDisplayMode, Species, TagList, GeneratorType, SettingIndex, CustomFieldContentType, CustomFieldDescription, } from '@/types';
+import { StoryWebSettingsApplication } from '@/applications/settings/StoryWebSettingsApplication';
 import { ApiCustomGenerateImagePostRequestImageConfiguration, ApiCustomGenerateImagePostRequestImageModelEnum, ApiCustomGenerateImagePostRequestTextModelEnum } from '@/apiClient';
+import { StoryWebNodeTypes, SessionDisplayMode, Species, TagList, GeneratorType, SettingIndex, CustomFieldContentType, CustomFieldDescription, } from '@/types';
 
 export type ImageConfiguration = ApiCustomGenerateImagePostRequestImageConfiguration & {
   descriptionField?: string;
@@ -26,8 +27,8 @@ export interface ImageVisibility {
    top: number;
    width: number;
    height: number;
+   maximized?: boolean;
  }
-
 
 export enum SettingKey {
   // displayed in main settings window
@@ -36,6 +37,7 @@ export enum SettingKey {
   sessionDisplayMode = 'sessionDisplayMode',  // how to display sessions in the directory
   hideBackendWarning = 'hideBackendWarning', // don't show the warning about no backend
   defaultAddToSession = 'defaultAddToSession', // default state of "Add to current session" checkbox
+  sessionBookmark = 'sessionBookmark', // show a bookmark for the current session
   enableToDoList = 'enableToDoList', // whether the to-do list feature is enabled
   autoRelationships = 'autoRelationships', // whether to automatically suggest relationship changes based on editor
   showTypesInTree = 'showTypesInTree', // show the type of the entry in the hierarchy tree
@@ -43,15 +45,13 @@ export enum SettingKey {
   useWebs = 'useWebs', // allow creation and viewing of story webs
   subTabsSavePosition = 'subTabsSavePosition', // whether sub-tabs remember their last position
   storyWebAutoArrange = 'storyWebAutoArrange', // whether to enable physics in story webs
+  genericFoundryTab = 'genericFoundryTab', // whether to show the generic Foundry tab on entries
 
   // internal only
   rootFolderId = 'rootFolderId',  // uuid of the root folder
   groupTreeByType = 'groupTreeByType',  // should the directory be grouped by type?
   isInPlayMode = 'isInPlayMode',  // stores the prep/play mode state
-  entryTags = 'entryTags',
-  sessionTags = 'sessionTags',
-  frontTags = 'frontTags',
-  arcTags = 'arcTags',
+  contentTags = 'contentTags',  // tags for all content types
   lastKnownVersion = 'lastKnownVersion',  // tracks the last known module version - used for tracking migrations
   settingIndex = 'settingIndex',  // array of high-level setting info (name, packId)
   mainWindowBounds = 'mainWindowBounds',
@@ -82,6 +82,11 @@ export enum SettingKey {
   imageMenu = 'imageMenu', // display the image visibility menu
   showImages = 'showImages', // whether to show images on settings, campaigns, etc
 
+  // story graph connections settings
+  storyWebSettingsMenu = 'storyWebSettingsMenu', // display the story graph connections menu
+  storyWebConnectionColors = 'storyWebConnectionColors', // predefined colors for edges
+  storyWebConnectionStyles = 'storyWebConnectionStyles', // predefined styles for edges
+  storyWebNodeFields = 'storyWebNodeFields', // selected fields to display in node tooltips by content type
 }
 
 export type SettingKeyType<K extends SettingKey> =
@@ -97,6 +102,7 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.useWebs ? boolean :
     K extends SettingKey.subTabsSavePosition ? boolean :
     K extends SettingKey.storyWebAutoArrange ? boolean :
+    K extends SettingKey.genericFoundryTab ? boolean :
     K extends SettingKey.advancedSettingsMenu ? never :
     K extends SettingKey.customFieldsMenu ? never :
     K extends SettingKey.APIURL ? string :
@@ -104,18 +110,20 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.selectedTextModel ? ApiCustomGenerateImagePostRequestTextModelEnum :
     K extends SettingKey.selectedImageModel ? ApiCustomGenerateImagePostRequestImageModelEnum :
     K extends SettingKey.defaultAddToSession ? boolean :
+    K extends SettingKey.sessionBookmark ? boolean :
     K extends SettingKey.rollTableSettingsMenu ? never :
     K extends SettingKey.autoRefreshRollTables ? boolean :
     K extends SettingKey.generatorDefaultTypes ? Record<GeneratorType, string> :
     K extends SettingKey.speciesList ? Species[] :
     K extends SettingKey.imageMenu ? never :
     K extends SettingKey.showImages ? ImageVisibility :
+    K extends SettingKey.storyWebSettingsMenu ? never :
+    K extends SettingKey.storyWebConnectionColors ? { id: string; name: string; value: string }[] :
+    K extends SettingKey.storyWebConnectionStyles ? { id: string; name: string; value: string }[] :
+    K extends SettingKey.storyWebNodeFields ? Partial<Record<StoryWebNodeTypes, string[]>> :
     K extends SettingKey.aiImagePrompts ? Record<CustomFieldContentType, string> :
     K extends SettingKey.aiImageConfigurations ? Record<CustomFieldContentType, ImageConfiguration> :
-    K extends SettingKey.entryTags ? TagList :
-    K extends SettingKey.sessionTags ? TagList :
-    K extends SettingKey.frontTags ? TagList :
-    K extends SettingKey.arcTags ? TagList :
+    K extends SettingKey.contentTags ? TagList :
     K extends SettingKey.lastKnownVersion ? string :
     K extends SettingKey.settingIndex ? SettingIndex[] :
     K extends SettingKey.customFields ? Record<CustomFieldContentType, CustomFieldDescription[]> :
@@ -202,6 +210,15 @@ export class ModuleSettings {
       icon: 'fas fa-image',               // A Font Awesome icon used in the submenu button
       permissions: ['SETTINGS_WRITE'], // Optional: restrict to GM only
       type: ImageSettingsApplication,
+    },
+    {
+      settingID: SettingKey.storyWebSettingsMenu,
+      name: 'settings.storyWebSettings',
+      label: 'fcb.settings.storyWebSettingsLabel',   // localized by Foundry
+      hint: 'settings.storyWebSettingsHelp',
+      icon: 'fa-solid fa-project-diagram',
+      permissions: ['SETTINGS_WRITE'],
+      type: StoryWebSettingsApplication,
     }
   ];
 
@@ -264,6 +281,13 @@ export class ModuleSettings {
       type: Boolean,
     },
     {
+      settingID: SettingKey.sessionBookmark,
+      name: 'settings.sessionBookmark',
+      hint: 'settings.sessionBookmarkHelp',
+      default: true,
+      type: Boolean,
+    },
+    {
       settingID: SettingKey.enableToDoList,
       name: 'settings.enableToDoList',
       hint: 'settings.enableToDoListHelp',
@@ -275,6 +299,7 @@ export class ModuleSettings {
       name: 'settings.autoRelationships',
       hint: 'settings.autoRelationshipsHelp',
       default: true,
+      requiresReload: true, // so we don't turn it on in the middle of an edit
       type: Boolean,
     },
     {
@@ -289,6 +314,14 @@ export class ModuleSettings {
       name: 'settings.storyWebAutoArrange',
       hint: 'settings.storyWebAutoArrangeHelp',
       default: true,
+      requiresReload: true,
+      type: Boolean,
+    },
+    {
+      settingID: SettingKey.genericFoundryTab,
+      name: 'settings.genericFoundryTab',
+      hint: 'settings.genericFoundryTabHelp',
+      default: false,
       requiresReload: true,
       type: Boolean,
     },
@@ -335,22 +368,7 @@ export class ModuleSettings {
       type: Object,
     },
     {
-      settingID: SettingKey.entryTags,
-      default: {},
-      type: Object,
-    },
-    {
-      settingID: SettingKey.sessionTags,
-      default: {},
-      type: Object,
-    },
-    {
-      settingID: SettingKey.frontTags,
-      default: {},
-      type: Object,
-    },
-    {
-      settingID: SettingKey.arcTags,
+      settingID: SettingKey.contentTags,
       default: {},
       type: Object,
     },
@@ -425,6 +443,31 @@ export class ModuleSettings {
     },
     {
       settingID: SettingKey.aiImageConfigurations,
+      default: {},
+      type: Object,
+    },
+    {
+      settingID: SettingKey.storyWebConnectionColors,
+      default: [
+        // get the primary color from the theme
+        { id: 'normal', name: 'Normal', value: getComputedStyle(document.body).getPropertyValue('--fcb-primary') },
+      ],
+      type: Array,
+    },
+    {
+      settingID: SettingKey.storyWebConnectionStyles,
+      default: [
+        { id: 'solid', name: 'Solid', value: 'solid' },
+        { id: 'dashed', name: 'Dashed', value: 'dashed' },
+        { id: 'dotted', name: 'Dotted', value: 'dotted' },
+        { id: 'dash_dot', name: 'Dash-Dot', value: 'dash_dot' },
+        { id: 'long_dash', name: 'Long Dash', value: 'long_dash' },
+        { id: 'dense_dot', name: 'Dense Dot', value: 'dense_dot' },
+      ],
+      type: Array,
+    },
+    {
+      settingID: SettingKey.storyWebNodeFields,
       default: {},
       type: Object,
     },

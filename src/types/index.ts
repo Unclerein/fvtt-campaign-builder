@@ -35,6 +35,7 @@ export enum WindowTabType  {
   Front,
   Arc,
   StoryWeb,
+  TagResults,
 }
 
 export interface WindowTabHistory {
@@ -88,6 +89,7 @@ export enum DocumentLinkType {
   Actors,
   Items,
   Journals,
+  GenericFoundry,
 }
 
 // relationships
@@ -159,7 +161,7 @@ export interface EntryBasicIndex {
 };
 
 export interface TopicBasicIndex { 
-  topic: string; 
+  topic: ValidTopic; 
   types: string[]; 
   topNodes: string[]; 
   entries: EntryBasicIndex[];
@@ -205,5 +207,6 @@ export type ValidDocType =
 export interface ContentTabDescriptor {
   id: string;
   label: string;
+  deletable?: boolean;
 }
   

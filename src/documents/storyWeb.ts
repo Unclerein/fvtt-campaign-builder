@@ -20,6 +20,18 @@ export const StoryWebSchema ={
       y: new fields.NumberField({ required: true, nullable: false }),
     }),
     { required: true, nullable: false, initial: {} as Record<string, { x: number, y: number }> }
+  ),
+  
+  /** edge styling information keyed by edge UUID */
+  edgeStyles: new fields.TypedObjectField(
+    new fields.SchemaField({
+      /** color ID reference */
+      colorId: new fields.StringField({ required: true, nullable: false }),
+
+      /** style ID reference */
+      styleId: new fields.StringField({ required: true, nullable: false }),
+    }),
+    { required: true, nullable: false, initial: {} as Record<string, { colorId: string, styleId: string }> }
   ),  
 };
 
@@ -32,6 +44,7 @@ export class StoryWebDataModel<Schema extends StoryWebSchemaType, ParentNode ext
 
   override prepareBaseData(): void {
     this.positions = cleanKeysOnLoad(this.positions);
+    this.edgeStyles = cleanKeysOnLoad(this.edgeStyles);
   }
 }
 
@@ -44,6 +57,7 @@ export interface StoryWebDoc extends JournalEntryPage {
     nodes: StoryWebNode[];
     edges: StoryWebEdge[];
     positions: Record<string, { x: number, y: number }>;
+    edgeStyles: Record<string, { colorId: string, styleId: string }>;
   };
 }
 

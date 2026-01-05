@@ -1,4 +1,5 @@
 import { EntryBasicIndex, StoryWebNodeTypes, Topics, WindowTabType } from '@/types';
+import { Entry } from '@/classes';
 
 /**
  * Safely converts a topic value to the Topics enum type.  Sometimes topic ends up a string
@@ -73,6 +74,8 @@ export function getTabTypeIcon(type: string | number | WindowTabType | null | un
       return 'fa-route';  //'fa-book-open';
     case WindowTabType.StoryWeb:
       return 'fa-diagram-project';
+    case WindowTabType.TagResults:
+      return 'fa-tag';
     case WindowTabType.Entry:
       throw new Error('Tried to use getTabTypeIcon() for Entry');
     default: 

@@ -43,9 +43,10 @@
         <Tags
           v-if="currentEntry"
           v-model="currentEntry.tags"
-          :tag-setting="SettingKey.entryTags"
+          :tag-setting="SettingKey.contentTags"
           @tag-added="onTagChange"
           @tag-removed="onTagChange"
+          @tag-click="onTagClick"
         />
       </div>
       <ContentTabStrip 
@@ -111,7 +112,6 @@
             <Editor
               :initial-content="currentEntry?.description || ''"
               :current-entity-uuid="currentEntry?.uuid"
-              :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
               fixed-height="240px"
               @editor-saved="onDescriptionEditorSaved"
               @related-entries-changed="onRelatedEntriesChanged"
@@ -121,8 +121,6 @@
           <CustomFieldsBlocks
             v-if="customFieldContentType !== null && currentEntry"
             :content-type="customFieldContentType"
-            :content="currentEntry"
-            :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
             @related-entries-changed="onRelatedEntriesChanged"
           />
 
@@ -170,12 +168,25 @@
         <div class="tab flexcol" data-group="primary" data-tab="sessions">
           <SessionsTab />
         </div>
+        <div 
+          v-if="ModuleSettings.get(SettingKey.genericFoundryTab)"
+          class="tab flexcol" 
+          data-group="primary" 
+          data-tab="foundry"
+        >
+          <div class="tab-inner">
+            <RelatedDocumentTable 
+              :document-link-type="DocumentLinkType.GenericFoundry"
+            />
+          </div>
+        </div>
       </ContentTabStrip>
     </div>
 
     <!-- Related Items Management Dialog -->
     <RelatedEntriesManagementDialog
       v-model="showRelatedEntriesDialog"
+      :description="localize('dialogs.relatedEntriesManagement.entryDescription')"
       :added-ids="pendingAddedUUIDs"
       :removed-ids="pendingRemovedUUIDs"
       @update="onRelatedEntriesDialogUpdate"
@@ -198,7 +209,8 @@
   import { ModuleSettings, SettingKey } from '@/settings';
   import { notifyInfo, notifyWarn } from '@/utils/notifications';  
   import { updateEntryDialog } from '@/dialogs/createEntry';
-  import { getRelatedEntries } from '@/utils/uuidExtraction';
+  import { getEntryRelatedEntries } from '@/utils/uuidExtraction';
+  import { filterRelatedEntries } from '@/utils/relatedContent';
 
   // library components
   import InputText from 'primevue/inputtext';
@@ -259,7 +271,7 @@
     { tab: 'pcs', label: 'labels.tabs.entry.pcs', topic: Topics.PC },
   ] as { tab: string; label: string; topic: Topics }[];
 
-  const topic = ref<Topics | null>(null);
+  const topic = computed(() => currentEntry.value?.topic || null);
   const name = ref<string>('');
 
   const parentId = ref<string | null>(null);
@@ -312,6 +324,8 @@
       tabs.push({ id: 'scenes', label: localize('labels.scenes') });
     if (topic.value!==Topics.PC)
       tabs.push({ id: 'sessions', label: localize('labels.sessions') });
+    if (ModuleSettings.get(SettingKey.genericFoundryTab))
+      tabs.push({ id: 'foundry', label: localize('labels.tabs.entry.foundry') });
 
     return tabs;
   });
@@ -322,9 +336,7 @@
     // refresh this so we can capture changes to campaigns as soon as they happen
     await updatePushButton();
 
-    if (!currentEntry.value || !currentEntry.value.uuid) {
-      topic.value = null;
-    } else {
+    if (currentEntry.value && currentEntry.value.uuid) {
       let newTopicFolder: TopicFolder | null;
 
       newTopicFolder = await currentEntry.value.getTopicFolder();
@@ -332,8 +344,6 @@
         throw new Error('Invalid entry topic in EntryContent.refreshEntry');
 
       // we're going to show a content page
-      topic.value = newTopicFolder.topic;
-
       // load starting data values
       name.value = currentEntry.value.name || '';
 
@@ -532,7 +542,7 @@
       return;
     }
 
-    notifyInfo(`${currentEntry.value.name} ${localize('notifications.addedToSession')}`);
+    notifyInfo(`${currentEntry.value.name} ${localize('notifications.addedToSession')}: ${session.name} (#${session.number})`);
     await updatePushButton();// # of available changed
   };
 
@@ -551,6 +561,7 @@
         icon: 'fa-file-lines',
         iconFontClass: 'fas',
         label: localize('contextMenus.generate.nameAndDescription'),        
+        disabled: false,
         onClick: async () => {
           if (currentEntry.value)
             await updateEntryDialog(currentEntry.value);
@@ -598,6 +609,11 @@
     await currentEntry.value.save();
   }
 
+  const onTagClick = async (tagName: string): Promise<void> => {
+    // Open the tag results tab for the clicked tag
+    await navigationStore.openTagResults(tagName, { newTab: true, activate: true });
+  }
+
   const onTypeSelectionMade = async (selection: string) => {
     if (currentEntry.value) {
       const oldType = currentEntry.value.type;
@@ -631,45 +647,19 @@
   };
 
   const onRelatedEntriesChanged = async (addedUUIDs: string[], removedUUIDs: string[]) => {
-    if (!currentEntry.value || !ModuleSettings.get(SettingKey.autoRelationships)) {
+    if (!currentEntry.value || !currentSetting.value || !ModuleSettings.get(SettingKey.autoRelationships)) {
       return;
     }
 
-    // check against current relationships
-    const { added, removed } = await getRelatedEntries(addedUUIDs, removedUUIDs, currentEntry.value);
+    // get the entries we actually need to check
+    const { added, removed } = await getEntryRelatedEntries(addedUUIDs, removedUUIDs, currentEntry.value);
 
-    let invalidOnes: string[] = [];
-
-    // we can only link to things in the current setting's compendium; filter others out quickly
-    for (const uuid of added.concat(removed)) {
-      if (!uuid.startsWith(`Compendium.${currentEntry.value.compendiumId}`))
-        invalidOnes.push(uuid);
-    }
-
-    // remove those
-    let finalAdded = added.filter(uuid => !invalidOnes.includes(uuid));
-    let finalRemoved = removed.filter(uuid => !invalidOnes.includes(uuid));
-
-    // from what's left filter out settings, campaigns, and sessions
-    // we know the uuids are journalentries, so the id is the last 16
-    const ids = added.concat(removed).map(uuid => uuid.slice(-16));
-    const possibleConnections = await currentEntry.value.compendium.getDocuments({ _id__in: ids });
-
-    invalidOnes = [];
-    for (const doc of possibleConnections) {
-      // get the type - we only care about entries
-      if (!doc.pages?.contents ||doc.pages.contents[0].type!==DOCUMENT_TYPES.Entry) {
-        invalidOnes.push(doc.uuid);
-      }
-    }
-  
-    finalAdded = finalAdded.filter(uuid => !invalidOnes.includes(uuid));
-    finalRemoved = finalRemoved.filter(uuid => !invalidOnes.includes(uuid));
+    await filterRelatedEntries(currentSetting.value, added, removed);
 
     // Store the pending changes and show dialog if there are any changes
-    if (finalAdded.length > 0 || finalRemoved.length > 0) {
-      pendingAddedUUIDs.value = finalAdded;
-      pendingRemovedUUIDs.value = finalRemoved;
+    if (added.length > 0 || removed.length > 0) {
+      pendingAddedUUIDs.value = added;
+      pendingRemovedUUIDs.value = removed;
       showRelatedEntriesDialog.value = true;
     }
   };

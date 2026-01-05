@@ -76,7 +76,14 @@
       "storyWebAutoArrangeHelp": "Lorsqu'elle est activée, les réseaux d'histoires se réorganiseront pour essayer de garder une image propre. Lorsqu'elle est désactivée, vous pouvez positionner tout exactement comme vous le souhaitez.",
       "customFields": "Champs personnalisés",
       "customFieldsLabel": "Configurer les champs personnalisés",
-      "customFieldsHelp": "Configurer des champs supplémentaires et des instructions AI pour chaque type de contenu"
+      "customFieldsHelp": "Configurer des champs supplémentaires et des instructions AI pour chaque type de contenu",
+      "storyWebSettings": "Story Web Settings",
+      "storyWebSettingsLabel": "Configure Settings",
+      "storyWebSettingsHelp": "Configure line colors/styles and element text for story webs",
+      "genericFoundryTab": "Afficher l'onglet Foundry sur les entrées",
+      "genericFoundryTabHelp": "Lorsqu'il est activé, les entrées auront un onglet Foundry qui peut contenir tout type de document Foundry (scènes, acteurs, objets, etc.). Cela est utile pour animer des sessions de jeu entièrement à partir des entrées sans utiliser de campagnes/sessions.",
+      "sessionBookmark": "Afficher le signet de la session",
+      "sessionBookmarkHelp": "Lorsqu'il est activé, un signet pour la session en cours sera affiché en tête de la barre de signets"
     },
     "applications": {
       "sessionNotes": {
@@ -295,6 +302,29 @@
         "notifications": {
           "saveFailed": "Échec de l'enregistrement des champs personnalisés"
         }
+      },
+      "storyWebSettings": {
+        "title": "Configure Story Web Settings",
+        "tabs": {
+          "colors": "Connection Colors",
+          "styles": "Connection Styles",
+          "fields": "Fields"
+        },
+        "columns": {
+          "name": "Name",
+          "color": "Color",
+          "style": "Style",
+          "fieldName": "Field Name",
+          "fieldKey": "Field Key"
+        },
+        "fieldsHint": "The fields in this list will be displayed in the tooltip when hovering over entities in a Story Web.",
+        "contentType": "Content Type",
+        "selectField": "Select Field",
+        "notifications": {
+          "noAvailableFields": "No available fields to add",
+          "duplicateColorIds": "Duplicate color IDs found. Please ensure all color IDs are unique.",
+          "duplicateStyleIds": "Duplicate style IDs found. Please ensure all style IDs are unique."
+        }
       }
     },
     "help": {
@@ -359,7 +389,8 @@
       "entry": {
         "topic": "DossierSujet",
         "type": "Type",
-        "relationships": "Relations"
+        "relationships": "Relations",
+        "entry": "Entrée"
       },
       "session": {
         "session": "Session",
@@ -386,7 +417,8 @@
         "vignetteHelpText": "Scènes qui apportent une résolution, ouvrent de nouveaux chemins, modifient l'histoire. 1 par 45 minutes. Cliquez pour en savoir plus de Lazy DM.",
         "locationHelpText": "Lieux détaillés, mémorables et fantastiques que les personnages peuvent explorer. Cliquez pour en savoir plus de Lazy DM.",
         "addJournal": "Ajouter un journal",
-        "addJournalDrag": "(ou glisser/déposer un journal ou une page de journal)"
+        "addJournalDrag": "(ou glisser/déposer un journal ou une page de journal)",
+        "addDocumentDrag": "(glisser/déposer n'importe quel document Foundry)"
       },
       "campaign": {
         "addPC": "Ajouter un PJ",
@@ -410,7 +442,8 @@
           "characters": "Personnages",
           "locations": "Lieux",
           "organizations": "Organisations",
-          "pcs": "PCs"
+          "pcs": "PCs",
+          "foundry": "Foundry"
         },
         "campaign": {
           "pcs": "PJs",
@@ -643,8 +676,13 @@
       },
       "relatedEntriesManagement": {
         "title": "Gérer les entrées liées",
-        "addedItems": "Ajouter des relations à ceux-ci ?",
-        "removedItems": "Supprimer les relations de ceux-ci ?"
+        "addedItems": "Nouvelles références trouvées",
+        "removedItems": "Références supprimées",
+        "entryDescription": "Sélectionnez les entrées à lier ou délier à cette entrée en fonction de vos modifications.",
+        "sessionDescription": "Sélectionnez les entrées à lier ou délier à la session en fonction de vos modifications.",
+        "pcDescription": "Sélectionnez les entrées à lier ou délier à ce PC en fonction de vos modifications.",
+        "dangerDescription": "Sélectionnez les participants à ajouter/retirer de ce danger en fonction de vos modifications.",
+        "arcDescription": "Sélectionnez les entrées à lier ou délier à cet arc en fonction de vos modifications."
       },
       "saveSessionNotes": {
         "title": "Enregistrer les modifications ?",
@@ -659,7 +697,8 @@
         "message": "Vous avez des modifications non enregistrées dans un ou plusieurs éditeurs ouverts. Que souhaitez-vous faire ?",
         "save": "Enregistrer les modifications",
         "discard": "Annuler les modifications",
-        "cancel": "Annuler"
+        "cancel": "Annuler",
+        "uuidChangesMessage": "Vous avez ajouté ou supprimé des références à d'autres entrées. Souhaitez-vous mettre à jour les entrées concernées ?"
       },
       "confirmDeleteParticipant": {
         "title": "Supprimer ce participant ?",
@@ -824,10 +863,15 @@
         "addDangerWithRelationships": "Ajouter un danger avec des relations",
         "addTextPrompt": "Entrer le texte à ajouter au diagramme",
         "openEntryInNewTab": "Ouvrir l'entrée dans un nouvel onglet",
-        "openDangerInNewTab": "Ouvrir le danger dans un nouvel onglet"
+        "openDangerInNewTab": "Ouvrir le danger dans un nouvel onglet",
+        "setColor": "Set Color",
+        "setStyle": "Set Style"
       },
       "addToStoryWeb": "Ajouter à l'histoire Web actuelle",
-      "addWithRelationships": "Ajouter avec les relations"
+      "addWithRelationships": "Ajouter avec les relations",
+      "danger": {
+        "delete": "Supprimer le danger"
+      }
     },
     "tooltips": {
       "mainButton": "Lancer le Créateur de Campagne",
@@ -900,7 +944,10 @@
       "moveToArc": "Déplacer vers l'arc pour une utilisation ultérieure",
       "movetoLatestArc": "Déplacer vers le dernier arc",
       "editSession": "Modifier la session",
-      "generateAIContent": "Générer du contenu IA"
+      "generateAIContent": "Générer du contenu IA",
+      "maximizeWindow": "Agrandir la fenêtre",
+      "restoreWindow": "Restaurer la fenêtre",
+      "currentSession": "session en cours"
     },
     "errors": {
       "duplicateBookmark": "Déjà enregistré comme favori",
@@ -927,6 +974,12 @@
       "locationCopiedToNextSession": "Lieu copié à la session suivante",
       "monsterCopiedToNextSession": "Monstre copié à la session suivante",
       "documentIndexesRepaired": "Tous les index des documents ont été réparés avec succès !"
+    },
+    "tags": {
+      "tag": "Étiquette",
+      "resultsFor": "Résultats de l'étiquette pour",
+      "entryFound": "entrée trouvée",
+      "entriesFound": "entrées trouvées"
     }
   }
 }

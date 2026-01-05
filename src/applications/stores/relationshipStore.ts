@@ -9,7 +9,7 @@ import { useMainStore, } from './index';
 // types
 import { 
   Topics, ValidTopic,
-  RelatedEntryDetails, FieldDataByTopic,
+  RelatedEntryDetails, ColumnsByTopic,
   RelatedDocumentDetails,
   DocumentLinkType,
 } from '@/types';
@@ -61,7 +61,7 @@ export const useRelationshipStore = defineStore('relationship', () => {
       [Topics.Organization]: [{field:'role', header:'Role'}],
       [Topics.PC]: [],
     },    
-  } as FieldDataByTopic;
+  } as ColumnsByTopic;
   
   ///////////////////////////////
   // other stores
@@ -131,6 +131,47 @@ export const useRelationshipStore = defineStore('relationship', () => {
       entry.actors.push(actorId);
       await entry.save();
     }
+
+    await mainStore.refreshEntry();
+  }
+
+  /**
+   * Add an arbitrary Foundry document to the current entry
+   * @param uuid The uuid of the document to add
+   */
+  async function addFoundryDocument(uuid: string): Promise<void> {
+    // create the relationship on current entry
+    const entry = currentEntry.value;
+
+    if (!entry || !uuid)
+      throw new Error('Invalid entry in relationshipStore.addFoundryDocument()');
+
+    // update the entry
+    if (!entry.foundryDocuments.includes(uuid)) {
+      entry.foundryDocuments.push(uuid);
+      await entry.save();
+    }
+
+    await mainStore.refreshEntry();
+  }
+
+  /**
+   * Remove a foundry document from the current entry
+   * @param uuid The uuid of the foundry document to remove
+   */
+  async function deleteFoundryDocument(uuid: string): Promise<void> {
+    // edit the current entry
+    const entry = currentEntry.value;
+
+    if (!entry || !uuid)
+      throw new Error('Invalid entry in relationshipStore.deleteFoundryDocument()');
+
+    // update the entry
+    if (entry.foundryDocuments.includes(uuid)) {
+      entry.foundryDocuments.splice(entry.foundryDocuments.indexOf(uuid), 1);
+      await entry.save();
+    }
+    await entry.save();
 
     await mainStore.refreshEntry();
   }
@@ -418,6 +459,9 @@ export const useRelationshipStore = defineStore('relationship', () => {
           topic = Topics.None;
           await _refreshSessionReferences();
           break;
+        case 'foundry':
+          topic = Topics.None;
+          break;
         default:
           topic = Topics.None;
       }
@@ -460,6 +504,23 @@ export const useRelationshipStore = defineStore('relationship', () => {
           });
         }
         relatedDocumentRows.value = actorList;
+      } else if (currentDocumentType.value===DocumentLinkType.GenericFoundry) {
+        relatedEntryRows.value = [];
+
+        const docList = [] as RelatedDocumentDetails[];
+        for (let i=0; i<currentEntry.value.foundryDocuments.length; i++) {
+          const doc = await fromUuid(currentEntry.value.foundryDocuments[i]);
+          if (!doc)
+            continue;
+
+          docList.push({
+            uuid: currentEntry.value.foundryDocuments[i],
+            name: doc.name || '???',
+            packId: doc.pack,
+            packName: doc.pack ? game.packs?.get(doc.pack)?.title ?? null : null,
+          });
+        }
+        relatedDocumentRows.value = docList;
       } else {
         relatedEntryRows.value = [];
         relatedDocumentRows.value = [];
@@ -562,5 +623,7 @@ export const useRelationshipStore = defineStore('relationship', () => {
     addActor,
     deleteScene,
     deleteActor,
+    addFoundryDocument,
+    deleteFoundryDocument,
   };
 });

@@ -268,19 +268,23 @@ export class CampaignBuilderApplication extends VueApplicationMixin(DocumentShee
     }, 0);
   }
 
-  override async close(options: any = {}): Promise<void> {
+  override async close(options: any = {}): Promise<this> {
     if (game.modules.get(moduleId))
       // @ts-ignore
       game.modules.get(moduleId).activeWindow = null;
 
     await super.close(options);
+
+    return this;
   }
 
   // capture the window position (after debouncing)
-  override setPosition(position: any = {}): any {
+  override setPosition(position: any = {}): foundry.applications.api.ApplicationV2.Position | void {
     const result = super.setPosition(position);
 
-    if (!this._suppressBoundsSave) {
+    // if it's maximized, don't save the bounds
+    const maximized = ModuleSettings.get(SettingKey.mainWindowBounds)?.maximized || false;
+    if (!maximized && !this._suppressBoundsSave) {
       if (this._boundsSaveTimeout != null) {
         window.clearTimeout(this._boundsSaveTimeout);
       }
@@ -300,7 +304,14 @@ export class CampaignBuilderApplication extends VueApplicationMixin(DocumentShee
           width > 0 &&
           height > 0
         ) {
-          void ModuleSettings.set(SettingKey.mainWindowBounds, { left, top, width, height });
+          // Get current bounds to preserve maximized state
+          void ModuleSettings.set(SettingKey.mainWindowBounds, { 
+            left, 
+            top, 
+            width, 
+            height,
+            maximized: false
+          });
         }
       }, 250);
     }

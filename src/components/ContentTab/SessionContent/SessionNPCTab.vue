@@ -6,11 +6,14 @@
     :show-add-button="true"
     :add-button-label="localize('labels.session.addNPC')" 
     :extra-add-text="localize('labels.session.addNPCDrag')"
-    :allow-edit="false"
+    :allow-edit="true"
     :help-text="localize('labels.session.npcHelpText')"
+    :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
+    @related-entries-changed="(added, removed) => emit('relatedEntriesChanged', added, removed)"
     @add-item="showNPCPicker=true"
-    @dragoverNew="onDragoverNew"
+    @dragoverNew="standardDragover"
     @drop-new="onDropNew"
+    @cell-edit-complete="onCellEditComplete"
   />
   <RelatedEntryDialog
     v-model="showNPCPicker"
@@ -29,7 +32,8 @@
   import { useSessionStore, SessionTableTypes} from '@/applications/stores';
   import { Topics, RelatedEntryDialogModes, EntryNodeDragData,} from '@/types';
   import { localize } from '@/utils/game'
-  import { getType, getValidatedData } from '@/utils/dragdrop';
+  import { getType, getValidatedData, standardDragover, FCBDragTypes } from '@/utils/dragdrop';
+  import { ModuleSettings, SettingKey } from '@/settings';
 
   // library components
 
@@ -38,12 +42,16 @@
   import RelatedEntryDialog from '@/components/dialogs/RelatedEntryDialog.vue';
 
   // types
+  import { CellEditCompleteEvent, BaseTableColumn } from '@/types';
   
   ////////////////////////////////
   // props
 
   ////////////////////////////////
   // emits
+  const emit = defineEmits<{
+    (e: 'relatedEntriesChanged', addedUUIDs: string[], removedUUIDs: string[]): void;
+  }>();
 
   ////////////////////////////////
   // store
@@ -62,7 +70,7 @@
     }))
   ));
 
-   const columns = computed(() => {
+  const columns = computed((): BaseTableColumn[] => {
     const actionColumn = { field: 'actions', style: 'text-align: left; width: 100px; max-width: 100px', header: 'Actions' };
 
     const extraFields = sessionStore.extraFields[SessionTableTypes.NPC]
@@ -73,8 +81,14 @@
    const actions = computed(() => ([
     {
       icon: 'fa-trash', 
-      callback: (data) => onDeleteNPC(data.uuid), 
-      tooltip: localize('tooltips.deleteNPC') 
+      callback: (data, removedUUIDs) => onDeleteNPC(data.uuid, removedUUIDs), 
+      tooltip: localize('tooltips.deleteNPC'),
+    },
+    {
+      icon: 'fa-pen', 
+      isEdit: true, 
+      callback: () => {},
+      tooltip: localize('tooltips.editNotes') 
     },
 
     // deliver/undeliver buttons
@@ -105,8 +119,24 @@
 
   ////////////////////////////////
   // event handlers
-  const onDeleteNPC = async (uuid: string) => {
-    await sessionStore.deleteNPC(uuid);
+  const onCellEditComplete = async (event: CellEditCompleteEvent) => {
+    const { data, newValue, field, } = event;
+
+    switch (field) {
+      case 'notes':
+        await sessionStore.updateNPCNotes(data.uuid, newValue as string);
+        break;
+
+      default:
+        break;
+    }  
+  }
+
+  const onDeleteNPC = async (uuid: string, removedUUIDs?: string[]) => {
+    const deleted = await sessionStore.deleteNPC(uuid);
+    if (deleted && removedUUIDs && removedUUIDs.length > 0) {
+      emit('relatedEntriesChanged', [], removedUUIDs);
+    }
   }
 
   const onMarkNPCDelivered = async (uuid: string) => {
@@ -121,20 +151,12 @@
     await sessionStore.moveNPCToNext(uuid);
   }
 
-  const onDragoverNew = (event: DragEvent) => {
-    event.preventDefault();  
-    event.stopPropagation();
-
-    if (event.dataTransfer && !event.dataTransfer?.types.includes('text/plain'))
-      event.dataTransfer.dropEffect = 'none';
-  }
-
   const onDropNew = async(event: DragEvent) => {
     event.preventDefault();  
 
     // parse the data  - looking for entry node
     const data = getValidatedData(event);
-    if (!data || getType(data) !== 'fcb-entry') {
+    if (!data || getType(data) !== FCBDragTypes.Entry) {
       return;
     }
 

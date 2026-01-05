@@ -1,5 +1,5 @@
 <template>
-  <div v-if="props.content && customFields.length > 0">
+  <div v-if="content && customFields.length > 0">
     <template v-for="field in customFields" :key="field.name">
       <template v-if="field.fieldType === FieldType.Editor">
         <div class="flexrow form-group">
@@ -26,11 +26,10 @@
         </div>
         <div class="flexrow form-group">
           <Editor
-            :key="`${props.content.uuid}-${field.name}`"
+            :key="`${content.uuid}-${field.name}`"
             :initial-content="String(values[field.name] ?? '')"
             :fixed-height="`${field.editorHeight ?? 4}rem`"
-            :current-entity-uuid="props.content.uuid"
-            :enable-related-entries-tracking="props.enableRelatedEntriesTracking"
+            :current-entity-uuid="content.uuid"
             @editor-saved="(newContent: string) => onFieldValueChanged(field, newContent)"
             @related-entries-changed="onRelatedEntriesChanged"
           />
@@ -83,16 +82,18 @@
 
 <script setup lang="ts">
   // library imports
-  import { computed, reactive, watch, PropType } from 'vue';
+  import { computed, reactive, watch, PropType, } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
   import { localize } from '@/utils/game';
   import { ModuleSettings, SettingKey } from '@/settings';
   import { notifyError, notifyInfo } from '@/utils/notifications';
-  import { useBackendStore, useMainStore } from '@/applications/stores';
+  import { useBackendStore } from '@/applications/stores/backendStore';
+  import { useMainStore } from '@/applications/stores';
   import { nameStyles } from '@/utils/nameStyles';
   import { promptReplace } from '@/utils/generation';
+  import { replaceUUIDsInText } from '@/utils/sanitizeHtml';
 
   // library components
   import InputText from 'primevue/inputtext';
@@ -104,8 +105,7 @@
 
   // types
   import { CustomFieldContentType, CustomFieldDescription, FieldType } from '@/types';
-  import { FCBJournalEntryPage } from '@/classes/Documents/FCBJournalEntryPage';
-  import { Entry } from '@/classes';
+  import { Arc, Campaign, Entry, FCBSetting, Front, Session } from '@/classes';
   import { ApiCustomGeneratePostRequest, ApiCustomGeneratePostRequestContentTypeEnum } from '@/apiClient';
 
   ////////////////////////////////
@@ -115,17 +115,7 @@
     contentType: {
       type: Number as PropType<CustomFieldContentType>,
       required: true
-    },
-    enableRelatedEntriesTracking: {
-      type: Boolean,
-      required: false,
-      default: false
-    },
-    content: {
-      type: Object as PropType<FCBJournalEntryPage<any, any> | null>,
-      required: false,
-      default: null
-    },
+    }
   });
 
   ////////////////////////////////
@@ -140,7 +130,7 @@
   const backendStore = useBackendStore();
   const mainStore = useMainStore();
   const { available: backendAvailable } = storeToRefs(backendStore);
-  const { currentSetting } = storeToRefs(mainStore);
+  const { currentSetting, currentArc, currentSession, currentCampaign, currentEntry, currentFront, } = storeToRefs(mainStore);
 
   ////////////////////////////////
   // data
@@ -166,6 +156,34 @@
   ////////////////////////////////
   // computed data
 
+  const content = computed((): Entry | Campaign | Arc | Front | Session | FCBSetting | null => {
+    switch (props.contentType) {
+      case CustomFieldContentType.Arc:
+        return currentArc.value;
+
+      case CustomFieldContentType.Campaign:
+        return currentCampaign.value;
+
+      case CustomFieldContentType.Front:
+        return currentFront.value;
+
+      case CustomFieldContentType.Session:
+        return currentSession.value;
+
+      case CustomFieldContentType.Setting:
+        return currentSetting.value;
+
+      case CustomFieldContentType.Character:
+      case CustomFieldContentType.PC:
+      case CustomFieldContentType.Location:
+      case CustomFieldContentType.Organization:
+        return currentEntry.value;
+
+      default:
+        throw new Error(`Unsupported content type in CustomFieldsBlocks.content(): ${props.contentType}`);
+    }
+  });
+
   const customFields = computed<CustomFieldDescription[]>(() => {
     const customFieldsByType = ModuleSettings.get(SettingKey.customFields);
     return (customFieldsByType?.[props.contentType] || [])
@@ -178,7 +196,7 @@
   // methods
 
   const aiGenerationKey = (field: CustomFieldDescription): string => {
-    return `${props.content?.uuid || 'unknown'}-${field.name}`;
+    return `${content.value?.uuid || 'unknown'}-${field.name}`;
   };
 
   const selectedNameStyles = (genre: string, settingNameStyles: readonly number[]): string[] => {
@@ -191,32 +209,32 @@
       .filter((style) => style !== '');
   };
 
-  const resolvePromptFromFieldTemplate = (field: CustomFieldDescription): string => {
-    if (!props.content) return '';
+  const resolvePromptFromFieldTemplate = async (field: CustomFieldDescription): Promise<string> => {
+    if (!content.value) return '';
 
-    const baseName = String((props.content as any).name ?? '');
+    const baseName = String(content.value.name ?? '');
 
     const template = String(field.aiPromptTemplate ?? '').trim();
     if (!template) {
       return `Write ${field.label} for ${baseName}.`;
     }
 
-    return promptReplace(
+    return await promptReplace(
       template, 
       baseName, 
-      String((props.content as any).description ?? ''),
-      String((props.content as any).type ?? ''),
-      String((props.content as any).species ?? ''),
-      String((props.content as any).parentName ?? ''),
+      await replaceUUIDsInText(String((content.value as any).description ?? '')),
+      String((content.value as any).type ?? ''),
+      String((content.value as any).species ?? ''),
+      String((content.value as any).parentName ?? ''),
       values as Record<string, boolean>
     );
   };
 
   const buildCustomGenerateRequest = async (field: CustomFieldDescription): Promise<ApiCustomGeneratePostRequest> => {
-    if (!props.content || !currentSetting.value) 
+    if (!content.value || !currentSetting.value) 
       throw new Error('No content or setting in CustomFieldsBlocks.buildCustomGenerateRequest');
 
-    const setting = await props.content.getSetting();
+    const setting = await content.value.getSetting();
 
     // add the other things based on topic
     let parent: Entry | null = null;
@@ -227,9 +245,9 @@
 
   switch (props.contentType) {
     case CustomFieldContentType.Character:
-      type = (props.content as Entry)?.type ?? '';
+      type = (content.value as Entry)?.type ?? '';
       const speciesList = ModuleSettings.get(SettingKey.speciesList) || [];
-      const speciesId = (props.content as Entry)?.speciesId;
+      const speciesId = (content.value as Entry)?.speciesId;
       const speciesItem = speciesList.find((s: any) => s.id === speciesId);
       species = speciesItem?.name ?? '';
       speciesDescription = speciesItem?.description ?? '';
@@ -238,9 +256,9 @@
       break;
     case CustomFieldContentType.Location:
     case CustomFieldContentType.Organization:
-      type = (props.content as Entry)?.type ?? '';
+      type = (content.value as Entry)?.type ?? '';
 
-      const entry = props.content as unknown as Entry;
+      const entry = content.value as unknown as Entry;
       const parentId = await entry.getParentId();
       if (parentId) {
         parent = await Entry.fromUuid(parentId);
@@ -269,9 +287,9 @@
 
     const request = {
       contentType: ApiContentTypeMap[props.contentType],
-      name: (props.content)?.name ?? '',
+      name: (content.value)?.name ?? '',
       fieldLabel: field.label,
-      prompt: resolvePromptFromFieldTemplate(field),
+      prompt: await resolvePromptFromFieldTemplate(field),
       genre: currentSetting.value.genre ?? '',
       settingFeeling: currentSetting.value.settingFeeling ?? '',
 
@@ -280,11 +298,11 @@
       speciesDescription,
       parentName: parent?.name || '',
       parentType: parent?.type || '',
-      parentDescription: parent?.description || '',
+      parentDescription: await replaceUUIDsInText(parent?.description || ''),
       grandparentName: grandparent?.name || '',
       grandparentType: grandparent?.type || '',
-      grandparentDescription: grandparent?.description || '',
-      description: String((props.content as any).description ?? ''),
+      grandparentDescription: await replaceUUIDsInText(grandparent?.description || ''),
+      description: await replaceUUIDsInText(String((content.value as any).description ?? '')),
       nameStyles: selectedNameStyles(currentSetting.value.genre ?? '', (setting as any).nameStyles || []),
       textModel: ModuleSettings.get(SettingKey.selectedTextModel),
       configuration,
@@ -293,10 +311,14 @@
   };
 
   const hydrateFromContent = () => {
-    if (!props.content) return;
+    if (!content.value) 
+      return;
 
     for (const field of customFields.value) {
-      const current = props.content.getCustomField(field.name);
+      if (!('getCustomField' in content.value)) 
+        debugger;
+
+      const current = content.value.getCustomField(field.name);
 
       if (field.fieldType === FieldType.Boolean) {
         values[field.name] = Boolean(current);
@@ -311,14 +333,14 @@
   };
 
   const queueSave = () => {
-    if (!props.content) return;
+    if (!content.value) return;
 
     const debounceTime = 500;
     clearTimeout(saveDebounceTimer);
 
     saveDebounceTimer = setTimeout(async () => {
       try {
-        await props.content?.save();
+        await content.value?.save();
       } catch (e) {
         console.error(e);
         notifyError(localize('applications.customFieldsBlocks.notifications.saveFailed'));
@@ -336,15 +358,15 @@
   };
 
   const onFieldValueChanged = (field: CustomFieldDescription, value: string | boolean) => {
-    if (!props.content) return;
+    if (!content.value) return;
 
     values[field.name] = value;
-    props.content.setCustomField(field.name, value);
+    content.value.setCustomField(field.name, value);
     queueSave();
   };
 
   const onGenerateAiClick = async (field: CustomFieldDescription) => {
-    if (!props.content) return;
+    if (!content.value) return;
     if (!backendAvailable.value) return;
     if (!field.aiEnabled) return;
 
@@ -353,12 +375,12 @@
     isGeneratingAi[key] = true;
 
     try {
-      notifyInfo(`Generating ${field.label} for ${(props.content as any).name}. This may take a minute...`);
+      notifyInfo(`Generating ${field.label} for ${(content.value as any).name}. This may take a minute...`);
       const request = await buildCustomGenerateRequest(field);
       const result = await backendStore.generateCustom(request);
       const html = String(result?.data?.response ?? '');
       onFieldValueChanged(field, html);
-      notifyInfo(`AI completed for ${(props.content as any).name} (${field.label}).`);
+      notifyInfo(`AI completed for ${(content.value as any).name} (${field.label}).`);
     } catch (e) {
       console.error(e);
       notifyError(`Failed to generate ${field.label}.`);
@@ -368,10 +390,10 @@
   };
 
   const onRelatedEntriesChanged = (added: string[], removed: string[]) => {
-    if (!props.enableRelatedEntriesTracking) 
+    if (!ModuleSettings.get(SettingKey.autoRelationships)) 
       return;
 
-    if (!props.content) 
+    if (!content.value) 
       return;
 
     emit('relatedEntriesChanged', added, removed);
@@ -380,9 +402,9 @@
   ////////////////////////////////
   // watchers
 
-  watch(
-    () => [props.content?.uuid, props.contentType, customFields.value.map((f) => f.name).join(',')],
-    () => hydrateFromContent(),
+  watch(() => [content.value?.uuid, props.contentType], () => {
+      hydrateFromContent();
+    },
     { immediate: true }
   );
 

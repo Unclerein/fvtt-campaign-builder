@@ -11,9 +11,11 @@
     :draggable-rows="true"
     :help-text="localize('labels.session.monsterHelpText')"
     help-link="https://slyflourish.com/choose_monsters_based_on_the_story.html"
+    :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
+    @related-entries-changed="(added, removed) => emit('relatedEntriesChanged', added, removed)"
     @add-item="showMonsterPicker=true"
     @drop-new="onDropNew"
-    @dragoverNew="onDragoverNew"
+    @dragoverNew="standardDragover"
     @dragstart="onDragStart"
     @cell-edit-complete="onCellEditComplete"
   />
@@ -33,8 +35,9 @@
   // local imports
   import { useSessionStore, SessionTableTypes, useArcStore, ArcTableTypes, } from '@/applications/stores';
   import { localize } from '@/utils/game'
-  import { getValidatedData, actorDragStart } from '@/utils/dragdrop';
+  import { getValidatedData, actorDragStart, standardDragover } from '@/utils/dragdrop';
   import { notifyInfo } from '@/utils/notifications';
+  import { ModuleSettings, SettingKey } from '@/settings';
 
   // library components
 	
@@ -43,7 +46,7 @@
   import RelatedDocumentsDialog from '@/components/tables/RelatedDocumentsDialog.vue';
 
   // types
-  import { CellEditCompleteEvent } from '@/types';
+  import { CellEditCompleteEvent, BaseTableColumn } from '@/types';
   
   ////////////////////////////////
   // props
@@ -57,6 +60,9 @@
 
   ////////////////////////////////
   // emits
+  const emit = defineEmits<{
+    (e: 'relatedEntriesChanged', addedUUIDs: string[], removedUUIDs: string[]): void;
+  }>();
 
   ////////////////////////////////
   // store
@@ -80,7 +86,7 @@
     }))
   ));
   
-  const columns = computed(() => {
+  const columns = computed((): BaseTableColumn[] => {
     const actionColumn = { field: 'actions', style: 'text-align: left; width: 100px; max-width: 100px', header: 'Actions' };
 
     const extraFields = props.arcMode ? 
@@ -93,8 +99,8 @@
   const actions = computed(() => ([
     {
       icon: 'fa-trash', 
-      callback: (data) => onDeleteMonster(data.uuid), 
-      tooltip: localize('tooltips.deleteLocation') 
+      callback: (data, removedUUIDs) => onDeleteMonster(data.uuid, removedUUIDs), 
+      tooltip: localize('tooltips.deleteLocation'),
     },
     {
       icon: 'fa-pen', 
@@ -136,14 +142,6 @@
     await store.value.addMonster(documentUuid);
   }
 
-  const onDragoverNew = (event: DragEvent) => {
-    event.preventDefault();  
-    event.stopPropagation();
-
-    if (event.dataTransfer && !event.dataTransfer?.types.includes('text/plain'))
-      event.dataTransfer.dropEffect = 'none';
-  }
-
   const onDropNew = async (event: DragEvent) => {
     event.preventDefault();  
 
@@ -168,7 +166,11 @@
         }
         break;
       case 'notes':
-        await arcStore.updateMonsterNotes(data.uuid, newValue as string);
+        if (props.arcMode) {
+          await arcStore.updateMonsterNotes(data.uuid, newValue as string);
+        } else {
+          await sessionStore.updateMonsterNotes(data.uuid, newValue as string);
+        }
         break;
 
       default:
@@ -176,8 +178,11 @@
     }  
   }
 
-  const onDeleteMonster = async (uuid: string) => {
-    await store.value.deleteMonster(uuid);
+  const onDeleteMonster = async (uuid: string, removedUUIDs?: string[]) => {
+    const deleted = await store.value.deleteMonster(uuid);
+    if (deleted && removedUUIDs && removedUUIDs.length > 0) {
+      emit('relatedEntriesChanged', [], removedUUIDs);
+    }
   }
 
   const onMarkMonsterDelivered = async (uuid: string) => {

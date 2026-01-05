@@ -1,24 +1,24 @@
 <template>
-  <section class="standard-form">
-    <div class="fcb-sheet-container flexcol species-list">
-      <div class="species-list-table" data-application-part="content" style="overflow: hidden; height: calc(100vh - 325px);">
-        <ScrollPanel style="flex: 1; min-height: 0; height: 100%; width: 100%;" :pt="{ wrapper: { style: 'height: 100%; width: 100%; scrollbar-width: thin; scrollbar-color: var(--fcb-scrollbar) var(--fcb-scrollbar-thumb)' }, content: { style: 'width: 100%; box-sizing: border-box' } }">
-          <BaseTable
-            :rows="rows"
-            :columns="columns"
-            :show-add-button="true"
-            :show-filter="false"
-            :allow-edit="true"
-            :add-button-label="localize('applications.speciesList.labels.add')"
-            :delete-item-label="localize('applications.speciesList.labels.delete')"
-            @delete-item="onDeleteItem"
-            @add-item="onAddItem"
-            @cell-edit-complete="onCellEditComplete"
-          />
-        </ScrollPanel>
-      </div>
+  <ConfigDialogLayout>
+    <template #header>
+    </template>
 
-      <footer class="form-footer" data-application-part="footer">
+    <template #scrollSection>
+      <BaseTable
+        :rows="rows"
+        :columns="columns"
+        :show-add-button="true"
+        :show-filter="false"
+        :allow-edit="true"
+        :add-button-label="localize('applications.speciesList.labels.add')"
+        :delete-item-label="localize('applications.speciesList.labels.delete')"
+        @delete-item="onDeleteItem"
+        @add-item="onAddItem"
+        @cell-edit-complete="onCellEditComplete"
+      />
+    </template>
+
+    <template #footer>
       <button 
         data-testid="species-list-reset-button"
         @click="onClickReset"
@@ -33,9 +33,8 @@
         <i class="fa-solid fa-save"></i>
         <label>{{ localize('labels.saveChanges') }}</label>
       </button>
-    </footer>
-    </div>
-  </section>
+    </template>
+  </ConfigDialogLayout>
 </template> 
 
 <script setup lang="ts">
@@ -50,13 +49,13 @@
   import { isCampaignBuilderAppOpen } from '@/utils/appWindow';
 
   // library components
-  import ScrollPanel from 'primevue/scrollpanel';
 
   // local components
   import BaseTable from '@/components/tables/BaseTable.vue';
+  import ConfigDialogLayout from '@/components/layout/ConfigDialogLayout.vue';
 
   // types
-  import { Species, CellEditCompleteEvent } from '@/types';
+  import { BaseTableColumn, Species, CellEditCompleteEvent } from '@/types';
   
   ////////////////////////////////
   // props
@@ -82,7 +81,7 @@
     })
   )));
 
-  const columns = computed((): any[] => {
+  const columns = computed((): BaseTableColumn[] => {
     // for now, just action and name
     const actionColumn = { field: 'actions', style: 'text-align: left; width: 75px;', header: localize('labels.tableHeaders.actions') };
     const nameColumn = { field: 'name', style: 'text-align: left; width: 20%;', header: localize('labels.tableHeaders.name'), sortable: true, editable: true, smallEditBox: true }; 
@@ -158,62 +157,6 @@
 
 </script>
 
-<style lang="scss">
-  // Apply scrollbar styles to ScrollPanel
-  .p-scrollpanel-wrapper {
-    scrollbar-width: thin;
-    scrollbar-color: var(--fcb-scrollbar) var(--fcb-scrollbar-thumb);
-  }
-  
-  .p-scrollpanel-wrapper::-webkit-scrollbar {
-    width: 8px;
-  }
-  
-  .p-scrollpanel-wrapper::-webkit-scrollbar-track {
-    background: var(--fcb-scrollbar);
-  }
-  
-  .p-scrollpanel-wrapper::-webkit-scrollbar-thumb {
-    background-color: var(--fcb-scrollbar-thumb);
-    border-radius: 4px;
-  }
-
-  .fcb-species-list {
-    background-color: var(--fcb-surface);
-  }
-
-  .fcb-species-list .window-content {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    /* scrolling is now handled by ScrollPanel */
-    overflow: hidden;
-  }
-
-  .fcb-species-list .fcb-sheet-container {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-height: 0;
-    height: 100%;
-  }
-
-  .fcb-species-list .species-list-table {
-    flex: 1 1 auto;
-    min-height: 0;
-    /* scrolling is now handled by ScrollPanel */
-    overflow: hidden;
-  }
-
-  /* keep the footer visible while content scrolls */
-  .fcb-species-list .form-footer {
-    // keep footer pinned to the bottom of the scrolling area
-    position: sticky;
-    flex: 0 0 auto;
-    bottom: 0;
-    background-color: var(--fcb-surface);
-    z-index: 1;
-    margin-top: auto;
-  }
+<style lang="scss" scoped>
 </style>
 

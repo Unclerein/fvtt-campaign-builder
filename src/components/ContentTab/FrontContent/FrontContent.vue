@@ -19,9 +19,10 @@
         <Tags
           v-if="currentFront"
           v-model="currentFront.tags"
-          :tag-setting="SettingKey.frontTags"
+          :tag-setting="SettingKey.contentTags"
           @tag-added="onTagChange"
           @tag-removed="onTagChange"
+          @tag-click="onTagClick"
         />
       </div>
       <ContentTabStrip 
@@ -30,6 +31,7 @@
         add-tab
         :add-tab-label="localize('labels.tabs.front.createNewDanger')"
         @add-tab="onAddTab"
+        @delete-tab="onDeleteTab"
       >
         <DescriptionTab
           :name="currentFront?.name || 'Front'"
@@ -127,7 +129,7 @@
     for (let i=0; i < (currentFront.value?.dangers?.length || 0); i++) {
       const danger = currentFront.value!.dangers[i];
       
-      retval.push({ id: `danger${i}`, label: danger.name });
+      retval.push({ id: `danger${i}`, label: danger.name, deletable: true });
     }
     
     return retval;
@@ -189,6 +191,11 @@
     await currentFront.value.save();
   }
 
+  const onTagClick = async (tagName: string): Promise<void> => {
+    // Open the tag results tab for the clicked tag
+    await navigationStore.openTagResults(tagName, { newTab: true, activate: true });
+  }
+
   const onAddTab = async (): Promise<void> => {
     if (!currentFront.value)
       return;
@@ -196,6 +203,23 @@
     await currentFront.value.createDanger();
 
     currentContentTab.value = `danger${currentFront.value.dangers.length - 1}`;
+
+    await mainStore.refreshFront();
+  }
+
+  const onDeleteTab = async (tabId: string): Promise<void> => {
+    if (!currentFront.value)
+      return;
+
+    // extract the danger index from the tab id (e.g., 'danger0' -> 0)
+    const dangerIndex = parseInt(tabId.replace('danger', ''));
+    if (isNaN(dangerIndex))
+      return;
+
+    await currentFront.value.deleteDanger(dangerIndex);
+
+    // switch to description tab after deletion
+    currentContentTab.value = 'description';
 
     await mainStore.refreshFront();
   }
