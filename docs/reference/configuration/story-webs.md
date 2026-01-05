@@ -10,9 +10,9 @@ next:
 
 # Story Web Configuration Menu
 
-This menu allows you to configure the visual appearance of various parts of your [Story Webs](/reference/campaign-mgt/content/storyWeb). You can customize the colors and line styles used to represent different types of relationships between entries, as well as set what fields are displayed when hovering over an element.  
+This menu allows you to configure the visual appearance of various parts of your [Story Webs](/reference/campaign-mgt/content/storyWeb/index). You can customize the colors and line styles used to represent different types of relationships between entries, as well as set what fields are displayed when hovering over an element.  
 
-See [Story Web Connection Styles](/reference/campaign-mgt/content/storyWeb#connection-colors-and-styles) for more information on using connection colors/styles in Story Webs.
+See [Story Web Connection Styles](/reference/campaign-mgt/content/storyWeb/index#connection-colors-and-styles) for more information on using connection colors/styles in Story Webs.
 
 > [!NOTE]
 > No changes are saved in this dialog until you hit "Save Changes". You can use the "Reset" button to revert any unsaved changes.
