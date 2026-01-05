@@ -14,6 +14,8 @@
       :draggable-rows="false"
       :can-reorder="true"
       :actions="actions"
+      :enable-related-entries-tracking="props.arcMode && ModuleSettings.get(SettingKey.autoRelationships)"
+      @related-entries-changed="(added, removed) => emit('relatedEntriesChanged', added, removed)"
       @add-item="onAddIdea"
       @cell-edit-complete="onCellEditComplete"
       @reorder="onReorder"
@@ -30,6 +32,7 @@
   // local imports
   import { useCampaignStore, CampaignTableTypes, useArcStore, } from '@/applications/stores';
   import { localize } from '@/utils/game';
+  import { ModuleSettings, SettingKey } from '@/settings';
 
   // library components
 
@@ -50,6 +53,9 @@
 
   ////////////////////////////////
   // emits
+  const emit = defineEmits<{
+    (e: 'relatedEntriesChanged', addedUUIDs: string[], removedUUIDs: string[]): void;
+  }>();
 
   ////////////////////////////////
   // store
@@ -77,8 +83,8 @@
     return [
       { 
         icon: 'fa-trash', 
-        callback: (data) => onDeleteIdea(data.uuid), 
-        tooltip: localize('tooltips.deleteIdea') 
+        callback: (data, removedUUIDs) => onDeleteIdea(data.uuid, removedUUIDs), 
+        tooltip: localize('tooltips.deleteIdea'),
       },
       { 
         icon: 'fa-arrow-up',
@@ -119,8 +125,11 @@
 
   ////////////////////////////////
   // event handlers
-  const onDeleteIdea = async (uuid: string) => {
-    await store.value.deleteIdea(uuid);
+  const onDeleteIdea = async (uuid: string, removedUUIDs?: string[]) => {
+    const deleted = await store.value.deleteIdea(uuid);
+    if (deleted && removedUUIDs && removedUUIDs.length > 0) {
+      emit('relatedEntriesChanged', [], removedUUIDs);
+    }
   };
 
   const onAddIdea = async () => {

@@ -52,6 +52,7 @@
   import { replaceEntityReferences } from '@/utils/entityLinking';
   import { extractUUIDs, compareUUIDs, } from '@/utils/uuidExtraction';
   import { registerEditor, unregisterEditor } from '@/utils/editorChangeDetection';
+  import { ModuleSettings, SettingKey } from '@/settings';
 
   // library components
 
@@ -117,11 +118,6 @@
       type: Boolean,
       required: false,
       default: true,
-    },
-    enableRelatedEntriesTracking: {
-      type: Boolean,
-      required: false,
-      default: false,
     },
   });
 
@@ -263,7 +259,7 @@
     }
 
     // Check for UUID changes if related items tracking is enabled
-    if (dirty && props.enableRelatedEntriesTracking) {
+    if (dirty && ModuleSettings.get(SettingKey.autoRelationships)) {
       const currentUUIDs = extractUUIDs(content);
       const { added, removed } = compareUUIDs(initialUUIDs.value, currentUUIDs);
       
@@ -293,7 +289,7 @@
     if (dirty) {
       lastSavedContent.value = content;
       
-      if (props.enableRelatedEntriesTracking) {
+      if (ModuleSettings.get(SettingKey.autoRelationships)) {
         initialUUIDs.value = [];
       }
       
@@ -343,7 +339,7 @@
   // event handlers
   const onDragover = (event: DragEvent) => {
     if (!props.editable) return;
-    standardDragover(event);
+      standardDragover(event);
   }
 
   const onDrop = async (event: DragEvent) => {
@@ -380,7 +376,7 @@
     const content = newContent || '';
       
     // Initialize UUIDs for tracking if enabled
-    if (props.enableRelatedEntriesTracking) {
+    if (ModuleSettings.get(SettingKey.autoRelationships)) {
       initialUUIDs.value = extractUUIDs(content);
     }
 
@@ -448,7 +444,7 @@
     enrichedInitialContent.value = !props.editOnlyMode ? await enrichFcbHTML(currentSetting.value.uuid, props.initialContent || '') : props.initialContent || '';
 
     // Initialize UUIDs for tracking if enabled
-    if (props.enableRelatedEntriesTracking) {
+    if (ModuleSettings.get(SettingKey.autoRelationships)) {
       initialUUIDs.value = extractUUIDs(props.initialContent || '');
     }
 

@@ -11,6 +11,8 @@
     :help-text="localize('labels.session.locationHelpText')"
     help-link="https://slyflourish.com/designing_fantastic_locations.html"
     :can-reorder="false"
+    :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
+    @related-entries-changed="(added, removed) => emit('relatedEntriesChanged', added, removed)"
     @add-item="showLocationPicker=true"
     @dragover-new="standardDragover"
     @dropNew="onDropNew"
@@ -35,6 +37,7 @@
   import { localize } from '@/utils/game'
   import { getType, getValidatedData, standardDragover, FCBDragTypes } from '@/utils/dragdrop';
   import { notifyInfo } from '@/utils/notifications';
+  import { ModuleSettings, SettingKey } from '@/settings';
 
   // library components
 
@@ -57,6 +60,9 @@
 
   ////////////////////////////////
   // emits
+  const emit = defineEmits<{
+    (e: 'relatedEntriesChanged', addedUUIDs: string[], removedUUIDs: string[]): void;
+  }>();
 
   ////////////////////////////////
   // store
@@ -93,8 +99,8 @@
   const actions = computed(() => ([
     {
       icon: 'fa-trash', 
-      callback: (data) => onDeleteLocation(data.uuid), 
-      tooltip: localize('tooltips.deleteLocation') 
+      callback: (data, removedUUIDs) => onDeleteLocation(data.uuid, removedUUIDs), 
+      tooltip: localize('tooltips.deleteLocation'),
     },
     {
       icon: 'fa-pen', 
@@ -131,8 +137,11 @@
 
   ////////////////////////////////
   // event handlers
-  const onDeleteLocation = async (uuid: string) => {
-    await store.value.deleteLocation(uuid);
+  const onDeleteLocation = async (uuid: string, removedUUIDs?: string[]) => {
+    const deleted = await store.value.deleteLocation(uuid);
+    if (deleted && removedUUIDs && removedUUIDs.length > 0) {
+      emit('relatedEntriesChanged', [], removedUUIDs);
+    }
   }
 
   const onMarkLocationDelivered = async (uuid: string) => {

@@ -8,6 +8,8 @@
     :extra-add-text="localize('labels.session.addNPCDrag')"
     :allow-edit="true"
     :help-text="localize('labels.session.npcHelpText')"
+    :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
+    @related-entries-changed="(added, removed) => emit('relatedEntriesChanged', added, removed)"
     @add-item="showNPCPicker=true"
     @dragoverNew="standardDragover"
     @drop-new="onDropNew"
@@ -31,6 +33,7 @@
   import { Topics, RelatedEntryDialogModes, EntryNodeDragData,} from '@/types';
   import { localize } from '@/utils/game'
   import { getType, getValidatedData, standardDragover, FCBDragTypes } from '@/utils/dragdrop';
+  import { ModuleSettings, SettingKey } from '@/settings';
 
   // library components
 
@@ -46,6 +49,9 @@
 
   ////////////////////////////////
   // emits
+  const emit = defineEmits<{
+    (e: 'relatedEntriesChanged', addedUUIDs: string[], removedUUIDs: string[]): void;
+  }>();
 
   ////////////////////////////////
   // store
@@ -75,8 +81,8 @@
    const actions = computed(() => ([
     {
       icon: 'fa-trash', 
-      callback: (data) => onDeleteNPC(data.uuid), 
-      tooltip: localize('tooltips.deleteNPC') 
+      callback: (data, removedUUIDs) => onDeleteNPC(data.uuid, removedUUIDs), 
+      tooltip: localize('tooltips.deleteNPC'),
     },
     {
       icon: 'fa-pen', 
@@ -126,8 +132,11 @@
     }  
   }
 
-  const onDeleteNPC = async (uuid: string) => {
-    await sessionStore.deleteNPC(uuid);
+  const onDeleteNPC = async (uuid: string, removedUUIDs?: string[]) => {
+    const deleted = await sessionStore.deleteNPC(uuid);
+    if (deleted && removedUUIDs && removedUUIDs.length > 0) {
+      emit('relatedEntriesChanged', [], removedUUIDs);
+    }
   }
 
   const onMarkNPCDelivered = async (uuid: string) => {

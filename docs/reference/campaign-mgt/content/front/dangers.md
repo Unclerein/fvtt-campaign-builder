@@ -19,8 +19,15 @@ Each [^Front] is made up of one or more [^Dangers]. A Danger is a specific threa
 To add a new Danger to a Front:
 
 1. Open the Front in the main content area.
-2. Click the `+` button on the Front’s tab strip.
+2. Click the `+` button on the Front's tab strip.
 3. A new Danger is created and a tab for it appears.
+
+### Deleting a Danger
+
+To delete a Danger from a Front:
+
+1. Right-click on the Danger's tab.
+2. Select "Delete danger" from the context menu.
 
 ### Danger Name
 
@@ -70,3 +77,6 @@ Think of grim portents as a short, ordered list of events:
 As you play, you can check off grim portents as they occur, reflecting how the Front is progressing.
 
 You can drag rows up and down to change the order in which the grim portents appear.
+
+> [!TIP]
+> Front description, motivation and the Grim Portent table support [Related Entry Tracking](/reference/navigation/editors#related-entry-tracking). When you add or remove references to Characters or Organizations in any of these, you'll be prompted to add or remove them from the Participants table.

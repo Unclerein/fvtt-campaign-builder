@@ -10,6 +10,8 @@
     :draggable-rows="true"
     :help-text="localize('labels.session.itemHelpText')"
     help-link="https://slyflourish.com/lazy_magic_items.html"
+    :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
+    @related-entries-changed="(added, removed) => emit('relatedEntriesChanged', added, removed)"
     @add-item="showItemPicker=true"
     @drop-new="onDropNew"
     @dragoverNew="standardDragover"
@@ -32,6 +34,7 @@
   import { useSessionStore, SessionTableTypes, } from '@/applications/stores';
   import { localize, } from '@/utils/game'
   import { getValidatedData, itemDragStart, standardDragover } from '@/utils/dragdrop';
+  import { ModuleSettings, SettingKey } from '@/settings';
 
   // library components
 	
@@ -47,6 +50,9 @@
 
   ////////////////////////////////
   // emits
+  const emit = defineEmits<{
+    (e: 'relatedEntriesChanged', addedUUIDs: string[], removedUUIDs: string[]): void;
+  }>();
 
   ////////////////////////////////
   // store
@@ -76,8 +82,8 @@
   const actions = computed(() => ([
     {
       icon: 'fa-trash', 
-      callback: (data) => onDeleteItem(data.uuid), 
-      tooltip: localize('tooltips.deleteItem') 
+      callback: (data, removedUUIDs) => onDeleteItem(data.uuid, removedUUIDs), 
+      tooltip: localize('tooltips.deleteItem'),
     },
     {
       icon: 'fa-pen', 
@@ -145,8 +151,11 @@
     }  
   }
 
-  const onDeleteItem = async (uuid: string) => {
-    await sessionStore.deleteItem(uuid);
+  const onDeleteItem = async (uuid: string, removedUUIDs?: string[]) => {
+    const deleted = await sessionStore.deleteItem(uuid);
+    if (deleted && removedUUIDs && removedUUIDs.length > 0) {
+      emit('relatedEntriesChanged', [], removedUUIDs);
+    }
   }
 
   const onMarkItemDelivered = async (uuid: string) => {
