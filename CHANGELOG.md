@@ -1,6 +1,6 @@
 # Change Log
 ## 1.8.0 - Customize all your fields, fine tune your AI, and get lists of items by tag
-![](https://img.shields.io/badge/release%20date-December%20__%2C%202025-blue)
+![](https://img.shields.io/badge/release%20date-January%205%2C%202026-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.8.0/module.zip)
 
 > **NOTE:**
