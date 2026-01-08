@@ -10,13 +10,13 @@
     :allow-edit="true"
     :help-text="localize('labels.session.locationHelpText')"
     help-link="https://slyflourish.com/designing_fantastic_locations.html"
-    :can-reorder="false"
     :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
     @related-entries-changed="(added, removed) => emit('relatedEntriesChanged', added, removed)"
     @add-item="showLocationPicker=true"
     @dragover-new="standardDragover"
     @dropNew="onDropNew"
     @cell-edit-complete="onCellEditComplete"
+    @reorder="onReorder"
   />
   <RelatedEntryDialog
     v-model="showLocationPicker"
@@ -29,11 +29,11 @@
 <script setup lang="ts">
 
   // library imports
-  import { computed, ref, } from 'vue';
+  import { computed, ref, watch } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
-  import { useSessionStore, SessionTableTypes, useArcStore, ArcTableTypes } from '@/applications/stores';
+  import { useSessionStore, SessionTableTypes, useArcStore, ArcTableTypes, useMainStore } from '@/applications/stores';
   import { localize } from '@/utils/game'
   import { getType, getValidatedData, standardDragover, FCBDragTypes } from '@/utils/dragdrop';
   import { notifyInfo } from '@/utils/notifications';
@@ -46,7 +46,8 @@
   import RelatedEntryDialog from '@/components/dialogs/RelatedEntryDialog.vue';
 
   // types
-  import { BaseTableColumn, Topics, RelatedEntryDialogModes, CellEditCompleteEvent, EntryNodeDragData, } from '@/types';
+  import { BaseTableColumn, Topics, RelatedEntryDialogModes, CellEditCompleteEvent, EntryNodeDragData, BaseTableGridRow, } from '@/types';
+  import { ArcLocation, SessionLocation } from '@/documents';
   
   ////////////////////////////////
   // props
@@ -68,12 +69,15 @@
   // store
   const sessionStore = useSessionStore();
   const arcStore = useArcStore();
+  const mainStore = useMainStore();
   const { relatedLocationRows: sessionLocationRows } = storeToRefs(sessionStore);
   const { locationRows: arcLocationRows } = storeToRefs(arcStore);
+  const { currentArc } = storeToRefs(mainStore);
 
   ////////////////////////////////
   // data
   const showLocationPicker = ref<boolean>(false);
+  const campaignHasSessions = ref<boolean>(false);  // are any sessions in the campaign this belongs to?
 
   ////////////////////////////////
   // computed data
@@ -126,7 +130,9 @@
     // move to next session
     { 
       icon: 'fa-share', 
-      display: (data) => props.arcMode || !data.delivered, // hide arrow for things already delivered
+      // only show for arc mode if the campaign has at least one session
+      display: (data) => (props.arcMode && campaignHasSessions.value)
+        || (!props.arcMode && !data.delivered), // hide arrow for things already delivered
       callback: (data) => onMoveLocationToNext(data.uuid), 
       tooltip: props.arcMode ? localize('tooltips.copyToNextSession') : localize('tooltips.moveToNextSession') 
     }
@@ -193,9 +199,32 @@
     await store.value.addLocation(fcbEntry.childId);
   };
 
+  const onReorder = async (reorderedRows: BaseTableGridRow[]) => {
+    const reorderedLocations = reorderedRows.map((row) => {
+      const location = locationRows.value.find(l => l.uuid === row.uuid);
+
+      // rows have extra fields we don't want
+      return {
+        uuid: row.uuid,
+        delivered: location?.delivered ?? false,
+        notes: location?.notes ?? '',
+      } as ArcLocation | SessionLocation;
+    });
+
+    await store.value.reorderLocations(reorderedLocations);
+  };
+
   ////////////////////////////////
   // watchers
-  
+  watch(currentArc, async (newArc) => {
+    if (newArc) {
+      const campaign = await newArc?.loadCampaign();
+      campaignHasSessions.value = (campaign?.sessionIndex?.length || 0) > 0;
+    } else {
+      campaignHasSessions.value = true;
+    }
+  }, { immediate: true });
+
 
   ////////////////////////////////
   // lifecycle events

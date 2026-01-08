@@ -1,14 +1,11 @@
 const fields = foundry.data.fields;
 
-export const ArcLoreSchema = () => (
+export const ArcVignetteSchema = () => (
   new fields.SchemaField({
     /** uuid  but our own, so just a string*/
     uuid: new fields.StringField({ required: true, nullable: false }),
 
-    /** the lore description */
+    /** the vignette description */
     description: new fields.StringField({ required: true, nullable: false, initial: '' }),
-
-    /** a linked journal entry page */
-    journalEntryPageId: new fields.DocumentUUIDField({ required: true, nullable: true }),
-}, { required: true, nullable: false} )
+  }, { required: true, nullable: false} )
 );

@@ -12,7 +12,6 @@
       :allow-edit="true"
       :edit-item-label="localize('tooltips.editRow')"
       :draggable-rows="false"
-      :can-reorder="true"
       :actions="actions"
       :enable-related-entries-tracking="props.arcMode && ModuleSettings.get(SettingKey.autoRelationships)"
       @related-entries-changed="(added, removed) => emit('relatedEntriesChanged', added, removed)"
@@ -156,11 +155,8 @@
   };
 
   const onReorder = async (reorderedRows: BaseTableGridRow[]) => {
-    // Create properly ordered ideas with updated sortOrder values
-    const reorderedIdeas = reorderedRows.map((row, index) => {
-      const idea = ideaRows.value.find(idea => idea.uuid === row.uuid) as Idea;
-      return { ...idea, sortOrder: index };
-    });
+    // Reorder using array order
+    const reorderedIdeas = reorderedRows.map((row) => ideaRows.value.find(idea => idea.uuid === row.uuid));
     await store.value.reorderIdeas(reorderedIdeas);
   };
 

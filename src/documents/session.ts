@@ -32,7 +32,6 @@ export interface SessionLore extends SessionRelatedItem {
   significant: boolean;
   description: string;
   journalEntryPageId: string | null;
-  sortOrder: number;
 }
 
 export const SessionSchema = {

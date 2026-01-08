@@ -280,7 +280,7 @@ export class Session extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Session> 
     this._clone.system.vignettes.push({
       uuid: uuid,
       description: description,
-      delivered: false
+      delivered: false,
     });
 
     await this.save();
@@ -404,7 +404,7 @@ export class Session extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Session> 
       uuid: uuid,
       number: number,
       delivered: false,
-      notes: ''
+      notes: '',
     });
 
     await this.save();
@@ -462,7 +462,7 @@ export class Session extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Session> 
     this._clone.system.items.push({
       uuid: uuid,
       delivered: false,
-      notes: ''
+      notes: '',
     });
 
     await this.save();

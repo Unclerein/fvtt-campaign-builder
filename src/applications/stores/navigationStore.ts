@@ -18,7 +18,7 @@ import { notifyError, notifyInfo } from '@/utils/notifications';
 import { getGlobalSetting } from '@/utils/globalSettings';
 
 // types
-import { Bookmark, TabHeader, WindowTabType, } from '@/types';
+import { Bookmark, SessionDisplayMode, TabHeader, WindowTabType, } from '@/types';
 import { WindowTab, Entry, Campaign, Session, Front, Arc, StoryWeb } from '@/classes';
 
 // the store definition
@@ -38,7 +38,9 @@ export const useNavigationStore = defineStore('navigation', () => {
   // external state
   const tabs = ref<WindowTab[]>([]);       // the main tabs of entries (top of FCBHeader)
   const bookmarks = ref<Bookmark[]>([]);
+  const sessionBookmarks = ref<Bookmark[]>([]); // special, derived bookmarks for latest sessions
   const recent = ref<TabHeader[]>([]);
+  const _sessionBookmarksRefreshToken = ref<number>(0);
 
   ///////////////////////////////
   // actions
@@ -768,6 +770,94 @@ export const useNavigationStore = defineStore('navigation', () => {
     }
   };
  
+  /**
+   * Refreshes the derived "session bookmarks" list (one per campaign), pointing at the most recent session.
+   */
+  const refreshSessionBookmarks = async function (): Promise<void> {
+    const token = ++_sessionBookmarksRefreshToken.value;
+
+    if (!ModuleSettings.get(SettingKey.sessionBookmark)) {
+      sessionBookmarks.value = [];
+      return;
+    }
+
+    if (!currentSetting.value) {
+      sessionBookmarks.value = [];
+      return;
+    }
+
+    // Ensure campaigns are loaded. (Avoid calling loadCampaigns if the directory already did.)
+    const campaignIndexCount = currentSetting.value.campaignIndex?.length || 0;
+    const loadedCampaignCount = Object.keys(currentSetting.value.campaigns || {}).length;
+    if (campaignIndexCount > 0 && loadedCampaignCount < campaignIndexCount) {
+      await currentSetting.value.loadCampaigns();
+    }
+
+    const displayMode = ModuleSettings.get(SettingKey.sessionDisplayMode);
+    const newBookmarks: Bookmark[] = [];
+    const campaigns = Object.values(currentSetting.value.campaigns);
+
+    for (const campaign of campaigns) {
+      // Skip campaigns with no sessions
+      if (!campaign.sessionIndex?.length) {
+        continue;
+      }
+
+      const lastSessionIndex = campaign.sessionIndex[campaign.sessionIndex.length - 1];
+      if (!lastSessionIndex?.uuid) {
+        continue;
+      }
+
+      const session = await Session.fromUuid(lastSessionIndex.uuid);
+      if (!session) {
+        continue;
+      }
+
+      // Get session display name based on setting
+      let name = '';
+      switch (displayMode) {
+        case SessionDisplayMode.Date:
+          if (session.date) {
+            name = new Date(session.date).toLocaleDateString();
+          } else {
+            name = `${localize('labels.session.session')} ${session.number}`;
+          }
+          break;
+        case SessionDisplayMode.Name:
+          if (session.name && session.name.trim() !== '') {
+            name = session.name;
+          } else {
+            name = `${localize('labels.session.session')} ${session.number}`;
+          }
+          break;
+        case SessionDisplayMode.Number:
+        default:
+          name = `${localize('labels.session.session')} ${session.number}`;
+          break;
+      }
+
+      newBookmarks.push({
+        id: `session-${campaign.uuid}`,
+        header: {
+          uuid: session.uuid,
+          name: `${name}`,
+          icon: getTabTypeIcon(WindowTabType.Session)
+        },
+        tabInfo: {
+          tabType: WindowTabType.Session,
+          contentId: session.uuid,
+        }
+      } as Bookmark);
+    }
+
+    // Avoid out-of-order async updates overwriting newer results.
+    if (_sessionBookmarksRefreshToken.value !== token) {
+      return;
+    }
+
+    sessionBookmarks.value = newBookmarks;
+  };
+
   // removes the bookmark with given id
   const removeBookmark = async function (bookmarkId: string) {
     const bookmarksValue = bookmarks.value;
@@ -849,6 +939,7 @@ export const useNavigationStore = defineStore('navigation', () => {
   return {
     tabs,
     bookmarks,
+    sessionBookmarks,
     recent,
 
     openEntry,
@@ -873,6 +964,7 @@ export const useNavigationStore = defineStore('navigation', () => {
     clearTabsAndBookmarks,
     traverseTabs,
     navigateHistory,
-    loadContentMetadata
+    loadContentMetadata,
+    refreshSessionBookmarks
   };
 });

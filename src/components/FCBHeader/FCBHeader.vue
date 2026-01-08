@@ -89,9 +89,8 @@
 
   // local imports
   import { localize } from '@/utils/game';
-  import { useMainStore, useNavigationStore, useCampaignDirectoryStore } from '@/applications/stores';
+  import { useMainStore, useNavigationStore } from '@/applications/stores';
   import { ModuleSettings, SettingKey } from '@/settings';
-  import { getTabTypeIcon } from '@/utils/misc';
   
   // library components
 
@@ -101,8 +100,7 @@
   import PlayModeNavigation from './PlayModeNavigation/PlayModeNavigation.vue';
 
   // types
-  import { Bookmark, SessionDisplayMode, WindowTabType } from '@/types';
-  import { Session } from '@/classes';
+  import { Bookmark } from '@/types';
 
   ////////////////////////////////
   // props
@@ -114,10 +112,8 @@
   // store
   const mainStore = useMainStore();
   const navigationStore = useNavigationStore();
-  const campaignDirectoryStore = useCampaignDirectoryStore();
   const { currentSetting, } = storeToRefs(mainStore);
-  const { tabs, bookmarks } = storeToRefs(navigationStore);
-  const { currentCampaignTree } = campaignDirectoryStore;
+  const { tabs, bookmarks, sessionBookmarks } = storeToRefs(navigationStore);
 
   ////////////////////////////////
   // data
@@ -126,7 +122,6 @@
   const overflowButton = ref<HTMLElement | null>(null);
   const visibleCount = ref<number>(0); // Start with none visible
   const isOverflowMenuOpen = ref<boolean>(false);
-  const sessionBookmarks = ref<Bookmark[]>([]);
   let resizeObserver: ResizeObserver | null = null;
   
   ////////////////////////////////
@@ -153,89 +148,6 @@
     return visible.slice(visibleCount.value);
   });
 
-  // Watch for changes and update the session bookmarks
-  // Watch currentCampaignTree.value to detect when campaigns/sessions are added/deleted
-  watch([currentSetting, () => currentCampaignTree.value], async () => {
-    if (!ModuleSettings.get(SettingKey.sessionBookmark)) {
-      sessionBookmarks.value = [];
-      return;
-    }
-    
-    const setting = currentSetting.value;
-    if (!setting) {
-      sessionBookmarks.value = [];
-      return;
-    }
-    
-    const bookmarks: Bookmark[] = [];
-    
-    // Get all campaigns in the current setting
-    const campaigns = Object.values(setting.campaigns);
-    
-    for (const campaign of campaigns) {
-      // Skip campaigns with no sessions
-      if (campaign.sessionIndex.length === 0) {
-        continue;
-      }
-      
-      // Get the last session ID from the session index
-      const lastSessionIndex = campaign.sessionIndex[campaign.sessionIndex.length - 1];
-      if (!lastSessionIndex) {
-        continue;
-      }
-      
-      // Get the session using fromUuid
-      const session = await Session.fromUuid(lastSessionIndex.uuid);
-      if (!session) {
-        continue;
-      }
-      
-      // Get session display name based on setting
-      const displayMode = ModuleSettings.get(SettingKey.sessionDisplayMode);
-      let name = '';
-      
-      switch (displayMode) {
-        case SessionDisplayMode.Date:
-          if (session.date) {
-            name = new Date(session.date).toLocaleDateString();
-          } else {
-            name = `${localize('labels.session.session')} ${session.number}`;
-          }
-          break;
-        
-        case SessionDisplayMode.Name:
-          if (session.name && session.name.trim() !== '') {
-            name = session.name;
-          } else {
-            name = `${localize('labels.session.session')} ${session.number}`;
-          }
-          break;
-        
-        case SessionDisplayMode.Number:
-        default:
-          name = `${localize('labels.session.session')} ${session.number}`;
-          break;
-      }
-      
-      // Create bookmark with campaign name as prefix
-      bookmarks.push({
-        id: `session-${campaign.uuid}`,
-        header: {
-          uuid: session.uuid,
-          name: `${name}`,
-          icon: getTabTypeIcon(WindowTabType.Session)
-        },
-        tabInfo: {
-          tabType: WindowTabType.Session,
-          contentId: session.uuid,
-        }
-      } as Bookmark);
-    }
-    
-    sessionBookmarks.value = bookmarks;
-  }, { immediate: true });
-
-
   ////////////////////////////////
   // methods
   const getBookmarkClass = (index: number): string => {
@@ -259,7 +171,7 @@
     const container = bookmarksContainer.value;
     
     // Find the left splitter panel to get the actual available width
-    const leftPanel = container.closest('.fcb-left-panel');
+    const leftPanel = container.closest('.fcb-left-panel') as HTMLElement | null;
     const containerWidth = leftPanel ? leftPanel.offsetWidth : container.offsetWidth;
     
     // If container has no width yet, wait for layout
@@ -499,7 +411,7 @@
   }, { deep: true });
 
   // Watch for splitter panel size changes
-  watch(() => root.value?.querySelector('.fcb-left-panel')?.offsetWidth, async () => {
+  watch(() => (root.value?.querySelector('.fcb-left-panel') as HTMLElement | null)?.offsetWidth, async () => {
     await nextTick();
     calculateVisibleBookmarks();
   });

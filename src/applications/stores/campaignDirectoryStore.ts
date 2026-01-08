@@ -123,6 +123,9 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
       if (currentEntry.value)
         await mainStore.refreshEntry();
 
+      // Keep the derived session bookmarks (in the header) in sync with campaign/session changes.
+      await navigationStore.refreshSessionBookmarks();
+
       isCampaignTreeRefreshing.value = false;
 
       // Wait for next tick to ensure DOM is updated
@@ -307,10 +310,9 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
 
       // Find the arc that contains the new session and refresh it
       const affectedArc = getArcForSession(campaign.arcIndex, session.number);
-      
-      if (affectedArc?.uuid) {
-        await refreshCampaignDirectoryTree([affectedArc?.uuid]);
-      }
+
+      // Always refresh so reactive dependents (like session bookmarks) update reliably.
+      await refreshCampaignDirectoryTree(affectedArc?.uuid ? [affectedArc.uuid] : []);
       return session;
     } else {
       return null;
@@ -445,6 +447,8 @@ export const useCampaignDirectoryStore = defineStore('campaignDirectory', () => 
   watch(currentSetting, async (newSetting: FCBSetting | null): Promise<void> => {
     if (!newSetting) {
       currentCampaignTree.value = [];
+      // Clear derived session bookmarks when no setting is active.
+      await navigationStore.refreshSessionBookmarks();
       return;
     }
 
