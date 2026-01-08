@@ -15,10 +15,11 @@ import {
   ArcParticipantDetails, 
   ArcMonsterDetails, 
   ArcLoreDetails,
+  ArcVignetteDetails,
   Idea,
   Topics,
 } from '@/types';
-import { ArcLore, } from '@/documents';
+import { ArcLore, ArcVignette, } from '@/documents';
 
 import { Entry, } from '@/classes';
 import { getTopicText } from '@/compendia';
@@ -28,6 +29,7 @@ export enum ArcTableTypes {
   Location,
   Participant,
   Monster,
+  Vignette,
   Lore,
   Idea,
 }
@@ -40,6 +42,7 @@ export const useArcStore = defineStore('arc', () => {
   const locationRows = ref<ArcLocationDetails[]>([]);
   const participantRows = ref<ArcParticipantDetails[]>([]);
   const monsterRows = ref<ArcMonsterDetails[]>([]);
+  const vignetteRows = ref<ArcVignetteDetails[]>([]);
   const loreRows = ref<ArcLoreDetails[]>([]); 
   const ideaRows = ref<Idea[]>([]);
   
@@ -62,6 +65,9 @@ export const useArcStore = defineStore('arc', () => {
       { field: 'name', style: 'text-align: left', header: 'Name', sortable: true, onClick: onMonsterClick },
       { field: 'notes', style: 'text-align: left', header: 'Notes', editable: true },
     ], 
+    [ArcTableTypes.Vignette]: [
+      { field: 'description', style: 'text-align: left', header: 'Vignette', editable: true },
+    ],
     [ArcTableTypes.Lore]: [
       { field: 'description', style: 'text-align: left', header: 'Description', editable: true },
       { field: 'journalEntryPageName', style: 'text-align: left; width: 25%;max-width: 25%', header: 'Journal Page', editable: false,
@@ -121,20 +127,37 @@ export const useArcStore = defineStore('arc', () => {
   }
 
   /**
-   * Copy a location to the last session in the arc.
+   * Copy a location to the current session in the campaign.
    * @param uuid the UUID of the location to copy
    */
   const copyLocationToSession = async (uuid: string): Promise<void> => {
     if (!currentArc.value)
       return;
 
-    const lastSession = await currentArc.value.getLastSession();
+    const campaign = await currentArc.value.loadCampaign();
+    if (!campaign)
+      throw new Error('Invalid campaign in arcStore.copyLocationToSession()');
 
-    if (!lastSession)
+    const currentSession = await campaign.getCurrentSession(); 
+
+    if (!currentSession)
       return;
 
-    await lastSession.addLocation(uuid);
+    await currentSession.addLocation(uuid);
   }
+
+  /**
+   * Reorders locations on the arc (persisting the new array order).
+   * @param reorderedLocations the reordered location array
+   */
+  const reorderLocations = async (reorderedLocations: ArcLocation[]): Promise<void> => {
+    if (!currentArc.value)
+      return;
+
+    currentArc.value.locations = reorderedLocations;
+    await currentArc.value.save();
+    await _refreshLocationRows();
+  };
 
   /**
    * Adds a participant to the arc.
@@ -169,24 +192,27 @@ export const useArcStore = defineStore('arc', () => {
 
 
   /**
-   * Copy a participant (only a character) to the last session in the arc.
+   * Copy a participant (only a character) to the current session in the campaign.
    * @param uuid the UUID of the participant to copy
    */
   const copyParticipantToSession = async (uuid: string): Promise<void> => {
     if (!currentArc.value)
       return;
 
-    const lastSession = await currentArc.value.getLastSession();
+    const campaign = await currentArc.value.loadCampaign();
+    if (!campaign)
+      throw new Error('Invalid campaign in arcStore.copyParticipantToSession()');
 
-    if (!lastSession)
-      return;
+    const currentSession = await campaign.getCurrentSession(); 
+    if (!currentSession)
+      throw new Error('Invalid session in arcStore.copyParticipantToSession()');
 
     // need to make sure it's a character
     const character = await Entry.fromUuid(uuid);
     if (!character || character.topic!=Topics.Character)
       return;
  
-    await lastSession.addNPC(uuid);
+    await currentSession.addNPC(uuid);
   }
 
   /**
@@ -271,24 +297,96 @@ export const useArcStore = defineStore('arc', () => {
   }
 
   /**
-   * Move a lore to the last session in the arc.
+   * Adds a vignette to the arc.
+   * @param description The description for the vignette
+   * @returns The UUID of the created vignette
+   */
+  const addVignette = async (description = ''): Promise<string | null> => {
+    if (!currentArc.value)
+      throw new Error('Invalid arc in arcStore.addVignette()');
+
+    const vignetteUuid = await currentArc.value.addVignette(description);
+    await _refreshVignetteRows();
+    return vignetteUuid;
+  }
+
+  /**
+   * Updates the vignette description
+   * @param uuid the UUID of the vignette
+   */
+  const updateVignetteDescription = async (uuid: string, description: string): Promise<void> => {
+    if (!currentArc.value)
+      throw new Error('Invalid arc in arcStore.updateVignetteDescription()');
+
+    await currentArc.value.updateVignetteDescription(uuid, description);
+    await _refreshVignetteRows();
+  }
+
+  /**
+   * Deletes a vignette entry from the arc.
+   * @param uuid - The UUID of the vignette entry to delete.
+   * @returns True if the vignette was deleted, false if the user canceled.
+   */
+  const deleteVignette = async (uuid: string): Promise<boolean> => {
+    if (!currentArc.value)
+      throw new Error('Invalid arc in arcStore.deleteVignette()');
+
+    // confirm
+    if (!(await FCBDialog.confirmDialog('Delete vignette?', 'Are you sure you want to delete this vignette?')))
+      return false;
+
+    await currentArc.value.deleteVignette(uuid);
+    await _refreshVignetteRows();
+    return true;
+  }
+
+  /**
+   * Move a vignette to the current session in the campaign.
+   * @param uuid the UUID of the vignette to move
+   */
+  const moveVignetteToSession = async (uuid: string): Promise<void> => {
+    if (!currentArc.value)
+      return;
+
+    const campaign = await currentArc.value.loadCampaign();
+    if (!campaign)
+      throw new Error('Invalid campaign in arcStore.moveVignetteToSession()');
+
+    const currentSession = await campaign.getCurrentSession(); 
+    if (!currentSession)
+      throw new Error('Invalid session in arcStore.moveVignetteToSession()');
+
+    const vignette = (currentArc.value.vignettes as ArcVignette[]).find(v=> v.uuid===uuid);
+    if (!vignette)
+      return;
+
+    await currentSession.addVignette(vignette.description);
+    await currentArc.value.deleteVignette(uuid);
+    await _refreshVignetteRows();
+  }
+
+  /**
+   * Move a lore to the current session in the campaign.
    * @param uuid the UUID of the lore to move
    */
   const moveLoreToSession = async (uuid: string): Promise<void> => {
     if (!currentArc.value)
       return;
 
-    const lastSession = await currentArc.value.getLastSession();
+    const campaign = await currentArc.value.loadCampaign();
+    if (!campaign)
+      throw new Error('Invalid campaign in arcStore.moveLoreToSession()');
 
-    if (!lastSession)
-      return;
+    const currentSession = await campaign.getCurrentSession(); 
+    if (!currentSession)
+      throw new Error('Invalid session in arcStore.moveLoreToSession()');
 
     const lore = currentArc.value.lore.find(l=> l.uuid===uuid);
 
     if (!lore)
       return;
 
-    await lastSession.addLore(lore.description, lore.journalEntryPageId);
+    await currentSession.addLore(lore.description, lore.journalEntryPageId);
     await currentArc.value.deleteLore(uuid);
 
     await _refreshLoreRows();
@@ -362,20 +460,71 @@ export const useArcStore = defineStore('arc', () => {
   }
 
   /**
-   * Copy a monster to the last session in the arc.
+   * Copy a monster to the current session in the campaign.
    * @param uuid the UUID of the monster to copy
    */
   const copyMonsterToSession = async (uuid: string): Promise<void> => {
     if (!currentArc.value)
       return;
 
-    const lastSession = await currentArc.value.getLastSession();
+    const campaign = await currentArc.value.loadCampaign();
+    if (!campaign)
+      throw new Error('Invalid campaign in arcStore.copyMonsterToSession()');
 
-    if (!lastSession)
+    const currentSession = await campaign.getCurrentSession(); 
+    if (!currentSession)
+      throw new Error('Invalid session in arcStore.copyMonsterToSession()');
+
+    await currentSession.addMonster(uuid);
+  }
+
+  /**
+   * Reorders participants on the arc (persisting the new array order).
+   * @param reorderedParticipants the reordered participant array
+   */
+  const reorderParticipants = async (reorderedParticipants: ArcParticipant[]): Promise<void> => {
+    if (!currentArc.value)
       return;
 
-    await lastSession.addMonster(uuid);
-  }
+    currentArc.value.participants = reorderedParticipants;
+    await currentArc.value.save();
+    await _refreshParticipantRows();
+  };
+
+  /**
+   * Reorders monsters on the arc (persisting the new array order).
+   * @param reorderedMonsters the reordered monster array
+   */
+  const reorderMonsters = async (reorderedMonsters: ArcMonster[]): Promise<void> => {
+    if (!currentArc.value)
+      return;
+
+    currentArc.value.monsters = reorderedMonsters;
+    await currentArc.value.save();
+    await _refreshMonsterRows();
+  };
+
+  /**
+   * Reorders story webs on the arc (persisting the new array order).
+   * @param reorderedStoryWebIds the reordered story web id array
+   */
+  const reorderStoryWebs = async (reorderedStoryWebIds: string[]): Promise<void> => {
+    if (!currentArc.value)
+      return;
+
+    currentArc.value.storyWebs = reorderedStoryWebIds;
+    await currentArc.value.save();
+    await mainStore.refreshCurrentContent();
+  };
+
+  const reorderVignettes = async (reorderedVignettes: ArcVignette[]): Promise<void> => {
+    if (!currentArc.value)
+      return;
+
+    currentArc.value.vignettes = reorderedVignettes;
+    await currentArc.value.save();
+    await _refreshVignetteRows();
+  };
 
   const reorderLore = async (reorderedLore: ArcLore[]) => {
     if (!currentArc.value) return;
@@ -607,7 +756,6 @@ export const useArcStore = defineStore('arc', () => {
       retval.push({
         uuid: lore.uuid,
         description: lore.description,
-        sortOrder: lore.sortOrder,
         journalEntryPageId: lore.journalEntryPageId,
         journalEntryPageName: entry?.name || null,
         packId: entry?.pack || null,
@@ -617,6 +765,17 @@ export const useArcStore = defineStore('arc', () => {
     loreRows.value = retval;
   }
 
+  const _refreshVignetteRows = async () => {
+    if (!currentArc.value)
+      return;
+
+    const vignettes = (currentArc.value.vignettes as ArcVignette[] | undefined) || [];
+    vignetteRows.value = vignettes.map((v) => ({
+      uuid: v.uuid,
+      description: v.description,
+    }));
+  }
+
   const _refreshRowsForTab = async () => {
     switch (currentContentTab.value) {
       case 'description':
@@ -624,6 +783,9 @@ export const useArcStore = defineStore('arc', () => {
         break;
       case 'ideas':
         await _refreshIdeaRows();
+        break;
+      case 'vignettes':
+        await _refreshVignetteRows();
         break;
       case 'lore':
         await _refreshLoreRows();
@@ -663,6 +825,7 @@ export const useArcStore = defineStore('arc', () => {
     locationRows,
     participantRows,
     monsterRows,
+    vignetteRows,
     ideaRows,
     loreRows,
     extraFields,
@@ -675,14 +838,23 @@ export const useArcStore = defineStore('arc', () => {
     deleteLocation,
     copyLocationToSession,
     updateLocationNotes,
+    reorderLocations,
     addParticipant,
     deleteParticipant,
     copyParticipantToSession,
     updateParticipantNotes,
+    reorderParticipants,
     addMonster,
     deleteMonster,
     copyMonsterToSession,
     updateMonsterNotes,
+    reorderMonsters,
+    reorderStoryWebs,
+    addVignette,
+    deleteVignette,
+    updateVignetteDescription,
+    moveVignetteToSession,
+    reorderVignettes,
     addLore,
     deleteLore,
     reorderLore,

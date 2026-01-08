@@ -18,6 +18,7 @@
     @dragoverNew="standardDragover"
     @dragstart="onDragStart"
     @cell-edit-complete="onCellEditComplete"
+    @reorder="onReorder"
   />
   <RelatedDocumentsDialog
     v-model="showMonsterPicker"
@@ -29,11 +30,11 @@
 <script setup lang="ts">
 
   // library imports
-  import { ref, computed } from 'vue';
+  import { ref, computed, watch } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
-  import { useSessionStore, SessionTableTypes, useArcStore, ArcTableTypes, } from '@/applications/stores';
+  import { useSessionStore, SessionTableTypes, useArcStore, ArcTableTypes, useMainStore, } from '@/applications/stores';
   import { localize } from '@/utils/game'
   import { getValidatedData, actorDragStart, standardDragover } from '@/utils/dragdrop';
   import { notifyInfo } from '@/utils/notifications';
@@ -46,7 +47,8 @@
   import RelatedDocumentsDialog from '@/components/tables/RelatedDocumentsDialog.vue';
 
   // types
-  import { CellEditCompleteEvent, BaseTableColumn } from '@/types';
+  import { CellEditCompleteEvent, BaseTableColumn, BaseTableGridRow } from '@/types';
+  import { ArcMonster, SessionMonster } from '@/documents';
   
   ////////////////////////////////
   // props
@@ -68,12 +70,15 @@
   // store
   const sessionStore = useSessionStore();
   const arcStore = useArcStore();
+  const mainStore = useMainStore();
   const { relatedMonsterRows: sessionMonsterRows } = storeToRefs(sessionStore);
   const { monsterRows: arcMonsterRows } = storeToRefs(arcStore);
+  const { currentArc } = storeToRefs(mainStore);
   
   ////////////////////////////////
   // data
   const showMonsterPicker = ref<boolean>(false);
+  const campaignHasSessions = ref<boolean>(false);  // are any sessions in the campaign this belongs to?
 
   ////////////////////////////////
   // computed data
@@ -126,7 +131,9 @@
     // move to next session
     { 
       icon: 'fa-share', 
-      display: (data) => props.arcMode || !data.delivered, // hide arrow for things already delivered
+      // only show for arc mode if the campaign has at least one session
+      display: (data) => (props.arcMode && campaignHasSessions.value)
+        || (!props.arcMode && !data.delivered), // hide arrow for things already delivered
       callback: (data) => onMoveMonsterToNext(data.uuid), 
       tooltip: props.arcMode ? localize('tooltips.copyToNextSession') : localize('tooltips.moveToNextSession') 
     }
@@ -206,9 +213,30 @@
     await actorDragStart(event, uuid);
   }
 
+  const onReorder = async (reorderedRows: BaseTableGridRow[]) => {
+    const reorderedMonsters = reorderedRows.map((row) => {
+      const monster = monsterRows.value.find(m => m.uuid === row.uuid);
+
+      // rows have extra fields we don't want
+      return {
+        uuid: row.uuid,
+        notes: monster?.notes ?? '',
+      } as ArcMonster;
+    });
+
+    await store.value.reorderMonsters(reorderedMonsters);
+  };
+
   ////////////////////////////////
   // watchers
-
+  watch(currentArc, async (newArc) => {
+    if (newArc) {
+      const campaign = await newArc?.loadCampaign();
+      campaignHasSessions.value = (campaign?.sessionIndex?.length || 0) > 0;
+    } else {
+      campaignHasSessions.value = true;
+    }
+  }, { immediate: true });
 
   ////////////////////////////////
   // lifecycle events

@@ -1,6 +1,6 @@
 // represents a game session 
 
-import { ArcLocation, ArcLore, ArcMonster, ArcParticipant, DOCUMENT_TYPES, } from '@/documents';
+import { ArcLocation, ArcLore, ArcMonster, ArcParticipant, ArcVignette, DOCUMENT_TYPES, } from '@/documents';
 import { searchService } from '@/utils/search';
 import { FCBDialog } from '@/dialogs';
 import { Campaign } from './Campaign';
@@ -24,6 +24,7 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
     participants: [],  
     monsters: [],  
     ideas: [],
+    vignettes: [],
     lore: [],  
     img: '',   
     tags: [],
@@ -147,7 +148,6 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
     const item: Idea = {
       uuid: foundry.utils.randomID(),
       text: text || '',
-      sortOrder: this._clone.system.ideas.reduce((max, item) => Math.max(max, item.sortOrder), -1) + 1,
     };
 
     this._clone.system.ideas.push(item);
@@ -178,19 +178,6 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
     await this.campaign?.addIdea(item.text);    
     this._clone.system.ideas = this._clone.system.ideas.filter(i => i.uuid !== uuid);
     await this.save();
-  }
-
-
-  public async getLastSession(): Promise<Session | null> {
-    if (this.endSessionNumber==-1)
-      return null;
-
-    await this.loadCampaign();
-    const index = this.campaign?.sessionIndex.find(s=> s.number===this.endSessionNumber);
-    if (!index)
-      return null;
-
-    return (await Session.fromUuid(index.uuid)) || null;
   }
 
   get sortOrder(): number {
@@ -309,6 +296,45 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
     this._clone.system.lore = value.slice();     // we clone it so it can't be edited outside
   }
 
+  get vignettes(): ArcVignette[] {
+    return this._clone.system.vignettes || [];
+  }
+
+  set vignettes(value: ArcVignette[] | readonly ArcVignette[]) {
+    this._clone.system.vignettes = value.slice();     // we clone it so it can't be edited outside
+  }
+
+  async addVignette(description: string): Promise<string> {
+    const uuid = foundry.utils.randomID();
+
+    const vignettes = this._clone.system.vignettes;
+    if (!vignettes) {
+      this._clone.system.vignettes = [];
+    }
+
+    this._clone.system.vignettes.push({
+      uuid,
+      description: description || '',
+    } satisfies ArcVignette);
+
+    await this.save();
+    return uuid;
+  }
+
+  async updateVignetteDescription(uuid: string, description: string): Promise<void> {
+    const vignette = this._clone.system.vignettes.find(v => v.uuid===uuid);
+    if (!vignette)
+      return;
+
+    vignette.description = description;
+    await this.save();
+  }
+
+  async deleteVignette(uuid: string): Promise<void> {
+    this._clone.system.vignettes = this._clone.system.vignettes.filter(v => v.uuid!==uuid);
+    await this.save();
+  }
+
   async addLore(description: string, journalEntryPageId: string | null = null): Promise<string> {
     const uuid = foundry.utils.randomID();
 
@@ -316,7 +342,6 @@ export class Arc extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Arc> {
       uuid: uuid,
       description: description,
       journalEntryPageId: journalEntryPageId,
-      sortOrder: this._clone.system.lore.length,
     });
 
     await this.save();

@@ -14,11 +14,15 @@ export interface ArcParticipant extends ArcRelatedItem {}
 
 export interface ArcMonster extends ArcRelatedItem {}
 
+export interface ArcVignette {
+  uuid: string;
+  description: string;
+}
+
 export interface ArcLore {
   uuid: string;
   description: string;
   journalEntryPageId: string | null;
-  sortOrder: number;
 }
 
 export const ArcSchema = {
@@ -63,6 +67,12 @@ export const ArcSchema = {
     schemas.ArcMonster(),
     { initial: [] as ArcMonster[] }
   ),  
+
+  /** array of vignettes */
+  vignettes: new fields.ArrayField(
+    schemas.ArcVignette(),
+    { initial: [] as ArcVignette[] }
+  ),
 
   /** array of lore */
   lore: new fields.ArrayField(
@@ -110,6 +120,7 @@ export interface ArcDoc extends JournalEntryPage {
     locations: ArcLocation[];
     participants: ArcParticipant[];
     monsters: ArcMonster[];
+    vignettes: ArcVignette[];
     lore: ArcLore[];
   };
 }
