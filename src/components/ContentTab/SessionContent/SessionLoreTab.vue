@@ -10,7 +10,6 @@
     :allow-drop-row="true"
     :help-text="localize('labels.session.loreHelpText')"
     help-link="https://slyflourish.com/sharing_secrets.html"
-    :can-reorder="true"
     :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
     @related-entries-changed="(added, removed) => emit('relatedEntriesChanged', added, removed)"
     @add-item="onAddLore"
@@ -27,7 +26,7 @@
 
   // library imports
   import { storeToRefs } from 'pinia';
-  import { computed, ref } from 'vue';
+  import { computed, ref, watch } from 'vue';
 
   // local imports
   import { useSessionStore, useArcStore, useMainStore, SessionTableTypes, ArcTableTypes, } from '@/applications/stores';
@@ -73,12 +72,12 @@
   ////////////////////////////////
   // data
   const sessionTableRef = ref<any>(null);
+  const campaignHasSessions = ref<boolean>(false);  // are any sessions in the campaign this belongs to?
 
   ////////////////////////////////
   // computed data
   const loreRows = computed(() => props.arcMode ? arcLoreRows.value : sessionLoreRows.value);
   const store = computed(() => props.arcMode ? arcStore : sessionStore);
-  const arcHasSessions = computed((): boolean => (currentArc.value?.startSessionNumber != -1 ));
 
   const mappedLoreRows = computed(() => (
     loreRows.value.map((row) => ({
@@ -96,7 +95,7 @@
     return [ actionColumn, ...extraFields];
   });
 
-    const actions = computed(() => {
+  const actions = computed(() => {
     return [
       {
         icon: 'fa-trash', 
@@ -135,8 +134,8 @@
       // move to next session
       { 
         icon: 'fa-share', 
-        // we hide if already deleivered in session mode or no sessions in arc mode
-        display: (data) => (props.arcMode && arcHasSessions.value) 
+        // we hide if already deleivered in session mode or no sessions in arc's campaign
+        display: (data) => (props.arcMode && campaignHasSessions.value) 
           || (!props.arcMode && !data.delivered), // hide arrow for things already delivered
         callback: (data) => onMoveLoreToNext(data.uuid), 
         tooltip: localize('tooltips.moveToNextSession') 
@@ -218,12 +217,12 @@
     event.preventDefault();  
 
     // parse the data - looking for raw foundry data
-    let data = getValidatedData(event) as FoundryDragType | undefined;
+    const data = getValidatedData(event);
     if (!data)
       return;
 
     // make sure it's the right format - looking for JournalEntry(Page)
-    if (['JournalEntry', 'JournalEntryPage'].includes(data.type as string) && data.uuid) {
+    if (['JournalEntry', 'JournalEntryPage'].includes(data.type as string) && ('uuid' in data) && data.uuid) {
       // Create a new lore entry and associate it with the journal entry page
       const loreId = await store.value.addLore('');
 
@@ -237,12 +236,12 @@
     event.preventDefault();  
 
     // parse the data - looking for raw foundry data
-    let data = getValidatedData(event);
+    const data = getValidatedData(event);
     if (!data)
       return;
 
     // make sure it's the right format - looking for JournalEntry(Page)
-    if (['JournalEntry', 'JournalEntryPage'].includes(data.type as string) && data.uuid && rowUuid) {
+    if (['JournalEntry', 'JournalEntryPage'].includes(data.type as string) && ('uuid' in data) && data.uuid && rowUuid) {
       const lore = loreRows.value.find((l)=>l.uuid===rowUuid);
       
       if (lore?.journalEntryPageId && 
@@ -255,16 +254,17 @@
   }
 
   const onReorder = async (reorderedRows: BaseTableGridRow[]) => {
-    // Create properly ordered lore with updated sortOrder values
-    const reorderedLore = reorderedRows.map((row, index) => {
+    // Reorder using array order
+    const reorderedLore = reorderedRows.map((row) => {
       const lore = loreRows.value.find(lore => lore.uuid === row.uuid) as SessionLoreDetails;
+
+      // rows have extra fields we don't want
       return { 
         uuid: lore.uuid,
         description: lore.description,
         delivered: lore.delivered,
         significant: lore.significant,
         journalEntryPageId: lore.journalEntryPageId,
-        sortOrder: index 
       } as SessionLore;
     });
     await store.value.reorderLore(reorderedLore);
@@ -272,7 +272,15 @@
 
   ////////////////////////////////
   // watchers
-  
+  watch(currentArc, async (newArc) => {
+    if (newArc) {
+      const campaign = await newArc?.loadCampaign();
+      campaignHasSessions.value = (campaign?.sessionIndex?.length || 0) > 0;
+    } else {
+      campaignHasSessions.value = true;
+    }
+  }, { immediate: true });
+
 
   ////////////////////////////////
   // lifecycle events

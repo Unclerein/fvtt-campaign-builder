@@ -211,6 +211,19 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   /**
+   * Reorders locations in the session (persisting the new array order).
+   * @param reorderedLocations the reordered location array
+   */
+  const reorderLocations = async (reorderedLocations: SessionLocation[]): Promise<void> => {
+    if (!currentSession.value)
+      return;
+
+    currentSession.value.locations = reorderedLocations;
+    await currentSession.value.save();
+    await _refreshLocationRows();
+  };
+
+  /**
    * Adds a NPC to the session.
    * @param uuid the UUID of the character to add.
    */
@@ -313,6 +326,19 @@ export const useSessionStore = defineStore('session', () => {
 
     await _refreshNPCRows();
   }
+
+  /**
+   * Reorders NPCs in the session (persisting the new array order).
+   * @param reorderedNPCs the reordered NPC array
+   */
+  const reorderNPCs = async (reorderedNPCs: SessionNPC[]): Promise<void> => {
+    if (!currentSession.value)
+      return;
+
+    currentSession.value.npcs = reorderedNPCs;
+    await currentSession.value.save();
+    await _refreshNPCRows();
+  };
 
   /**
    * Adds a vignette to the session.
@@ -777,6 +803,45 @@ export const useSessionStore = defineStore('session', () => {
     await _refreshMonsterRows();
   }
 
+  /**
+   * Reorders items in the session (persisting the new array order).
+   * @param reorderedItems the reordered item array
+   */
+  const reorderItems = async (reorderedItems: SessionItem[]): Promise<void> => {
+    if (!currentSession.value)
+      return;
+
+    currentSession.value.items = reorderedItems;
+    await currentSession.value.save();
+    await _refreshItemRows();
+  };
+
+  /**
+   * Reorders monsters in the session (persisting the new array order).
+   * @param reorderedMonsters the reordered monster array
+   */
+  const reorderMonsters = async (reorderedMonsters: SessionMonster[]): Promise<void> => {
+    if (!currentSession.value)
+      return;
+
+    currentSession.value.monsters = reorderedMonsters;
+    await currentSession.value.save();
+    await _refreshMonsterRows();
+  };
+
+  /**
+   * Reorders story webs on the session (persisting the new array order).
+   * @param reorderedStoryWebIds the reordered story web id array
+   */
+  const reorderStoryWebs = async (reorderedStoryWebIds: string[]): Promise<void> => {
+    if (!currentSession.value)
+      return;
+
+    currentSession.value.storyWebs = reorderedStoryWebIds;
+    await currentSession.value.save();
+    await mainStore.refreshCurrentContent();
+  };
+
   const getNextSession = async (): Promise<Session | null> => {
     let campaign;
     if (currentSession.value)
@@ -994,7 +1059,7 @@ export const useSessionStore = defineStore('session', () => {
 
     const retval = [] as SessionVignette[];
 
-    for (const vignette of currentSession.value?.vignettes) {
+    for (const vignette of (currentSession.value?.vignettes || [])) {
       retval.push({
         uuid: vignette.uuid,
         delivered: vignette.delivered,
@@ -1022,7 +1087,6 @@ export const useSessionStore = defineStore('session', () => {
         delivered: lore.delivered,
         significant: lore.significant,
         description: lore.description,
-        sortOrder: lore.sortOrder,
         journalEntryPageId: lore.journalEntryPageId,
         journalEntryPageName: entry?.name || null,
         packId: entry?.pack || null,
@@ -1094,23 +1158,28 @@ export const useSessionStore = defineStore('session', () => {
     updateLocationNotes,
     markLocationDelivered,
     moveLocationToNext,
+    reorderLocations,
     addItem,
     deleteItem,
     updateItemNotes,
     markItemDelivered,
     moveItemToNext,
+    reorderItems,
     addNPC,
     addNPCToPlayedSession,
     deleteNPC,
     updateNPCNotes,
     markNPCDelivered,
     moveNPCToNext,
+    reorderNPCs,
     addMonster,
     deleteMonster,
     updateMonsterNumber,
     updateMonsterNotes,
     markMonsterDelivered,
     moveMonsterToNext,
+    reorderMonsters,
+    reorderStoryWebs,
     addVignette,
     deleteVignette,
     updateVignetteDescription,

@@ -1,4 +1,14 @@
 # Change Log
+## 1.8.1 - Fixed session bookmark bug
+![](https://img.shields.io/badge/release%20date-January%209%2C%202026-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.8.1/module.zip)
+
+- Added Vignettes to Arcs
+- You can now manually reorder most tables, making it easier to (for example) group monster lists together by encounter
+- Fixed an issue where the new "current session" bookmark wasn't refreshing when a new session is created.
+- "Move to last Session" for items on Arcs now moves the item to the last Session in the Campaign, even if it's on a different Arc. This way if you have leftover items on an old Arc you can easily get them into your more recent play area. 
+- The search boxes to filter results on tables now work consistently.
+
 ## 1.8.0 - Customize all your fields, fine tune your AI, and get lists of items by tag
 ![](https://img.shields.io/badge/release%20date-January%205%2C%202026-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.8.0/module.zip)

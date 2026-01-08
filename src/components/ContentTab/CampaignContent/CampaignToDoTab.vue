@@ -12,7 +12,6 @@
       :allow-edit="true"
       :edit-item-label="localize('tooltips.editRow')"
       :draggable-rows="false"
-      :can-reorder="true"
       :actions="actions"
       @add-item="onAddToDoItem"
       @cell-edit-complete="onCellEditComplete"
@@ -121,11 +120,8 @@
   }
 
   const onReorder = async (reorderedRows: BaseTableGridRow[]) => {
-    // Create properly ordered todos with updated sortOrder values
-    const reorderedToDos = reorderedRows.map((row, index) => {
-      const toDo = toDoRows.value.find(toDo => toDo.uuid === row.uuid) as ToDoItem;
-      return { ...toDo, sortOrder: index };
-    });
+    // Reorder using array order
+    const reorderedToDos = reorderedRows.map((row) => toDoRows.value.find(toDo => toDo.uuid === row.uuid));
     await campaignStore.reorderToDos(reorderedToDos);
   };
 
