@@ -665,7 +665,7 @@
   const onClickEditableCell = (event: MouseEvent, uuid: string) => {
     // Check if the click was on a content link - if so, let it bubble up to the application handler
     const target = event.target as HTMLElement;
-    if (target.closest('.fcb-content-link')) {
+    if (target.closest('.fcb-content-link') || target.closest('.content-link')) {
       return;
     }
 
