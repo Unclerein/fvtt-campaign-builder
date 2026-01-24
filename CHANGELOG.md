@@ -1,10 +1,15 @@
 # Change Log
+## 1.8.3 - Bug fix
+![](https://img.shields.io/badge/release%20date-January%2024%2C%202026-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.8.3/module.zip)
+
+- Connections between some combinations of content types (ex. manual text to manual text) were previously not able to be deleted.  This is now working.
+
 ## 1.8.2 - Foundry links in table text
 ![](https://img.shields.io/badge/release%20date-January%2017%2C%202026-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.8.2/module.zip)
 
 - You can now properly click on links to Foundry documents (actors, items, etc.) that are in text boxes in tables (ex. Vignettes descriptions).
-
 
 ## 1.8.1 - Fixed session bookmark bug
 ![](https://img.shields.io/badge/release%20date-January%2010%2C%202026-blue)
