@@ -638,7 +638,6 @@ export const storyWebStore = () => {
 
   /** remove an edge from the story web 
   */
-
   const removeEdge = async (edgeId: string) => {
     if (!currentStoryWeb.value || !currentNetwork.value)
       return;
@@ -652,7 +651,7 @@ export const storyWebStore = () => {
 
     // first handle non-custom cases
     if (node1?.source !== StoryWebNodeSource.Custom && node2?.source !== StoryWebNodeSource.Custom) {
-      // show confirmation for non-custom ones
+      // show confirmation 
       const result = await FCBDialog.confirmDialog(localize('labels.storyWeb.removeRelationship'), localize('labels.storyWeb.removeRelationshipConfirm'));
       if (!result)
         return;
@@ -660,7 +659,7 @@ export const storyWebStore = () => {
       const node1Danger = node1.type === StoryWebNodeTypes.Danger;
       const node2Danger = node2.type === StoryWebNodeTypes.Danger;
 
-      // Handle danger-entry connections
+      // Handle danger-entry connections (note: there are no danger-danger connections)
       if (node1Danger || node2Danger) {
         // Remove the entry from the danger's participants
         await removeDangerParticipant(
@@ -687,7 +686,8 @@ export const storyWebStore = () => {
     }
 
     // remove from the web if it was a manual edge
-    currentStoryWeb.value.edges = currentStoryWeb.value.edges.filter(e => e.uuid !== edgeId);
+    const edgeUuid = getEdgeUuid(node1.uuid, node2.uuid, 'manual');
+    currentStoryWeb.value.edges = currentStoryWeb.value.edges.filter(e => e.uuid !== edgeUuid);
     await currentStoryWeb.value.save(); 
     
     // refresh the drawing
@@ -721,8 +721,12 @@ export const storyWebStore = () => {
   ///////////////////////////////
   // methods
 
-  /** Generate a consistent UUID for an edge */
-  const getEdgeUuid = (fromNode: string, toNode: string, edgeType: 'manual' | 'relationship' | 'danger' = 'relationship'): string => {
+  /** Generate a consistent UUID for an edge
+   *  @param fromNode - The id of the first node
+   *  @param toNode - The id of the second node
+   *  @returns A consistent UUID for the edge
+   */
+  const getEdgeUuid = (fromNode: string, toNode: string, edgeType: 'manual' | 'relationship' | 'danger'): string => {
     const sorted = [fromNode, toNode].sort();
     return `${edgeType}:${sorted[0]}|${sorted[1]}`;
   };
