@@ -40,6 +40,7 @@ window.fcbStoryWebPhysics = {
     enabled: true,
     onlyDynamicEdges: false,
     updateInterval: 1,
+    fit: false,
   },
   maxVelocity: 50,
   minVelocity: 1

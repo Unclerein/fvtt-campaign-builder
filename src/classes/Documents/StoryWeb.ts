@@ -105,8 +105,6 @@ export class StoryWeb extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.StoryWeb
     newStoryWeb.edgeStyles = { ...originalStoryWeb.edgeStyles };
     await newStoryWeb.save();
 
-    await campaign.addStoryWeb(newStoryWeb);
-
     return newStoryWeb;
   }
 
