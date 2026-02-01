@@ -1,4 +1,12 @@
 # Change Log
+## 1.8.5 - More robust journal lists
+![](https://img.shields.io/badge/release%20date-February%201%2C%202026-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.8.5/module.zip)
+
+- Links to journal entry sections (i.e. headers inside of a page) that are put into editors now properly open to the right part of the page.
+- You can now drop a link to a journal entry page section header into an editor and will properly link to the header instead of just the page.
+- You can now drag a journal entry page section header into the journals tab for Entries, Campaigns, and Settings, and it will then link directly to that section. 
+
 ## 1.8.4 - Story web updates
 ![](https://img.shields.io/badge/release%20date-January%2029%2C%202026-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.8.4/module.zip)
