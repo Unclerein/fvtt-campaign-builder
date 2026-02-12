@@ -65,6 +65,11 @@ your characters, locations, etc. (and even create images) or do it all yourself.
 
 See the [user documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/guide) for more details.
 
+## Known bugs
+
+* If you have a Story Web open in one panel and make a modification to something shown in it in a another panel, the Story Web will not immediately update.  Workaround: Change to a different tab in the Story Web panel and then come back.
+
+
 ## Issues?
 
 If you believe you found a bug or would like to post a feature request, head over to the module's [Github repo](https://github.com/dovrosenberg/fvtt-campaign-builder) and [open a new issue](https://github.com/dovrosenberg/fvtt-campaign-builder/issues/new/choose).
