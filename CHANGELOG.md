@@ -10,6 +10,7 @@
 - You can now adjust the size of all custom field editors using the grabber in the lower-right corner.  This size can be set differently for each piece of content.  If you want to change the default size for a particular field, you can still do that in the module settings.
 - You can now export a full setting as either a .MD file or a .ZIP file (the .MD plus all the story web .PNGs)from the directory context menu.  This is handy for reviewing in another interface or for feeding to an LLM to ask it questions about the setting/campaign.
 - Fixed issue with drag/drop of rows not working properly on very long tables.
+- Fixed conflict with Pathfinder 2e that was causing tags to show white (ex. traits)
 - Opening the Setting content now properly scrolls to the Setting node in the directory and highlights it, as it does for all the other content types.
 
 ## 1.8.6 - Assorted bug fixes and improvements
