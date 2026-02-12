@@ -53,7 +53,6 @@
     "eslint-plugin-vue": "^9.32.0",
     "lodash": "^4.17.21",
     "mini-css-extract-plugin": "^2.9.2",
-    "node-sass": "^9.0.0",
     "null-loader": "^4.0.1",
     "postcss": "^8.5.6",
     "postcss-prefix-selector": "^2.1.1",
@@ -81,7 +80,7 @@
   },
   "dependencies": {
     "@imengyu/vue3-context-menu": "^1.4.4",
-    "@primevue/themes": "^4.2.5",
+    "@primeuix/themes": "^2.0.3",
     "@yaireo/tagify": "^4.34.0",
     "minisearch": "^7.1.2",
     "pinia": "^3.0.4",
