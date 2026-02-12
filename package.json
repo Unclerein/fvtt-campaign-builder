@@ -61,7 +61,6 @@
     "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-scss": "^4.0.1",
     "sass": "^1.83.0",
-    "sass-loader": "^16.0.4",
     "semver-increment": "^1.0.1",
     "sinon": "^20.0.0",
     "source-map-loader": "^5.0.0",
