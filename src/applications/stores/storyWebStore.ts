@@ -13,17 +13,25 @@ import { useNavigationStore } from '@/applications/stores';
 import type { StoryWebGraphState } from '@/composables/useStoryWebGraphState';
 
 // Global physics options for console debugging and tuning
+// Initialize global physics options with current defaults
 // @ts-ignore
 window.fcbStoryWebPhysics = {
   solver: 'barnesHut',
   barnesHut: {
-    avoidOverlap: 0.5,
-    springLength: 100,
-    springConstant: .002,
-    gravitationalConstant: -1550,
-    centralGravity: .05,
-    damping: .1,
+    avoidOverlap: 0.5,        // ensure nodes don't overlap
+    springLength: 100,      // "rest" length of edges (shorter = tighter cluster)
+    springConstant: .002,  //0.01,  // how strong springs pull (higher = neighbors move more)
+    gravitationalConstant: -1550,  //-500,  //-3500, // -3500 // how strongly nodes repel (more negative = more push)
+    centralGravity: .05, //1,  //0.3,    // pulls everything toward center (higher = more drift)
+    damping: .1,  //0.09,          // friction (higher = motion dies out faster)
   },
+  // repulsion: {
+  //   nodeDistance: 100,
+  //   springLength: 100,      // "rest" length of edges (shorter = tighter cluster)
+  //   springConstant: 0.03,  // how strong springs pull (higher = neighbors move more)
+  //   centralGravity: 0.05,    // pulls everything toward center (higher = more drift)
+  //   damping: .3,            // friction (higher = motion dies out faster)
+  // },
   stabilization: {
     enabled: true,
     onlyDynamicEdges: false,
@@ -36,7 +44,6 @@ window.fcbStoryWebPhysics = {
 
 // the store definition
 export const storyWebStore = () => {
-  const navigationStore = useNavigationStore();
   const _graphStates = new Map<number, StoryWebGraphState>();
 
   /**
@@ -56,31 +63,6 @@ export const storyWebStore = () => {
     _graphStates.delete(panelIndex);
   };
 
-  /** Get the graph state for the currently focused panel. */
-  const _getFocusedGraphState = (): StoryWebGraphState | undefined => {
-    return _graphStates.get(navigationStore.focusedPanelIndex);
-  };
-
-  /**
-   * Add entry to the focused panel's story web (used by directory context menus).
-   * @param uuid - UUID of the entry to add
-   * @param position - Position to place the node at (canvas coordinates)
-   * @param withRelationships - Whether to also add all related nodes implicitly
-   */
-  const addEntry = async (uuid: string, position: { x: number; y: number } | null = null, withRelationships = false) => {
-    await _getFocusedGraphState()?.addEntry(uuid, position, withRelationships);
-  };
-
-  /**
-   * Add front to the focused panel's story web (used by directory context menus).
-   * @param frontId - UUID of the front to add
-   * @param position - Position to place the first danger at (canvas coordinates)
-   * @param withRelationships - Whether to also add all related nodes implicitly
-   */
-  const addFront = async (frontId: string, position: { x: number; y: number } | null = null, withRelationships = false) => {
-    await _getFocusedGraphState()?.addFront(frontId, position, withRelationships);
-  };
-
   /**
    * Regenerate active story web graphs that use the given content.
    * Called by the updateJournalEntryPage hook so that story webs pick up
@@ -96,8 +78,6 @@ export const storyWebStore = () => {
   return {
     registerGraphState,
     unregisterGraphState,
-    addEntry,
-    addFront,
     regenerateAllGraphs,
   };
 };

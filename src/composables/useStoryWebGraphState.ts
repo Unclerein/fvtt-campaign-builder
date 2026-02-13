@@ -1217,6 +1217,24 @@ export function useStoryWebGraphState(): StoryWebGraphState {
   ///////////////////////////////
   // private methods
 
+  /** Record a new color scheme for a node */
+  const setNodeColorScheme = async (nodeId: string, colorSchemeId: string) => {
+    if (!currentStoryWeb.value) return;
+    
+    if (!currentStoryWeb.value.nodeStyles[nodeId]) {
+      currentStoryWeb.value.nodeStyles[nodeId] = {
+        colorSchemeId: colorSchemeId,
+      };
+    } else {
+      currentStoryWeb.value.nodeStyles[nodeId].colorSchemeId = colorSchemeId;
+    }
+    
+    await currentStoryWeb.value.save();
+
+    // Refresh the graph to apply the new color
+    await refreshAndRegenerate();
+  };
+  
   const onConnectionModeMouseMove = (event: MouseEvent) => {
     if (!tempEdge.value || !isConnectionMode.value || !currentNetwork.value || !currentContainer.value)
       return;
@@ -1291,7 +1309,7 @@ export function useStoryWebGraphState(): StoryWebGraphState {
     }
   };
 
-  const showNodeContextMenu = (nodeId: string, position: { x: number; y: number }) => {
+  const showNodeContextMenu = (nodeId: string, position: { x: number, y: number }) => {
     if (!currentContainer.value || !currentNetwork.value)
       return;
 
@@ -1299,29 +1317,41 @@ export function useStoryWebGraphState(): StoryWebGraphState {
     toRaw(currentNetwork.value).unselectAll();
     toRaw(currentNetwork.value).selectNodes([nodeId]);
 
-    // check if this is an entry node (not custom)
+    // Check if this is an entry node (not custom)
     const node = currentStoryWeb.value?.nodes.find(n => n.uuid === nodeId);
     const isDangerNode = node && node.type === StoryWebNodeTypes.Danger;
     const isEntryNode = node && [StoryWebNodeSource.Explicit, StoryWebNodeSource.Implicit].includes(node.source) && !isDangerNode;
 
-    // create the custom text submenu
-    let colorSubmenu: any[] = [];
+    // create the color submenu - available for all node types
+    let colorSubmenu: any[]= [];
 
-    if (node && node.source === StoryWebNodeSource.Custom) {
-      // get predefined color schemes from settings
-      const colorSchemes = ModuleSettings.get(SettingKey.storyWebCustomNodeColorSchemes);
+    // Get predefined color schemes from settings
+    const colorSchemes = ModuleSettings.get(SettingKey.storyWebCustomNodeColorSchemes);
 
-      colorSubmenu = colorSchemes.map(scheme => ({
+    colorSubmenu = colorSchemes.map(scheme => ({
         label: scheme.name,
         icon: () => h('svg', { viewBox: '0 0 20 20', style: 'width: 16px; height: 16px;' }, [
           h('rect', { x: 2, y: 2, width: 16, height: 16, rx: 3, ry: 3, fill: scheme.backgroundColor }),
           h('text', { x: 10, y: 14, 'text-anchor': 'middle', 'font-size': '10px', fill: scheme.foregroundColor }, 'A')
         ]),
-        onClick: async () => { await setCustomNodeColorScheme(nodeId, scheme.id); }
+        onClick: async () => { await setNodeColorScheme(nodeId, scheme.id); }
       }));
-    }
 
-    // build menu items
+    // Add reset to default option at the beginning
+    colorSubmenu.unshift({
+      label: localize('contextMenus.storyWebGraph.resetToDefault'),
+      icon: 'fa-undo',
+      iconFontClass: 'fas',
+      onClick: async () => { 
+        if (currentStoryWeb.value?.nodeStyles[nodeId]) {
+          delete currentStoryWeb.value.nodeStyles[nodeId];
+          await currentStoryWeb.value.save();
+          await refreshAndRegenerate();
+        }
+      }
+    });
+
+    // Build menu items
     const menuItems = [
       {
         icon: 'fa-link',
@@ -1341,9 +1371,9 @@ export function useStoryWebGraphState(): StoryWebGraphState {
         iconFontClass: 'fas',
         label: localize('contextMenus.storyWebGraph.openDangerInNewTab'),
         onClick: async () => {
-          const [frontId, dangerId] = nodeId.split('|');
+          const [frontId, dangerId] = nodeId.split('|'); 
 
-          await navigationStore.openFront(frontId, { newTab: true, contentTabId: `danger${dangerId}`, forceTab: true });
+          await navigationStore.openFront(frontId, { newTab: true, contentTabId: `danger${dangerId}`, forceTab: true }); 
         },
         hidden: !isDangerNode
       },
@@ -1358,7 +1388,7 @@ export function useStoryWebGraphState(): StoryWebGraphState {
         icon: 'fa-palette',
         iconFontClass: 'fas',
         label: localize('contextMenus.storyWebGraph.setColor'),
-        hidden: !node || node.source !== StoryWebNodeSource.Custom,
+        hidden: !node,
         children: colorSubmenu
       },
       {
@@ -1369,7 +1399,7 @@ export function useStoryWebGraphState(): StoryWebGraphState {
       },
     ];
 
-    // show our menu
+    //show our menu
     ContextMenu.showContextMenu({
       customClass: 'fcb',
       x: position.x,
@@ -1377,9 +1407,9 @@ export function useStoryWebGraphState(): StoryWebGraphState {
       zIndex: 300,
       items: menuItems
     });
-  };
+  }
 
-  const showEdgeContextMenu = (edgeId: string, position: { x: number; y: number }) => {
+  const showEdgeContextMenu = (edgeId: string, position: { x: number, y: number }) => {
     if (!currentContainer.value || !currentNetwork.value)
       return;
 
@@ -1387,35 +1417,36 @@ export function useStoryWebGraphState(): StoryWebGraphState {
     toRaw(currentNetwork.value).unselectAll();
     toRaw(currentNetwork.value).selectEdges([edgeId]);
 
-    // get the connected nodes to determine edge type
+    // Get the connected nodes to determine edge type
     const connectedNodes = toRaw(currentNetwork.value).getConnectedNodes(edgeId) as string[];
     const [fromNode, toNode] = connectedNodes;
     const edgeUuid = getEdgeUuid(fromNode, toNode, getEdgeType(fromNode, toNode));
 
-    // get predefined colors and styles from settings
+    // Get predefined colors and styles from settings
     const colors = ModuleSettings.get(SettingKey.storyWebConnectionColors);
     const styles = ModuleSettings.get(SettingKey.storyWebConnectionStyles);
 
-    // build color submenu items
+    // Build color submenu items
     const colorSubmenu = colors.map(color => ({
       label: color.name,
       icon: () => h('svg', { viewBox: '0 0 20 20', style: 'width: 16px; height: 16px;' }, [
         h('rect', { x: 2, y: 2, width: 16, height: 16, rx: 3, ry: 3, fill: color.value })
       ]),
-      onClick: async () => {
+      onClick: async () => { 
         if (!currentStoryWeb.value)
           return;
 
-        await setEdgeColor(currentStoryWeb.value, edgeUuid, color.id);
-        await refreshAndRegenerate();
+        await setEdgeColor(currentStoryWeb.value, edgeUuid, color.id); 
+        await refreshAndRegenerate(); 
       }
     }));
 
-    // build style submenu items
+    // Build style submenu items
     const styleSubmenu = styles.map(style => {
-      // create SVG icon based on line style pattern
+      // Create SVG icon based on line style pattern
       let iconContent;
-
+      
+      // Use multiple lines to create visible patterns
       switch (style.value) {
         case 'dashed':
           iconContent = [
@@ -1462,21 +1493,21 @@ export function useStoryWebGraphState(): StoryWebGraphState {
             h('line', { x1: 2, y1: 10, x2: 18, y2: 10, stroke: '#000', strokeWidth: 1.5, strokeLinecap: 'round' })
           ];
       }
-
+      
       return {
         label: style.name,
         icon: () => h('svg', { viewBox: '0 0 20 20', style: 'width: 16px; height: 16px;' }, iconContent),
-        onClick: async () => {
+        onClick: async () => { 
           if (!currentStoryWeb.value)
             return;
-
-          await setEdgeStyle(currentStoryWeb.value, edgeUuid, style.id);
-          await refreshAndRegenerate();
+          
+          await setEdgeStyle(currentStoryWeb.value, edgeUuid, style.id); 
+          await refreshAndRegenerate(); 
         }
       };
     });
 
-    // show our menu
+    //show our menu
     ContextMenu.showContextMenu({
       customClass: 'fcb',
       x: position.x,
@@ -1510,7 +1541,7 @@ export function useStoryWebGraphState(): StoryWebGraphState {
         },
       ]
     });
-  };
+  }
 
   /** Determine the type of an edge based on its nodes. */
   const getEdgeType = (fromNode: string, toNode: string): 'manual' | 'relationship' | 'danger' => {
