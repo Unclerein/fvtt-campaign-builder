@@ -470,7 +470,14 @@ export class ModuleSettings {
     },
     {
       settingID: SettingKey.storyWebNodeFields,
-      default: {},
+      default: {
+        [StoryWebNodeTypes.Character]: ['description'],
+        [StoryWebNodeTypes.Location]: ['description'],
+        [StoryWebNodeTypes.Organization]: ['description'],
+        [StoryWebNodeTypes.PC]: ['description'],
+        [StoryWebNodeTypes.Danger]: ['description'],
+        [StoryWebNodeTypes.Custom]: ['description'],
+      },
       type: Object,
     },
     {
