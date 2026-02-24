@@ -86,7 +86,9 @@
       "sessionBookmarkHelp": "Lorsqu'il est activé, un signet pour la session en cours sera affiché en tête de la barre de signets",
       "tableGrouping": "Paramètres de regroupement de table",
       "tableGroupingLabel": "Regroupement de table",
-      "tableGroupingHelp": "Configurer quels onglets utilisent des tables groupées pour chaque type de contenu"
+      "tableGroupingHelp": "Configurer quels onglets utilisent des tables groupées pour chaque type de contenu",
+      "enableVoiceRecording": "Activer l'enregistrement vocal",
+      "enableVoiceRecordingHelp": "Autoriser l'enregistrement d'échantillons vocaux pour les personnages afin d'aider à se souvenir des voix/accents"
     },
     "applications": {
       "sessionNotes": {
@@ -811,6 +813,16 @@
           "participants": "Participants",
           "grimPortents": "Sombres présages"
         }
+      },
+      "voiceRecording": {
+        "title": "Enregistrement vocal",
+        "recording": "Enregistrement... Cliquez sur Arrêter lorsque vous avez terminé.",
+        "stop": "Arrêter",
+        "overwriteTitle": "Écraser l'enregistrement ?",
+        "overwriteMessage": "Un enregistrement vocal existe déjà. Voulez-vous le remplacer ?",
+        "deleteTitle": "Supprimer l'enregistrement ?",
+        "deleteMessage": "Êtes-vous sûr de vouloir supprimer cet enregistrement vocal ? Le fichier restera sur le serveur mais ne sera plus lié à ce personnage.",
+        "selectFolderTitle": "Sélectionner le dossier d'enregistrement vocal"
       }
     },
     "contextMenus": {
@@ -913,6 +925,12 @@
       "addWithRelationships": "Ajouter avec les relations",
       "danger": {
         "delete": "Supprimer le danger"
+      },
+      "voice": {
+        "record": "Enregistrer la voix",
+        "play": "Lire la voix",
+        "delete": "Supprimer l'enregistrement",
+        "changeFolder": "Changer le dossier d'enregistrement"
       }
     },
     "tooltips": {
@@ -989,7 +1007,9 @@
       "generateAIContent": "Générer du contenu IA",
       "maximizeWindow": "Agrandir la fenêtre",
       "restoreWindow": "Restaurer la fenêtre",
-      "currentSession": "session en cours"
+      "currentSession": "session en cours",
+      "voiceRecordingExists": "Enregistrement vocal existant - cliquez pour les options",
+      "voiceRecordingNone": "Aucun enregistrement vocal - cliquez pour enregistrer"
     },
     "notifications": {
       "backend": {
@@ -1019,6 +1039,13 @@
         "starting": "Démarrage de l'exportation des paramètres...",
         "complete": "Paramètre exporté avec succès",
         "failed": "Échec de l'exportation du paramètre"
+      },
+      "voiceRecording": {
+        "saved": "Enregistrement vocal enregistré",
+        "deleted": "Enregistrement vocal supprimé",
+        "permissionDenied": "Accès au microphone refusé. Veuillez autoriser l'accès au microphone pour enregistrer la voix.",
+        "notSupported": "L'enregistrement vocal n'est pas pris en charge dans ce navigateur",
+        "uploadFailed": "Échec du téléchargement de l'enregistrement vocal"
       }
     },
     "tags": {
