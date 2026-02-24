@@ -44,3 +44,34 @@ For each actor, you can see it's name and whether it is in the current Foundry w
 ![Hamburger icon](/assets/images/hamburger.webp)
 
 You can also grab and drag the hamburger icon to drag the default token for this actor right onto the canvas, just like dragging from the Foundry sidebar.
+
+### Voice Recording {#voice-recording}
+
+The voice recording feature allows you to record a short voice sample for each Character. This helps you remember what voice or accent you used for each NPC during your games.
+
+> [!NOTE]
+> Voice recording is an optional feature that can be disabled in [Module Settings](/reference/configuration/#voice-recording).
+
+#### Recording a Voice Sample
+
+1. Click the microphone button on a Character entry
+2. Select "Record Voice" from the menu
+3. If a recording already exists, you'll be asked to confirm overwriting it
+4. Your browser will request microphone access (if not already granted)
+5. A dialog will appear showing the recording timer
+6. Click "Stop" when you're finished recording
+7. The recording will be automatically saved and linked to the Character
+
+#### Playing a Recording
+
+1. Click the microphone button on a Character entry
+2. Select "Play Voice" from the menu (only available if a recording exists)
+3. The audio will play through your default audio output
+
+#### Deleting a Recording
+
+1. Click the microphone button on a Character entry
+2. Select "Delete Recording" from the menu (only available if a recording exists)
+
+> [!NOTE]
+> Deleting a recording only removes the link from the Character. The audio file remains on the server, as Foundry does not permit file deletion. You will need to manually remove unneeded files if you want to clean up.
