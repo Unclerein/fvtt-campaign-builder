@@ -1065,7 +1065,11 @@
         },
         "2": "Campaign",
         "3": "Session",
-        "4": "Setting"
+        "4": "Setting",
+        "5": "Front",
+        "6": "Arc",
+        "7": "Story Web",
+        "8": "Tag Results"
       },
       "createEntry": {
         "addToCurrentSession": "Add to current session",
