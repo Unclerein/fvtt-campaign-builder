@@ -14,8 +14,7 @@ import {
   ModuleExportData,
   SettingExportData,
   ProgressCallback,
-  cleanInvalidRelationships,
-  cleanInvalidPositions,
+isValidUuid,
 } from './importExportCommon';
 
 /**
@@ -229,6 +228,96 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
   }
 
   return data;
+}
+
+/**
+ * Clean invalid relationships from entry system data.
+ * Removes relationship entries that reference invalid UUIDs or have missing required fields.
+ *
+ * @param system - The system data to clean
+ * @returns The cleaned system data
+ */
+function cleanInvalidRelationships(system: Record<string, unknown>): Record<string, unknown> {
+  if (!system.relationships || typeof system.relationships !== 'object') {
+    return system;
+  }
+
+  const cleanedRelationships: Record<string, unknown> = {};
+  const relationships = system.relationships as Record<string, unknown>;
+
+  for (const [topic, entries] of Object.entries(relationships)) {
+    if (!entries || typeof entries !== 'object') {
+      continue;
+    }
+
+    const cleanedEntries: Record<string, unknown> = {};
+    for (const [entryUuid, details] of Object.entries(entries as Record<string, unknown>)) {
+      // Check if the key UUID is valid
+      if (!isValidUuid(entryUuid)) {
+        console.warn(`Export: Removing relationship with invalid key UUID: ${entryUuid}`);
+        continue;
+      }
+
+      // Check if the details object has valid required fields
+      if (details && typeof details === 'object') {
+        const detailObj = details as Record<string, unknown>;
+        
+        // Check uuid field
+        if (!isValidUuid(detailObj.uuid)) {
+          console.warn(`Export: Removing relationship with invalid uuid field: ${detailObj.uuid}`);
+          continue;
+        }
+        
+        // Check topic field - required by schema
+        if (detailObj.topic === null || detailObj.topic === undefined || detailObj.topic === '') {
+          console.warn(`Export: Removing relationship with invalid topic field`);
+          continue;
+        }
+      }
+
+      cleanedEntries[entryUuid] = details;
+    }
+    cleanedRelationships[topic] = cleanedEntries;
+  }
+
+  return { ...system, relationships: cleanedRelationships };
+}
+
+/**
+ * Clean invalid positions from story web system data.
+ * Removes position entries that reference invalid UUIDs or have invalid coordinates.
+ *
+ * @param system - The system data to clean
+ * @returns The cleaned system data
+ */
+function cleanInvalidPositions(system: Record<string, unknown>): Record<string, unknown> {
+  if (!system.positions || typeof system.positions !== 'object') {
+    return system;
+  }
+
+  const cleanedPositions: Record<string, unknown> = {};
+  const positions = system.positions as Record<string, unknown>;
+
+  for (const [uuid, coords] of Object.entries(positions)) {
+    // Check if the key UUID is valid
+    if (!isValidUuid(uuid)) {
+      console.warn(`Export: Removing position with invalid UUID: ${uuid}`);
+      continue;
+    }
+
+    // Check if coordinates are valid
+    if (coords && typeof coords === 'object') {
+      const coordObj = coords as Record<string, unknown>;
+      if (typeof coordObj.x !== 'number' || typeof coordObj.y !== 'number') {
+        console.warn(`Export: Removing position with invalid coordinates for ${uuid}`);
+        continue;
+      }
+    }
+
+    cleanedPositions[uuid] = coords;
+  }
+
+  return { ...system, positions: cleanedPositions };
 }
 
 export default {

@@ -19,7 +19,6 @@ import {
   remapRecordKeys,
   validateRelationshipsInSystem,
   validatePositionsInSystem,
-  cleanInvalidPositions,
 } from './importExportCommon';
 
 /**
@@ -757,9 +756,6 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
               remappedStoryWebSystem.positions as Record<string, unknown>,
               context.uuidMap
             );
-            // Clean any invalid positions that may have been introduced
-            const cleanedSystem = cleanInvalidPositions(remappedStoryWebSystem);
-            remappedStoryWebSystem.positions = cleanedSystem.positions;
           }
           if (remappedStoryWebSystem.edgeStyles) {
             remappedStoryWebSystem.edgeStyles = remapRecordKeys(
