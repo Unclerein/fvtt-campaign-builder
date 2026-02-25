@@ -345,7 +345,6 @@
         "importDescription": "Import FCB data from a previously exported JSON file. This will replace all existing FCB content.",
         "exportButton": "Export All Data",
         "importButton": "Import Data",
-        "includeClientSettings": "Include personal preferences (sidebar state, display options)?",
         "exportStarting": "Starting export...",
         "exportComplete": "Module data exported successfully",
         "exportFailed": "Failed to export module data",
