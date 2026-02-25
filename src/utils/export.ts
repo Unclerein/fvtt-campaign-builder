@@ -14,7 +14,8 @@ import {
   ModuleExportData,
   SettingExportData,
   ProgressCallback,
-isValidUuid,
+  isValidUuid,
+  DocumentExportData,
 } from './importExportCommon';
 
 /**
@@ -95,17 +96,24 @@ function collectModuleSettings(): Record<string, unknown> {
   return settings;
 }
 
-/**
- * Get system data from a document as a plain object.
- * Uses the raw document's toObject method to get a serializable copy.
- *
- * @param content - The FCB content (FCBSetting, Entry, etc.)
- * @returns The system data as a plain object
- */
-function getSystemData(content: FCBJournalEntryPage<any, any>): Record<string, unknown> {
-  return foundry.utils.deepClone(content.systemData) as Record<string, unknown>;
-}
+function addToDocuments<
+  T extends FCBJournalEntryPage<any, any> & { description?: string | undefined }
+>(
+  collection: DocumentExportData[], 
+  document: T, 
+  cleaningFunction?: (data: Record<string, unknown>) => Record<string, unknown>) 
+{
+  let systemData = foundry.utils.deepClone(document.systemData);
+  if (cleaningFunction)
+    systemData = cleaningFunction(systemData);
 
+  collection.push({
+    uuid: document.uuid,
+    name: document.name,
+    system: systemData,
+    description: document.description || null,
+  });
+}
 /**
  * Collect all data for a setting including all child documents.
  *
@@ -116,7 +124,7 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
   const data: SettingExportData = {
     uuid: setting.uuid,
     name: setting.name,
-    system: getSystemData(setting),
+    system: foundry.utils.deepClone(setting.systemData) as unknown as Record<string, unknown>,
     description: setting.description,
     documents: {
       entries: [],
@@ -134,16 +142,7 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
     if (topicFolder) {
       const entries = await topicFolder.allEntries();
       for (const entry of entries) {
-        // Get and clean the system data to remove invalid relationships
-        let entrySystem = getSystemData(entry);
-        entrySystem = cleanInvalidRelationships(entrySystem);
-
-        data.documents.entries.push({
-          uuid: entry.uuid,
-          name: entry.name,
-          system: entrySystem,
-          description: entry.description
-        });
+        addToDocuments(data.documents.entries, entry, cleanInvalidRelationships);
       }
     }
   }
@@ -152,34 +151,19 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
   for (const campaignIndex of setting.campaignIndex) {
     const campaign = await Campaign.fromUuid(campaignIndex.uuid);
     if (campaign) {
-      data.documents.campaigns.push({
-        uuid: campaign.uuid,
-        name: campaign.name,
-        system: getSystemData(campaign),
-        description: campaign.description,
-      });
+      addToDocuments(data.documents.campaigns, campaign);
 
       // Collect sessions
       const sessions = await campaign.allSessions();
       for (const session of sessions) {
-        data.documents.sessions.push({
-          uuid: session.uuid,
-          name: session.name,
-          system: getSystemData(session),
-          description: session.description,
-        });
+        addToDocuments(data.documents.sessions, session);
       }
 
       // Collect arcs
       for (const arcIndex of campaign.arcIndex) {
         const arc = await Arc.fromUuid(arcIndex.uuid);
         if (arc) {
-          data.documents.arcs.push({
-            uuid: arc.uuid,
-            name: arc.name,
-            system: getSystemData(arc),
-            description: arc.description,
-          });
+          addToDocuments(data.documents.arcs, arc);
         }
       }
 
@@ -187,12 +171,7 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
       for (const frontId of campaign.frontIds) {
         const front = await Front.fromUuid(frontId);
         if (front) {
-          data.documents.fronts.push({
-            uuid: front.uuid,
-            name: front.name,
-            system: getSystemData(front),
-            description: front.description,
-          });
+          addToDocuments(data.documents.fronts, front);
         }
       }
 
@@ -201,15 +180,7 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
         const storyWeb = await StoryWeb.fromUuid(storyWebId);
         if (storyWeb) {
           // Get and clean the system data to remove invalid positions
-          let storyWebSystem = getSystemData(storyWeb);
-          storyWebSystem = cleanInvalidPositions(storyWebSystem);
-
-          data.documents.storyWebs.push({
-            uuid: storyWeb.uuid,
-            name: storyWeb.name,
-            system: storyWebSystem,
-            description: null,
-          });
+          addToDocuments(data.documents.storyWebs, storyWeb, cleanInvalidPositions);
         }
       }
     }
@@ -234,33 +205,21 @@ function cleanInvalidRelationships(system: Record<string, unknown>): Record<stri
   const relationships = system.relationships as Record<string, unknown>;
 
   for (const [topic, entries] of Object.entries(relationships)) {
+    // entries is an object with uuid keys and relationship details as values
     if (!entries || typeof entries !== 'object') {
       continue;
     }
 
     const cleanedEntries: Record<string, unknown> = {};
     for (const [entryUuid, details] of Object.entries(entries as Record<string, unknown>)) {
-      // Check if the key UUID is valid
-      if (!isValidUuid(entryUuid)) {
-        console.warn(`Export: Removing relationship with invalid key UUID: ${entryUuid}`);
-        continue;
-      }
+      // Check if the key UUID is valid - if it is, it basically has to be FCB; if it's not its corrupt
+      if (!isValidUuid(entryUuid)) continue;
 
       // Check if the details object has valid required fields
       if (details && typeof details === 'object') {
         const detailObj = details as Record<string, unknown>;
         
-        // Check uuid field
-        if (!isValidUuid(detailObj.uuid)) {
-          console.warn(`Export: Removing relationship with invalid uuid field: ${detailObj.uuid}`);
-          continue;
-        }
-        
-        // Check topic field - required by schema
-        if (detailObj.topic === null || detailObj.topic === undefined || detailObj.topic === '') {
-          console.warn(`Export: Removing relationship with invalid topic field`);
-          continue;
-        }
+        // uuid matches the key, so don't need to check it        
       }
 
       cleanedEntries[entryUuid] = details;
@@ -287,19 +246,10 @@ function cleanInvalidPositions(system: Record<string, unknown>): Record<string, 
   const positions = system.positions as Record<string, unknown>;
 
   for (const [uuid, coords] of Object.entries(positions)) {
-    // Check if the key UUID is valid
+    // Check if the key UUID is valid - we assume if valid it's an FCB doc
     if (!isValidUuid(uuid)) {
       console.warn(`Export: Removing position with invalid UUID: ${uuid}`);
       continue;
-    }
-
-    // Check if coordinates are valid
-    if (coords && typeof coords === 'object') {
-      const coordObj = coords as Record<string, unknown>;
-      if (typeof coordObj.x !== 'number' || typeof coordObj.y !== 'number') {
-        console.warn(`Export: Removing position with invalid coordinates for ${uuid}`);
-        continue;
-      }
     }
 
     cleanedPositions[uuid] = coords;

@@ -52,24 +52,8 @@ export function isNonFCBUuid(uuid: string): boolean {
  */
 export function isValidUuid(uuid: unknown): boolean {
   if (typeof uuid !== 'string') return true; // Non-strings are handled elsewhere
-  if (!uuid) return false; // Empty strings are invalid
 
-  // Valid if it's an FCB compendium UUID
-  if (VALID_UUID_PATTERN.test(uuid)) return true;
-
-  // Valid if it's a JournalEntryPage UUID
-  if (VALID_JOURNAL_ENTRY_PAGE_PATTERN.test(uuid)) return true;
-
-  // Valid if it starts with Actor., Scene., Item., etc. (non-FCB documents)
-  if (/^(Actor|Scene|Item|RollTable|Macro|Playlist)\.[^.]+\.[a-zA-Z0-9]+/.test(uuid)) return true;
-
-  // If it contains "Compendium" but doesn't match our pattern, it might be invalid
-  if (uuid.includes('Compendium.') && !uuid.startsWith('Compendium.world.')) {
-    return false;
-  }
-
-  // Default to valid for other patterns
-  return true;
+  return !!foundry.utils.parseUuid(uuid);
 }
 
 /**
@@ -319,103 +303,6 @@ export type ProgressCallback = (message: string, progress?: number) => void;
 // Shared Validation Functions
 // ===========================================
 
-/**
- * Validate relationships in a system data object.
- *
- * @param system - The system data to validate
- * @param documentName - Name of the document for error messages
- * @throws Error if invalid relationship data is found
- */
-export function validateRelationshipsInSystem(system: Record<string, unknown>, documentName: string): void {
-  if (!system.relationships || typeof system.relationships !== 'object') {
-    return;
-  }
-
-  const relationships = system.relationships as Record<string, unknown>;
-  const validTopicKeys = ['1', '2', '3', '4']; // Topics.Character=1, Location=2, Organization=3, PC=4
-
-  for (const [topicKey, entries] of Object.entries(relationships)) {
-    // Validate topic key is valid
-    if (!validTopicKeys.includes(topicKey)) {
-      throw new Error(
-        `Import validation failed for "${documentName}": Invalid topic key "${topicKey}" in relationships. ` +
-        `Expected one of: ${validTopicKeys.join(', ')}. The export file may be corrupted.`
-      );
-    }
-
-    if (!entries || typeof entries !== 'object') {
-      continue;
-    }
-
-    for (const [entryUuid, details] of Object.entries(entries as Record<string, unknown>)) {
-      // Check if the key UUID is valid
-      if (!isValidUuid(entryUuid)) {
-        throw new Error(
-          `Import validation failed for "${documentName}": Invalid relationship key UUID "${entryUuid}" in topic "${topicKey}". ` +
-          `The export file may be corrupted.`
-        );
-      }
-
-      // Check if the details object has valid required fields
-      if (details && typeof details === 'object') {
-        const detailObj = details as Record<string, unknown>;
-        
-        // Check uuid field
-        if (!isValidUuid(detailObj.uuid)) {
-          throw new Error(
-            `Import validation failed for "${documentName}": Invalid relationship uuid field "${detailObj.uuid}" in topic "${topicKey}". ` +
-            `The export file may be corrupted.`
-          );
-        }
-        
-        // Check topic field - should be a number 1-4
-        const topicValue = detailObj.topic;
-        if (topicValue === null || topicValue === undefined) {
-          throw new Error(
-            `Import validation failed for "${documentName}": Missing topic field in relationship for UUID "${entryUuid}" in topic "${topicKey}". ` +
-            `The export file may be corrupted.`
-          );
-        }
-      }
-    }
-  }
-}
-
-/**
- * Validate positions in a story web system data object.
- *
- * @param system - The system data to validate
- * @param documentName - Name of the document for error messages
- * @throws Error if invalid position data is found
- */
-export function validatePositionsInSystem(system: Record<string, unknown>, documentName: string): void {
-  if (!system.positions || typeof system.positions !== 'object') {
-    return;
-  }
-
-  const positions = system.positions as Record<string, unknown>;
-
-  for (const [uuid, coords] of Object.entries(positions)) {
-    // Check if the key UUID is valid
-    if (!isValidUuid(uuid)) {
-      throw new Error(
-        `Import validation failed for "${documentName}": Invalid position UUID "${uuid}". ` +
-        `The export file may be corrupted.`
-      );
-    }
-
-    // Check if coordinates are valid
-    if (coords && typeof coords === 'object') {
-      const coordObj = coords as Record<string, unknown>;
-      if (typeof coordObj.x !== 'number' || typeof coordObj.y !== 'number') {
-        throw new Error(
-          `Import validation failed for "${documentName}": Invalid coordinates for position "${uuid}". ` +
-          `The export file may be corrupted.`
-        );
-      }
-    }
-  }
-}
 
 export default {
   EXPORT_VERSION,
@@ -426,6 +313,4 @@ export default {
   remapRecordKeys,
   remapUuidArray,
   remapUuid,
-  validateRelationshipsInSystem,
-  validatePositionsInSystem,
 };

@@ -6,8 +6,8 @@
 
 import { localize } from '@/utils/game';
 import { ModuleSettings, SettingKey } from '@/settings/ModuleSettings';
-import { RootFolder, FCBSetting, Campaign, Session, Arc, Front, StoryWeb, Entry } from '@/classes';
-import { Topics, ValidTopic } from '@/types';
+import { RootFolder, FCBSetting, Campaign, Session, Arc, Front, StoryWeb, Entry,FCBJournalEntryPage } from '@/classes';
+import { Topics, ValidDocType, ValidTopic } from '@/types';
 import GlobalSettingService from '@/utils/globalSettings';
 import {
   ModuleExportData,
@@ -17,8 +17,7 @@ import {
   ProgressCallback,
   remapUuidsInObject,
   remapRecordKeys,
-  validateRelationshipsInSystem,
-  validatePositionsInSystem,
+  isValidUuid,
 } from './importExportCommon';
 
 /**
@@ -90,65 +89,60 @@ export async function importModuleJson(
 }
 
 /**
- * Validate all data in the export before importing.
- * This checks all relationships and UUID references to ensure they are valid.
- * Throws an error at the first sign of invalid data.
- *
- * @param data - The export data to validate
- * @throws Error if any invalid data is found
- */
-function validateExportDataForImport(data: ModuleExportData): void {
-  for (const settingData of data.settings) {
-    // Validate setting relationships
-    validateRelationshipsInSystem(settingData.system, `Setting "${settingData.name}"`);
-
-    // Validate entries
-    for (const entryData of settingData.documents.entries) {
-      validateRelationshipsInSystem(entryData.system, `Entry "${entryData.name}"`);
-    }
-
-    // Validate campaigns
-    for (const campaignData of settingData.documents.campaigns) {
-      validateRelationshipsInSystem(campaignData.system, `Campaign "${campaignData.name}"`);
-    }
-
-    // Validate sessions
-    for (const sessionData of settingData.documents.sessions) {
-      validateRelationshipsInSystem(sessionData.system, `Session "${sessionData.name}"`);
-    }
-
-    // Validate arcs
-    for (const arcData of settingData.documents.arcs) {
-      validateRelationshipsInSystem(arcData.system, `Arc "${arcData.name}"`);
-    }
-
-    // Validate fronts
-    for (const frontData of settingData.documents.fronts) {
-      validateRelationshipsInSystem(frontData.system, `Front "${frontData.name}"`);
-    }
-
-    // Validate story webs
-    for (const storyWebData of settingData.documents.storyWebs) {
-      validateRelationshipsInSystem(storyWebData.system, `Story Web "${storyWebData.name}"`);
-      validatePositionsInSystem(storyWebData.system, `Story Web "${storyWebData.name}"`);
-    }
-  }
-}
-
-/**
  * Validate export data structure.
  *
  * @param data - The data to validate
  * @returns True if valid
  */
-function validateExportData(data: unknown): data is ModuleExportData {
-  if (!data || typeof data !== 'object') return false;
+function validateExportData(data: unknown): boolean {
+  if (!data || typeof data !== 'object') 
+    return false;
+  
   const d = data as Record<string, unknown>;
 
-  if (typeof d.version !== 'string') return false;
-  if (typeof d.exportedAt !== 'string') return false;
-  if (typeof d.moduleSettings !== 'object') return false;
-  if (!Array.isArray(d.settings)) return false;
+  if (
+    (typeof d.version !== 'string') ||
+    (typeof d.exportedAt !== 'string') ||
+    (typeof d.moduleSettings !== 'object') ||
+    (!Array.isArray(d.settings))
+  ) 
+    return false;
+
+  const valid = (collection: DocumentExportData[]): boolean => {
+    for (const doc of collection) {
+      if (
+        (typeof doc !== 'object') || 
+        (typeof doc.name !== 'string') ||
+        (typeof doc.description !== 'string' && doc.description !== null) ||
+        (typeof doc.uuid !== 'string') ||
+        (typeof doc.system !== 'object')
+      )
+        return false;
+    }
+
+    return true;
+  }
+
+  for (const setting of d.settings) {
+    if (
+      !setting ||
+      typeof setting !== 'object' ||
+      typeof setting.name !== 'string' ||
+      typeof setting.description !== 'string' ||
+      typeof setting.uuid !== 'string' ||
+      typeof setting.documents !== 'object'
+    ) 
+      return false;
+    else if (
+      !valid(setting.documents.entries) ||
+      !valid(setting.documents.campaigns) ||
+      !valid(setting.documents.sessions) ||
+      !valid(setting.documents.arcs) ||
+      !valid(setting.documents.fronts) ||
+      !valid(setting.documents.storyWebs) 
+    )
+      return false;
+  }
 
   return true;
 }
@@ -515,18 +509,17 @@ async function importStoryWebs(
  * @param doc - The FCB document wrapper with systemData and save() method
  * @param systemData - The system data to apply (with remapped UUIDs)
  */
-async function updateDocumentSystemData(
-  doc: { systemData: unknown; save: () => Promise<void>; uuid: string },
-  systemData: Record<string, unknown>
+async function updateDocumentSystemData<
+  DocType extends ValidDocType,
+  DocClass extends JournalEntryPage<DocType>,
+  T extends FCBJournalEntryPage<DocType, DocClass>
+>(
+  doc: T,
+  systemData: unknown
 ): Promise<void> {
   try {
     // Set the system data through the FCB class's setter
-    // This updates the internal _clone.system which will be properly
-    // transformed by _prepData() when save() is called
-    (doc as { systemData: unknown }).systemData = systemData;
-
-    // Save through the FCB class's save() method which handles
-    // key transformation (dots to #&#) via _prepData()
+    doc.systemData = systemData as DocClass['system'];
     await doc.save();
   } catch (error) {
     // Log the error but don't throw - allow other documents to continue
@@ -582,10 +575,7 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
       }
 
       // Update the setting document
-      await updateDocumentSystemData(
-        setting as unknown as { systemData: unknown; save: () => Promise<void>; uuid: string },
-        remappedSettingSystem
-      );
+      await updateDocumentSystemData(setting, remappedSettingSystem);
     }
 
     // Remap entries using original data
@@ -615,10 +605,7 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
               entry.description = remapUuidsInObject(originalEntryData.description, context.uuidMap) as string;
             }
 
-            await updateDocumentSystemData(
-              entry as unknown as { systemData: unknown; save: () => Promise<void>; uuid: string },
-              remappedEntrySystem
-            );
+            await updateDocumentSystemData(entry, remappedEntrySystem);
           }
         }
       }
@@ -645,10 +632,7 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
           campaign.description = remapUuidsInObject(originalCampaignData.description, context.uuidMap) as string;
         }
 
-        await updateDocumentSystemData(
-          campaign as unknown as { systemData: unknown; save: () => Promise<void>; uuid: string },
-          remappedCampaignSystem
-        );
+        await updateDocumentSystemData(campaign, remappedCampaignSystem);
       }
 
       // Remap sessions
@@ -670,10 +654,7 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
             session.description = remapUuidsInObject(originalSessionData.description, context.uuidMap) as string;
           }
 
-          await updateDocumentSystemData(
-            session as unknown as { systemData: unknown; save: () => Promise<void>; uuid: string },
-            remappedSessionSystem
-          );
+          await updateDocumentSystemData(session, remappedSessionSystem);
         }
       }
 
@@ -698,10 +679,7 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
             arc.description = remapUuidsInObject(originalArcData.description, context.uuidMap) as string;
           }
 
-          await updateDocumentSystemData(
-            arc as unknown as { systemData: unknown; save: () => Promise<void>; uuid: string },
-            remappedArcSystem
-          );
+          await updateDocumentSystemData(arc, remappedArcSystem);
         }
       }
 
@@ -726,10 +704,7 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
             front.description = remapUuidsInObject(originalFrontData.description, context.uuidMap) as string;
           }
 
-          await updateDocumentSystemData(
-            front as unknown as { systemData: unknown; save: () => Promise<void>; uuid: string },
-            remappedFrontSystem
-          );
+          await updateDocumentSystemData(front, remappedFrontSystem);
         }
       }
 
@@ -770,12 +745,108 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
             );
           }
 
-          await updateDocumentSystemData(
-            storyWeb as unknown as { systemData: unknown; save: () => Promise<void>; uuid: string },
-            remappedStoryWebSystem
+          await updateDocumentSystemData(storyWeb, remappedStoryWebSystem);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Validate all data in the export before importing.
+ * This checks all relationships and UUID references to ensure they are valid.
+ * Throws an error at the first sign of invalid data.
+ *
+ * @param data - The export data to validate
+ * @throws Error if any invalid data is found
+ */
+function validateExportDataForImport(data: ModuleExportData): void {
+  for (const settingData of data.settings) {
+    // Validate entries
+    for (const entryData of settingData.documents.entries) {
+      validateRelationshipsInSystem(entryData.system, `Entry "${entryData.name}"`);
+    }
+    // Validate story webs
+    for (const storyWebData of settingData.documents.storyWebs) {
+      validatePositionsInSystem(storyWebData.system, `Story Web "${storyWebData.name}"`);
+    }
+  }
+}
+
+/**
+ * Validate relationships in a system data object.
+ *
+ * @param system - The system data to validate
+ * @param documentName - Name of the document for error messages
+ * @throws Error if invalid relationship data is found
+ */
+function validateRelationshipsInSystem(system: Record<string, unknown>, documentName: string): void {
+  if (!system.relationships || typeof system.relationships !== 'object') {
+    return;
+  }
+
+  const relationships = system.relationships as Record<string, unknown>;
+  const validTopicKeys = ['1', '2', '3', '4']; // Topics.Character=1, Location=2, Organization=3, PC=4
+
+  for (const [topicKey, entries] of Object.entries(relationships)) {
+    // Validate topic key is valid
+    if (!validTopicKeys.includes(topicKey)) {
+      throw new Error(
+        `Import validation failed for "${documentName}": Invalid topic key "${topicKey}" in relationships. ` +
+        `Expected one of: ${validTopicKeys.join(', ')}. The export file may be corrupted.`
+      );
+    }
+
+    if (!entries || typeof entries !== 'object') {
+      continue;
+    }
+
+    for (const [entryUuid, details] of Object.entries(entries as Record<string, unknown>)) {
+      // Check if the key UUID is valid
+      if (!isValidUuid(entryUuid)) {
+        throw new Error(
+          `Import validation failed for "${documentName}": Invalid relationship key UUID "${entryUuid}" in topic "${topicKey}". ` +
+          `The export file may be corrupted.`
+        );
+      }
+
+      // Check if the details object has valid required fields
+      if (details && typeof details === 'object') {
+        const detailObj = details as Record<string, unknown>;
+        
+        // Check uuid field
+        if (!isValidUuid(detailObj.uuid)) {
+          throw new Error(
+            `Import validation failed for "${documentName}": Invalid relationship uuid field "${detailObj.uuid}" in topic "${topicKey}". ` +
+            `The export file may be corrupted.`
           );
         }
       }
+    }
+  }
+}
+
+/**
+ * Validate positions in a story web system data object.
+ *
+ * @param system - The system data to validate
+ * @param documentName - Name of the document for error messages
+ * @throws Error if invalid position data is found
+ */
+function validatePositionsInSystem(system: Record<string, unknown>, documentName: string): void {
+  if (!system.positions || typeof system.positions !== 'object') {
+    return;
+  }
+
+  const positions = system.positions as Record<string, unknown>;
+
+  for (const [uuid, coords] of Object.entries(positions)) {
+    // Check if the key UUID is valid
+    if (!isValidUuid(uuid)) {
+      throw new Error(
+        `Import validation failed for "${documentName}": Invalid position UUID "${uuid}". ` +
+        `The export file may be corrupted.`
+      );
     }
   }
 }
