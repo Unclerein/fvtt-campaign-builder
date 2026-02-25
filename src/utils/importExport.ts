@@ -30,6 +30,16 @@ interface ModuleExportData {
   settings: SettingExportData[];
 }
 
+/** Import context to track original data and mappings */
+interface ImportContext {
+  /** Maps old UUID -> new UUID (for remapping content) */
+  uuidMap: Map<string, string>;
+  /** Maps new UUID -> old UUID (for finding original data during second pass) */
+  reverseUuidMap: Map<string, string>;
+  /** Original document data keyed by old UUID */
+  originalData: Map<string, DocumentExportData>;
+}
+
 /** Setting export data structure */
 interface SettingExportData {
   uuid: string;
@@ -60,11 +70,9 @@ export type ProgressCallback = (message: string, progress?: number) => void;
 /**
  * Export all module data to a JSON file and trigger download.
  *
- * @param includeClientSettings - Whether to include client-scoped settings
  * @param onProgress - Optional callback for progress updates
  */
 export async function exportModuleJson(
-  includeClientSettings: boolean,
   onProgress?: ProgressCallback
 ): Promise<void> {
   onProgress?.(localize('applications.importExport.exportStarting'), 0);
@@ -78,7 +86,7 @@ export async function exportModuleJson(
 
   // Collect module settings
   onProgress?.(localize('applications.importExport.collectingSettings'), 10);
-  exportData.moduleSettings = collectModuleSettings(includeClientSettings);
+  exportData.moduleSettings = collectModuleSettings();
 
   // Collect all settings and their documents
   const settingIndex = ModuleSettings.get(SettingKey.settingIndex);
@@ -111,71 +119,21 @@ export async function exportModuleJson(
 /**
  * Collect module settings for export.
  *
- * @param includeClientSettings - Whether to include client-scoped settings
  * @returns Object containing all settings to export
  */
-function collectModuleSettings(includeClientSettings: boolean): Record<string, unknown> {
+function collectModuleSettings(): Record<string, unknown> {
   const settings: Record<string, unknown> = {};
 
-  /** World-scoped settings to always include in export; can't define in global because of initialization order */
-  const WORLD_SCOPED_SETTINGS: SettingKey[] = [
-    SettingKey.rootFolderId,
-    SettingKey.voiceRecordingFolder,
-    SettingKey.autoRefreshRollTables,
-    SettingKey.speciesList,
-    SettingKey.generatorDefaultTypes,
-    SettingKey.contentTags,
-    SettingKey.customFields,
-    SettingKey.aiImagePrompts,
-    SettingKey.aiImageConfigurations,
-    SettingKey.APIURL,
-    SettingKey.APIToken,
-    SettingKey.selectedTextModel,
-    SettingKey.selectedImageModel,
-    SettingKey.useGmailToDos,
-    SettingKey.emailDefaultSetting,
-    SettingKey.emailDefaultCampaign,
-    SettingKey.showImages,
-    SettingKey.storyWebConnectionColors,
-    SettingKey.storyWebConnectionStyles,
-    SettingKey.storyWebNodeFields,
-    SettingKey.storyWebCustomNodeColorSchemes,
-    SettingKey.tableGroupingSettings,
-    SettingKey.hideBackendWarning,
-    SettingKey.useFronts,
-    SettingKey.useStoryWebs,
-    SettingKey.enableVoiceRecording,
+  /** Settings to never include in export */
+  const EXCLUDED_SETTINGS: SettingKey[] = [
+    SettingKey.lastKnownVersion,
+    SettingKey.settingIndex,
+    SettingKey.isInPlayMode,
   ];
 
-  /** Client-scoped settings to optionally include */
-  const CLIENT_SCOPED_SETTINGS: SettingKey[] = [
-    SettingKey.startCollapsed,
-    SettingKey.displaySessionNotes,
-    SettingKey.sessionDisplayMode,
-    SettingKey.defaultAddToSession,
-    SettingKey.sessionBookmark,
-    SettingKey.enableToDoList,
-    SettingKey.autoRelationships,
-    SettingKey.showTypesInTree,
-    SettingKey.subTabsSavePosition,
-    SettingKey.storyWebAutoArrange,
-    SettingKey.genericFoundryTab,
-    SettingKey.groupTreeByType,
-    SettingKey.mainWindowBounds,
-  ];
-
-  // Add world-scoped settings
-  for (const key of WORLD_SCOPED_SETTINGS) {
-    try {
-      settings[key] = ModuleSettings.get(key);
-    } catch {
-      // Setting may not exist yet
-    }
-  }
-
-  // Optionally add client-scoped settings
-  if (includeClientSettings) {
-    for (const key of CLIENT_SCOPED_SETTINGS) {
+  // Add all setting except excluded ones
+  for (const key of Object.values(SettingKey)) {
+    if (!EXCLUDED_SETTINGS.includes(key)) {
       try {
         settings[key] = ModuleSettings.get(key);
       } catch {
@@ -185,6 +143,130 @@ function collectModuleSettings(includeClientSettings: boolean): Record<string, u
   }
 
   return settings;
+}
+
+/** Pattern for valid FCB compendium UUIDs */
+const VALID_UUID_PATTERN = /^Compendium\.world\.[^.]+\.(JournalEntry|JournalEntryPage)\.[a-zA-Z0-9]+$/;
+
+/** Pattern for valid JournalEntryPage UUIDs */
+const VALID_JOURNAL_ENTRY_PAGE_PATTERN = /^JournalEntry\.[^.]+\.JournalEntryPage\.[a-zA-Z0-9]+$/;
+
+/**
+ * Check if a UUID string is valid (either an FCB compendium UUID or other valid Foundry UUID).
+ *
+ * @param uuid - The UUID to check
+ * @returns True if the UUID is valid or not a string
+ */
+function isValidUuid(uuid: unknown): boolean {
+  if (typeof uuid !== 'string') return true; // Non-strings are handled elsewhere
+  if (!uuid) return false; // Empty strings are invalid
+
+  // Valid if it's an FCB compendium UUID
+  if (VALID_UUID_PATTERN.test(uuid)) return true;
+
+  // Valid if it's a JournalEntryPage UUID
+  if (VALID_JOURNAL_ENTRY_PAGE_PATTERN.test(uuid)) return true;
+
+  // Valid if it starts with Actor., Scene., Item., etc. (non-FCB documents)
+  if (/^(Actor|Scene|Item|RollTable|Macro|Playlist)\.[^.]+\.[a-zA-Z0-9]+/.test(uuid)) return true;
+
+  // If it contains "Compendium" but doesn't match our pattern, it might be invalid
+  if (uuid.includes('Compendium.') && !uuid.startsWith('Compendium.world.')) {
+    return false;
+  }
+
+  // Default to valid for other patterns
+  return true;
+}
+
+/**
+ * Clean invalid relationships from entry system data.
+ * Removes relationship entries that reference invalid UUIDs or have missing required fields.
+ *
+ * @param system - The system data to clean
+ * @returns The cleaned system data
+ */
+function cleanInvalidRelationships(system: Record<string, unknown>): Record<string, unknown> {
+  if (!system.relationships || typeof system.relationships !== 'object') {
+    return system;
+  }
+
+  const cleanedRelationships: Record<string, unknown> = {};
+  const relationships = system.relationships as Record<string, unknown>;
+
+  for (const [topic, entries] of Object.entries(relationships)) {
+    if (!entries || typeof entries !== 'object') {
+      continue;
+    }
+
+    const cleanedEntries: Record<string, unknown> = {};
+    for (const [entryUuid, details] of Object.entries(entries as Record<string, unknown>)) {
+      // Check if the key UUID is valid
+      if (!isValidUuid(entryUuid)) {
+        console.warn(`Export: Removing relationship with invalid key UUID: ${entryUuid}`);
+        continue;
+      }
+
+      // Check if the details object has valid required fields
+      if (details && typeof details === 'object') {
+        const detailObj = details as Record<string, unknown>;
+        
+        // Check uuid field
+        if (!isValidUuid(detailObj.uuid)) {
+          console.warn(`Export: Removing relationship with invalid uuid field: ${detailObj.uuid}`);
+          continue;
+        }
+        
+        // Check topic field - required by schema
+        if (detailObj.topic === null || detailObj.topic === undefined || detailObj.topic === '') {
+          console.warn(`Export: Removing relationship with invalid topic field`);
+          continue;
+        }
+      }
+
+      cleanedEntries[entryUuid] = details;
+    }
+    cleanedRelationships[topic] = cleanedEntries;
+  }
+
+  return { ...system, relationships: cleanedRelationships };
+}
+
+/**
+ * Clean invalid positions from story web system data.
+ * Removes position entries that reference invalid UUIDs or have invalid coordinates.
+ *
+ * @param system - The system data to clean
+ * @returns The cleaned system data
+ */
+function cleanInvalidPositions(system: Record<string, unknown>): Record<string, unknown> {
+  if (!system.positions || typeof system.positions !== 'object') {
+    return system;
+  }
+
+  const cleanedPositions: Record<string, unknown> = {};
+  const positions = system.positions as Record<string, unknown>;
+
+  for (const [uuid, coords] of Object.entries(positions)) {
+    // Check if the key UUID is valid
+    if (!isValidUuid(uuid)) {
+      console.warn(`Export: Removing position with invalid UUID: ${uuid}`);
+      continue;
+    }
+
+    // Check if coordinates are valid
+    if (coords && typeof coords === 'object') {
+      const coordObj = coords as Record<string, unknown>;
+      if (typeof coordObj.x !== 'number' || typeof coordObj.y !== 'number') {
+        console.warn(`Export: Removing position with invalid coordinates for ${uuid}`);
+        continue;
+      }
+    }
+
+    cleanedPositions[uuid] = coords;
+  }
+
+  return { ...system, positions: cleanedPositions };
 }
 
 /**
@@ -238,10 +320,14 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
     if (topicFolder) {
       const entries = await topicFolder.allEntries();
       for (const entry of entries) {
+        // Get and clean the system data to remove invalid relationships
+        let entrySystem = getSystemData(entry as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } });
+        entrySystem = cleanInvalidRelationships(entrySystem);
+
         data.documents.entries.push({
           uuid: entry.uuid,
           name: entry.name,
-          system: getSystemData(entry as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } }),
+          system: entrySystem,
           text: getTextContent(entry as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } }),
         });
       }
@@ -300,10 +386,14 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
       for (const storyWebId of campaign.storyWebIds) {
         const storyWeb = await StoryWeb.fromUuid(storyWebId);
         if (storyWeb) {
+          // Get and clean the system data to remove invalid positions
+          let storyWebSystem = getSystemData(storyWeb as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } });
+          storyWebSystem = cleanInvalidPositions(storyWebSystem);
+
           data.documents.storyWebs.push({
             uuid: storyWeb.uuid,
             name: storyWeb.name,
-            system: getSystemData(storyWeb as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } }),
+            system: storyWebSystem,
             text: null,
           });
         }
@@ -312,6 +402,150 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
   }
 
   return data;
+}
+
+/**
+ * Validate all data in the export before importing.
+ * This checks all relationships and UUID references to ensure they are valid.
+ * Throws an error at the first sign of invalid data.
+ *
+ * @param data - The export data to validate
+ * @throws Error if any invalid data is found
+ */
+function validateExportDataForImport(data: ModuleExportData): void {
+  for (const settingData of data.settings) {
+    // Validate setting relationships
+    validateRelationshipsInSystem(settingData.system, `Setting "${settingData.name}"`);
+
+    // Validate entries
+    for (const entryData of settingData.documents.entries) {
+      validateRelationshipsInSystem(entryData.system, `Entry "${entryData.name}"`);
+    }
+
+    // Validate campaigns
+    for (const campaignData of settingData.documents.campaigns) {
+      validateRelationshipsInSystem(campaignData.system, `Campaign "${campaignData.name}"`);
+    }
+
+    // Validate sessions
+    for (const sessionData of settingData.documents.sessions) {
+      validateRelationshipsInSystem(sessionData.system, `Session "${sessionData.name}"`);
+    }
+
+    // Validate arcs
+    for (const arcData of settingData.documents.arcs) {
+      validateRelationshipsInSystem(arcData.system, `Arc "${arcData.name}"`);
+    }
+
+    // Validate fronts
+    for (const frontData of settingData.documents.fronts) {
+      validateRelationshipsInSystem(frontData.system, `Front "${frontData.name}"`);
+    }
+
+    // Validate story webs
+    for (const storyWebData of settingData.documents.storyWebs) {
+      validateRelationshipsInSystem(storyWebData.system, `Story Web "${storyWebData.name}"`);
+      validatePositionsInSystem(storyWebData.system, `Story Web "${storyWebData.name}"`);
+    }
+  }
+}
+
+/**
+ * Validate relationships in a system data object.
+ *
+ * @param system - The system data to validate
+ * @param documentName - Name of the document for error messages
+ * @throws Error if invalid relationship data is found
+ */
+function validateRelationshipsInSystem(system: Record<string, unknown>, documentName: string): void {
+  if (!system.relationships || typeof system.relationships !== 'object') {
+    return;
+  }
+
+  const relationships = system.relationships as Record<string, unknown>;
+  const validTopicKeys = ['1', '2', '3', '4']; // Topics.Character=1, Location=2, Organization=3, PC=4
+
+  for (const [topicKey, entries] of Object.entries(relationships)) {
+    // Validate topic key is valid
+    if (!validTopicKeys.includes(topicKey)) {
+      throw new Error(
+        `Import validation failed for "${documentName}": Invalid topic key "${topicKey}" in relationships. ` +
+        `Expected one of: ${validTopicKeys.join(', ')}. The export file may be corrupted.`
+      );
+    }
+
+    if (!entries || typeof entries !== 'object') {
+      continue;
+    }
+
+    for (const [entryUuid, details] of Object.entries(entries as Record<string, unknown>)) {
+      // Check if the key UUID is valid
+      if (!isValidUuid(entryUuid)) {
+        throw new Error(
+          `Import validation failed for "${documentName}": Invalid relationship key UUID "${entryUuid}" in topic "${topicKey}". ` +
+          `The export file may be corrupted.`
+        );
+      }
+
+      // Check if the details object has valid required fields
+      if (details && typeof details === 'object') {
+        const detailObj = details as Record<string, unknown>;
+        
+        // Check uuid field
+        if (!isValidUuid(detailObj.uuid)) {
+          throw new Error(
+            `Import validation failed for "${documentName}": Invalid relationship uuid field "${detailObj.uuid}" in topic "${topicKey}". ` +
+            `The export file may be corrupted.`
+          );
+        }
+        
+        // Check topic field - should be a number 1-4
+        const topicValue = detailObj.topic;
+        if (topicValue === null || topicValue === undefined) {
+          throw new Error(
+            `Import validation failed for "${documentName}": Missing topic field in relationship for UUID "${entryUuid}" in topic "${topicKey}". ` +
+            `The export file may be corrupted.`
+          );
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Validate positions in a story web system data object.
+ *
+ * @param system - The system data to validate
+ * @param documentName - Name of the document for error messages
+ * @throws Error if invalid position data is found
+ */
+function validatePositionsInSystem(system: Record<string, unknown>, documentName: string): void {
+  if (!system.positions || typeof system.positions !== 'object') {
+    return;
+  }
+
+  const positions = system.positions as Record<string, unknown>;
+
+  for (const [uuid, coords] of Object.entries(positions)) {
+    // Check if the key UUID is valid
+    if (!isValidUuid(uuid)) {
+      throw new Error(
+        `Import validation failed for "${documentName}": Invalid position UUID "${uuid}". ` +
+        `The export file may be corrupted.`
+      );
+    }
+
+    // Check if coordinates are valid
+    if (coords && typeof coords === 'object') {
+      const coordObj = coords as Record<string, unknown>;
+      if (typeof coordObj.x !== 'number' || typeof coordObj.y !== 'number') {
+        throw new Error(
+          `Import validation failed for "${documentName}": Invalid coordinates for position "${uuid}". ` +
+          `The export file may be corrupted.`
+        );
+      }
+    }
+  }
 }
 
 /**
@@ -342,12 +576,20 @@ export async function importModuleJson(
     throw new Error(localize('applications.importExport.invalidFile'));
   }
 
+  // Validate all data before making any changes
+  onProgress?.(localize('applications.importExport.validatingData'), 8);
+  validateExportDataForImport(data);
+
   // Delete all existing settings
   onProgress?.(localize('applications.importExport.deletingExisting'), 10);
   await deleteAllSettings();
 
-  // UUID mapping: old UUID -> new UUID
-  const uuidMap = new Map<string, string>();
+  // Create import context with UUID mapping and original data storage
+  const context: ImportContext = {
+    uuidMap: new Map<string, string>(),
+    reverseUuidMap: new Map<string, string>(),
+    originalData: new Map<string, DocumentExportData>(),
+  };
 
   // Import module settings (remapped to remove old setting UUIDs)
   onProgress?.(localize('applications.importExport.importingSettings'), 15);
@@ -364,12 +606,12 @@ export async function importModuleJson(
       progress
     );
 
-    await importSetting(settingData, uuidMap);
+    await importSetting(settingData, context);
   }
 
-  // Remap all UUIDs in all documents
+  // Remap all UUIDs in all documents using original data
   onProgress?.(localize('applications.importExport.remappingUuids'), 95);
-  await remapAllDocumentUuids(uuidMap);
+  await remapAllDocumentUuids(context);
 
   onProgress?.(localize('applications.importExport.importComplete'), 100);
 }
@@ -448,11 +690,11 @@ async function importModuleSettings(settings: Record<string, unknown>): Promise<
  * Import a single setting and all its documents.
  *
  * @param settingData - The setting data to import
- * @param uuidMap - Map to populate with UUID mappings
+ * @param context - Import context with UUID map and original data storage
  */
 async function importSetting(
   settingData: SettingExportData,
-  uuidMap: Map<string, string>
+  context: ImportContext
 ): Promise<void> {
   // Create the compendium
   const compendiumId = await createCompendium(settingData.name);
@@ -467,32 +709,34 @@ async function importSetting(
   }
 
   // Map the old setting UUID to the new one
-  uuidMap.set(settingData.uuid, setting.uuid);
+  context.uuidMap.set(settingData.uuid, setting.uuid);
+  context.reverseUuidMap.set(setting.uuid, settingData.uuid);
+
+  // Store original setting data for later remapping
+  context.originalData.set(settingData.uuid, {
+    uuid: settingData.uuid,
+    name: settingData.name,
+    system: settingData.system,
+    text: settingData.text,
+  });
 
   // Import entries
-  await importEntries(setting, settingData.documents.entries, uuidMap);
+  await importEntries(setting, settingData.documents.entries, context);
 
   // Import campaigns
-  await importCampaigns(setting, settingData.documents.campaigns, uuidMap);
+  await importCampaigns(setting, settingData.documents.campaigns, context);
 
   // Import sessions (need campaign mapping)
-  await importSessions(settingData.documents.sessions, uuidMap);
+  await importSessions(settingData.documents.sessions, context);
 
   // Import arcs
-  await importArcs(settingData.documents.arcs, uuidMap);
+  await importArcs(settingData.documents.arcs, context);
 
   // Import fronts
-  await importFronts(settingData.documents.fronts, uuidMap);
+  await importFronts(settingData.documents.fronts, context);
 
   // Import story webs
-  await importStoryWebs(settingData.documents.storyWebs, uuidMap);
-
-  // Update setting system data - we'll do full remap later
-  // For now, just update the text content if available
-  if (settingData.text) {
-    setting.description = settingData.text;
-    await setting.save();
-  }
+  await importStoryWebs(settingData.documents.storyWebs, context);
 }
 
 /**
@@ -550,12 +794,12 @@ async function createCompendium(name: string): Promise<string | null> {
  *
  * @param setting - The setting to import into
  * @param entries - The entry data to import
- * @param uuidMap - Map to populate with UUID mappings
+ * @param context - Import context with UUID map and original data storage
  */
 async function importEntries(
   setting: FCBSetting,
   entries: DocumentExportData[],
-  uuidMap: Map<string, string>
+  context: ImportContext
 ): Promise<void> {
   for (const entryData of entries) {
     const topic = entryData.system.topic as ValidTopic;
@@ -569,14 +813,16 @@ async function importEntries(
     });
 
     if (entry) {
-      uuidMap.set(entryData.uuid, entry.uuid);
+      context.uuidMap.set(entryData.uuid, entry.uuid);
+      context.reverseUuidMap.set(entry.uuid, entryData.uuid);
 
-      // Update the document with the full system data
-      // We'll set text and do full system remap later
-      if (entryData.text) {
-        entry.description = entryData.text;
-        await entry.save();
-      }
+      // Store original entry data for later remapping
+      context.originalData.set(entryData.uuid, {
+        uuid: entryData.uuid,
+        name: entryData.name,
+        system: entryData.system,
+        text: entryData.text,
+      });
     }
   }
 }
@@ -586,23 +832,26 @@ async function importEntries(
  *
  * @param setting - The setting to import into
  * @param campaigns - The campaign data to import
- * @param uuidMap - Map to populate with UUID mappings
+ * @param context - Import context with UUID map and original data storage
  */
 async function importCampaigns(
   setting: FCBSetting,
   campaigns: DocumentExportData[],
-  uuidMap: Map<string, string>
+  context: ImportContext
 ): Promise<void> {
   for (const campaignData of campaigns) {
     const campaign = await Campaign.create(setting, campaignData.name);
     if (campaign) {
-      uuidMap.set(campaignData.uuid, campaign.uuid);
+      context.uuidMap.set(campaignData.uuid, campaign.uuid);
+      context.reverseUuidMap.set(campaign.uuid, campaignData.uuid);
 
-      // Set text content
-      if (campaignData.text) {
-        campaign.description = campaignData.text;
-        await campaign.save();
-      }
+      // Store original campaign data for later remapping
+      context.originalData.set(campaignData.uuid, {
+        uuid: campaignData.uuid,
+        name: campaignData.name,
+        system: campaignData.system,
+        text: campaignData.text,
+      });
     }
   }
 }
@@ -611,14 +860,14 @@ async function importCampaigns(
  * Import sessions.
  *
  * @param sessions - The session data to import
- * @param uuidMap - Map of UUIDs for remapping
+ * @param context - Import context with UUID map and original data storage
  */
 async function importSessions(
   sessions: DocumentExportData[],
-  uuidMap: Map<string, string>
+  context: ImportContext
 ): Promise<void> {
   for (const sessionData of sessions) {
-    const campaignId = uuidMap.get(sessionData.system.campaignId as string);
+    const campaignId = context.uuidMap.get(sessionData.system.campaignId as string);
     if (!campaignId) continue;
 
     const campaign = await Campaign.fromUuid(campaignId);
@@ -626,13 +875,16 @@ async function importSessions(
 
     const session = await Session.create(campaign, sessionData.name);
     if (session) {
-      uuidMap.set(sessionData.uuid, session.uuid);
+      context.uuidMap.set(sessionData.uuid, session.uuid);
+      context.reverseUuidMap.set(session.uuid, sessionData.uuid);
 
-      // Set text content
-      if (sessionData.text) {
-        session.description = sessionData.text;
-        await session.save();
-      }
+      // Store original session data for later remapping
+      context.originalData.set(sessionData.uuid, {
+        uuid: sessionData.uuid,
+        name: sessionData.name,
+        system: sessionData.system,
+        text: sessionData.text,
+      });
     }
   }
 }
@@ -641,14 +893,14 @@ async function importSessions(
  * Import arcs.
  *
  * @param arcs - The arc data to import
- * @param uuidMap - Map of UUIDs for remapping
+ * @param context - Import context with UUID map and original data storage
  */
 async function importArcs(
   arcs: DocumentExportData[],
-  uuidMap: Map<string, string>
+  context: ImportContext
 ): Promise<void> {
   for (const arcData of arcs) {
-    const campaignId = uuidMap.get(arcData.system.campaignId as string);
+    const campaignId = context.uuidMap.get(arcData.system.campaignId as string);
     if (!campaignId) continue;
 
     const campaign = await Campaign.fromUuid(campaignId);
@@ -656,13 +908,16 @@ async function importArcs(
 
     const arc = await Arc.create(campaign, arcData.name);
     if (arc) {
-      uuidMap.set(arcData.uuid, arc.uuid);
+      context.uuidMap.set(arcData.uuid, arc.uuid);
+      context.reverseUuidMap.set(arc.uuid, arcData.uuid);
 
-      // Set text content
-      if (arcData.text) {
-        arc.description = arcData.text;
-        await arc.save();
-      }
+      // Store original arc data for later remapping
+      context.originalData.set(arcData.uuid, {
+        uuid: arcData.uuid,
+        name: arcData.name,
+        system: arcData.system,
+        text: arcData.text,
+      });
     }
   }
 }
@@ -671,14 +926,14 @@ async function importArcs(
  * Import fronts.
  *
  * @param fronts - The front data to import
- * @param uuidMap - Map of UUIDs for remapping
+ * @param context - Import context with UUID map and original data storage
  */
 async function importFronts(
   fronts: DocumentExportData[],
-  uuidMap: Map<string, string>
+  context: ImportContext
 ): Promise<void> {
   for (const frontData of fronts) {
-    const campaignId = uuidMap.get(frontData.system.campaignId as string);
+    const campaignId = context.uuidMap.get(frontData.system.campaignId as string);
     if (!campaignId) continue;
 
     const campaign = await Campaign.fromUuid(campaignId);
@@ -686,13 +941,16 @@ async function importFronts(
 
     const front = await Front.create(campaign, frontData.name);
     if (front) {
-      uuidMap.set(frontData.uuid, front.uuid);
+      context.uuidMap.set(frontData.uuid, front.uuid);
+      context.reverseUuidMap.set(front.uuid, frontData.uuid);
 
-      // Set text content
-      if (frontData.text) {
-        front.description = frontData.text;
-        await front.save();
-      }
+      // Store original front data for later remapping
+      context.originalData.set(frontData.uuid, {
+        uuid: frontData.uuid,
+        name: frontData.name,
+        system: frontData.system,
+        text: frontData.text,
+      });
     }
   }
 }
@@ -701,14 +959,14 @@ async function importFronts(
  * Import story webs.
  *
  * @param storyWebs - The story web data to import
- * @param uuidMap - Map of UUIDs for remapping
+ * @param context - Import context with UUID map and original data storage
  */
 async function importStoryWebs(
   storyWebs: DocumentExportData[],
-  uuidMap: Map<string, string>
+  context: ImportContext
 ): Promise<void> {
   for (const storyWebData of storyWebs) {
-    const campaignId = uuidMap.get(storyWebData.system.campaignId as string);
+    const campaignId = context.uuidMap.get(storyWebData.system.campaignId as string);
     if (!campaignId) continue;
 
     const campaign = await Campaign.fromUuid(campaignId);
@@ -716,91 +974,133 @@ async function importStoryWebs(
 
     const storyWeb = await StoryWeb.create(campaign, storyWebData.name);
     if (storyWeb) {
-      uuidMap.set(storyWebData.uuid, storyWeb.uuid);
+      context.uuidMap.set(storyWebData.uuid, storyWeb.uuid);
+      context.reverseUuidMap.set(storyWeb.uuid, storyWebData.uuid);
+
+      // Store original story web data for later remapping
+      context.originalData.set(storyWebData.uuid, {
+        uuid: storyWebData.uuid,
+        name: storyWebData.name,
+        system: storyWebData.system,
+        text: null,
+      });
     }
   }
 }
 
 /**
  * Update a document's system data with remapped UUIDs.
+ * Uses the FCB class's systemData setter and save() method to ensure
+ * proper key transformation (e.g., UUID dots to #&#) before persistence.
  *
- * @param doc - The document wrapper with raw property
+ * @param doc - The FCB document wrapper with systemData and save() method
  * @param systemData - The system data to apply (with remapped UUIDs)
  */
 async function updateDocumentSystemData(
-  doc: { raw: { update: (data: unknown, options?: unknown) => Promise<unknown> }; save: () => Promise<void> },
+  doc: { systemData: unknown; save: () => Promise<void>; uuid: string },
   systemData: Record<string, unknown>
 ): Promise<void> {
-  // Update the document directly with the new system data
-  await doc.raw.update(
-    { system: systemData },
-    { recursive: false, render: false }
-  );
+  try {
+    // Set the system data through the FCB class's setter
+    // This updates the internal _clone.system which will be properly
+    // transformed by _prepData() when save() is called
+    (doc as { systemData: unknown }).systemData = systemData;
+
+    // Save through the FCB class's save() method which handles
+    // key transformation (dots to #&#) via _prepData()
+    await doc.save();
+  } catch (error) {
+    // Log the error but don't throw - allow other documents to continue
+    console.warn(`Failed to update document "${doc.uuid}":`, error);
+  }
 }
 
 /**
- * Remap all UUIDs in all documents after import.
+ * Remap all UUIDs in all documents after import using the original exported data.
  *
- * @param uuidMap - Map of old UUIDs to new UUIDs
+ * @param context - Import context with UUID map and original data
  */
-async function remapAllDocumentUuids(uuidMap: Map<string, string>): Promise<void> {
+async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
   const settingIndex = ModuleSettings.get(SettingKey.settingIndex);
 
   for (const settingInfo of settingIndex) {
     const setting = await FCBSetting.fromUuid(settingInfo.settingId);
     if (!setting) continue;
 
-    // Get current system data, remap, and update
-    const settingSystem = getSystemData(setting as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } });
-    const remappedSettingSystem = remapUuidsInObject(settingSystem, uuidMap) as Record<string, unknown>;
+    // Find the original setting data using the reverse map
+    const oldSettingUuid = context.reverseUuidMap.get(setting.uuid);
+    const originalSettingData = oldSettingUuid
+      ? context.originalData.get(oldSettingUuid)
+      : undefined;
 
-    // Remap text content
-    const settingText = getTextContent(setting as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } });
-    if (settingText) {
-      const remappedText = remapUuidsInObject(settingText, uuidMap) as string;
-      setting.description = remappedText;
-    }
+    if (originalSettingData) {
+      // Use original system data, remap UUIDs, and apply
+      const remappedSettingSystem = remapUuidsInObject(
+        originalSettingData.system,
+        context.uuidMap
+      ) as Record<string, unknown>;
 
-    // Remap hierarchies keys
-    if (remappedSettingSystem.hierarchies) {
-      remappedSettingSystem.hierarchies = remapRecordKeys(
-        remappedSettingSystem.hierarchies as Record<string, unknown>,
-        uuidMap
+      // Remap text content
+      if (originalSettingData.text) {
+        const remappedText = remapUuidsInObject(originalSettingData.text, context.uuidMap) as string;
+        setting.description = remappedText;
+      }
+
+      // Remap hierarchies keys
+      if (remappedSettingSystem.hierarchies) {
+        remappedSettingSystem.hierarchies = remapRecordKeys(
+          remappedSettingSystem.hierarchies as Record<string, unknown>,
+          context.uuidMap
+        );
+      }
+
+      // Remap expandedIds keys
+      if (remappedSettingSystem.expandedIds) {
+        remappedSettingSystem.expandedIds = remapRecordKeys(
+          remappedSettingSystem.expandedIds as Record<string, unknown>,
+          context.uuidMap
+        );
+      }
+
+      // Update the setting document
+      await updateDocumentSystemData(
+        setting as unknown as { systemData: unknown; save: () => Promise<void>; uuid: string },
+        remappedSettingSystem
       );
     }
 
-    // Remap expandedIds keys
-    if (remappedSettingSystem.expandedIds) {
-      remappedSettingSystem.expandedIds = remapRecordKeys(
-        remappedSettingSystem.expandedIds as Record<string, unknown>,
-        uuidMap
-      );
-    }
-
-    // Update the setting document
-    await updateDocumentSystemData(
-      setting as unknown as { raw: { update: (data: unknown, options?: unknown) => Promise<unknown> }; save: () => Promise<void> },
-      remappedSettingSystem
-    );
-
-    // Remap entries
+    // Remap entries using original data
     for (const topic of [Topics.Character, Topics.Location, Topics.Organization, Topics.PC] as ValidTopic[]) {
       const topicFolder = setting.topicFolders[topic];
       if (topicFolder) {
         const entries = await topicFolder.allEntries();
         for (const entry of entries) {
-          const entrySystem = getSystemData(entry as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } });
-          const remappedEntrySystem = remapUuidsInObject(entrySystem, uuidMap) as Record<string, unknown>;
+          // Find original entry data using reverse map
+          const oldEntryUuid = context.reverseUuidMap.get(entry.uuid);
+          const originalEntryData = oldEntryUuid
+            ? context.originalData.get(oldEntryUuid)
+            : undefined;
 
-          const entryText = getTextContent(entry as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } });
-          if (entryText) {
-            entry.description = remapUuidsInObject(entryText, uuidMap) as string;
+          if (originalEntryData) {
+            // Use original system data, remap UUIDs, and apply
+            const remappedEntrySystem = remapUuidsInObject(
+              originalEntryData.system,
+              context.uuidMap
+            ) as Record<string, unknown>;
+
+            // Validate remapped relationships - throw error if invalid data found
+            validateRelationshipsInSystem(remappedEntrySystem, entry.name || 'unknown');
+
+            // Apply text content
+            if (originalEntryData.text) {
+              entry.description = remapUuidsInObject(originalEntryData.text, context.uuidMap) as string;
+            }
+
+            await updateDocumentSystemData(
+              entry as unknown as { systemData: unknown; save: () => Promise<void>; uuid: string },
+              remappedEntrySystem
+            );
           }
-
-          await updateDocumentSystemData(
-            entry as unknown as { raw: { update: (data: unknown, options?: unknown) => Promise<unknown> }; save: () => Promise<void> },
-            remappedEntrySystem
-          );
         }
       }
     }
@@ -810,50 +1110,77 @@ async function remapAllDocumentUuids(uuidMap: Map<string, string>): Promise<void
       const campaign = await Campaign.fromUuid(campaignIndex.uuid);
       if (!campaign) continue;
 
-      const campaignSystem = getSystemData(campaign as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } });
-      const remappedCampaignSystem = remapUuidsInObject(campaignSystem, uuidMap) as Record<string, unknown>;
+      // Find original campaign data using reverse map
+      const oldCampaignUuid = context.reverseUuidMap.get(campaign.uuid);
+      const originalCampaignData = oldCampaignUuid
+        ? context.originalData.get(oldCampaignUuid)
+        : undefined;
 
-      const campaignText = getTextContent(campaign as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } });
-      if (campaignText) {
-        campaign.description = remapUuidsInObject(campaignText, uuidMap) as string;
+      if (originalCampaignData) {
+        const remappedCampaignSystem = remapUuidsInObject(
+          originalCampaignData.system,
+          context.uuidMap
+        ) as Record<string, unknown>;
+
+        if (originalCampaignData.text) {
+          campaign.description = remapUuidsInObject(originalCampaignData.text, context.uuidMap) as string;
+        }
+
+        await updateDocumentSystemData(
+          campaign as unknown as { systemData: unknown; save: () => Promise<void>; uuid: string },
+          remappedCampaignSystem
+        );
       }
-
-      await updateDocumentSystemData(
-        campaign as unknown as { raw: { update: (data: unknown, options?: unknown) => Promise<unknown> }; save: () => Promise<void> },
-        remappedCampaignSystem
-      );
 
       // Remap sessions
       const sessions = await campaign.allSessions();
       for (const session of sessions) {
-        const sessionSystem = getSystemData(session as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } });
-        const remappedSessionSystem = remapUuidsInObject(sessionSystem, uuidMap) as Record<string, unknown>;
+        // Find original session data using reverse map
+        const oldSessionUuid = context.reverseUuidMap.get(session.uuid);
+        const originalSessionData = oldSessionUuid
+          ? context.originalData.get(oldSessionUuid)
+          : undefined;
 
-        const sessionText = getTextContent(session as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } });
-        if (sessionText) {
-          session.description = remapUuidsInObject(sessionText, uuidMap) as string;
+        if (originalSessionData) {
+          const remappedSessionSystem = remapUuidsInObject(
+            originalSessionData.system,
+            context.uuidMap
+          ) as Record<string, unknown>;
+
+          if (originalSessionData.text) {
+            session.description = remapUuidsInObject(originalSessionData.text, context.uuidMap) as string;
+          }
+
+          await updateDocumentSystemData(
+            session as unknown as { systemData: unknown; save: () => Promise<void>; uuid: string },
+            remappedSessionSystem
+          );
         }
-
-        await updateDocumentSystemData(
-          session as unknown as { raw: { update: (data: unknown, options?: unknown) => Promise<unknown> }; save: () => Promise<void> },
-          remappedSessionSystem
-        );
       }
 
       // Remap arcs
       for (const arcIndex of campaign.arcIndex) {
         const arc = await Arc.fromUuid(arcIndex.uuid);
-        if (arc) {
-          const arcSystem = getSystemData(arc as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } });
-          const remappedArcSystem = remapUuidsInObject(arcSystem, uuidMap) as Record<string, unknown>;
+        if (!arc) continue;
 
-          const arcText = getTextContent(arc as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } });
-          if (arcText) {
-            arc.description = remapUuidsInObject(arcText, uuidMap) as string;
+        // Find original arc data using reverse map
+        const oldArcUuid = context.reverseUuidMap.get(arc.uuid);
+        const originalArcData = oldArcUuid
+          ? context.originalData.get(oldArcUuid)
+          : undefined;
+
+        if (originalArcData) {
+          const remappedArcSystem = remapUuidsInObject(
+            originalArcData.system,
+            context.uuidMap
+          ) as Record<string, unknown>;
+
+          if (originalArcData.text) {
+            arc.description = remapUuidsInObject(originalArcData.text, context.uuidMap) as string;
           }
 
           await updateDocumentSystemData(
-            arc as unknown as { raw: { update: (data: unknown, options?: unknown) => Promise<unknown> }; save: () => Promise<void> },
+            arc as unknown as { systemData: unknown; save: () => Promise<void>; uuid: string },
             remappedArcSystem
           );
         }
@@ -862,17 +1189,26 @@ async function remapAllDocumentUuids(uuidMap: Map<string, string>): Promise<void
       // Remap fronts
       for (const frontId of campaign.frontIds) {
         const front = await Front.fromUuid(frontId);
-        if (front) {
-          const frontSystem = getSystemData(front as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } });
-          const remappedFrontSystem = remapUuidsInObject(frontSystem, uuidMap) as Record<string, unknown>;
+        if (!front) continue;
 
-          const frontText = getTextContent(front as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } });
-          if (frontText) {
-            front.description = remapUuidsInObject(frontText, uuidMap) as string;
+        // Find original front data using reverse map
+        const oldFrontUuid = context.reverseUuidMap.get(front.uuid);
+        const originalFrontData = oldFrontUuid
+          ? context.originalData.get(oldFrontUuid)
+          : undefined;
+
+        if (originalFrontData) {
+          const remappedFrontSystem = remapUuidsInObject(
+            originalFrontData.system,
+            context.uuidMap
+          ) as Record<string, unknown>;
+
+          if (originalFrontData.text) {
+            front.description = remapUuidsInObject(originalFrontData.text, context.uuidMap) as string;
           }
 
           await updateDocumentSystemData(
-            front as unknown as { raw: { update: (data: unknown, options?: unknown) => Promise<unknown> }; save: () => Promise<void> },
+            front as unknown as { systemData: unknown; save: () => Promise<void>; uuid: string },
             remappedFrontSystem
           );
         }
@@ -881,32 +1217,45 @@ async function remapAllDocumentUuids(uuidMap: Map<string, string>): Promise<void
       // Remap story webs
       for (const storyWebId of campaign.storyWebIds) {
         const storyWeb = await StoryWeb.fromUuid(storyWebId);
-        if (storyWeb) {
-          const storyWebSystem = getSystemData(storyWeb as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } });
-          const remappedStoryWebSystem = remapUuidsInObject(storyWebSystem, uuidMap) as Record<string, unknown>;
+        if (!storyWeb) continue;
+
+        // Find original story web data using reverse map
+        const oldStoryWebUuid = context.reverseUuidMap.get(storyWeb.uuid);
+        const originalStoryWebData = oldStoryWebUuid
+          ? context.originalData.get(oldStoryWebUuid)
+          : undefined;
+
+        if (originalStoryWebData) {
+          const remappedStoryWebSystem = remapUuidsInObject(
+            originalStoryWebData.system,
+            context.uuidMap
+          ) as Record<string, unknown>;
 
           // Remap positions, edgeStyles, nodeStyles keys
           if (remappedStoryWebSystem.positions) {
             remappedStoryWebSystem.positions = remapRecordKeys(
               remappedStoryWebSystem.positions as Record<string, unknown>,
-              uuidMap
+              context.uuidMap
             );
+            // Clean any invalid positions that may have been introduced
+            const cleanedSystem = cleanInvalidPositions(remappedStoryWebSystem);
+            remappedStoryWebSystem.positions = cleanedSystem.positions;
           }
           if (remappedStoryWebSystem.edgeStyles) {
             remappedStoryWebSystem.edgeStyles = remapRecordKeys(
               remappedStoryWebSystem.edgeStyles as Record<string, unknown>,
-              uuidMap
+              context.uuidMap
             );
           }
           if (remappedStoryWebSystem.nodeStyles) {
             remappedStoryWebSystem.nodeStyles = remapRecordKeys(
               remappedStoryWebSystem.nodeStyles as Record<string, unknown>,
-              uuidMap
+              context.uuidMap
             );
           }
 
           await updateDocumentSystemData(
-            storyWeb as unknown as { raw: { update: (data: unknown, options?: unknown) => Promise<unknown> }; save: () => Promise<void> },
+            storyWeb as unknown as { systemData: unknown; save: () => Promise<void>; uuid: string },
             remappedStoryWebSystem
           );
         }

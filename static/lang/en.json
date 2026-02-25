@@ -360,6 +360,7 @@
         "exportingSetting": "Exporting setting",
         "creatingFile": "Creating export file...",
         "readingFile": "Reading import file...",
+        "validatingData": "Validating import data...",
         "deletingExisting": "Deleting existing content...",
         "importingSettings": "Importing module settings...",
         "importingSetting": "Importing setting",

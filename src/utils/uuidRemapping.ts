@@ -80,7 +80,9 @@ export function remapUuidsInObject(obj: unknown, uuidMap: Map<string, string>): 
   if (typeof obj === 'string') {
     // First check if the entire string is a UUID to remap
     if (uuidMap.has(obj)) {
-      return uuidMap.get(obj);
+      const mapped = uuidMap.get(obj);
+      // Return the mapped value if it exists, otherwise keep original
+      return mapped !== undefined ? mapped : obj;
     }
     // Then check for embedded UUID references
     if (obj.includes('@UUID[')) {
@@ -98,8 +100,8 @@ export function remapUuidsInObject(obj: unknown, uuidMap: Map<string, string>): 
   if (typeof obj === 'object' && obj !== null) {
     const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
-      // Remap both key (if it's a UUID) and value
-      const newKey = uuidMap.get(key) || key;
+      // Remap key if it's a UUID in the map, otherwise keep original
+      const newKey = uuidMap.has(key) ? (uuidMap.get(key) || key) : key;
       result[newKey] = remapUuidsInObject(value, uuidMap);
     }
     return result;

@@ -53,6 +53,23 @@ export class FCBJournalEntryPage<
     return this._doc;
   }
 
+  /**
+   * Get the system data object for direct manipulation.
+   * Used during import to set remapped data before calling save().
+   */
+  public get systemData(): DocClass['system'] {
+    return this._clone.system;
+  }
+
+  /**
+   * Set the entire system data object.
+   * Used during import to replace all system data with remapped data.
+   * After setting, call save() to persist the changes.
+   */
+  public set systemData(value: DocClass['system']) {
+    this._clone.system = value;
+  }
+
   public get customFields(): Readonly<Record<string, string | boolean>> {
     // @ts-ignore - not sure how to specify customFields exists on all of these
     return foundry.utils.deepClone(this._clone.system?.customFields) || {};
