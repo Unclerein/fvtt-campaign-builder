@@ -86,7 +86,9 @@
       "sessionBookmarkHelp": "Wenn aktiviert, wird ein Lesezeichen für die aktuelle Sitzung vorne in der Lesezeichenleiste angezeigt",
       "tableGrouping": "Tabellengruppierungseinstellungen",
       "tableGroupingLabel": "Tabellengruppierung",
-      "tableGroupingHelp": "Konfigurieren Sie, welche Registerkarten gruppierte Tabellen für jeden Inhaltstyp verwenden"
+      "tableGroupingHelp": "Konfigurieren Sie, welche Registerkarten gruppierte Tabellen für jeden Inhaltstyp verwenden",
+      "enableVoiceRecording": "Sprachaufnahme aktivieren",
+      "enableVoiceRecordingHelp": "Erlaube das Aufzeichnen von Sprachproben für Charaktere, um Stimmen/Akzente besser zu merken"
     },
     "applications": {
       "sessionNotes": {
@@ -811,6 +813,16 @@
           "participants": "Teilnehmer",
           "grimPortents": "Düstere Vorzeichen"
         }
+      },
+      "voiceRecording": {
+        "title": "Sprachaufnahme",
+        "recording": "Aufnahme... Klicken Sie auf Stop, wenn Sie fertig sind.",
+        "stop": "Stop",
+        "overwriteTitle": "Aufnahme überschreiben?",
+        "overwriteMessage": "Eine Sprachaufnahme existiert bereits. Möchten Sie sie ersetzen?",
+        "deleteTitle": "Aufnahme löschen?",
+        "deleteMessage": "Sind Sie sicher, dass Sie diese Sprachaufnahme löschen möchten? Die Datei bleibt auf dem Server, wird jedoch nicht mehr mit diesem Charakter verknüpft.",
+        "selectFolderTitle": "Ordner für Sprachaufnahmen auswählen"
       }
     },
     "contextMenus": {
@@ -913,6 +925,12 @@
       "addWithRelationships": "Mit Beziehungen hinzufügen",
       "danger": {
         "delete": "Gefahr löschen"
+      },
+      "voice": {
+        "record": "Stimme aufnehmen",
+        "play": "Stimme abspielen",
+        "delete": "Aufnahme löschen",
+        "changeFolder": "Aufnahmeordner ändern"
       }
     },
     "tooltips": {
@@ -989,7 +1007,9 @@
       "generateAIContent": "KI-Inhalt generieren",
       "maximizeWindow": "Fenster maximieren",
       "restoreWindow": "Fenster wiederherstellen",
-      "currentSession": "aktuelle Sitzung"
+      "currentSession": "aktuelle Sitzung",
+      "voiceRecordingExists": "Sprachaufnahme vorhanden - klicken für Optionen",
+      "voiceRecordingNone": "Keine Sprachaufnahme - klicken zum Aufnehmen"
     },
     "notifications": {
       "backend": {
@@ -1019,6 +1039,13 @@
         "starting": "Starte den Export der Einstellungen...",
         "complete": "Einstellungen erfolgreich exportiert",
         "failed": "Fehler beim Exportieren der Einstellungen"
+      },
+      "voiceRecording": {
+        "saved": "Sprachaufnahme gespeichert",
+        "deleted": "Sprachaufnahme entfernt",
+        "permissionDenied": "Mikrofonzugriff verweigert. Bitte erlauben Sie den Mikrofonzugriff, um die Stimme aufzunehmen.",
+        "notSupported": "Sprachaufnahme wird in diesem Browser nicht unterstützt",
+        "uploadFailed": "Hochladen der Sprachaufnahme fehlgeschlagen"
       }
     },
     "tags": {
