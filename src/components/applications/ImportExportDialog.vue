@@ -6,7 +6,7 @@ Purpose
 - Provides UI for users to import module data from a JSON file
 
 Responsibilities
-- Handles export with optional client-scoped settings
+- Handles export 
 - Handles import with confirmation dialog
 - Shows progress during export/import operations
 - Displays error messages on failure
@@ -35,17 +35,6 @@ Dependencies
         <div class="fcb-section">
           <h3>{{ localize('applications.importExport.exportTitle') }}</h3>
           <p class="notes">{{ localize('applications.importExport.exportDescription') }}</p>
-
-          <div class="fcb-option">
-            <label class="fcb-checkbox-label">
-              <input
-                type="checkbox"
-                v-model="includeClientSettings"
-                class="fcb-setting-checkbox"
-              />
-              <span>{{ localize('applications.importExport.includeClientSettings') }}</span>
-            </label>
-          </div>
 
           <button
             @click="onExportClick"
@@ -154,7 +143,6 @@ Dependencies
 
   ////////////////////////////////
   // data
-  const includeClientSettings = ref(false);
   const isExporting = ref(false);
   const isImporting = ref(false);
   const exportProgress = ref(0);
@@ -198,7 +186,7 @@ Dependencies
     exportStatus.value = '';
 
     try {
-      await exportModuleJson(includeClientSettings.value, handleExportProgress);
+      await exportModuleJson(handleExportProgress);
     } catch (error) {
       errorMessage.value = error instanceof Error ? error.message : localize('applications.importExport.exportFailed');
       exportProgress.value = 0;

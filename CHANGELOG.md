@@ -11,6 +11,7 @@
 - Arcs now have a journals tab
 - You can now record a voice clip on character entries.  This is an easy way to quickly pull up what accent/voice you used for each character.
 - You can now export a full setting as either a .MD file or a .ZIP file (the .MD plus all the story web .PNGs)from the directory context menu.  This is handy for reviewing in another interface or for feeding to an LLM to ask it questions about the setting/campaign.
+- You can also export all of your settings and configuration and then import it into a different Foundry world.  Any links to Foundry content (actors, items, etc.), though, will be broken.
 - Many tables can now be put into "grouped" mode, which allows you to create groups of rows and collapse/expand them.  This is particularly useful for large lists like lore, ideas, and to-do items, but is available other places, too.  There is a new config dialog that lets you specify where you want to use this vs. the normal style.
 - Various settings that turn functionality on/off (ex. show types in tree and use to-do list) now are now reflected immediately in the app window, without needing to refresh the browser.
 - Fixed issue with drag/drop of rows not working properly on very long tables.
