@@ -1,11 +1,7 @@
 /**
- * Module JSON Export/Import Service
+ * Module JSON Import Service
  *
- * Handles exporting all FCB module data to a JSON file and importing
- * it into another Foundry world. This includes:
- * - All FCB Settings and their content (entries, campaigns, sessions, etc.)
- * - Module configuration settings
- * - UUID remapping to maintain relationships after import
+ * Handles importing FCB module data from a JSON file into a Foundry world.
  */
 
 import { localize } from '@/utils/game';
@@ -14,539 +10,17 @@ import { RootFolder, FCBSetting, Campaign, Session, Arc, Front, StoryWeb, Entry 
 import { Topics, ValidTopic } from '@/types';
 import GlobalSettingService from '@/utils/globalSettings';
 import {
+  ModuleExportData,
+  SettingExportData,
+  ImportContext,
+  DocumentExportData,
+  ProgressCallback,
   remapUuidsInObject,
   remapRecordKeys,
-} from '@/utils/uuidRemapping';
-import { downloadFile } from '@/utils/fileDownload';
-
-/** Current export format version */
-const EXPORT_VERSION = '1.0.0';
-
-/** Export data structure */
-interface ModuleExportData {
-  version: string;
-  exportedAt: string;
-  moduleSettings: Record<string, unknown>;
-  settings: SettingExportData[];
-}
-
-/** Import context to track original data and mappings */
-interface ImportContext {
-  /** Maps old UUID -> new UUID (for remapping content) */
-  uuidMap: Map<string, string>;
-  /** Maps new UUID -> old UUID (for finding original data during second pass) */
-  reverseUuidMap: Map<string, string>;
-  /** Original document data keyed by old UUID */
-  originalData: Map<string, DocumentExportData>;
-}
-
-/** Setting export data structure */
-interface SettingExportData {
-  uuid: string;
-  name: string;
-  system: Record<string, unknown>;
-  text: string | null;
-  documents: {
-    entries: DocumentExportData[];
-    campaigns: DocumentExportData[];
-    sessions: DocumentExportData[];
-    arcs: DocumentExportData[];
-    fronts: DocumentExportData[];
-    storyWebs: DocumentExportData[];
-  };
-}
-
-/** Individual document export data */
-interface DocumentExportData {
-  uuid: string;
-  name: string;
-  system: Record<string, unknown>;
-  text: string | null;
-}
-
-/** Progress callback type */
-export type ProgressCallback = (message: string, progress?: number) => void;
-
-/**
- * Export all module data to a JSON file and trigger download.
- *
- * @param onProgress - Optional callback for progress updates
- */
-export async function exportModuleJson(
-  onProgress?: ProgressCallback
-): Promise<void> {
-  onProgress?.(localize('applications.importExport.exportStarting'), 0);
-
-  const exportData: ModuleExportData = {
-    version: EXPORT_VERSION,
-    exportedAt: new Date().toISOString(),
-    moduleSettings: {},
-    settings: [],
-  };
-
-  // Collect module settings
-  onProgress?.(localize('applications.importExport.collectingSettings'), 10);
-  exportData.moduleSettings = collectModuleSettings();
-
-  // Collect all settings and their documents
-  const settingIndex = ModuleSettings.get(SettingKey.settingIndex);
-  const totalSettings = settingIndex.length;
-
-  for (let i = 0; i < settingIndex.length; i++) {
-    const settingInfo = settingIndex[i];
-    const progress = 10 + (i / totalSettings) * 80;
-    onProgress?.(
-      `${localize('applications.importExport.exportingSetting')}: ${settingInfo.name}`,
-      progress
-    );
-
-    const setting = await FCBSetting.fromUuid(settingInfo.settingId);
-    if (setting) {
-      const settingData = await collectSettingData(setting);
-      exportData.settings.push(settingData);
-    }
-  }
-
-  // Create and download the file
-  onProgress?.(localize('applications.importExport.creatingFile'), 95);
-  const json = JSON.stringify(exportData, null, 2);
-  const filename = `fcb-export-${new Date().toISOString().split('T')[0]}.json`;
-  downloadFile(json, filename, 'application/json');
-
-  onProgress?.(localize('applications.importExport.exportComplete'), 100);
-}
-
-/**
- * Collect module settings for export.
- *
- * @returns Object containing all settings to export
- */
-function collectModuleSettings(): Record<string, unknown> {
-  const settings: Record<string, unknown> = {};
-
-  /** Settings to never include in export */
-  const EXCLUDED_SETTINGS: SettingKey[] = [
-    SettingKey.lastKnownVersion,
-    SettingKey.settingIndex,
-    SettingKey.isInPlayMode,
-  ];
-
-  // Add all setting except excluded ones
-  for (const key of Object.values(SettingKey)) {
-    if (!EXCLUDED_SETTINGS.includes(key)) {
-      try {
-        settings[key] = ModuleSettings.get(key);
-      } catch {
-        // Setting may not exist yet
-      }
-    }
-  }
-
-  return settings;
-}
-
-/** Pattern for valid FCB compendium UUIDs */
-const VALID_UUID_PATTERN = /^Compendium\.world\.[^.]+\.(JournalEntry|JournalEntryPage)\.[a-zA-Z0-9]+$/;
-
-/** Pattern for valid JournalEntryPage UUIDs */
-const VALID_JOURNAL_ENTRY_PAGE_PATTERN = /^JournalEntry\.[^.]+\.JournalEntryPage\.[a-zA-Z0-9]+$/;
-
-/**
- * Check if a UUID string is valid (either an FCB compendium UUID or other valid Foundry UUID).
- *
- * @param uuid - The UUID to check
- * @returns True if the UUID is valid or not a string
- */
-function isValidUuid(uuid: unknown): boolean {
-  if (typeof uuid !== 'string') return true; // Non-strings are handled elsewhere
-  if (!uuid) return false; // Empty strings are invalid
-
-  // Valid if it's an FCB compendium UUID
-  if (VALID_UUID_PATTERN.test(uuid)) return true;
-
-  // Valid if it's a JournalEntryPage UUID
-  if (VALID_JOURNAL_ENTRY_PAGE_PATTERN.test(uuid)) return true;
-
-  // Valid if it starts with Actor., Scene., Item., etc. (non-FCB documents)
-  if (/^(Actor|Scene|Item|RollTable|Macro|Playlist)\.[^.]+\.[a-zA-Z0-9]+/.test(uuid)) return true;
-
-  // If it contains "Compendium" but doesn't match our pattern, it might be invalid
-  if (uuid.includes('Compendium.') && !uuid.startsWith('Compendium.world.')) {
-    return false;
-  }
-
-  // Default to valid for other patterns
-  return true;
-}
-
-/**
- * Clean invalid relationships from entry system data.
- * Removes relationship entries that reference invalid UUIDs or have missing required fields.
- *
- * @param system - The system data to clean
- * @returns The cleaned system data
- */
-function cleanInvalidRelationships(system: Record<string, unknown>): Record<string, unknown> {
-  if (!system.relationships || typeof system.relationships !== 'object') {
-    return system;
-  }
-
-  const cleanedRelationships: Record<string, unknown> = {};
-  const relationships = system.relationships as Record<string, unknown>;
-
-  for (const [topic, entries] of Object.entries(relationships)) {
-    if (!entries || typeof entries !== 'object') {
-      continue;
-    }
-
-    const cleanedEntries: Record<string, unknown> = {};
-    for (const [entryUuid, details] of Object.entries(entries as Record<string, unknown>)) {
-      // Check if the key UUID is valid
-      if (!isValidUuid(entryUuid)) {
-        console.warn(`Export: Removing relationship with invalid key UUID: ${entryUuid}`);
-        continue;
-      }
-
-      // Check if the details object has valid required fields
-      if (details && typeof details === 'object') {
-        const detailObj = details as Record<string, unknown>;
-        
-        // Check uuid field
-        if (!isValidUuid(detailObj.uuid)) {
-          console.warn(`Export: Removing relationship with invalid uuid field: ${detailObj.uuid}`);
-          continue;
-        }
-        
-        // Check topic field - required by schema
-        if (detailObj.topic === null || detailObj.topic === undefined || detailObj.topic === '') {
-          console.warn(`Export: Removing relationship with invalid topic field`);
-          continue;
-        }
-      }
-
-      cleanedEntries[entryUuid] = details;
-    }
-    cleanedRelationships[topic] = cleanedEntries;
-  }
-
-  return { ...system, relationships: cleanedRelationships };
-}
-
-/**
- * Clean invalid positions from story web system data.
- * Removes position entries that reference invalid UUIDs or have invalid coordinates.
- *
- * @param system - The system data to clean
- * @returns The cleaned system data
- */
-function cleanInvalidPositions(system: Record<string, unknown>): Record<string, unknown> {
-  if (!system.positions || typeof system.positions !== 'object') {
-    return system;
-  }
-
-  const cleanedPositions: Record<string, unknown> = {};
-  const positions = system.positions as Record<string, unknown>;
-
-  for (const [uuid, coords] of Object.entries(positions)) {
-    // Check if the key UUID is valid
-    if (!isValidUuid(uuid)) {
-      console.warn(`Export: Removing position with invalid UUID: ${uuid}`);
-      continue;
-    }
-
-    // Check if coordinates are valid
-    if (coords && typeof coords === 'object') {
-      const coordObj = coords as Record<string, unknown>;
-      if (typeof coordObj.x !== 'number' || typeof coordObj.y !== 'number') {
-        console.warn(`Export: Removing position with invalid coordinates for ${uuid}`);
-        continue;
-      }
-    }
-
-    cleanedPositions[uuid] = coords;
-  }
-
-  return { ...system, positions: cleanedPositions };
-}
-
-/**
- * Get system data from a document as a plain object.
- * Uses the raw document's toObject method to get a serializable copy.
- *
- * @param doc - The document wrapper (FCBSetting, Entry, etc.)
- * @returns The system data as a plain object
- */
-function getSystemData(doc: { raw: { toObject: (lean: boolean) => { system: unknown } } }): Record<string, unknown> {
-  const obj = doc.raw.toObject(false);
-  return foundry.utils.deepClone(obj.system) as Record<string, unknown>;
-}
-
-/**
- * Get text content from a document.
- *
- * @param doc - The document wrapper
- * @returns The text content or null
- */
-function getTextContent(doc: { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null } } }): string | null {
-  const obj = doc.raw.toObject(false);
-  return obj.text?.content || null;
-}
-
-/**
- * Collect all data for a setting including all child documents.
- *
- * @param setting - The FCBSetting to collect data from
- * @returns Setting export data structure
- */
-async function collectSettingData(setting: FCBSetting): Promise<SettingExportData> {
-  const data: SettingExportData = {
-    uuid: setting.uuid,
-    name: setting.name,
-    system: getSystemData(setting),
-    text: getTextContent(setting as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } }),
-    documents: {
-      entries: [],
-      campaigns: [],
-      sessions: [],
-      arcs: [],
-      fronts: [],
-      storyWebs: [],
-    },
-  };
-
-  // Collect entries from all topics
-  for (const topic of [Topics.Character, Topics.Location, Topics.Organization, Topics.PC] as ValidTopic[]) {
-    const topicFolder = setting.topicFolders[topic];
-    if (topicFolder) {
-      const entries = await topicFolder.allEntries();
-      for (const entry of entries) {
-        // Get and clean the system data to remove invalid relationships
-        let entrySystem = getSystemData(entry as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } });
-        entrySystem = cleanInvalidRelationships(entrySystem);
-
-        data.documents.entries.push({
-          uuid: entry.uuid,
-          name: entry.name,
-          system: entrySystem,
-          text: getTextContent(entry as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } }),
-        });
-      }
-    }
-  }
-
-  // Collect campaigns and their children
-  for (const campaignIndex of setting.campaignIndex) {
-    const campaign = await Campaign.fromUuid(campaignIndex.uuid);
-    if (campaign) {
-      data.documents.campaigns.push({
-        uuid: campaign.uuid,
-        name: campaign.name,
-        system: getSystemData(campaign as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } }),
-        text: getTextContent(campaign as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } }),
-      });
-
-      // Collect sessions
-      const sessions = await campaign.allSessions();
-      for (const session of sessions) {
-        data.documents.sessions.push({
-          uuid: session.uuid,
-          name: session.name,
-          system: getSystemData(session as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } }),
-          text: getTextContent(session as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } }),
-        });
-      }
-
-      // Collect arcs
-      for (const arcIndex of campaign.arcIndex) {
-        const arc = await Arc.fromUuid(arcIndex.uuid);
-        if (arc) {
-          data.documents.arcs.push({
-            uuid: arc.uuid,
-            name: arc.name,
-            system: getSystemData(arc as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } }),
-            text: getTextContent(arc as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } }),
-          });
-        }
-      }
-
-      // Collect fronts
-      for (const frontId of campaign.frontIds) {
-        const front = await Front.fromUuid(frontId);
-        if (front) {
-          data.documents.fronts.push({
-            uuid: front.uuid,
-            name: front.name,
-            system: getSystemData(front as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } }),
-            text: getTextContent(front as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } }),
-          });
-        }
-      }
-
-      // Collect story webs
-      for (const storyWebId of campaign.storyWebIds) {
-        const storyWeb = await StoryWeb.fromUuid(storyWebId);
-        if (storyWeb) {
-          // Get and clean the system data to remove invalid positions
-          let storyWebSystem = getSystemData(storyWeb as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } });
-          storyWebSystem = cleanInvalidPositions(storyWebSystem);
-
-          data.documents.storyWebs.push({
-            uuid: storyWeb.uuid,
-            name: storyWeb.name,
-            system: storyWebSystem,
-            text: null,
-          });
-        }
-      }
-    }
-  }
-
-  return data;
-}
-
-/**
- * Validate all data in the export before importing.
- * This checks all relationships and UUID references to ensure they are valid.
- * Throws an error at the first sign of invalid data.
- *
- * @param data - The export data to validate
- * @throws Error if any invalid data is found
- */
-function validateExportDataForImport(data: ModuleExportData): void {
-  for (const settingData of data.settings) {
-    // Validate setting relationships
-    validateRelationshipsInSystem(settingData.system, `Setting "${settingData.name}"`);
-
-    // Validate entries
-    for (const entryData of settingData.documents.entries) {
-      validateRelationshipsInSystem(entryData.system, `Entry "${entryData.name}"`);
-    }
-
-    // Validate campaigns
-    for (const campaignData of settingData.documents.campaigns) {
-      validateRelationshipsInSystem(campaignData.system, `Campaign "${campaignData.name}"`);
-    }
-
-    // Validate sessions
-    for (const sessionData of settingData.documents.sessions) {
-      validateRelationshipsInSystem(sessionData.system, `Session "${sessionData.name}"`);
-    }
-
-    // Validate arcs
-    for (const arcData of settingData.documents.arcs) {
-      validateRelationshipsInSystem(arcData.system, `Arc "${arcData.name}"`);
-    }
-
-    // Validate fronts
-    for (const frontData of settingData.documents.fronts) {
-      validateRelationshipsInSystem(frontData.system, `Front "${frontData.name}"`);
-    }
-
-    // Validate story webs
-    for (const storyWebData of settingData.documents.storyWebs) {
-      validateRelationshipsInSystem(storyWebData.system, `Story Web "${storyWebData.name}"`);
-      validatePositionsInSystem(storyWebData.system, `Story Web "${storyWebData.name}"`);
-    }
-  }
-}
-
-/**
- * Validate relationships in a system data object.
- *
- * @param system - The system data to validate
- * @param documentName - Name of the document for error messages
- * @throws Error if invalid relationship data is found
- */
-function validateRelationshipsInSystem(system: Record<string, unknown>, documentName: string): void {
-  if (!system.relationships || typeof system.relationships !== 'object') {
-    return;
-  }
-
-  const relationships = system.relationships as Record<string, unknown>;
-  const validTopicKeys = ['1', '2', '3', '4']; // Topics.Character=1, Location=2, Organization=3, PC=4
-
-  for (const [topicKey, entries] of Object.entries(relationships)) {
-    // Validate topic key is valid
-    if (!validTopicKeys.includes(topicKey)) {
-      throw new Error(
-        `Import validation failed for "${documentName}": Invalid topic key "${topicKey}" in relationships. ` +
-        `Expected one of: ${validTopicKeys.join(', ')}. The export file may be corrupted.`
-      );
-    }
-
-    if (!entries || typeof entries !== 'object') {
-      continue;
-    }
-
-    for (const [entryUuid, details] of Object.entries(entries as Record<string, unknown>)) {
-      // Check if the key UUID is valid
-      if (!isValidUuid(entryUuid)) {
-        throw new Error(
-          `Import validation failed for "${documentName}": Invalid relationship key UUID "${entryUuid}" in topic "${topicKey}". ` +
-          `The export file may be corrupted.`
-        );
-      }
-
-      // Check if the details object has valid required fields
-      if (details && typeof details === 'object') {
-        const detailObj = details as Record<string, unknown>;
-        
-        // Check uuid field
-        if (!isValidUuid(detailObj.uuid)) {
-          throw new Error(
-            `Import validation failed for "${documentName}": Invalid relationship uuid field "${detailObj.uuid}" in topic "${topicKey}". ` +
-            `The export file may be corrupted.`
-          );
-        }
-        
-        // Check topic field - should be a number 1-4
-        const topicValue = detailObj.topic;
-        if (topicValue === null || topicValue === undefined) {
-          throw new Error(
-            `Import validation failed for "${documentName}": Missing topic field in relationship for UUID "${entryUuid}" in topic "${topicKey}". ` +
-            `The export file may be corrupted.`
-          );
-        }
-      }
-    }
-  }
-}
-
-/**
- * Validate positions in a story web system data object.
- *
- * @param system - The system data to validate
- * @param documentName - Name of the document for error messages
- * @throws Error if invalid position data is found
- */
-function validatePositionsInSystem(system: Record<string, unknown>, documentName: string): void {
-  if (!system.positions || typeof system.positions !== 'object') {
-    return;
-  }
-
-  const positions = system.positions as Record<string, unknown>;
-
-  for (const [uuid, coords] of Object.entries(positions)) {
-    // Check if the key UUID is valid
-    if (!isValidUuid(uuid)) {
-      throw new Error(
-        `Import validation failed for "${documentName}": Invalid position UUID "${uuid}". ` +
-        `The export file may be corrupted.`
-      );
-    }
-
-    // Check if coordinates are valid
-    if (coords && typeof coords === 'object') {
-      const coordObj = coords as Record<string, unknown>;
-      if (typeof coordObj.x !== 'number' || typeof coordObj.y !== 'number') {
-        throw new Error(
-          `Import validation failed for "${documentName}": Invalid coordinates for position "${uuid}". ` +
-          `The export file may be corrupted.`
-        );
-      }
-    }
-  }
-}
+  validateRelationshipsInSystem,
+  validatePositionsInSystem,
+  cleanInvalidPositions,
+} from './importExportCommon';
 
 /**
  * Import module data from a JSON file.
@@ -614,6 +88,52 @@ export async function importModuleJson(
   await remapAllDocumentUuids(context);
 
   onProgress?.(localize('applications.importExport.importComplete'), 100);
+}
+
+/**
+ * Validate all data in the export before importing.
+ * This checks all relationships and UUID references to ensure they are valid.
+ * Throws an error at the first sign of invalid data.
+ *
+ * @param data - The export data to validate
+ * @throws Error if any invalid data is found
+ */
+function validateExportDataForImport(data: ModuleExportData): void {
+  for (const settingData of data.settings) {
+    // Validate setting relationships
+    validateRelationshipsInSystem(settingData.system, `Setting "${settingData.name}"`);
+
+    // Validate entries
+    for (const entryData of settingData.documents.entries) {
+      validateRelationshipsInSystem(entryData.system, `Entry "${entryData.name}"`);
+    }
+
+    // Validate campaigns
+    for (const campaignData of settingData.documents.campaigns) {
+      validateRelationshipsInSystem(campaignData.system, `Campaign "${campaignData.name}"`);
+    }
+
+    // Validate sessions
+    for (const sessionData of settingData.documents.sessions) {
+      validateRelationshipsInSystem(sessionData.system, `Session "${sessionData.name}"`);
+    }
+
+    // Validate arcs
+    for (const arcData of settingData.documents.arcs) {
+      validateRelationshipsInSystem(arcData.system, `Arc "${arcData.name}"`);
+    }
+
+    // Validate fronts
+    for (const frontData of settingData.documents.fronts) {
+      validateRelationshipsInSystem(frontData.system, `Front "${frontData.name}"`);
+    }
+
+    // Validate story webs
+    for (const storyWebData of settingData.documents.storyWebs) {
+      validateRelationshipsInSystem(storyWebData.system, `Story Web "${storyWebData.name}"`);
+      validatePositionsInSystem(storyWebData.system, `Story Web "${storyWebData.name}"`);
+    }
+  }
 }
 
 /**
@@ -1265,6 +785,5 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
 }
 
 export default {
-  exportModuleJson,
   importModuleJson,
 };

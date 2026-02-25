@@ -121,7 +121,9 @@ Dependencies
 
   // local imports
   import { localize } from '@/utils/game';
-  import { exportModuleJson, importModuleJson, ProgressCallback } from '@/utils/importExport';
+  import { exportModuleJson } from '@/utils/export';
+  import { importModuleJson } from '@/utils/import';
+  import { ProgressCallback } from '@/utils/importExportCommon';
   import { importExportApp } from '@/applications/settings/ImportExportApplication';
   import { FCBDialog } from '@/dialogs';
 
@@ -236,7 +238,7 @@ Dependencies
         fileInput.value.value = '';
       }
 
-      // Reload the page to refresh all data
+      // Reload the page to refresh all data (mostly settings)
       setTimeout(() => {
         foundry.utils.debouncedReload();
       }, 1000);
