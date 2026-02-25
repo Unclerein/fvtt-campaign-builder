@@ -10,9 +10,16 @@ The Import/Export feature allows you to backup all your FCB content and settings
 
 ## Accessing Import/Export
 
-You access this using the "Export Module Data" and "Import Module Data" buttons in the [Module Settings] menu.  
+You access this by clicking the **Import/Export** button in the [Module Settings] menu. 
 
 ## Exporting Data
+
+### How to Export
+
+1. Open the Import/Export dialog 
+2. In the **Export** section, click the **Export** button
+3. A progress bar will show the export status
+4. Once complete, your browser will download a JSON file containing all your data
 
 ### What Gets Exported
 
@@ -28,6 +35,14 @@ The export includes all Campaign Builder data:
 Any links to non-Campaign Builder Foundry documents (actors, scenes, items, etc.) will be preserved, but the actual documents will not be exported.  Direct links (ex. magical items, character actors) will be dropped to keep it tidy.  Links that are in text content will be left but become broken links.
 
 ## Importing Data
+
+### How to Import
+
+1. Open the Import/Export dialog from 
+2. In the **Import** section, click **Select File** to choose a previously exported JSON file
+3. The selected file name will appear next to the button
+4. Click the **Import** button to begin the import process
+5. Once complete, Foundry will automatically reload
 
 ::: danger Danger!
 Importing will **DELETE ALL existing Campaign Builder content** in the current world before creating the imported content. This action cannot be undone.
