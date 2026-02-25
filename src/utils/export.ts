@@ -6,7 +6,7 @@
 
 import { localize } from '@/utils/game';
 import { ModuleSettings, SettingKey } from '@/settings/ModuleSettings';
-import { FCBSetting, Campaign, Arc, Front, StoryWeb } from '@/classes';
+import { FCBSetting, Campaign, Arc, Front, StoryWeb,FCBJournalEntryPage } from '@/classes';
 import { Topics, ValidTopic } from '@/types';
 import { downloadFile } from '@/utils/fileDownload';
 import {
@@ -99,23 +99,11 @@ function collectModuleSettings(): Record<string, unknown> {
  * Get system data from a document as a plain object.
  * Uses the raw document's toObject method to get a serializable copy.
  *
- * @param doc - The document wrapper (FCBSetting, Entry, etc.)
+ * @param content - The FCB content (FCBSetting, Entry, etc.)
  * @returns The system data as a plain object
  */
-function getSystemData(doc: { raw: { toObject: (lean: boolean) => { system: unknown } } }): Record<string, unknown> {
-  const obj = doc.raw.toObject(false);
-  return foundry.utils.deepClone(obj.system) as Record<string, unknown>;
-}
-
-/**
- * Get text content from a document.
- *
- * @param doc - The document wrapper
- * @returns The text content or null
- */
-function getTextContent(doc: { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null } } }): string | null {
-  const obj = doc.raw.toObject(false);
-  return obj.text?.content || null;
+function getSystemData(content: FCBJournalEntryPage<any, any>): Record<string, unknown> {
+  return foundry.utils.deepClone(content.systemData) as Record<string, unknown>;
 }
 
 /**
@@ -129,7 +117,7 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
     uuid: setting.uuid,
     name: setting.name,
     system: getSystemData(setting),
-    text: getTextContent(setting as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } }),
+    description: setting.description,
     documents: {
       entries: [],
       campaigns: [],
@@ -147,14 +135,14 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
       const entries = await topicFolder.allEntries();
       for (const entry of entries) {
         // Get and clean the system data to remove invalid relationships
-        let entrySystem = getSystemData(entry as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } });
+        let entrySystem = getSystemData(entry);
         entrySystem = cleanInvalidRelationships(entrySystem);
 
         data.documents.entries.push({
           uuid: entry.uuid,
           name: entry.name,
           system: entrySystem,
-          text: getTextContent(entry as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } }),
+          description: entry.description
         });
       }
     }
@@ -167,8 +155,8 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
       data.documents.campaigns.push({
         uuid: campaign.uuid,
         name: campaign.name,
-        system: getSystemData(campaign as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } }),
-        text: getTextContent(campaign as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } }),
+        system: getSystemData(campaign),
+        description: campaign.description,
       });
 
       // Collect sessions
@@ -177,8 +165,8 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
         data.documents.sessions.push({
           uuid: session.uuid,
           name: session.name,
-          system: getSystemData(session as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } }),
-          text: getTextContent(session as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } }),
+          system: getSystemData(session),
+          description: session.description,
         });
       }
 
@@ -189,8 +177,8 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
           data.documents.arcs.push({
             uuid: arc.uuid,
             name: arc.name,
-            system: getSystemData(arc as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } }),
-            text: getTextContent(arc as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } }),
+            system: getSystemData(arc),
+            description: arc.description,
           });
         }
       }
@@ -202,8 +190,8 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
           data.documents.fronts.push({
             uuid: front.uuid,
             name: front.name,
-            system: getSystemData(front as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } }),
-            text: getTextContent(front as unknown as { raw: { toObject: (lean: boolean) => { text?: { content?: string } | null; system: unknown } } }),
+            system: getSystemData(front),
+            description: front.description,
           });
         }
       }
@@ -213,14 +201,14 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
         const storyWeb = await StoryWeb.fromUuid(storyWebId);
         if (storyWeb) {
           // Get and clean the system data to remove invalid positions
-          let storyWebSystem = getSystemData(storyWeb as unknown as { raw: { toObject: (lean: boolean) => { system: unknown } } });
+          let storyWebSystem = getSystemData(storyWeb);
           storyWebSystem = cleanInvalidPositions(storyWebSystem);
 
           data.documents.storyWebs.push({
             uuid: storyWeb.uuid,
             name: storyWeb.name,
             system: storyWebSystem,
-            text: null,
+            description: null,
           });
         }
       }

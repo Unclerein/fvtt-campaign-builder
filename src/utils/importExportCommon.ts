@@ -34,6 +34,17 @@ export function isFCBUuid(uuid: string): boolean {
 }
 
 /**
+ * Check if a string is a UUID but not for an FCB document.
+ *
+ * @param uuid - The UUID to check
+ * @returns True if the string is a UUID but not an FCB document UUID
+ */
+export function isNonFCBUuid(uuid: string): boolean {
+  return (uuid && !!foundry.utils.parseUuid(uuid) && !isFCBUuid(uuid));
+}
+
+
+/**
  * Check if a UUID string is valid (either an FCB compendium UUID or other valid Foundry UUID).
  *
  * @param uuid - The UUID to check
@@ -114,7 +125,13 @@ export function remapUuidsInObject(obj: unknown, uuidMap: Map<string, string>): 
         return remappedFrontUuid + suffix;
       }
     }
-    // Then check for embedded UUID references
+    // Check if this is a direct non-FCB UUID reference (Foundry content)
+    // These should be dropped with a warning
+    if (isNonFCBUuid(obj)) {
+      console.warn(`Import: Dropping direct UUID reference to non-FCB content: ${obj}`);
+      return null;
+    }
+    // Then check for embedded UUID references in text (these are left as-is for non-FCB)
     if (obj.includes('@UUID[')) {
       return remapUuidsInText(obj, uuidMap);
     }
@@ -275,8 +292,8 @@ export interface ImportContext {
 export interface SettingExportData {
   uuid: string;
   name: string;
+  description: string | null;
   system: Record<string, unknown>;
-  text: string | null;
   documents: {
     entries: DocumentExportData[];
     campaigns: DocumentExportData[];
@@ -291,8 +308,8 @@ export interface SettingExportData {
 export interface DocumentExportData {
   uuid: string;
   name: string;
+  description: string | null;
   system: Record<string, unknown>;
-  text: string | null;
 }
 
 /** Progress callback type */

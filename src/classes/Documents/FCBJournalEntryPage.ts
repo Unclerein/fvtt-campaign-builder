@@ -58,7 +58,7 @@ export class FCBJournalEntryPage<
    * Used during import to set remapped data before calling save().
    */
   public get systemData(): DocClass['system'] {
-    return this._clone.system;
+    return this._clone.system;  
   }
 
   /**

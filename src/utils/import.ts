@@ -236,7 +236,7 @@ async function importSetting(
     uuid: settingData.uuid,
     name: settingData.name,
     system: settingData.system,
-    text: settingData.text,
+    description: settingData.description,
   });
 
   // Import entries
@@ -340,7 +340,7 @@ async function importEntries(
         uuid: entryData.uuid,
         name: entryData.name,
         system: entryData.system,
-        text: entryData.text,
+        description: entryData.description,
       });
     }
   }
@@ -369,7 +369,7 @@ async function importCampaigns(
         uuid: campaignData.uuid,
         name: campaignData.name,
         system: campaignData.system,
-        text: campaignData.text,
+        description: campaignData.description,
       });
     }
   }
@@ -402,7 +402,7 @@ async function importSessions(
         uuid: sessionData.uuid,
         name: sessionData.name,
         system: sessionData.system,
-        text: sessionData.text,
+        description: sessionData.description,
       });
     }
   }
@@ -435,7 +435,7 @@ async function importArcs(
         uuid: arcData.uuid,
         name: arcData.name,
         system: arcData.system,
-        text: arcData.text,
+        description: arcData.description,
       });
     }
   }
@@ -468,7 +468,7 @@ async function importFronts(
         uuid: frontData.uuid,
         name: frontData.name,
         system: frontData.system,
-        text: frontData.text,
+        description: frontData.description,
       });
     }
   }
@@ -501,7 +501,7 @@ async function importStoryWebs(
         uuid: storyWebData.uuid,
         name: storyWebData.name,
         system: storyWebData.system,
-        text: null,
+        description: null,
       });
     }
   }
@@ -560,8 +560,8 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
       ) as Record<string, unknown>;
 
       // Remap text content
-      if (originalSettingData.text) {
-        const remappedText = remapUuidsInObject(originalSettingData.text, context.uuidMap) as string;
+      if (originalSettingData.description) {
+        const remappedText = remapUuidsInObject(originalSettingData.description, context.uuidMap) as string;
         setting.description = remappedText;
       }
 
@@ -611,8 +611,8 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
             validateRelationshipsInSystem(remappedEntrySystem, entry.name || 'unknown');
 
             // Apply text content
-            if (originalEntryData.text) {
-              entry.description = remapUuidsInObject(originalEntryData.text, context.uuidMap) as string;
+            if (originalEntryData.description) {
+              entry.description = remapUuidsInObject(originalEntryData.description, context.uuidMap) as string;
             }
 
             await updateDocumentSystemData(
@@ -641,8 +641,8 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
           context.uuidMap
         ) as Record<string, unknown>;
 
-        if (originalCampaignData.text) {
-          campaign.description = remapUuidsInObject(originalCampaignData.text, context.uuidMap) as string;
+        if (originalCampaignData.description) {
+          campaign.description = remapUuidsInObject(originalCampaignData.description, context.uuidMap) as string;
         }
 
         await updateDocumentSystemData(
@@ -666,8 +666,8 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
             context.uuidMap
           ) as Record<string, unknown>;
 
-          if (originalSessionData.text) {
-            session.description = remapUuidsInObject(originalSessionData.text, context.uuidMap) as string;
+          if (originalSessionData.description) {
+            session.description = remapUuidsInObject(originalSessionData.description, context.uuidMap) as string;
           }
 
           await updateDocumentSystemData(
@@ -694,8 +694,8 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
             context.uuidMap
           ) as Record<string, unknown>;
 
-          if (originalArcData.text) {
-            arc.description = remapUuidsInObject(originalArcData.text, context.uuidMap) as string;
+          if (originalArcData.description) {
+            arc.description = remapUuidsInObject(originalArcData.description, context.uuidMap) as string;
           }
 
           await updateDocumentSystemData(
@@ -722,8 +722,8 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
             context.uuidMap
           ) as Record<string, unknown>;
 
-          if (originalFrontData.text) {
-            front.description = remapUuidsInObject(originalFrontData.text, context.uuidMap) as string;
+          if (originalFrontData.description) {
+            front.description = remapUuidsInObject(originalFrontData.description, context.uuidMap) as string;
           }
 
           await updateDocumentSystemData(
