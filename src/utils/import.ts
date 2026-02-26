@@ -217,14 +217,8 @@ async function importSetting(
   settingData: SettingExportData,
   context: ImportContext
 ): Promise<void> {
-  // Create the compendium
-  const compendiumId = await createCompendium(settingData.name);
-  if (!compendiumId) {
-    throw new Error(`Failed to create compendium for setting: ${settingData.name}`);
-  }
-
   // Create the setting document
-  const setting = await FCBSetting.create(false, settingData.name, compendiumId, true);
+  const setting = await FCBSetting.create(false, settingData.name, '', true);
   if (!setting) {
     throw new Error(`Failed to create setting: ${settingData.name}`);
   }
@@ -258,56 +252,6 @@ async function importSetting(
 
   // Import story webs
   await importStoryWebs(settingData.documents.storyWebs, context);
-}
-
-/**
- * Create a new compendium for a setting.
- *
- * @param name - The name for the compendium
- * @returns The compendium ID or null on failure
- */
-async function createCompendium(name: string): Promise<string | null> {
-  const metadata = {
-    name: foundry.utils.randomID(),
-    label: `FCB - ${name}`,
-    type: 'JournalEntry' as const,
-    ownership: {
-      GAMEMASTER: 'OWNER' as const,
-      ASSISTANT: 'LIMITED' as const,
-      TRUSTED: 'LIMITED' as const,
-      PLAYER: 'LIMITED' as const,
-    },
-    locked: false,
-  };
-
-  const rootFolder = await RootFolder.get();
-  const pack = await foundry.documents.collections.CompendiumCollection.createCompendium(
-    metadata
-  ) as CompendiumCollection<'JournalEntry'>;
-  // Use the folder ID string - the type definition is too strict
-  if (rootFolder.raw.id) {
-    await pack.setFolder(rootFolder.raw.id);
-  }
-
-  const compendiumId = pack.metadata.id;
-
-  // Create folders inside compendium
-  const folderNames = [
-    localize('contentFolders.sessions'),
-    localize('contentFolders.campaigns'),
-    localize('contentFolders.entries'),
-    localize('contentFolders.fronts'),
-  ];
-
-  const folders = folderNames.map((folderName) => ({
-    name: folderName,
-    type: 'JournalEntry' as const,
-    sorting: 'a' as const,
-  }));
-
-  await Folder.createDocuments(folders, { pack: compendiumId });
-
-  return compendiumId;
 }
 
 /**

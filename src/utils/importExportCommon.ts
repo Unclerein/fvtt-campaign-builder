@@ -77,10 +77,59 @@ export function remapUuidsInText(text: string, uuidMap: Map<string, string>): st
   });
 }
 
+/** Pattern for matching UUIDs that appear before a pipe (danger node format) */
+const FRONT_UUID_PATTERN = /^([^.|]+\.[^.|]+\.[^.|]+\.[^.|]+)\|/;
+
+/**
+ * Remap all UUIDs found in a string.
+ * This handles:
+ * 1) @UUID[...] references - remaps the UUID inside brackets
+ * 2) Danger node format (frontUuid|dangerIndex) - remaps the front UUID
+ * 3) Direct UUID strings - remaps if entire string is a UUID
+ *
+ * For each UUID found, replaces it with the new one if it's in the map,
+ * otherwise leaves it unchanged.
+ *
+ * @param text - The string to process
+ * @param uuidMap - Map of old UUIDs to new UUIDs
+ * @returns The string with remapped UUIDs
+ */
+function remapAllUuidsInString(text: string, uuidMap: Map<string, string>): string {
+  if (!text || typeof text !== 'string') return text;
+
+  // First, remap @UUID[...] references
+  let result = text.replace(UUID_LINK_PATTERN, (match, uuid) => {
+    const newUuid = uuidMap.get(uuid);
+    return newUuid ? `@UUID[${newUuid}]` : match;
+  });
+
+  // Check if the entire string is a UUID in the map
+  if (uuidMap.has(result)) {
+    return uuidMap.get(result) || result;
+  }
+
+  // Check for danger node format (frontUuid|dangerIndex)
+  // Match any UUID-like pattern before the pipe
+  const dangerMatch = result.match(FRONT_UUID_PATTERN);
+  if (dangerMatch) {
+    const frontUuid = dangerMatch[1];
+    const newFrontUuid = uuidMap.get(frontUuid);
+    if (newFrontUuid) {
+      result = newFrontUuid + result.substring(frontUuid.length);
+    }
+  }
+
+  return result;
+}
+
 /**
  * Recursively remap UUIDs in an object's string fields.
  * This handles nested objects, arrays, and string values that may contain
  * UUID references.
+ *
+ * For strings, finds every UUID or front UUID in the string and:
+ * 1) Replaces it with the new one if it's in the map
+ * 2) Leaves it alone otherwise
  *
  * Also handles danger node UUIDs which have the format "frontUuid|dangerIndex".
  *
@@ -91,35 +140,9 @@ export function remapUuidsInText(text: string, uuidMap: Map<string, string>): st
 export function remapUuidsInObject(obj: unknown, uuidMap: Map<string, string>): unknown {
   if (!obj) return obj;
 
-  // Handle strings - could be direct UUID or contain @UUID[...] references
+  // Handle strings - find and remap all UUIDs within
   if (typeof obj === 'string') {
-    // First check if the entire string is a UUID to remap
-    if (uuidMap.has(obj)) {
-      const mapped = uuidMap.get(obj);
-      // Return the mapped value if it exists, otherwise keep original
-      return mapped !== undefined ? mapped : obj;
-    }
-    // Check if this is a danger node UUID (format: frontUuid|dangerIndex)
-    const pipeIndex = obj.indexOf('|');
-    if (pipeIndex !== -1) {
-      const frontUuid = obj.substring(0, pipeIndex);
-      const suffix = obj.substring(pipeIndex);
-      const remappedFrontUuid = uuidMap.get(frontUuid);
-      if (remappedFrontUuid) {
-        return remappedFrontUuid + suffix;
-      }
-    }
-    // Check if this is a direct non-FCB UUID reference (Foundry content)
-    // These should be dropped with a warning
-    if (isNonFCBUuid(obj)) {
-      console.warn(`Import: Dropping direct UUID reference to non-FCB content: ${obj}`);
-      return null;
-    }
-    // Then check for embedded UUID references in text (these are left as-is for non-FCB)
-    if (obj.includes('@UUID[')) {
-      return remapUuidsInText(obj, uuidMap);
-    }
-    return obj;
+    return remapAllUuidsInString(obj, uuidMap);
   }
 
   // Handle arrays

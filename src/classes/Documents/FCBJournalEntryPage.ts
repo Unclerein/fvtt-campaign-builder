@@ -71,9 +71,17 @@ export class FCBJournalEntryPage<
    * After setting, call save() to persist the changes.
    */
   public async setSystemData(value: DocClass['system'] | Record<string, unknown>) {
-    // we need to convert system back to a data model and get _doc updated, too  
+    // DEBUG: Log what we're trying to update
+    console.log(`[setSystemData] Updating ${this._doc.uuid}`);
+    console.log(`[setSystemData] value keys:`, Object.keys(value as Record<string, unknown>));
+    console.log(`[setSystemData] value:`, value);
+    console.log(`[setSystemData] current doc.system keys:`, this._doc.system ? Object.keys(this._doc.system) : 'no system');
+    console.log(`[setSystemData] current doc.system.type:`, (this._doc.system as Record<string, unknown>)?.type);
+    console.log(`[setSystemData] value.type:`, (value as Record<string, unknown>)?.type);
+    
+    // we need to convert system back to a data model and get _doc updated, too
     // @ts-ignore - I couldn't figure out the right type of raw system
-    const retval = await toRaw(this._doc)?.update(value, { recursive: false, render: false })  as DocClass | undefined;
+    const retval = await toRaw(this._doc)?.update({system: value}, { recursive: false, render: false })  as DocClass | undefined;
 
     // no update done
     if (!retval) {
