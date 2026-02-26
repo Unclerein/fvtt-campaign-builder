@@ -45,10 +45,12 @@
           <div class="flexrow form-group">
             <Editor 
               :initial-content="currentArc?.description || ''"
-              fixed-height="240px"
+              :fixed-height="descriptionHeight"
+              :resizable="true"
               :current-entity-uuid="currentArc?.uuid"
               @related-entries-changed="onRelatedEntriesChanged"
               @editor-saved="onDescriptionEditorSaved"
+              @editor-resized="onDescriptionEditorResized"
             />
           </div>
 
@@ -58,6 +60,11 @@
             @related-entries-changed="onRelatedEntriesChanged"
           />
         </DescriptionTab>
+        <JournalTab
+          v-if="currentArc"
+          :initial-journals="currentArc.journals"
+          @journals-updated="onJournalsUpdate"
+        />
         <div class="tab flexcol" data-group="primary" data-tab="participants">
           <div class="tab-inner">
             <ArcParticipantTab 
@@ -128,11 +135,12 @@
 <script setup lang="ts">
 
   // library imports
-  import { storeToRefs } from 'pinia';
-  import { ref, watch, onBeforeUnmount, computed, } from 'vue';
+  import { ref, watch, onBeforeUnmount, computed, provide, } from 'vue';
 
   // local imports
   import { useMainStore, useCampaignDirectoryStore, useNavigationStore, useArcStore, } from '@/applications/stores';
+  import { useContentState } from '@/composables/useContentState';
+  import { useArcDerivedState, ARC_DERIVED_STATE_KEY } from '@/composables/useArcDerivedState';
   import { getTabTypeIcon } from '@/utils/misc';
   import { localize } from '@/utils/game'
   import { ModuleSettings, SettingKey } from '@/settings';
@@ -153,6 +161,7 @@
   import CampaignIdeasTab from '@/components/ContentTab/CampaignContent/CampaignIdeasTab.vue';
   import DescriptionTab from '@/components/ContentTab/DescriptionTab.vue'; 
   import LabelWithHelp from '@/components/LabelWithHelp.vue';
+  import JournalTab from '@/components/ContentTab/JournalTab.vue';
   import Tags from '@/components/Tags.vue';
   import ContentTabStrip from '@/components/ContentTab/ContentTabStrip.vue';
   import StoryWebsTab from '@/components/ContentTab/StoryWebsTab.vue';
@@ -175,8 +184,10 @@
   const navigationStore = useNavigationStore();
   const campaignDirectoryStore = useCampaignDirectoryStore();
   const arcStore = useArcStore();
-  const { currentArc, currentSetting, } = storeToRefs(mainStore);
-  
+  const { currentArc, currentSetting } = useContentState();
+  const arcDerivedState = useArcDerivedState();
+  provide(ARC_DERIVED_STATE_KEY, arcDerivedState);
+
   ////////////////////////////////
   // data
   const name = ref<string>('');
@@ -184,15 +195,18 @@
   const showRelatedEntriesDialog = ref<boolean>(false);
   const pendingAddedUUIDs = ref<string[]>([]);
   const pendingRemovedUUIDs = ref<string[]>([]);
+  const descriptionHeight = ref<number>(15);  // for handling description editor height
 
   ////////////////////////////////
   // computed data
   const showStoryWebTab = computed(() => {
-    return ModuleSettings.get(SettingKey.useWebs);
+    ModuleSettings.getReactiveVersion();
+    return ModuleSettings.get(SettingKey.useStoryWebs);
   });
 
   const tabs = computed(() => [
     { id: 'description', label: localize('labels.description')},
+    { id: 'journals', label: localize('labels.journals') },
     { id: 'lore', label: localize('labels.tabs.arc.lore')},
     { id: 'vignettes', label: localize('labels.tabs.arc.vignettes')},
     { id: 'locations', label: localize('labels.tabs.arc.locations')},
@@ -207,6 +221,15 @@
 
   ////////////////////////////////
   // event handlers
+  const onDescriptionEditorResized = async (height: number) => {
+    if (!currentArc.value)
+      return;
+    
+    descriptionHeight.value = height;
+    currentArc.value?.setCustomFieldHeight('###description###', height);
+    await currentArc.value?.save();
+  };
+
   // debounce changes to name/number/strong start
   let nameDebounceTimer: NodeJS.Timeout | undefined = undefined;
 
@@ -220,7 +243,7 @@
 
       // name can't be blank
       if (newValue.trim() === '') {
-        notifyWarn(localize('errors.nameRequired'));
+        notifyWarn(localize('notifications.nameRequired'));
         name.value = currentArc.value?.name!;
         return;
       }
@@ -251,6 +274,13 @@
       await currentArc.value.save();
     }
   }
+
+  const onJournalsUpdate = async (newJournals: RelatedJournal[]) => {
+    if (currentArc.value) {
+      currentArc.value.journals = newJournals;
+      await currentArc.value.save();
+    }
+  };
 
   // we can use this for add and remove because the change was already passed back to 
   //    currentArc - we just need to save
@@ -315,6 +345,7 @@
       // load starting data values
       name.value = newArc.name || '';
       descriptionContent.value = newArc.description || '';
+      descriptionHeight.value = newArc.getCustomFieldHeight('###description###') || 15;
     }
   }, { immediate: true });
   

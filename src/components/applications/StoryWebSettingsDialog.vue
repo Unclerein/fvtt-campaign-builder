@@ -35,6 +35,9 @@ Dependencies
         <a class="item" data-tab="styles">
           {{ localize('applications.storyWebSettings.tabs.styles') }}
         </a>
+        <a class="item" data-tab="custom-colors">
+          {{ localize('applications.storyWebSettings.tabs.shapeColors') }}
+        </a>
         <a class="item" data-tab="fields">
           {{ localize('applications.storyWebSettings.tabs.fields') }}
         </a>
@@ -173,6 +176,85 @@ Dependencies
           </DataTable>
         </div>
 
+        <!-- Custom Colors Tab -->
+        <div class="tab flexcol" data-group="sw-config-dialog" data-tab="custom-colors">
+          <DataTable
+            :value="workingCustomColorSchemes"
+            data-key="uuid"
+            size="small"
+            :pt="{
+              header: { style: 'border: none' },
+              table: { style: 'margin: 0px; table-layout: fixed;' },
+              thead: { style: 'font-family: var(--font-primary); text-shadow: none; background: inherit;' },
+              row: {
+                style: 'font-family: var(--font-primary); text-shadow: none; background: inherit;',
+              },
+            }"
+          >
+            <template #header>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; gap: 0.5rem;">
+                  <Button
+                    unstyled
+                    :label="localize('labels.add')"
+                    style="flex: initial; width:auto;"
+                    @click="onAddCustomColorScheme"
+                  >
+                    <template #icon>
+                      <i class="fas fa-plus"></i>
+                    </template>
+                  </Button>
+                </div>
+              </div>
+            </template>
+
+            <template #empty>
+              {{ localize('labels.noResults') }}
+            </template>
+
+            <Column field="actions" :header="localize('labels.tableHeaders.actions')" style="width: 100px">
+              <template #body="{ data }">
+                <a
+                  class="fcb-action-icon"
+                  :data-tooltip="localize('labels.delete')"
+                  @click.stop="onDeleteCustomColorScheme(data.uuid)"
+                >
+                  <i class="fas fa-trash"></i>
+                </a>
+              </template>
+            </Column>
+
+            <Column field="name" :header="localize('applications.storyWebSettings.columns.name')" >
+              <template #body="{ data }">
+                <InputText v-model="data.name" unstyled style="width: 100%" />
+              </template>
+            </Column>
+
+            <Column field="foregroundColor" :header="localize('applications.storyWebSettings.columns.foregroundColor')" >
+              <template #body="{ data }">
+                <FoundryColorPicker v-model="data.foregroundColor" />
+              </template>
+            </Column>
+
+            <Column field="backgroundColor" :header="localize('applications.storyWebSettings.columns.backgroundColor')" >
+              <template #body="{ data }">
+                <FoundryColorPicker v-model="data.backgroundColor" />
+              </template>
+            </Column>
+
+            <Column field="preview" :header="localize('applications.storyWebSettings.columns.preview')" style="width: 80px">
+              <template #body="{ data }">
+                <div style="display: flex; justify-content: center; align-items: center; padding: 0.5rem;">
+                  <svg viewBox="0 0 40 20" style="width: 40px; height: 20px; border: 1px solid var(--color-border-light);">
+                    <rect x="1" y="1" width="38" height="18" :fill="data.backgroundColor" />
+                    <text x="20" y="14" text-anchor="middle" font-size="10" :fill="data.foregroundColor">Aa</text>
+                  </svg>
+                </div>
+              </template>
+            </Column>
+          </DataTable>
+        </div>
+
         <!-- Fields Tab -->
         <div class="tab flexcol" data-group="sw-config-dialog" data-tab="fields">
           <div class="fields-header" style="padding: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
@@ -290,8 +372,8 @@ Dependencies
   import { ModuleSettings, SettingKey } from '@/settings';
   import { generateIdFromName } from '@/utils/idGeneration';
   import { storyWebSettingsApp } from '@/applications/settings/StoryWebSettingsApplication';
-  import { useStoryWebStore } from '@/applications/stores';
   import { useMainStore } from '@/applications/stores';
+  import { LINE_STYLES } from '@/utils/storyWebGeneration';
 
   // library components
   import { Button, InputText, Select, DataTable, Column } from 'primevue';
@@ -302,7 +384,7 @@ Dependencies
 
   // types
   import { CustomFieldContentType, StoryWebNodeTypes } from '@/types';
-  import { STORYWEB_TO_CUSTOM_FIELD_MAP } from '@/documents/fields/StoryWebNode';
+  import { STORY_WEB_TO_CUSTOM_FIELD_MAP } from '@/documents/fields/StoryWebNode';
 
   interface ColorOption {
     uuid: string;
@@ -333,6 +415,21 @@ Dependencies
     id: string;
     name: string;
     value: string;
+  }
+
+  interface CustomColorSchemeOption {
+    uuid: string;
+    id: string;
+    name: string;
+    foregroundColor: string;
+    backgroundColor: string;
+  }
+
+  interface PersistedCustomColorSchemeOption {
+    id: string;
+    name: string;
+    foregroundColor: string;
+    backgroundColor: string;
   }
 
   interface FieldOption {
@@ -366,11 +463,13 @@ Dependencies
   // Working copies that only persist when save is clicked
   const workingColors = ref<ColorOption[]>([]);
   const workingStyles = ref<StyleOption[]>([]);
+  const workingCustomColorSchemes = ref<CustomColorSchemeOption[]>([]);
   const workingFields = ref<Partial<Record<StoryWebNodeTypes, FieldOption[]>>>({});
 
   // Original values for reset functionality
   const originalColors = ref<ColorOption[]>([]);
   const originalStyles = ref<StyleOption[]>([]);
+  const originalCustomColorSchemes = ref<CustomColorSchemeOption[]>([]);
   const originalFields = ref<Partial<Record<StoryWebNodeTypes, FieldOption[]>>>({});
 
   // Current selected content type for fields tab
@@ -380,11 +479,11 @@ Dependencies
 
   // Content type options
   const contentTypeOptions: ContentTypeOption[] = [
-    { label: 'Character', value: StoryWebNodeTypes.Character, customFieldType: STORYWEB_TO_CUSTOM_FIELD_MAP[StoryWebNodeTypes.Character] },
-    { label: 'Location', value: StoryWebNodeTypes.Location, customFieldType: STORYWEB_TO_CUSTOM_FIELD_MAP[StoryWebNodeTypes.Location] },
-    { label: 'Organization', value: StoryWebNodeTypes.Organization, customFieldType: STORYWEB_TO_CUSTOM_FIELD_MAP[StoryWebNodeTypes.Organization] },
-    { label: 'PC', value: StoryWebNodeTypes.PC, customFieldType: STORYWEB_TO_CUSTOM_FIELD_MAP[StoryWebNodeTypes.PC] },
-    { label: 'Danger', value: StoryWebNodeTypes.Danger, customFieldType: STORYWEB_TO_CUSTOM_FIELD_MAP[StoryWebNodeTypes.Danger] },
+    { label: 'Character', value: StoryWebNodeTypes.Character, customFieldType: STORY_WEB_TO_CUSTOM_FIELD_MAP[StoryWebNodeTypes.Character] },
+    { label: 'Location', value: StoryWebNodeTypes.Location, customFieldType: STORY_WEB_TO_CUSTOM_FIELD_MAP[StoryWebNodeTypes.Location] },
+    { label: 'Organization', value: StoryWebNodeTypes.Organization, customFieldType: STORY_WEB_TO_CUSTOM_FIELD_MAP[StoryWebNodeTypes.Organization] },
+    { label: 'PC', value: StoryWebNodeTypes.PC, customFieldType: STORY_WEB_TO_CUSTOM_FIELD_MAP[StoryWebNodeTypes.PC] },
+    { label: 'Danger', value: StoryWebNodeTypes.Danger, customFieldType: STORY_WEB_TO_CUSTOM_FIELD_MAP[StoryWebNodeTypes.Danger] },
   ];
 
   // Hard-coded fields for each content type
@@ -420,7 +519,7 @@ Dependencies
   };
 
   // Line style options for the dropdown
-  const lineStyleOptions = Object.entries(useStoryWebStore().LINE_STYLES).map(([key, value]) => ({
+  const lineStyleOptions = Object.entries(LINE_STYLES).map(([key, value]) => ({
     label: value.name,
     value: key,
   })) as LineStyleOption[];
@@ -478,6 +577,7 @@ Dependencies
   const loadSettings = () => {
     const persistedColors = ModuleSettings.get(SettingKey.storyWebConnectionColors) as PersistedColorOption[];
     const persistedStyles = ModuleSettings.get(SettingKey.storyWebConnectionStyles) as PersistedStyleOption[];
+    const persistedCustomColorSchemes = ModuleSettings.get(SettingKey.storyWebCustomNodeColorSchemes) as PersistedCustomColorSchemeOption[];
     const persistedFields = ModuleSettings.get(SettingKey.storyWebNodeFields) as PersistedFieldsData;
     
     originalColors.value = persistedColors.map(c => ({
@@ -486,6 +586,11 @@ Dependencies
     }));
     
     originalStyles.value = persistedStyles.map(s => ({
+      ...s,
+      uuid: foundry.utils.randomID(),
+    }));
+
+    originalCustomColorSchemes.value = persistedCustomColorSchemes.map(s => ({
       ...s,
       uuid: foundry.utils.randomID(),
     }));
@@ -506,6 +611,7 @@ Dependencies
     // Initialize working copies
     workingColors.value = JSON.parse(JSON.stringify(originalColors.value));
     workingStyles.value = JSON.parse(JSON.stringify(originalStyles.value));
+    workingCustomColorSchemes.value = JSON.parse(JSON.stringify(originalCustomColorSchemes.value));
     workingFields.value = JSON.parse(JSON.stringify(originalFields.value));
   };
 
@@ -527,6 +633,7 @@ Dependencies
     // Reset working copies to original values
     workingColors.value = JSON.parse(JSON.stringify(originalColors.value));
     workingStyles.value = JSON.parse(JSON.stringify(originalStyles.value));
+    workingCustomColorSchemes.value = JSON.parse(JSON.stringify(originalCustomColorSchemes.value));
     workingFields.value = JSON.parse(JSON.stringify(originalFields.value));
   };
 
@@ -539,6 +646,7 @@ Dependencies
     // Validate that all IDs are unique
     const colorIds = new Set(workingColors.value.map(c => c.id));
     const styleIds = new Set(workingStyles.value.map(s => s.id));
+    const customColorSchemeIds = new Set(workingCustomColorSchemes.value.map(s => s.id));
     
     if (colorIds.size !== workingColors.value.length) {
       ui.notifications?.error(localize('applications.storyWebSettings.notifications.duplicateColorIds'));
@@ -547,6 +655,11 @@ Dependencies
     
     if (styleIds.size !== workingStyles.value.length) {
       ui.notifications?.error(localize('applications.storyWebSettings.notifications.duplicateStyleIds'));
+      return;
+    }
+
+    if (customColorSchemeIds.size !== workingCustomColorSchemes.value.length) {
+      ui.notifications?.error(localize('applications.storyWebSettings.notifications.duplicateCustomColorSchemeIds'));
       return;
     }
     
@@ -563,6 +676,13 @@ Dependencies
       value: s.value,
     }));
 
+    const persistedCustomColorSchemes: PersistedCustomColorSchemeOption[] = workingCustomColorSchemes.value.map(s => ({
+      id: s.id,
+      name: s.name,
+      foregroundColor: s.foregroundColor,
+      backgroundColor: s.backgroundColor,
+    }));
+
     const persistedFields: PersistedFieldsData = {};
     // Initialize all content types with empty arrays
     Object.values(StoryWebNodeTypes).forEach(contentType => {
@@ -574,11 +694,13 @@ Dependencies
     
     await ModuleSettings.set(SettingKey.storyWebConnectionColors, persistedColors);
     await ModuleSettings.set(SettingKey.storyWebConnectionStyles, persistedStyles);
+    await ModuleSettings.set(SettingKey.storyWebCustomNodeColorSchemes, persistedCustomColorSchemes);
     await ModuleSettings.set(SettingKey.storyWebNodeFields, persistedFields);
     
     // Update original values
     originalColors.value = JSON.parse(JSON.stringify(workingColors.value));
     originalStyles.value = JSON.parse(JSON.stringify(workingStyles.value));
+    originalCustomColorSchemes.value = JSON.parse(JSON.stringify(workingCustomColorSchemes.value));
     originalFields.value = JSON.parse(JSON.stringify(workingFields.value));
     
     ui.notifications?.info(localize('notifications.changesSaved'));
@@ -619,6 +741,21 @@ Dependencies
 
   const onDeleteStyle = (uuid: string) => {
     workingStyles.value = workingStyles.value.filter(s => s.uuid !== uuid);
+  };
+
+  const onAddCustomColorScheme = () => {
+    const newScheme: CustomColorSchemeOption = {
+      uuid: foundry.utils.randomID(),
+      id: generateIdFromName(`scheme-${workingCustomColorSchemes.value.length + 1}`),
+      name: `Color Scheme ${workingCustomColorSchemes.value.length + 1}`,
+      foregroundColor: '#000000',
+      backgroundColor: '#ffffff',
+    };
+    workingCustomColorSchemes.value.push(newScheme);
+  };
+
+  const onDeleteCustomColorScheme = (uuid: string) => {
+    workingCustomColorSchemes.value = workingCustomColorSchemes.value.filter(s => s.uuid !== uuid);
   };
 
     /**

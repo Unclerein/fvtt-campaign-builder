@@ -1,8 +1,8 @@
 ---
 title: Bookmarks
 prev: 
-  text: 'Tabs'
-  link: './tabs'
+  text: 'Tables'
+  link: './tables'
 next: 
   text: 'Search'
   link: './search'
@@ -13,6 +13,8 @@ next:
 Bookmarks provide quick access to frequently used content without cluttering your tab bar. They allow you to mark any page that you frequently use and open it with one click.
 
 ![Bookmarks](/assets/images/bookmarks.webp)
+
+If you are using [multi-panel interface](/reference/navigation/panels), bookmarks open in the [^Focused Panel].
 
 The different bookmark on the left side is for the currently active [^Session] (if there is one).  If you have multiple campaigns, you'll see one of these for each.  These is is both a reminder of what the current session is (for functionality that automatically acts on it, for example), as well as any easy way to get there without having to re-bookmark the Session every time it changes.
 
@@ -25,6 +27,6 @@ Open the tab you want to bookmark and click the "Create Bookmark" button.
 
 ## Bookmark Management
 
-   * **Opening Bookmarks**: Just click a bookmark to open the associated page.  Hold control to open it in a new tab.
+   * **Opening Bookmarks**: Just click a bookmark to open the associated page.  Hold Control to open in a new tab, Alt to open in a different [panel](/reference/navigation/panels).
    * **Reordering Bookmarks**: Drag and drop any bookmark to reorder the bookmarks.
    * **Deleting a Bookmark**: Right-click on any bookmark and choose "Delete Bookmark".

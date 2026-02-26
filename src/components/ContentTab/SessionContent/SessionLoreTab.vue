@@ -2,32 +2,39 @@
   <BaseTable
     ref="sessionTableRef"
     :actions="actions"
-    :rows="mappedLoreRows"
+    :rows="loreRows"
     :columns="columns"
     :show-add-button="true"
     :add-button-label="localize('labels.session.addLore')"
     :allow-drop-row="false"
+    :grouped="isGrouped"
+    :groups="loreGroups"
     :help-text="localize('labels.session.loreHelpText')"
     help-link="https://slyflourish.com/sharing_secrets.html"
     :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
     @related-entries-changed="(added, removed) => emit('relatedEntriesChanged', added, removed)"
     @add-item="onAddLore"
     @cell-edit-complete="onCellEditComplete"
-    @reorder="onReorder"
+    @reorder="groupedTable.onReorder"
+    @reorder-group="(items) => groupedTable.onReorderGroup(items, loreGroups)"
+    @group-add="groupedTable.onGroupAdd"
+    @group-edit="groupedTable.onGroupEdit"
+    @group-delete="groupedTable.onGroupDelete"
   />
 </template>
 
 <script setup lang="ts">
 
   // library imports
-  import { storeToRefs } from 'pinia';
-  import { computed, ref, watch } from 'vue';
+  import { computed, ref, watch, inject } from 'vue';
 
   // local imports
-  import { useSessionStore, useArcStore, useMainStore, } from '@/applications/stores';
+  import { useSessionStore, useArcStore } from '@/applications/stores';
+  import { useContentState } from '@/composables/useContentState';
+  import { useGroupedTable } from '@/composables/useGroupedTable';
+  import { ARC_DERIVED_STATE_KEY } from '@/composables/useArcDerivedState';
+  import { SESSION_DERIVED_STATE_KEY } from '@/composables/useSessionDerivedState';
   import { localize } from '@/utils/game'
-  import DragDropService from '@/utils/dragDrop'; 
-  import { FCBDialog } from '@/dialogs';
   import { ModuleSettings, SettingKey } from '@/settings';
 
   // library components
@@ -36,8 +43,7 @@
   import BaseTable from '@/components/tables/BaseTable.vue';
 
   // types
-  import { ArcTableTypes, SessionTableTypes, CellEditCompleteEvent, BaseTableColumn, BaseTableGridRow, SessionLoreDetails, FoundryDragType } from '@/types';
-  import { SessionLore } from '@/documents';
+  import { ArcTableTypes, SessionTableTypes, CellEditCompleteEvent, BaseTableColumn, GroupableItem } from '@/types';
   
   ////////////////////////////////
   // props
@@ -59,10 +65,13 @@
   // store
   const sessionStore = useSessionStore();
   const arcStore = useArcStore();
-  const mainStore = useMainStore();
-  const { loreRows: sessionLoreRows } = storeToRefs(sessionStore);
-  const { loreRows: arcLoreRows } = storeToRefs(arcStore);
-  const { currentArc } = storeToRefs(mainStore);
+  const sessionDerivedState = inject(SESSION_DERIVED_STATE_KEY, null);
+  const sessionLoreRows = computed(() => sessionDerivedState?.loreRows.value ?? []);
+  const sessionLoreGroups = computed(() => sessionDerivedState?.loreGroups.value ?? []);
+  const arcDerivedState = inject(ARC_DERIVED_STATE_KEY, null);
+  const arcLoreRows = computed(() => arcDerivedState?.loreRows.value ?? []);
+  const arcLoreGroups = computed(() => arcDerivedState?.loreGroups.value ?? []);
+  const { currentArc } = useContentState();
   
   ////////////////////////////////
   // data
@@ -72,13 +81,24 @@
   ////////////////////////////////
   // computed data
   const loreRows = computed(() => props.arcMode ? arcLoreRows.value : sessionLoreRows.value);
+  const loreGroups = computed(() => props.arcMode ? arcLoreGroups.value : sessionLoreGroups.value);
   const store = computed(() => props.arcMode ? arcStore : sessionStore);
 
-  const mappedLoreRows = computed(() => (
-    loreRows.value.map((row) => ({
-      ...row,
-    }))
-  ));
+  const isGrouped = computed(() => {
+    // Access reactive version to create dependency on settings changes
+    ModuleSettings.getReactiveVersion();
+    return ModuleSettings.get(SettingKey.tableGroupingSettings)?.[
+      props.arcMode ?
+      GroupableItem.ArcLore :
+      GroupableItem.SessionLore
+    ] || false;
+  });
+
+  // Grouped table composable
+  const groupedTable = useGroupedTable(
+    (props.arcMode ? arcStore : sessionStore)
+    .groupStores[props.arcMode ? GroupableItem.ArcLore : GroupableItem.SessionLore]
+  );
 
   const columns = computed((): BaseTableColumn[] => {
     const actionColumn = { field: 'actions', style: 'text-align: left; width: 100px; max-width: 100px', header: 'Actions' };
@@ -105,11 +125,11 @@
       },
 
       // move up (to arc or campaign)
-      { 
-        icon: 'fa-arrow-up', 
+      {
+        icon: 'fa-arrow-up',
         display: (data) => props.arcMode || !data.delivered,
-        callback: (data) => onMoveLoreUp(data.uuid), 
-        tooltip: props.arcMode ? localize('tooltips.moveToCampaign') : localize('tooltips.moveToArc') 
+        callback: (data) => onMoveLoreUp(data.uuid, data.description as string),
+        tooltip: props.arcMode ? localize('tooltips.moveToCampaign') : localize('tooltips.moveToArc')
       },
 
       // deliver/undeliver buttons
@@ -127,13 +147,13 @@
       },
 
       // move to next session
-      { 
-        icon: 'fa-share', 
-        // we hide if already deleivered in session mode or no sessions in arc's campaign
-        display: (data) => (props.arcMode && campaignHasSessions.value) 
+      {
+        icon: 'fa-share',
+        // we hide if already delivered in session mode or no sessions in arc's campaign
+        display: (data) => (props.arcMode && campaignHasSessions.value)
           || (!props.arcMode && !data.delivered), // hide arrow for things already delivered
-        callback: (data) => onMoveLoreToNext(data.uuid), 
-        tooltip: localize('tooltips.moveToNextSession') 
+        callback: (data) => onMoveLoreToNext(data.uuid, data.description as string),
+        tooltip: localize('tooltips.moveToNextSession')
       }
     ];
   });
@@ -194,36 +214,19 @@
       await sessionStore.markLoreDelivered(uuid, false);
   }
 
-  const onMoveLoreUp = async (uuid: string) => {
+  const onMoveLoreUp = async (uuid: string, description: string) => {
     if (props.arcMode)
-      await arcStore.moveLoreToCampaign(uuid);
-    else 
-      await sessionStore.moveLoreToArc(uuid);
-  }
-
-  const onMoveLoreToNext = async (uuid: string) => {
-    if (props.arcMode) 
-      await arcStore.moveLoreToSession(uuid);
+      await arcStore.moveLoreToCampaign(uuid, description);
     else
-      await sessionStore.moveLoreToNext(uuid);
+      await sessionStore.moveLoreToArc(uuid, description);
   }
 
-  const onReorder = async (reorderedRows: BaseTableGridRow[]) => {
-    // Reorder using array order
-    const reorderedLore = reorderedRows.map((row) => {
-      const lore = loreRows.value.find(lore => lore.uuid === row.uuid) as SessionLoreDetails;
-
-      // rows have extra fields we don't want
-      return { 
-        uuid: lore.uuid,
-        description: lore.description,
-        delivered: lore.delivered,
-        significant: lore.significant,
-        journalEntryPageId: lore.journalEntryPageId,
-      } as SessionLore;
-    });
-    await store.value.reorderLore(reorderedLore);
-  };
+  const onMoveLoreToNext = async (uuid: string, description: string) => {
+    if (props.arcMode)
+      await arcStore.moveLoreToSession(uuid, description);
+    else
+      await sessionStore.moveLoreToNext(uuid, description);
+  }
 
   ////////////////////////////////
   // watchers

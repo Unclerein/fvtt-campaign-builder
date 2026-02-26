@@ -1,30 +1,8 @@
 <template>
-  <header 
+  <header
     ref="root"
     class="fcb-header flexcol"
   >
-    <div class="fcb-tab-bar flexrow">
-      <div class="fcb-tab-row flexrow">
-        <FCBHeaderTab
-          v-for="tab in tabs"
-          :key="tab.id"
-          :tab="tab"
-          @close-tab="onCloseTab"
-        />
-
-        <div
-          id="fcb-add-tab"
-          class="fcb-tab flexrow"
-          title="Open new tab"
-          @click="onAddTabClick"
-        >
-          <div class="fcb-tab-icon">
-            <i class="fas fa-plus"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Play Mode Navigation (only visible in play mode) -->
     <PlayModeNavigation />
 
@@ -95,7 +73,6 @@
   // library components
 
   // local components
-  import FCBHeaderTab from './FCBHeaderTab.vue';
   import FCBBookmark from './FCBBookmark.vue';
   import PlayModeNavigation from './PlayModeNavigation/PlayModeNavigation.vue';
 
@@ -113,7 +90,7 @@
   const mainStore = useMainStore();
   const navigationStore = useNavigationStore();
   const { currentSetting, } = storeToRefs(mainStore);
-  const { tabs, bookmarks, sessionBookmarks } = storeToRefs(navigationStore);
+  const { bookmarks, sessionBookmarks } = storeToRefs(navigationStore);
 
   ////////////////////////////////
   // data
@@ -130,20 +107,21 @@
     // Always return all bookmarks initially for measurement
     // The visibility will be controlled by CSS classes
     const allBookmarks = bookmarks.value;
-    
+
+    ModuleSettings.getReactiveVersion();
     // Add session bookmarks at the front if enabled
     if (ModuleSettings.get(SettingKey.sessionBookmark) && sessionBookmarks.value.length > 0) {
       return [...sessionBookmarks.value, ...allBookmarks];
     }
-    
+
     return allBookmarks;
   });
 
   const overflowBookmarks = computed(() => {
     const visible = visibleBookmarks.value;
-    
+
     if (visibleCount.value === 0 || visibleCount.value >= visible.length) return [];
-    
+
     // Return all bookmarks (session + regular) that fall past visibleCount
     return visible.slice(visibleCount.value);
   });
@@ -155,6 +133,7 @@
       return 'fcb-bookmark-hidden';
     }
     // Add special class for session bookmarks
+    ModuleSettings.getReactiveVersion();
     const sessionBookmarksCount = ModuleSettings.get(SettingKey.sessionBookmark) ? sessionBookmarks.value.length : 0;
     if (index < sessionBookmarksCount) {
       return 'fcb-session-bookmark';
@@ -307,9 +286,9 @@
           iconFontClass: 'fas',
           label: bookmark.header.name,
           customClass: `fcb-overflow-item-${index}${isSessionBookmark ? ' fcb-session-bookmark' : ''}`,
-          onClick: () => {
+          onClick: (e: MouseEvent) => {
             isOverflowMenuOpen.value = false;
-            void navigationStore.openContent(bookmark.header.uuid, bookmark.tabInfo.tabType, { newTab: false });
+            void navigationStore.openContent(bookmark.header.uuid, bookmark.tabInfo.tabType, { newTab: e.ctrlKey, panelIndex: e.altKey ? -1 : undefined });
           }
         };
       }),
@@ -360,11 +339,6 @@
   ////////////////////////////////
   // event handlers
 
-  // remove the tab given by the id from the list
-  const onCloseTab = function (tabId: string) {
-    void navigationStore.removeTab(tabId);
-  };
-
   // add the current tab as a new bookmark
   const onAddBookmarkClick = async (): Promise<void> => {
     //get the current tab and save the entity and name
@@ -375,7 +349,7 @@
 
     // see if a bookmark for the entry already exists
     if (bookmarks.value.find((b) => (b.header.uuid === tab?.header?.uuid)) != undefined) {
-      ui?.notifications?.warn(localize('errors.duplicateBookmark') || '');
+      ui?.notifications?.warn(localize('notifications.duplicateBookmark') || '');
       return;
     }
 
@@ -390,8 +364,6 @@
 
     await navigationStore.addBookmark(bookmark);
   };
-
-  const onAddTabClick = async () => { await navigationStore.openEntry(); };
 
   const onHistoryBackClick = () => { void navigationStore.navigateHistory(-1); };
   const onHistoryForwardClick = () => { void navigationStore.navigateHistory(1); };
@@ -419,11 +391,6 @@
   ////////////////////////////////
   // lifecycle events
   onMounted(async () => {
-    // set the active tab
-    const tab = navigationStore.getActiveTab();
-    if (tab)
-      await navigationStore.activateTab(tab.id);
-
     // Setup resize observer for bookmark overflow detection
     await nextTick();
     if (bookmarksContainer.value) {
@@ -463,24 +430,6 @@
   & > * {
     flex: 0 0 1.875rem;
     border-bottom: 1px solid var(--fcb-header-border-color);
-  }
-
-  // tab bar
-  .fcb-tab-bar {
-    position: relative;
-    transition: padding-right 0.5s;
-    padding: 4px 2px 0px 4px;
-    flex: 0 0 34px;
-    color: var(--fcb-header-tab-color);
-  }
-
-  #fcb-add-tab {
-    flex: 0 0 30px;
-    justify-content: center;
-
-    .fcb-tab-icon {
-      margin: 0px;
-    }
   }
 
   // Bookmark bar

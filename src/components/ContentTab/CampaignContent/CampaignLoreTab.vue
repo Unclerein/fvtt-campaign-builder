@@ -4,7 +4,7 @@
     <BaseTable
       ref="availableLoreRef"
       :actions="actions"
-      :rows="mappedAvailableLoreRows"
+      :rows="availableLoreRows"
       :columns="columns"
       :show-add-button="true"
       :add-button-label="localize('labels.session.addLore')"
@@ -12,10 +12,19 @@
       :allow-drop-row="false"
       :help-text="localize('labels.campaign.loreHelpText')"
       help-link="https://slyflourish.com/sharing_secrets.html"
+
       @add-item="onAddLore"
       @cell-edit-complete="onCellEditComplete"
-      @reorder="onReorderAvailable"
+      @reorder="onReorder"
     />
+      <!-- 
+      :grouped="isGrouped"
+      :groups="loreGroups"
+      @reorder="availableGroupedTable.onReorder"
+      @reorder-group="(items) => groupedTable.onReorderGroup(items, loreGroups)
+      @group-add="availableGroupedTable.onGroupAdd"
+      @group-edit="availableGroupedTable.onGroupEdit"
+      @group-delete="availableGroupedTable.onGroupDelete" -->
 
     <!-- For delivered lore -->
     <div style="font-size: 1.3em; font-weight: bold; margin: 0.5rem 0 -1rem 8px"> 
@@ -23,7 +32,7 @@
     </div>
     <BaseTable
       :actions="deliveredActions"
-      :rows="mappedDeliveredLoreRows"
+      :rows="deliveredLoreRows"
       :columns="deliveredColumns"
       :allow-drop-row="false"
       :allow-delete="true"
@@ -39,13 +48,14 @@
 <script setup lang="ts">
 
   // library imports
-  import { storeToRefs } from 'pinia';
-  import { computed, ref } from 'vue';
+  import { computed, ref, inject } from 'vue';
 
   // local imports
   import { useCampaignStore, } from '@/applications/stores';
+  import { CAMPAIGN_DERIVED_STATE_KEY } from '@/composables/useCampaignDerivedState';
+  import { useGroupedTable } from '@/composables/useGroupedTable';
   import { localize } from '@/utils/game'
-  import DragDropService from '@/utils/dragDrop'; 
+  import { ModuleSettings, SettingKey } from '@/settings';
   
   // library components
 	
@@ -53,7 +63,7 @@
   import BaseTable from '@/components/tables/BaseTable.vue';
 
   // types
-  import { BaseTableColumn, CampaignTableTypes, BaseTableGridRow, CampaignLoreDetails, CellEditCompleteEvent } from '@/types';
+  import { BaseTableColumn, CampaignTableTypes, CellEditCompleteEvent, GroupableItem } from '@/types';
   
   ////////////////////////////////
   // props
@@ -64,25 +74,23 @@
   ////////////////////////////////
   // store
   const campaignStore = useCampaignStore();
-  const { availableLoreRows, deliveredLoreRows } = storeToRefs(campaignStore);
-  
+  const campaignDerivedState = inject(CAMPAIGN_DERIVED_STATE_KEY, null);
+  const { deliveredLoreRows, allRelatedLoreRows, availableLoreRows, availableLoreGroups } = campaignDerivedState;
+
   ////////////////////////////////
   // data
   const availableLoreRef = ref<any>(null);
 
   ////////////////////////////////
   // computed data
-  const mappedAvailableLoreRows = computed(() => (
-    availableLoreRows.value.map((row) => ({
-      ...row,
-    }))
-  ));
+  // const isGrouped = computed(() => {
+  //   // Access reactive version to create dependency on settings changes
+  //   ModuleSettings.getReactiveVersion();
+  //   return ModuleSettings.get(SettingKey.tableGroupingSettings)?.[GroupableItem.CampaignLore] || false;
+  // });
 
-  const mappedDeliveredLoreRows = computed(() => (
-    deliveredLoreRows.value.map((row) => ({
-      ...row,
-    }))
-  ));
+  // Grouped table composable
+  // const availableGroupedTable = useGroupedTable(campaignStore.groupStores[GroupableItem.CampaignLore]);
 
   const columns = computed((): BaseTableColumn[] => {
     const actionColumn = { field: 'actions', style: 'text-align: left; width: 100px; max-width: 100px', header: 'Actions' };
@@ -122,18 +130,18 @@
     },
 
     // move to next arc
-    { 
-      icon: 'fa-arrow-down', 
+    {
+      icon: 'fa-arrow-down',
       display: (data) => !data.delivered, // hide arrow for things already delivered
-      callback: (data) => moveLoreToArc(data.uuid), 
-      tooltip: localize('tooltips.movetoLatestArc') 
+      callback: (data) => moveLoreToArc(data.uuid, data.description as string),
+      tooltip: localize('tooltips.moveToLatestArc')
     },
     // move to next session
-    { 
-      icon: 'fa-share', 
+    {
+      icon: 'fa-share',
       display: (data) => !data.delivered, // hide arrow for things already delivered
-      callback: (data) => moveLoreToLastSession(data.uuid), 
-      tooltip: localize('tooltips.moveToNextSession') 
+      callback: (data) => moveLoreToLastSession(data.uuid, data.description as string),
+      tooltip: localize('tooltips.moveToNextSession')
     }
   ]));
 
@@ -181,48 +189,56 @@
     }
   }
 
+  const onReorder = async (reorderedRows: CampaignLoreRow[]) => {
+    campaignStore.reorderAvailableLore(reorderedRows);
+  };
+
+  /**
+   * Finds the lockedToSessionId for a lore row by uuid.
+   * @param uuid the lore UUID
+   * @returns the session ID if session-level, or null for campaign-level
+   */
+  const getSessionIdForLore = (uuid: string): string | null => {
+    const row = allRelatedLoreRows.value.find(r => r.uuid === uuid);
+    return row?.lockedToSessionId ?? null;
+  };
+
   // only applicable to the available lore table
   const onCellEditComplete = async (event: CellEditCompleteEvent) => {
     const { data, newValue, field, } = event;
 
     switch (field) {
       case 'description':
-        await campaignStore.updateLoreDescription(data.uuid, newValue as string);
+        await campaignStore.updateLoreDescription(data.uuid, newValue as string, getSessionIdForLore(data.uuid));
         break;
 
       default:
         break;
-    }  
+    }
   }
 
   const onDeleteLore = async (uuid: string) => {
-    await campaignStore.deleteLore(uuid);
+    await campaignStore.deleteLore(uuid, getSessionIdForLore(uuid));
   }
 
   // only applicable to the available lore table
   const onMarkLoreDelivered = async (uuid: string) => {
-    await campaignStore.markLoreDelivered(uuid, true);
+    await campaignStore.markLoreDelivered(uuid, true, getSessionIdForLore(uuid));
   }
 
   // only applicable to the delivered lore table
   const onUnmarkLoreDelivered = async (uuid: string) => {
-    await campaignStore.markLoreDelivered(uuid, false);
+    await campaignStore.markLoreDelivered(uuid, false, getSessionIdForLore(uuid));
   }
 
-  const moveLoreToLastSession = async (uuid: string) => {
-    await campaignStore.moveLoreToLastSession(uuid);
+  const moveLoreToLastSession = async (uuid: string, description: string) => {
+    await campaignStore.moveLoreToLastSession(uuid, description);
   }
 
-  const moveLoreToArc = async (uuid: string) => {
-    await campaignStore.moveLoreToArc(uuid);
+  const moveLoreToArc = async (uuid: string, description: string) => {
+    await campaignStore.moveLoreToArc(uuid, description);
   }
 
-
-  const onReorderAvailable = async (reorderedRows: BaseTableGridRow[]) => {
-    // Reorder using array order 
-    const reorderedLore = reorderedRows.map((row) => availableLoreRows.value.find(lore => lore.uuid === row.uuid) as CampaignLoreDetails);
-    await campaignStore.reorderAvailableLore(reorderedLore);
-  };
 
   ////////////////////////////////
   // watchers

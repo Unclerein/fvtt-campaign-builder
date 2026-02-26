@@ -177,12 +177,12 @@ const DirectoryScrollService = {
 
   /**
    * Scrolls to a campaign in the campaign directory tree.
-   * 
+   *
    * @returns A promise that resolves when the scroll operation is complete
    */
   scrollToCampaign: async (): Promise<void> => {
-    // Find and scroll to the campaign element using the active class
-    await DirectoryScrollService.scrollToElement('.fcb-campaign-folder.active');
+    // Find and scroll to the campaign element using the active class on the node-name span
+    await DirectoryScrollService.scrollToElement('.node-name.active');
   },
 
   /**
@@ -191,8 +191,9 @@ const DirectoryScrollService = {
    * @returns A promise that resolves when the scroll operation is complete
    */
   scrollToSetting: async (): Promise<void> => {
-    // Find and scroll to the campaign element using the active class
-    await DirectoryScrollService.scrollToElement('.fcb-setting-folder.folder:not(.collapsed)');
+    // Find and scroll to the setting element using the active class
+    // This is simpler than the others because it's the top folder (no never hidden) and there's always only one
+    await DirectoryScrollService.scrollToElement('.fcb-setting-folder.folder .folder-header');
   },
 
   /**

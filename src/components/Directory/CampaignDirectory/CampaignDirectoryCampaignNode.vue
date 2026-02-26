@@ -124,7 +124,7 @@
     }
 
     // if we are using webs, strip the story web folder
-    if (ModuleSettings.get(SettingKey.useWebs)) {
+    if (ModuleSettings.get(SettingKey.useStoryWebs)) {
       children = children.slice(1);
     }
 
@@ -133,6 +133,7 @@
   });
 
   const frontFolderNode = computed((): DirectoryFrontFolder | null => {
+    ModuleSettings.getReactiveVersion();
     if (ModuleSettings.get(SettingKey.useFronts)) {
       // front is always the first one
       return props.campaignNode.loadedChildren[0] as DirectoryFrontFolder;
@@ -142,7 +143,8 @@
   });
 
   const storyWebFolderNode = computed((): DirectoryStoryWebFolder | null => {
-    if (!ModuleSettings.get(SettingKey.useWebs)) {
+    ModuleSettings.getReactiveVersion();
+    if (!ModuleSettings.get(SettingKey.useStoryWebs)) {
       return null;
     }
     // story webs are always the second one after fronts (if fronts are enabled)
@@ -193,7 +195,7 @@
   };
 
   const onCampaignSelectClick = async (event: MouseEvent) => {
-    await navigationStore.openCampaign(currentNode.value.id, {newTab: event.ctrlKey});
+    await navigationStore.openCampaign(currentNode.value.id, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
   };
 
   const onCampaignContextMenu = (event: MouseEvent): void => {

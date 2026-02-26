@@ -3,30 +3,38 @@
     ref="sessionTableRef"
     :actions="actions"
     :columns="columns"
-    :rows="mappedVignetteRows"
+    :rows="vignetteRows"
     :show-add-button="true"
     :add-button-label="localize('labels.session.addVignette')"
     :allow-drop-row="false"
     :allow-edit="true"
-    :draggable-rows="false"
+    :grouped="isGrouped"
+    :groups="vignetteGroups"
     :help-text="localize('labels.session.vignetteHelpText')"
     help-link="https://slyflourish.com/scenes_catch_all_step.html"
     :enable-related-entries-tracking="ModuleSettings.get(SettingKey.autoRelationships)"
     @related-entries-changed="(added, removed) => emit('relatedEntriesChanged', added, removed)"
     @add-item="onAddVignette"
     @cell-edit-complete="onCellEditComplete"
-    @reorder="onReorder"
+    @reorder="groupedTable.onReorder"
+    @reorder-group="(items) => groupedTable.onReorderGroup(items, vignetteGroups)"
+    @group-add="groupedTable.onGroupAdd"
+    @group-edit="groupedTable.onGroupEdit"
+    @group-delete="groupedTable.onGroupDelete"
   />
 </template>
 
 <script setup lang="ts">
 
   // library imports
-  import { computed, ref, watch } from 'vue';
+  import { computed, ref, watch, inject } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
   import { useSessionStore, useArcStore, useMainStore, } from '@/applications/stores';
+  import { useGroupedTable } from '@/composables/useGroupedTable';
+  import { ARC_DERIVED_STATE_KEY } from '@/composables/useArcDerivedState';
+  import { SESSION_DERIVED_STATE_KEY } from '@/composables/useSessionDerivedState';
   import { localize } from '@/utils/game'
   import { ModuleSettings, SettingKey } from '@/settings';
 
@@ -37,8 +45,7 @@
   import BaseTable from '@/components/tables/BaseTable.vue';
 
   // types
-  import { BaseTableColumn, BaseTableGridRow, SessionTableTypes, ArcTableTypes, CellEditCompleteEvent } from '@/types';
-  import { ArcVignette, SessionVignette } from '@/documents';
+  import { BaseTableColumn, SessionTableTypes, ArcTableTypes, CellEditCompleteEvent, GroupableItem } from '@/types';
 
   ////////////////////////////////
   // props
@@ -60,8 +67,12 @@
   // store
   const sessionStore = useSessionStore();
   const arcStore = useArcStore();
-  const { vignetteRows: sessionVignetteRows } = storeToRefs(sessionStore);
-  const { vignetteRows: arcVignetteRows } = storeToRefs(arcStore);
+  const sessionDerivedState = inject(SESSION_DERIVED_STATE_KEY, null);
+  const sessionVignetteRows = computed(() => sessionDerivedState?.vignetteRows.value ?? []);
+  const sessionVignetteGroups = computed(() => sessionDerivedState?.vignetteGroups.value ?? []);
+  const arcDerivedState = inject(ARC_DERIVED_STATE_KEY, null);
+  const arcVignetteRows = computed(() => arcDerivedState?.vignetteRows.value ?? []);
+  const arcVignetteGroups = computed(() => arcDerivedState?.vignetteGroups.value ?? []);
   const { currentArc } = storeToRefs(useMainStore());
   
   ////////////////////////////////
@@ -72,13 +83,24 @@
   ////////////////////////////////
   // computed data
   const vignetteRows = computed(() => props.arcMode ? arcVignetteRows.value : sessionVignetteRows.value);
+  const vignetteGroups = computed(() => props.arcMode ? arcVignetteGroups.value : sessionVignetteGroups.value);
   const store = computed(() => props.arcMode ? arcStore : sessionStore);
 
-  const mappedVignetteRows = computed(() => (
-    vignetteRows.value.map((row) => ({
-      ...row,
-    }))
-  ));
+  const isGrouped = computed(() => {
+    // Access reactive version to create dependency on settings changes
+    ModuleSettings.getReactiveVersion();
+    return ModuleSettings.get(SettingKey.tableGroupingSettings)?.[
+      props.arcMode ?
+      GroupableItem.ArcVignettes :
+      GroupableItem.SessionVignettes
+    ] || false;
+  });
+
+  // Grouped table composable
+  const groupedTable = useGroupedTable(
+    (props.arcMode ? arcStore : sessionStore)
+    .groupStores[props.arcMode ? GroupableItem.ArcVignettes : GroupableItem.SessionVignettes]
+  );
 
   const columns = computed((): BaseTableColumn[] => {
     const actionColumn = { field: 'actions', style: 'text-align: left; width: 100px; max-width: 100px', header: 'Actions' };
@@ -123,7 +145,7 @@
       // only show for arc mode if the campaign has at least one session
       display: (data) => (props.arcMode && campaignHasSessions.value)
         || (!props.arcMode && !data.delivered), // hide arrow for things already delivered
-      callback: (data) => onMoveVignetteToNext(data.uuid), 
+      callback: (data) => onMoveVignetteToNext(data.uuid, data.description as string),
       tooltip: localize('tooltips.moveToNextSession') 
     }
   ]));
@@ -179,19 +201,12 @@
       await sessionStore.markVignetteDelivered(uuid, false);
   }
 
-  const onMoveVignetteToNext = async (uuid: string) => {
+  const onMoveVignetteToNext = async (uuid: string, description: string) => {
     if (props.arcMode)
-      await arcStore.moveVignetteToSession(uuid);
+      await arcStore.moveVignetteToSession(uuid, description);
     else
-      await sessionStore.moveVignetteToNext(uuid);
+      await sessionStore.moveVignetteToNext(uuid, description);
   }
-  
-  const onReorder = async (reorderedRows: BaseTableGridRow[]) => {
-    // Reorder using array order
-    const reorderedVignettes = reorderedRows.map((row) => vignetteRows.value.find(v => v.uuid === row.uuid) as ArcVignette | SessionVignette);
-    // @ts-ignore - the type will match the store.value type
-    await store.value.reorderVignettes(reorderedVignettes);
-  };
 
   ////////////////////////////////
   // watchers

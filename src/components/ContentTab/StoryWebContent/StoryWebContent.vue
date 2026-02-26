@@ -25,12 +25,13 @@
 
 <script setup lang="ts">
   // library imports
-  import { ref, onMounted, watch, onBeforeUnmount } from 'vue';
-  import { storeToRefs } from 'pinia';
+  import { ref, provide, onMounted, watch, onBeforeUnmount } from 'vue';
 
   // local imports
   import { localize } from '@/utils/game';
-  import { useCampaignDirectoryStore, useMainStore, useNavigationStore } from '@/applications/stores';
+  import { useCampaignDirectoryStore, useNavigationStore } from '@/applications/stores';
+  import { useContentState } from '@/composables/useContentState';
+  import { useStoryWebGraphState, STORY_WEB_GRAPH_STATE_KEY } from '@/composables/useStoryWebGraphState';
   import { getTabTypeIcon } from '@/utils/misc';
   import { notifyWarn } from '@/utils/notifications';
 
@@ -52,10 +53,13 @@
 
   ////////////////////////////////
   // store
-  const mainStore = useMainStore();
-  const { currentStoryWeb } = storeToRefs(mainStore);
+  const { currentStoryWeb } = useContentState();
   const navigationStore = useNavigationStore();
   const campaignDirectoryStore = useCampaignDirectoryStore();
+
+  // create per-panel graph state and provide to descendants (StoryWebGraph)
+  const graphState = useStoryWebGraphState();
+  provide(STORY_WEB_GRAPH_STATE_KEY, graphState);
 
   ////////////////////////////////
   // data
@@ -82,7 +86,7 @@
 
       // name can't be blank
       if (newValue.trim() === '') {
-        notifyWarn(localize('errors.nameRequired'));
+        notifyWarn(localize('notifications.nameRequired'));
         name.value = currentStoryWeb.value?.name!;
         return;
       }

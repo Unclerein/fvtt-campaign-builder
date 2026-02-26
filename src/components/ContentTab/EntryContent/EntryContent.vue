@@ -29,6 +29,16 @@
           <i class="fas fa-share"></i>
         </button>
         <button
+          v-if="showVoiceButton"
+          class="fcb-voice-button"
+          :class="{ 'has-recording': !!currentEntry?.voiceRecordingPath }"
+          data-testid="entry-voice-button"
+          @click="onVoiceButtonClick"
+          :title="voiceButtonTitle"
+        >
+          <i class="fas fa-microphone"></i>
+        </button>
+        <button
           v-if="canGenerate"
           class="fcb-generate-button"
           data-testid="entry-generate-button"
@@ -112,9 +122,11 @@
             <Editor
               :initial-content="currentEntry?.description || ''"
               :current-entity-uuid="currentEntry?.uuid"
-              fixed-height="240px"
+              :fixed-height="descriptionHeight"
+              :resizable="true"
               @editor-saved="onDescriptionEditorSaved"
               @related-entries-changed="onRelatedEntriesChanged"
+              @editor-resized="onDescriptionEditorResized"
             />
           </div>
 
@@ -191,19 +203,32 @@
       :removed-ids="pendingRemovedUUIDs"
       @update="onRelatedEntriesDialogUpdate"
     />
+
+    <!-- Voice Recording Dialog -->
+    <VoiceRecordingDialog
+      v-model="showRecordingDialog"
+      :recorder="activeRecorder"
+      :stream="activeStream"
+      :mime-type="activeMimeType"
+      @stopped="onRecordingStopped"
+      @error="onRecordingError"
+      @cancel="onRecordingCancelled"
+    />
   </form>
 </template>
 
 <script setup lang="ts">
 
   // library imports
-  import { computed, ref, watch, } from 'vue';
+  import { computed, ref, watch, provide, onUnmounted, } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
   import { getTopicIcon, } from '@/utils/misc';
   import { localize } from '@/utils/game';
-  import { useSettingDirectoryStore, useBackendStore, useMainStore, useNavigationStore, useRelationshipStore, usePlayingStore, } from '@/applications/stores';
+  import { useSettingDirectoryStore, useBackendStore, useNavigationStore, useRelationshipStore, usePlayingStore, } from '@/applications/stores';
+  import { useContentState } from '@/composables/useContentState';
+  import { useEntryDerivedState, ENTRY_DERIVED_STATE_KEY } from '@/composables/useEntryDerivedState';
   import { hasHierarchy, validParentItems, } from '@/utils/hierarchy';
   import { generateImage } from '@/utils/generation';
   import { ModuleSettings, SettingKey } from '@/settings';
@@ -211,6 +236,9 @@
   import { updateEntryDialog } from '@/dialogs/createEntry';
   import { getEntryRelatedEntries } from '@/utils/uuidExtraction';
   import { filterRelatedEntries } from '@/utils/relatedContent';
+  import { notifyError } from '@/utils/notifications';
+  import { FCBDialog } from '@/dialogs';
+  import VoiceRecordingService from '@/utils/voiceRecording';
 
   // library components
   import InputText from 'primevue/inputtext';
@@ -232,6 +260,7 @@
   import RelatedEntriesManagementDialog from '@/components/RelatedEntriesManagementDialog.vue';
   import ContentTabStrip from '@/components/ContentTab/ContentTabStrip.vue';
   import CustomFieldsBlocks from '@/components/CustomFieldsBlocks.vue';
+  import VoiceRecordingDialog from '@/components/dialogs/VoiceRecordingDialog.vue';
   
   // types
   import { CustomFieldContentType, DocumentLinkType, Topics, ValidTopic, WindowTabType, RelatedJournal, ContentTabDescriptor } from '@/types';
@@ -245,15 +274,18 @@
 
   ////////////////////////////////
   // store
-  const mainStore = useMainStore();
   const settingDirectoryStore = useSettingDirectoryStore();
   const navigationStore = useNavigationStore();
   const relationshipStore = useRelationshipStore();
   const playingStore = usePlayingStore();
   const backendStore = useBackendStore();
-  const { currentEntry, currentSetting, refreshCurrentEntry, } = storeToRefs(mainStore);
+  const { currentSetting, currentEntry, refreshCurrentEntry } = useContentState();
   const { currentPlayedCampaign } = storeToRefs(playingStore);
-  const { isGeneratingImage, available } = storeToRefs(backendStore); 
+  const { isGeneratingImage, available } = storeToRefs(backendStore);
+
+  // per-panel derived state for entry relationships
+  const entryDerivedState = useEntryDerivedState();
+  provide(ENTRY_DERIVED_STATE_KEY, entryDerivedState);
 
   ////////////////////////////////
   // data
@@ -282,6 +314,14 @@
   const pendingAddedUUIDs = ref<string[]>([]);
   const pendingRemovedUUIDs = ref<string[]>([]);
 
+  const descriptionHeight = ref<number>(15);  // for handling description editor height
+
+  // Voice recording state
+  const showRecordingDialog = ref<boolean>(false);
+  const activeRecorder = ref<MediaRecorder | null>(null);
+  const activeStream = ref<MediaStream | null>(null);
+  const activeMimeType = ref<string>('audio/webm');
+
   ////////////////////////////////
   // computed data
     
@@ -290,6 +330,19 @@
   const canGenerate = computed(() => topic.value && [Topics.Character, Topics.Location, Topics.Organization].includes(topic.value));
   const generateDisabled = computed(() => !available.value);
   const showHierarchy = computed((): boolean => (topic.value===null ? false : hasHierarchy(topic.value)));
+  
+  // Voice recording computed properties
+  const showVoiceButton = computed(() => {
+    return ModuleSettings.get(SettingKey.enableVoiceRecording) &&
+           topic.value === Topics.Character &&
+           VoiceRecordingService.isRecordingSupported();
+  });
+  const voiceButtonTitle = computed(() => {
+    if (!currentEntry.value?.voiceRecordingPath) {
+      return localize('tooltips.voiceRecordingNone');
+    }
+    return localize('tooltips.voiceRecordingExists');
+  });
 
   const customFieldContentType = computed<CustomFieldContentType | null>(() => {
     switch (topic.value) {
@@ -323,6 +376,7 @@
       tabs.push({ id: 'scenes', label: localize('labels.scenes') });
     if (topic.value!==Topics.PC)
       tabs.push({ id: 'sessions', label: localize('labels.sessions') });
+    ModuleSettings.getReactiveVersion();
     if (ModuleSettings.get(SettingKey.genericFoundryTab))
       tabs.push({ id: 'foundry', label: localize('labels.tabs.entry.foundry') });
 
@@ -399,6 +453,15 @@
   ////////////////////////////////
   // event handlers
 
+  const onDescriptionEditorResized = async (height: number) => {
+    if (!currentEntry.value)
+      return;
+    
+    descriptionHeight.value = height;
+    currentEntry.value?.setCustomFieldHeight('###description###', height);
+    await currentEntry.value?.save();
+  };
+
   // debounce changes to name
   let debounceTimer: NodeJS.Timeout | undefined = undefined;
 
@@ -412,7 +475,7 @@
       
       // name can't be blank
       if (newValue.trim() === '') {
-        notifyWarn(localize('errors.nameRequired'));
+        notifyWarn(localize('notifications.nameRequired'));
         name.value = currentEntry.value?.name!;
         return;
       }
@@ -592,6 +655,216 @@
     });
   };
 
+  /**
+   * Handle voice button click - show context menu with record/play/delete options.
+   */
+  const onVoiceButtonClick = (event: MouseEvent): void => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const hasRecording = !!currentEntry.value?.voiceRecordingPath;
+
+    const menuItems = [
+      {
+        icon: 'fa-microphone',
+        iconFontClass: 'fas',
+        label: localize('contextMenus.voice.record'),
+        disabled: false,
+        onClick: () => onRecordVoice(),
+      },
+      {
+        icon: 'fa-play',
+        iconFontClass: 'fas',
+        label: localize('contextMenus.voice.play'),
+        disabled: !hasRecording,
+        onClick: () => onPlayVoice(),
+      },
+      {
+        icon: 'fa-trash',
+        iconFontClass: 'fas',
+        label: localize('contextMenus.voice.delete'),
+        disabled: !hasRecording,
+        onClick: () => onDeleteVoice(),
+      },
+      {
+        icon: 'fa-folder-open',
+        iconFontClass: 'fas',
+        label: localize('contextMenus.voice.changeFolder'),
+        disabled: false,
+        onClick: () => onChangeVoiceFolder(),
+      },
+    ];
+
+    ContextMenu.showContextMenu({
+      customClass: 'fcb',
+      x: event.x,
+      y: event.y,
+      zIndex: 300,
+      items: menuItems,
+    });
+  };
+
+  /**
+   * Start recording voice for the current character.
+   */
+  const onRecordVoice = async (): Promise<void> => {
+    if (!currentEntry.value) {
+      return;
+    }
+
+    // Ensure folder is configured before starting recording
+    const folder = await VoiceRecordingService.ensureFolderConfigured();
+    if (!folder) {
+      // User cancelled folder selection
+      return;
+    }
+
+    // Check for existing recording and confirm overwrite
+    if (currentEntry.value.voiceRecordingPath) {
+      const confirmed = await FCBDialog.confirmDialog(
+        localize('dialogs.voiceRecording.overwriteTitle'),
+        localize('dialogs.voiceRecording.overwriteMessage'),
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    try {
+      // Start recording
+      const { recorder, stream, mimeType } = await VoiceRecordingService.startRecording();
+      
+      // Store references for the dialog
+      activeRecorder.value = recorder;
+      activeStream.value = stream;
+      activeMimeType.value = mimeType;
+
+      // Collect data as it becomes available
+      recorder.start();
+
+      // Show the recording dialog
+      showRecordingDialog.value = true;
+    } catch (error) {
+      // Handle permission denied or other errors
+      notifyError(localize('notifications.voiceRecording.permissionDenied'));
+    }
+  };
+
+  /**
+   * Handle recording stopped - upload and save the recording.
+   */
+  const onRecordingStopped = async (blob: Blob): Promise<void> => {
+    if (!currentEntry.value) {
+      return;
+    }
+
+    try {
+      // Upload the recording to Foundry
+      const path = await VoiceRecordingService.uploadRecording(blob, currentEntry.value.name, activeMimeType.value);
+
+      // If path is null, user cancelled the folder selection or upload failed
+      if (!path) {
+        return;
+      }
+
+      // Save the path to the entry
+      currentEntry.value.voiceRecordingPath = path;
+      await currentEntry.value.save();
+
+      notifyInfo(localize('notifications.voiceRecording.saved'));
+    } catch (error) {
+      notifyError(localize('notifications.voiceRecording.uploadFailed'));
+    } finally {
+      // Clean up
+      showRecordingDialog.value = false;
+      activeRecorder.value = null;
+      activeStream.value = null;
+      activeMimeType.value = 'audio/webm';
+    }
+  };
+
+  /**
+   * Handle recording error from the dialog.
+   */
+  const onRecordingError = (): void => {
+    notifyError(localize('notifications.voiceRecording.uploadFailed'));
+    // Clean up
+    showRecordingDialog.value = false;
+    activeRecorder.value = null;
+    activeStream.value = null;
+    activeMimeType.value = 'audio/webm';
+  };
+
+  /**
+   * Handle recording cancelled (e.g., dialog unmounted while recording).
+   */
+  const onRecordingCancelled = (): void => {
+    // Clean up - no notification needed since this is an intentional cancel
+    showRecordingDialog.value = false;
+    activeRecorder.value = null;
+    activeStream.value = null;
+    activeMimeType.value = 'audio/webm';
+  };
+
+  /**
+   * Cancel any active recording (called on unmount).
+   */
+  const cancelActiveRecording = (): void => {
+    if (activeRecorder.value && activeRecorder.value.state !== 'inactive') {
+      VoiceRecordingService.cancelRecording(activeRecorder.value, activeStream.value);
+    }
+    // Clean up refs
+    activeRecorder.value = null;
+    activeStream.value = null;
+    activeMimeType.value = 'audio/webm';
+  };
+
+  /**
+   * Play the voice recording for the current character.
+   */
+  const onPlayVoice = async (): Promise<void> => {
+    if (!currentEntry.value?.voiceRecordingPath) {
+      return;
+    }
+
+    try {
+      await VoiceRecordingService.playRecording(currentEntry.value.voiceRecordingPath);
+    } catch (error) {
+      notifyError(localize('notifications.voiceRecording.uploadFailed'));
+    }
+  };
+
+  /**
+   * Delete the voice recording for the current character.
+   */
+  const onDeleteVoice = async (): Promise<void> => {
+    if (!currentEntry.value) {
+      return;
+    }
+
+    const confirmed = await FCBDialog.confirmDialog(
+      localize('dialogs.voiceRecording.deleteTitle'),
+      localize('dialogs.voiceRecording.deleteMessage'),
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    // Clear the path (file remains on server since Foundry can't delete files)
+    currentEntry.value.voiceRecordingPath = null;
+    await currentEntry.value.save();
+
+    notifyInfo(localize('notifications.voiceRecording.deleted'));
+  };
+
+  /**
+   * Change the voice recording folder.
+   */
+  const onChangeVoiceFolder = async (): Promise<void> => {
+    await VoiceRecordingService.selectFolder();
+  };
+
   
   const onImageChange = async (imageUrl: string) => {
     if (currentEntry.value) {
@@ -698,6 +971,10 @@
   
   watch(currentEntry, async (): Promise<void> => {
     await refreshEntry();
+
+    descriptionHeight.value = currentEntry.value?.getCustomFieldHeight('###description###') || 15;
+
+    cancelActiveRecording();
   });
   
   // see if we want to force a full refresh (ex. when parent changes externally)
@@ -710,6 +987,10 @@
   
   ////////////////////////////////
   // lifecycle events
+  onUnmounted(() => {
+    // Cancel any active recording when component unmounts
+    cancelActiveRecording();
+  });
 
 </script>
 
@@ -719,8 +1000,35 @@
   }
   
   .tags-container {
-    // TODO - search for "31" and see todo note about changing this to rem
+    // TODO - search for "31" and see toDo note about changing this to rem
     min-height: 43px; /* Set a fixed minimum height for the tags container */
     position: relative;
+  }
+
+  .fcb-voice-button {
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 4px;
+    background: var(--fcb-primary);
+    color: white;
+    cursor: pointer;
+    margin-left: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .fcb-voice-button:hover {
+    background: var(--fcb-primary-hover);
+  }
+
+  .fcb-voice-button.has-recording {
+    color: var(--fcb-success);
+  }
+
+  .fcb-voice-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 </style>

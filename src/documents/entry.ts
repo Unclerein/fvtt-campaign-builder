@@ -11,6 +11,9 @@ export const EntrySchema = {
   /** map from field name to value */
   customFields: new fields.ObjectField({ required: true, nullable: false, initial: {} }),
 
+  /** the height of each custom field (in rem) */
+  customFieldHeights: new fields.ObjectField({ required: true, nullable: false, initial: {} }),
+
   /** keyed by topic, then entryId */
   relationships: schemas.Relationships(),
 
@@ -34,6 +37,9 @@ export const EntrySchema = {
 
   // Image for the entry
   img: new fields.FilePathField({blank: true, required: true, nullable: false, initial: '', categories: ['IMAGE']}),
+
+  // Voice recording for characters
+  voiceRecordingPath: new fields.FilePathField({required: false, nullable: true, initial: null, categories: ['AUDIO']}),
 };
 
 type EntrySchemaType = typeof EntrySchema;
@@ -61,6 +67,7 @@ export interface EntryDoc extends JournalEntryPage {
     type: string;
     tags: string[];
     customFields: Record<string, string>;
+    customFieldHeights: Record<string, number>;
 
     /**
      * Keyed by topic, then entryId
@@ -77,7 +84,10 @@ export interface EntryDoc extends JournalEntryPage {
     plotPoints?: string | null;
     magicItems?: string | null; 
 
-    img: string; 
+    img: string;
+
+    // Voice recording for characters
+    voiceRecordingPath?: string | null;
 
     scenes: string[];
     actors: string[];

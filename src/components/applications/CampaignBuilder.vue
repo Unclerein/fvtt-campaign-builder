@@ -23,8 +23,34 @@
       > 
         <div class="fcb-body flexcol">
           <FCBHeader />
-          <div class="fcb-content flexcol editable">
-            <ContentTab />
+          <div class="fcb-panels-container">
+            <Splitter
+              v-if="panelKeys.length > 1"
+              layout="horizontal"
+              :gutter-size="4"
+              class="fcb-panels-splitter"
+            >
+              <!-- Note that there are 3 at most, so min-size is ok -->
+              <SplitterPanel
+                v-for="(panelKey, pi) in panelKeys"
+                :key="panelKey"
+                :size="Math.floor(100 / panelKeys.length)"
+                :min-size="20"
+              >
+                <TabPanel
+                  :panel-index="pi"
+                  :is-rightmost="pi === panelKeys.length - 1"
+                />
+              </SplitterPanel>
+            </Splitter>
+
+            <!--  If there's only one panel, just show it -->
+            <TabPanel
+              v-else-if="panelKeys.length === 1"
+              :key="panelKeys[0]"
+              :panel-index="0"
+              :is-rightmost="true"
+            />
           </div>
         </div>
         <div
@@ -47,7 +73,7 @@
 
 <script setup lang="ts">
   // library imports
-  import { onMounted, watch, ref, } from 'vue';
+  import { onMounted, watch, ref, computed, } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
@@ -65,7 +91,7 @@
 
   // local components
   import FCBHeader from '@/components/FCBHeader/FCBHeader.vue';
-  import ContentTab from '@/components/ContentTab/ContentTab.vue';
+  import TabPanel from '@/components/TabPanel/TabPanel.vue';
   import Directory from '@/components/Directory/Directory.vue';
   import TitleBarComponents from '@/components/TitleBarComponents.vue';
 
@@ -86,6 +112,7 @@
   const navigationStore = useNavigationStore();
   const backendStore = useBackendStore();
   const { currentSetting, rootFolder, isArcManagerOpen } = storeToRefs(mainStore);
+  const { tabs, panelKeys } = storeToRefs(navigationStore);
   const { available, inProgress } = storeToRefs(backendStore);
 
   ////////////////////////////////
@@ -96,6 +123,7 @@
 
   ////////////////////////////////
   // computed data
+  const panelCount = computed(() => tabs.value.length);
 
   ////////////////////////////////
   // methods
@@ -138,28 +166,28 @@
     // the only things tagged fcb-content-link are ones for the setting we're looking at, so just need to open it
     switch (parseInt(target.dataset.linkType ?? '-1')) {
       case WindowTabType.Entry:
-        void navigationStore.openEntry(target.dataset.uuid, { newTab: event.ctrlKey});
+        void navigationStore.openEntry(target.dataset.uuid, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
         break;
       case WindowTabType.Campaign:
-        void navigationStore.openCampaign(target.dataset.uuid, { newTab: event.ctrlKey });
+        void navigationStore.openCampaign(target.dataset.uuid, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
         break;
       case WindowTabType.Session:
-        void navigationStore.openSession(target.dataset.uuid, { newTab: event.ctrlKey });
+        void navigationStore.openSession(target.dataset.uuid, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
         break;
       case WindowTabType.Arc:
-        void navigationStore.openArc(target.dataset.uuid, { newTab: event.ctrlKey });
+        void navigationStore.openArc(target.dataset.uuid, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
         break;
       case WindowTabType.Front:
-        void navigationStore.openFront(target.dataset.uuid, { newTab: event.ctrlKey });
+        void navigationStore.openFront(target.dataset.uuid, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
         break;
       case WindowTabType.StoryWeb:
-        void navigationStore.openStoryWeb(target.dataset.uuid, { newTab: event.ctrlKey });
+        void navigationStore.openStoryWeb(target.dataset.uuid, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
         break;
       case WindowTabType.Setting:
-        void navigationStore.openSetting(target.dataset.uuid, { newTab: event.ctrlKey });
+        void navigationStore.openSetting(target.dataset.uuid, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
         break;
       case WindowTabType.TagResults:
-        void navigationStore.openTagResults(target.dataset.uuid, { newTab: event.ctrlKey });
+        void navigationStore.openTagResults(target.dataset.uuid, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
         break;
     }  
   };
@@ -404,6 +432,18 @@
 
       .fcb-body {
         height: 100%;
+      }
+
+      .fcb-panels-container {
+        flex: 1;
+        display: flex;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .fcb-panels-splitter {
+        height: 100%;
+        width: 100%;
       }
     }
 

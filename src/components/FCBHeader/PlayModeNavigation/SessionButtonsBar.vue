@@ -33,7 +33,6 @@
   const navigationStore = useNavigationStore();
   const { currentContentTab } = storeToRefs(mainStore);
   const { currentPlayedCampaign } = storeToRefs(playingStore);
-  const { tabs } = storeToRefs(navigationStore);
 
   ////////////////////////////////
   // data
@@ -47,7 +46,7 @@
     { id: 'npcs', label: localize('labels.tabs.session.npcs'), icon: 'fa-user' },
     { id: 'monsters', label: localize('labels.tabs.session.monsters'), icon: 'fa-dragon' },
     { id: 'magic', label: 'Items', icon: 'fa-wand-sparkles' },
-    { id: 'todo', label: localize('labels.tabs.session.todo'), icon: 'fa-check-square' },
+    { id: 'toDo', label: localize('labels.tabs.session.toDo'), icon: 'fa-check-square' },
   ]);
 
   ////////////////////////////////
@@ -70,31 +69,31 @@
       return;
 
     // special case - it's on the campaign
-    if (tabId === 'todo') {
-      // Check if we already have a tab open to that campaign
+    if (tabId === 'toDo') {
+      // Check if we already have a tab open to that campaign (search all panels)
       const campaignId = currentPlayedCampaign.value.uuid;
-      const campaignTab = tabs.value.find((t) => t.header?.uuid === campaignId);
+      const campaignTab = navigationStore.findTabAcrossPanels(campaignId);
 
       // If there isn't a tab open to the most recent session, open one
       if (!campaignTab) {
         await navigationStore.openCampaign(campaignId, { newTab: true });
       } else {
         // it exists- so switch to it
-        await navigationStore.activateTab(campaignTab.id);
+        await navigationStore.activateTab(campaignTab.tab.id, false, campaignTab.panelIndex);
       }
     } else if (tabId === 'noteBox') {  // special case - it's the popout box
       await openSessionNotes(currentSessionNumber, false);  
       return;
     } else {
-      // Check if we already have a tab open to that session
-      const sessionTab = tabs.value.find((t) => t.header?.uuid === currentSessionId);
+      // Check if we already have a tab open to that session (search all panels)
+      const sessionTab = navigationStore.findTabAcrossPanels(currentSessionId);
 
       // If there isn't a tab open to the most recent session, open one
       if (!sessionTab) {
         await navigationStore.openSession(currentSessionId, { newTab: true });
       } else {
         // it exists- so switch to it
-        await navigationStore.activateTab(sessionTab.id);
+        await navigationStore.activateTab(sessionTab.tab.id, false, sessionTab.panelIndex);
       }
     }
 

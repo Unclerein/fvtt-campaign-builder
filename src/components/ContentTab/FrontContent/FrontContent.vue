@@ -49,9 +49,11 @@
           <div class="flexrow form-group">
             <Editor 
               :initial-content="currentFront?.description || ''"
-              fixed-height="380px"
+              :fixed-height="descriptionHeight"
+              :resizable="true"
               :current-entity-uuid="currentFront?.uuid"
               @editor-saved="onDescriptionEditorSaved"
+              @editor-resized="onDescriptionEditorResized"
             />
           </div>
         </DescriptionTab>
@@ -75,11 +77,12 @@
 <script setup lang="ts">
 
   // library imports
-  import { storeToRefs } from 'pinia';
-  import { ref, watch, onBeforeUnmount, computed, } from 'vue';
+  import { ref, watch, onBeforeUnmount, computed, provide, } from 'vue';
 
   // local imports
   import { useMainStore, useCampaignDirectoryStore, useNavigationStore, } from '@/applications/stores';
+  import { useContentState } from '@/composables/useContentState';
+  import { useFrontDerivedState, FRONT_DERIVED_STATE_KEY } from '@/composables/useFrontDerivedState';
   import { getTabTypeIcon } from '@/utils/misc';
   import { localize } from '@/utils/game'
   import { notifyWarn } from '@/utils/notifications';
@@ -97,7 +100,7 @@
   import LabelWithHelp from '@/components/LabelWithHelp.vue';
 
   // types
-  import { WindowTabType } from '@/types';
+  import { WindowTabType, ContentTabDescriptor } from '@/types';
   import { Front, } from '@/classes';
   
   ////////////////////////////////
@@ -111,17 +114,22 @@
   const mainStore = useMainStore();
   const navigationStore = useNavigationStore();
   const campaignDirectoryStore = useCampaignDirectoryStore();
-  const { currentFront, currentContentTab } = storeToRefs(mainStore);
-  
+  const { currentFront, currentContentTab } = useContentState();
+
+  // per-panel derived state for front dangers
+  const frontDerivedState = useFrontDerivedState();
+  provide(FRONT_DERIVED_STATE_KEY, frontDerivedState);
+
   ////////////////////////////////
   // data  
   const name = ref<string>('');
+  const descriptionHeight = ref<number>(23.75);  // for handling description editor height
 
   ////////////////////////////////
   // computed data
 
-  const tabs = computed(() => {
-    let retval = [
+  const tabs = computed((): ContentTabDescriptor[] => {
+    let retval: ContentTabDescriptor[] = [
       { id: 'description', label: localize('labels.description')},
     ];
 
@@ -140,6 +148,16 @@
 
   ////////////////////////////////
   // event handlers
+
+  const onDescriptionEditorResized = async (height: number) => {
+    if (!currentFront.value)
+      return;
+    
+    descriptionHeight.value = height;
+    currentFront.value?.setCustomFieldHeight('###description###', height);
+    await currentFront.value?.save();
+  };
+
   // debounce changes to name
   let nameDebounceTimer: NodeJS.Timeout | undefined = undefined;
 
@@ -153,7 +171,7 @@
 
       // name can't be blank
       if (newValue.trim() === '') {
-        notifyWarn(localize('errors.nameRequired'));
+        notifyWarn(localize('notifications.nameRequired'));
         name.value = currentFront.value?.name!;
         return;
       }
@@ -230,6 +248,8 @@
     if (newFront && newFront.uuid) {
       // load starting data values
       name.value = newFront.name || '';
+
+      descriptionHeight.value = newFront.getCustomFieldHeight('###description###') || 23.75;
     }
   });
   

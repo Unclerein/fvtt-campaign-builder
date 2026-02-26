@@ -10,7 +10,7 @@ next:
 
 # Story Webs - Relationship Graphs
 
-![Storyweb content](/assets/images/story-web-content.webp)
+![Story Web content](/assets/images/story-web-content.webp)
 
 > [!INFO]
 > Story Webs are an optional feature and can be disabled in the [Module Settings].
@@ -40,6 +40,10 @@ Right-click on the Story Web in the Campaign Directory and select "Delete" to re
 ### Duplicating a Story Web
 
 Right-click on the Story Web in the Campaign Directory and select "Duplicate Web" to create an exact copy of the Story Web. 
+
+### Exporting a Story Web as PNG
+
+Right-click on the Story Web in the Campaign Directory and select "Download as PNG" to export the entire story web as a PNG image file. 
 
 ## Working with the Graph Interface
 
@@ -144,7 +148,7 @@ By type of content:
 ### Creating relationships
 
 **Method 1: Drag and drop**
-- Drag one Entry node from the diretory and drop it onto an Entry, Danger, or custom Text in the graph and you will be prompted to create a new relationship between them.  Other than for customer text, this will also add the relationship to the Content items in your Setting/Campaign.
+- Drag one Entry node from the directory and drop it onto an Entry, Danger, or custom Text in the graph and you will be prompted to create a new relationship between them.  Other than for customer text, this will also add the relationship to the Content items in your Setting/Campaign.
 
 **Method 2: "Add connection"**
 - Right click on any node and select "Add Connection".  You will be switched to connection mode where you can move the mouse to point at any other node and click to connect them.  
@@ -153,7 +157,7 @@ By type of content:
 ### Connection labels
 
 - The text on connections shows the "relationship" or "role" field from the actual relationship
-- You can edit connection text directly on the graph by double-clicking the connection or right clicking and choosing "Edit Connection".  Other than for custom text, these changes will also update the decription of the relationship in your Setting/Campaign.
+- You can edit connection text directly on the graph by double-clicking the connection or right clicking and choosing "Edit Connection".  Other than for custom text, these changes will also update the description of the relationship in your Setting/Campaign.
 
 ### Connection styles {#connection-colors-and-styles}
 
@@ -180,12 +184,12 @@ By type of content:
 
 ### Collaboration
 
-- Storywebs update the underlying entry relationships, so changes are reflected everywhere
-- Use storywebs as planning tools, then reference them during sessions
-- Export or share screenshots of storywebs with players (as appropriate)
+- Story webs update the underlying entry relationships, so changes are reflected everywhere
+- Use story webs as planning tools, then reference them during sessions
+- Export or share screenshots of story webs with players (as appropriate)
 
 ### Performance
 
 - Large graphs with many connections may impact performance
-- Consider breaking very complex relationships into multiple focused storywebs
+- Consider breaking very complex relationships into multiple focused story webs
 - The saved configuration helps with loading performance for frequently used graphs -->

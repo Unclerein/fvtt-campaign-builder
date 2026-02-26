@@ -85,7 +85,10 @@
 
   ////////////////////////////////
   // computed data
-  const showTypesInTree = computed(() => ModuleSettings.get(SettingKey.showTypesInTree));
+  const showTypesInTree = computed(() => {
+    ModuleSettings.getReactiveVersion();
+    return ModuleSettings.get(SettingKey.showTypesInTree);
+  });
   
   const displayName = computed(() => {
     if (showTypesInTree.value && props.node.type && props.node.type!==NO_TYPE_STRING) {
@@ -106,7 +109,7 @@
     event.stopPropagation();
     event.preventDefault();
     
-    await navigationStore.openEntry(props.node.id, {newTab: event.ctrlKey});
+    await navigationStore.openEntry(props.node.id, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
   };
 
   // handle an entry dragging to another or to canvas

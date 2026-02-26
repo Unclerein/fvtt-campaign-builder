@@ -1,37 +1,25 @@
+import { GroupableItem } from '@/types';
+import type { 
+  SessionLocation, 
+  SessionItem, 
+  SessionNPC, 
+  SessionMonster, 
+  SessionVignette, 
+  SessionLore 
+} from '@/types/dbTypes';
 import { schemas } from './fields';
 
+// Re-export types for backward compatibility
+export type { 
+  SessionLocation, 
+  SessionItem, 
+  SessionNPC, 
+  SessionMonster, 
+  SessionVignette, 
+  SessionLore 
+} from '@/types/dbTypes';
+
 const fields = foundry.data.fields;
-
-export interface SessionRelatedItem {
-  uuid: string;
-  delivered: boolean;
-}
-
-export interface SessionLocation extends SessionRelatedItem {
-  notes: string;
-}
-
-export interface SessionItem extends SessionRelatedItem {
-  notes: string;
-}
-
-export interface SessionNPC extends SessionRelatedItem {
-  notes: string;
-}
-
-export interface SessionMonster extends SessionRelatedItem {
-  number: number;
-  notes: string;
-}
-
-export interface SessionVignette extends SessionRelatedItem {
-  description: string;
-}
-
-export interface SessionLore extends SessionRelatedItem {
-  significant: boolean;
-  description: string;
-}
 
 export const SessionSchema = {
   /** the campaign this session is in */
@@ -46,6 +34,8 @@ export const SessionSchema = {
   /** map from field name to value */
   customFields: new fields.ObjectField({ required: true, nullable: false, initial: {} }),
 
+  /** the height of each custom field (in rem) */
+  customFieldHeights: new fields.ObjectField({ required: true, nullable: false, initial: {} }),
   // we have to leave this until 1.8 migration is gone because otherwise the migration doesn't have access to it
   strongStart: new fields.StringField({ required: true, nullable: true, initial: null, textSearch: true, }),
 
@@ -95,6 +85,23 @@ export const SessionSchema = {
     new fields.DocumentUUIDField({ required: true, nullable: false }),
     { required: true, nullable: false, initial: [] as string[] }
   ),
+
+  /** consolidated groups structure */
+  groups: new fields.SchemaField({
+    [GroupableItem.SessionLore]: schemas.GroupArray(),
+    [GroupableItem.SessionVignettes]: schemas.GroupArray(),
+    [GroupableItem.SessionLocations]: schemas.GroupArray(),
+    [GroupableItem.SessionNPCs]: schemas.GroupArray(),
+    [GroupableItem.SessionMonsters]: schemas.GroupArray(),
+    [GroupableItem.SessionItems]: schemas.GroupArray(),
+  }, { required: true, nullable: false, initial: {
+    [GroupableItem.SessionLore]: [],
+    [GroupableItem.SessionVignettes]: [],
+    [GroupableItem.SessionLocations]: [],
+    [GroupableItem.SessionNPCs]: [],
+    [GroupableItem.SessionMonsters]: [],
+    [GroupableItem.SessionItems]: [],
+  } }),
 };
 
 type SessionSchemaType = typeof SessionSchema;
@@ -118,6 +125,7 @@ export interface SessionDoc extends JournalEntryPage {
     number: number;
     date: string | null;
     customFields: Record<string, string>;
+    customFieldHeights: Record<string, number>;
     locations: SessionLocation[];
     items: SessionItem[];
     npcs: SessionNPC[];

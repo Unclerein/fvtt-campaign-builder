@@ -65,8 +65,8 @@
       "showTypesInTreeHelp": "Lorsque c'est vrai, si le répertoire des paramètres n'est pas groupé par type, il affichera le type de chaque entrée dans l'arborescence.",
       "useFronts": "Utiliser les fronts",
       "useFrontsHelp": "Activer la fonctionnalité de \"front\" de campagne.",
-      "useWebs": "Utiliser les toiles d'histoires",
-      "useWebsHelp": "Activer la fonctionnalité de \"toile d'histoire\" de la campagne.",
+      "useStoryWebs": "Utiliser les toiles d'histoires",
+      "useStoryWebsHelp": "Activer la fonctionnalité de \"toile d'histoire\" de la campagne.",
       "images": "Configurer les images de contenu",
       "imagesLabel": "Images de contenu",
       "imagesHelp": "Configurer les paramètres de visibilité des images pour différents types de contenu",
@@ -83,7 +83,12 @@
       "genericFoundryTab": "Afficher l'onglet Foundry sur les entrées",
       "genericFoundryTabHelp": "Lorsqu'il est activé, les entrées auront un onglet Foundry qui peut contenir tout type de document Foundry (scènes, acteurs, objets, etc.). Cela est utile pour animer des sessions de jeu entièrement à partir des entrées sans utiliser de campagnes/sessions.",
       "sessionBookmark": "Afficher le signet de la session",
-      "sessionBookmarkHelp": "Lorsqu'il est activé, un signet pour la session en cours sera affiché en tête de la barre de signets"
+      "sessionBookmarkHelp": "Lorsqu'il est activé, un signet pour la session en cours sera affiché en tête de la barre de signets",
+      "tableGrouping": "Paramètres de regroupement de table",
+      "tableGroupingLabel": "Regroupement de table",
+      "tableGroupingHelp": "Configurer quels onglets utilisent des tables groupées pour chaque type de contenu",
+      "enableVoiceRecording": "Activer l'enregistrement vocal",
+      "enableVoiceRecordingHelp": "Autoriser l'enregistrement d'échantillons vocaux pour les personnages afin d'aider à se souvenir des voix/accents"
     },
     "applications": {
       "sessionNotes": {
@@ -308,22 +313,25 @@
         "tabs": {
           "colors": "Connection Colors",
           "styles": "Connection Styles",
-          "fields": "Fields"
+          "fields": "Fields",
+          "shapeColors": "Couleurs des formes"
         },
         "columns": {
           "name": "Name",
           "color": "Color",
           "style": "Style",
           "fieldName": "Field Name",
-          "fieldKey": "Field Key"
+          "foregroundColor": "Couleur du texte",
+          "backgroundColor": "Couleur de fond",
+          "preview": "Aperçu"
         },
         "fieldsHint": "The fields in this list will be displayed in the tooltip when hovering over entities in a Story Web.",
         "contentType": "Content Type",
         "selectField": "Select Field",
         "notifications": {
-          "noAvailableFields": "No available fields to add",
-          "duplicateColorIds": "Duplicate color IDs found. Please ensure all color IDs are unique.",
-          "duplicateStyleIds": "Duplicate style IDs found. Please ensure all style IDs are unique."
+          "duplicateColorIds": "Les identifiants de couleur doivent être uniques",
+          "duplicateStyleIds": "Les identifiants de style doivent être uniques",
+          "duplicateCustomColorSchemeIds": "Les identifiants de schéma de couleur personnalisé doivent être uniques"
         }
       }
     },
@@ -425,7 +433,7 @@
         "addPCDrag": "(ou glisser/déposer un PC)",
         "pcs": "PJ",
         "lore": "Tradition",
-        "todo": "À faire",
+        "toDo": "À faire",
         "addToDo": "Créer un nouveau 'À faire'",
         "loreHelpText": "Suivez les grands secrets au niveau de la campagne et les plus petits que vous n'êtes pas prêt à révéler. Cliquez pour en savoir plus de Lazy DM.",
         "ideas": "Idées",
@@ -461,7 +469,7 @@
           "npcs": "PNJs",
           "monsters": "Monstres",
           "magic": "Objets Magiques",
-          "todo": "À faire",
+          "toDo": "À faire",
           "noteBox": "Boîte à notes"
         },
         "front": {
@@ -564,7 +572,8 @@
       },
       "setting": {
         "setting": "Paramètre"
-      }
+      },
+      "newGroup": "Nouveau groupe"
     },
     "placeholders": {
       "search": "Rechercher",
@@ -773,6 +782,47 @@
           "errorDetails": "Détails de l'erreur",
           "warnings": "Avertissements"
         }
+      },
+      "tableGrouping": {
+        "title": "Paramètres de regroupement de table",
+        "description": "Choisissez quels onglets doivent utiliser des tables groupées pour chaque type de contenu.",
+        "contentTypes": {
+          "settings": "Paramètres",
+          "entries": "Entrées",
+          "campaigns": "Campagnes",
+          "arcs": "Arcs",
+          "sessions": "Sessions",
+          "fronts": "Fronts"
+        },
+        "tabs": {
+          "journals": "Journaux",
+          "characters": "Personnages",
+          "npcs": "PNJ",
+          "locations": "Lieux",
+          "organizations": "Organisations",
+          "pcs": "PJ",
+          "actors": "Acteurs",
+          "sessions": "Sessions",
+          "items": "Objets",
+          "magicItems": "Objets magiques",
+          "monsters": "Monstres",
+          "vignettes": "Vignettes",
+          "lore": "Traditions",
+          "ideas": "Idées",
+          "todo": "À faire",
+          "participants": "Participants",
+          "grimPortents": "Sombres présages"
+        }
+      },
+      "voiceRecording": {
+        "title": "Enregistrement vocal",
+        "recording": "Enregistrement... Cliquez sur Arrêter lorsque vous avez terminé.",
+        "stop": "Arrêter",
+        "overwriteTitle": "Écraser l'enregistrement ?",
+        "overwriteMessage": "Un enregistrement vocal existe déjà. Voulez-vous le remplacer ?",
+        "deleteTitle": "Supprimer l'enregistrement ?",
+        "deleteMessage": "Êtes-vous sûr de vouloir supprimer cet enregistrement vocal ? Le fichier restera sur le serveur mais ne sera plus lié à ce personnage.",
+        "selectFolderTitle": "Sélectionner le dossier d'enregistrement vocal"
       }
     },
     "contextMenus": {
@@ -850,7 +900,8 @@
       },
       "storyWeb": {
         "duplicate": "Dupliquer la toile",
-        "delete": "Supprimer la toile d'histoire"
+        "delete": "Supprimer la toile d'histoire",
+        "exportAsPng": "Exporter en PNG"
       },
       "storyWebGraph": {
         "delete": "Supprimer",
@@ -867,12 +918,19 @@
         "openEntryInNewTab": "Ouvrir l'entrée dans un nouvel onglet",
         "openDangerInNewTab": "Ouvrir le danger dans un nouvel onglet",
         "setColor": "Set Color",
-        "setStyle": "Set Style"
+        "setStyle": "Set Style",
+        "resetToDefault": "Réinitialiser par défaut"
       },
       "addToStoryWeb": "Ajouter à l'histoire Web actuelle",
       "addWithRelationships": "Ajouter avec les relations",
       "danger": {
         "delete": "Supprimer le danger"
+      },
+      "voice": {
+        "record": "Enregistrer la voix",
+        "play": "Lire la voix",
+        "delete": "Supprimer l'enregistrement",
+        "changeFolder": "Changer le dossier d'enregistrement"
       }
     },
     "tooltips": {
@@ -944,17 +1002,14 @@
       "editNotes": "Modifier les notes",
       "copyToNextSession": "Copier à la session suivante",
       "moveToArc": "Déplacer vers l'arc pour une utilisation ultérieure",
-      "movetoLatestArc": "Déplacer vers le dernier arc",
+      "moveToLatestArc": "Déplacer vers le dernier arc",
       "editSession": "Modifier la session",
       "generateAIContent": "Générer du contenu IA",
       "maximizeWindow": "Agrandir la fenêtre",
       "restoreWindow": "Restaurer la fenêtre",
-      "currentSession": "session en cours"
-    },
-    "errors": {
-      "duplicateBookmark": "Déjà enregistré comme favori",
-      "nameRequired": "Le nom ne peut pas être vide",
-      "failedToRepairIndexes": "Échec de la réparation des index. Vérifiez la console pour plus de détails."
+      "currentSession": "session en cours",
+      "voiceRecordingExists": "Enregistrement vocal existant - cliquez pour les options",
+      "voiceRecordingNone": "Aucun enregistrement vocal - cliquez pour enregistrer"
     },
     "notifications": {
       "backend": {
@@ -966,22 +1021,46 @@
       },
       "addedToSession": "ajouté à la session",
       "changesSaved": "Modifications enregistrées",
-      "todoReferenceNotFound": "La référence liée pour cet élément à faire n'existe plus.",
+      "toDoReferenceNotFound": "La référence liée pour cet élément à faire n'existe plus.",
       "changesDiscarded": "Modifications annulées",
       "migration": {
-        "minimumVersionRequired": "Le constructeur de campagne ne peut pas migrer depuis la version {0}. Vous devez d'abord passer à la version {1} ou supérieure avant de passer à {2}.",
+        "minimumVersionRequired": "Campaign Builder ne peut pas migrer depuis la version {0}. Vous devez d'abord mettre à niveau vers la version {1} ou supérieure avant de passer à la version {2}.",
         "cannotOpen": "Le constructeur de campagne ne peut pas être ouvert car la migration a échoué. Veuillez vérifier la console pour plus de détails et résoudre le problème de migration."
       },
       "participantCopiedToNextSession": "Participant copié à la session suivante",
       "locationCopiedToNextSession": "Lieu copié à la session suivante",
       "monsterCopiedToNextSession": "Monstre copié à la session suivante",
-      "documentIndexesRepaired": "Tous les index des documents ont été réparés avec succès !"
+      "documentIndexesRepaired": "Tous les index des documents ont été réparés avec succès !",
+      "duplicateBookmark": "Déjà enregistré comme un signet",
+      "nameRequired": "Le nom ne peut pas être vide",
+      "failedToRepairIndexes": "Échec de la réparation des index. Vérifiez la console pour plus de détails.",
+      "failedToExportStoryWeb": "Échec de l'exportation du réseau d'histoires en PNG",
+      "export": {
+        "starting": "Démarrage de l'exportation des paramètres...",
+        "complete": "Paramètre exporté avec succès",
+        "failed": "Échec de l'exportation du paramètre"
+      },
+      "voiceRecording": {
+        "saved": "Enregistrement vocal enregistré",
+        "deleted": "Enregistrement vocal supprimé",
+        "permissionDenied": "Accès au microphone refusé. Veuillez autoriser l'accès au microphone pour enregistrer la voix.",
+        "notSupported": "L'enregistrement vocal n'est pas pris en charge dans ce navigateur",
+        "uploadFailed": "Échec du téléchargement de l'enregistrement vocal"
+      }
     },
     "tags": {
       "tag": "Étiquette",
       "resultsFor": "Résultats de l'étiquette pour",
       "entryFound": "entrée trouvée",
       "entriesFound": "entrées trouvées"
+    },
+    "export": {
+      "relatedTopics": {
+        "1": "Personnages associés",
+        "2": "Lieux associés",
+        "3": "Organisations associées",
+        "4": "PJ associés"
+      }
     }
   }
 }

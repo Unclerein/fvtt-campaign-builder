@@ -20,6 +20,7 @@
   import { storeToRefs } from 'pinia';
 
   import { useMainStore, useNavigationStore, useCampaignStore, useArcStore, useSessionStore } from '@/applications/stores';
+  import { useContentState } from '@/composables/useContentState';
   import { localize } from '@/utils/game';
   import { FCBDialog } from '@/dialogs';
   import DragDropService from '@/utils/dragDrop'; 
@@ -46,7 +47,7 @@
   const campaignStore = useCampaignStore();
   const arcStore = useArcStore();
   const sessionStore = useSessionStore();
-  const { currentCampaign, currentArc, currentSession } = storeToRefs(mainStore);
+  const { currentCampaign, currentArc, currentSession } = useContentState();
 
   const rows = ref<StoryWebRow[]>([]);
 
@@ -96,8 +97,8 @@
     },
   ]));
 
-  const onNameClick = async (event: MouseEvent, uuid: string) => {
-    await navigationStore.openStoryWeb(uuid, { newTab: event.ctrlKey, activate: true });
+  const onNameClick = async (event: MouseEvent, data: Record<string, unknown> & { uuid: string; }) => {
+    await navigationStore.openStoryWeb(data.uuid, { newTab: event.ctrlKey, activate: true, panelIndex: event.altKey ? -1 : undefined });
   };
 
   const refreshRows = async () => {

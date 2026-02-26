@@ -11,7 +11,7 @@
               class="fcb-ai-button"
               :title="localize('tooltips.generateAIContent')"
               :disabled="isGeneratingAi[aiGenerationKey(field)]"
-              @click.stop="onGenerateAiClick(field)"
+              @click.stop="onGenerateAiClick(field.name)"
             >
               <i class="fas fa-head-side-virus"></i>
             </button>
@@ -28,9 +28,11 @@
           <Editor
             :key="`${content.uuid}-${field.name}`"
             :initial-content="String(values[field.name] ?? '')"
-            :fixed-height="`${field.editorHeight ?? 4}rem`"
+            :fixed-height="editorHeights[field.name] ? editorHeights[field.name] : (field.editorHeight ?? 4)"
+            :resizable="true"
             :current-entity-uuid="content.uuid"
             @editor-saved="(newContent: string) => onFieldValueChanged(field, newContent)"
+            @editor-resized="(height: number) => onEditorResized(field, height)"
             @related-entries-changed="onRelatedEntriesChanged"
           />
         </div>
@@ -89,7 +91,8 @@
   import { localize } from '@/utils/game';
   import { ModuleSettings, SettingKey } from '@/settings';
   import { notifyError, notifyInfo } from '@/utils/notifications';
-  import { useMainStore, useBackendStore } from '@/applications/stores';
+  import { useBackendStore } from '@/applications/stores';
+  import { useContentState } from '@/composables/useContentState';
   import { nameStyles } from '@/utils/nameStyles';
   import { promptReplace } from '@/utils/generation';
   import { replaceUUIDsInText } from '@/utils/sanitizeHtml';
@@ -127,9 +130,8 @@
   // store
 
   const backendStore = useBackendStore();
-  const mainStore = useMainStore();
   const { available: backendAvailable } = storeToRefs(backendStore);
-  const { currentSetting, currentArc, currentSession, currentCampaign, currentEntry, currentFront, } = storeToRefs(mainStore);
+  const { currentSetting, currentArc, currentSession, currentCampaign, currentEntry, currentFront } = useContentState();
 
   ////////////////////////////////
   // data
@@ -147,6 +149,7 @@
   };
 
   const values = reactive<Record<string, unknown>>({});
+  const editorHeights = reactive<Record<string, number>>({});
 
   const isGeneratingAi = reactive<Record<string, boolean>>({});
 
@@ -184,6 +187,7 @@
   });
 
   const customFields = computed<CustomFieldDescription[]>(() => {
+    ModuleSettings.getReactiveVersion();
     const customFieldsByType = ModuleSettings.get(SettingKey.customFields);
     return (customFieldsByType?.[props.contentType] || [])
       .filter((f) => !f.deleted)
@@ -314,15 +318,22 @@
       return;
 
     for (const field of customFields.value) {
-      if (!('getCustomField' in content.value)) 
-        debugger;
-
       const current = content.value.getCustomField(field.name);
 
       if (field.fieldType === FieldType.Boolean) {
         values[field.name] = Boolean(current);
       } else {
         values[field.name] = (current ?? '') as any;
+      }
+
+      // Load custom height if it exists
+      if (field.fieldType === FieldType.Editor) {
+        const storedHeight = content.value.getCustomFieldHeight(field.name);
+        if (storedHeight) {
+          editorHeights[field.name] = storedHeight;
+        } else if (field.editorHeight) {
+          editorHeights[field.name] = field.editorHeight;
+        }
       }
     }
   };
@@ -337,9 +348,13 @@
     const debounceTime = 500;
     clearTimeout(saveDebounceTimer);
 
+    // Capture the content reference at the time the debounce starts,
+    // so we save to the correct document even if the tab switches before the debounce fires
+    const contentToSave = content.value;
+
     saveDebounceTimer = setTimeout(async () => {
       try {
-        await content.value?.save();
+        await contentToSave?.save();
       } catch (e) {
         console.error(e);
         notifyError(localize('applications.customFieldsBlocks.notifications.saveFailed'));
@@ -364,10 +379,26 @@
     queueSave();
   };
 
-  const onGenerateAiClick = async (field: CustomFieldDescription) => {
+  const onEditorResized = (field: CustomFieldDescription, height: number) => {
+    if (!content.value) return;
+
+    editorHeights[field.name] = height;
+    content.value.setCustomFieldHeight(field.name, height);
+    queueSave();
+  };
+
+  const onGenerateAiClick = async (fieldName: string) => {
+    // we load the field rather than just taking from the vue template because settings might have been updated
+    const field = ModuleSettings.get(SettingKey.customFields)?.[props.contentType]?.find((f) => f.name === fieldName);
+    if (!field) return;
+
     if (!content.value) return;
     if (!backendAvailable.value) return;
     if (!field.aiEnabled) return;
+
+    // if there's already a value there, confirm that user wants to overwrite
+    if (!(await FCBDialog.confirmDialog('Overwrite field?', `Are you sure you want to overwrite ${field.label} with new text?`)))
+      return;
 
     const key = aiGenerationKey(field);
     if (isGeneratingAi[key]) return;

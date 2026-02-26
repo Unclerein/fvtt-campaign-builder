@@ -36,9 +36,11 @@
           <div class="flexrow form-group">
             <Editor 
               :initial-content="currentCampaign?.description || ''"
-              fixed-height="240px"
+              :fixed-height="descriptionHeight"
+              :resizable="true"
               :current-entity-uuid="currentCampaign?.uuid"
               @editor-saved="onDescriptionEditorSaved"
+              @editor-resized="onDescriptionEditorResized"
             />
           </div>
 
@@ -72,7 +74,7 @@
             <StoryWebsTab mode="campaign" />
           </div>
         </div>
-        <div v-if="showToDoTab" class="tab flexcol" data-group="primary" data-tab="todo">
+        <div v-if="showToDoTab" class="tab flexcol" data-group="primary" data-tab="toDo">
           <div class="tab-inner">
             <CampaignToDoTab />
           </div>
@@ -85,13 +87,14 @@
 <script setup lang="ts">
 
   // library imports
-  import { computed, ref, watch, } from 'vue';
-  import { storeToRefs } from 'pinia';
+  import { computed, ref, watch, provide, } from 'vue';
 
   // local imports
   import { getTabTypeIcon, } from '@/utils/misc';
   import { localize } from '@/utils/game';
-  import { useCampaignDirectoryStore, useCampaignStore, useMainStore, useNavigationStore } from '@/applications/stores';
+  import { useCampaignDirectoryStore, useNavigationStore } from '@/applications/stores';
+  import { useContentState } from '@/composables/useContentState';
+  import { useCampaignDerivedState, CAMPAIGN_DERIVED_STATE_KEY } from '@/composables/useCampaignDerivedState';
   import { ModuleSettings, SettingKey } from '@/settings';
   import { notifyWarn } from '@/utils/notifications';
   
@@ -122,12 +125,14 @@
 
   ////////////////////////////////
   // store
-  const mainStore = useMainStore();
   const navigationStore = useNavigationStore();
   const campaignDirectoryStore = useCampaignDirectoryStore();
-  const campaignStore = useCampaignStore();
-  const { currentCampaign, } = storeToRefs(mainStore);
-  const { toDoRows } = storeToRefs(campaignStore);
+  const { currentCampaign } = useContentState();
+
+  // per-panel derived state for campaign content
+  const campaignDerivedState = useCampaignDerivedState();
+  provide(CAMPAIGN_DERIVED_STATE_KEY, campaignDerivedState);
+  const { toDoRows } = campaignDerivedState;
 
   ////////////////////////////////
   // data
@@ -135,17 +140,20 @@
   const name = ref<string>('');
 
   const icon =  getTabTypeIcon(WindowTabType.Campaign);
- 
+   const descriptionHeight = ref<number>(15);  // for handling description editor height
+
   ////////////////////////////////
   // computed data
   const namePlaceholder = computed((): string => (localize('placeholders.campaignName') || ''));
 
   const showToDoTab = computed(() => {
+    ModuleSettings.getReactiveVersion();
     return ModuleSettings.get(SettingKey.enableToDoList);
   });
 
   const showStoryWebTab = computed(() => {
-    return ModuleSettings.get(SettingKey.useWebs);
+    ModuleSettings.getReactiveVersion();
+    return ModuleSettings.get(SettingKey.useStoryWebs);
   });
 
   const openToDoCount = computed(() => toDoRows.value.length);
@@ -162,7 +170,7 @@
     if (showToDoTab.value) {
       const baseLabel = localize('labels.tabs.campaign.toDo');
       const label = openToDoCount.value ? `${baseLabel} (${openToDoCount.value})` : baseLabel;
-      baseTabs.push({ id: 'todo', label });
+      baseTabs.push({ id: 'toDo', label });
     }
 
 
@@ -180,6 +188,15 @@
   ////////////////////////////////
   // event handlers
 
+  const onDescriptionEditorResized = async (height: number) => {
+    if (!currentCampaign.value)
+      return;
+    
+    descriptionHeight.value = height;
+    currentCampaign.value?.setCustomFieldHeight('###description###', height);
+    await currentCampaign.value?.save();
+  };
+
   // debounce changes to name
   let debounceTimer: NodeJS.Timeout | undefined = undefined;
 
@@ -193,7 +210,7 @@
 
       // name can't be blank
       if (newValue.trim() === '') {
-        notifyWarn(localize('errors.nameRequired'));
+        notifyWarn(localize('notifications.nameRequired'));
         name.value = currentCampaign.value?.name!;
         return;
       }
@@ -238,6 +255,7 @@
 
     // load starting data values
     name.value = currentCampaign.value.name || '';
+    descriptionHeight.value = currentCampaign.value.getCustomFieldHeight('###description###') || 15;
   });
 
   ////////////////////////////////

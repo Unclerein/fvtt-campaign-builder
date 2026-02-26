@@ -48,7 +48,7 @@
       "defaultAddToSession": "Standardmäßig 'Zur aktuellen Sitzung hinzufügen'",
       "defaultAddToSessionHelp": "Soll im Abspielmodus das Kontrollkästchen beim Erstellen eines Eintrags standardmäßig aktiviert oder deaktiviert sein?",
       "enableToDoList": "ToDo-Liste aktivieren",
-      "enableToDoListHelp": "Wenn deaktiviert, wird die ToDo-Listen-Funktion ausgeschaltet.",
+      "enableToDoListHelp": "Wenn deaktiviert, wird die To-Do-Liste-Funktion ausgeschaltet.",
       "autoRelationships": "Beziehungen automatisch vorschlagen",
       "autoRelationshipsHelp": "Wenn aktiviert, wird das System automatisch Änderungen an Beziehungen zwischen Einträgen vorschlagen, basierend auf Änderungen, die an der Beschreibung vorgenommen wurden.",
       "keybindings": {
@@ -65,8 +65,8 @@
       "showTypesInTreeHelp": "Wenn wahr, zeigt es den Typ jedes Eintrags im Baum an, wenn das Einstellungsverzeichnis nicht nach Typ gruppiert ist.",
       "useFronts": "Fronten verwenden",
       "useFrontsHelp": "Aktivieren Sie die Kampagnenfunktion \"Front\".",
-      "useWebs": "Story-Netze verwenden",
-      "useWebsHelp": "Aktivieren Sie die Funktionalität des Kampagnen-\"Story-Netzes\".",
+      "useStoryWebs": "Story-Netze verwenden",
+      "useStoryWebsHelp": "Aktivieren Sie die Funktionalität des Kampagnen-\"Story-Netzes\".",
       "images": "Inhaltsbilder konfigurieren",
       "imagesLabel": "Inhaltsbilder",
       "imagesHelp": "Konfigurieren Sie die Sichtbarkeitseinstellungen für Bilder für verschiedene Inhaltstypen",
@@ -83,7 +83,12 @@
       "genericFoundryTab": "Zeige Foundry-Tab auf Einträgen",
       "genericFoundryTabHelp": "Wenn aktiviert, haben Einträge einen Foundry-Tab, der jede Art von Foundry-Dokument (Szenen, Schauspieler, Gegenstände, etc.) enthalten kann. Dies ist nützlich, um Spielsitzungen vollständig von Einträgen aus zu steuern, ohne Kampagnen/Sitzungen zu verwenden.",
       "sessionBookmark": "Sitzungs-Lesezeichen anzeigen",
-      "sessionBookmarkHelp": "Wenn aktiviert, wird ein Lesezeichen für die aktuelle Sitzung vorne in der Lesezeichenleiste angezeigt"
+      "sessionBookmarkHelp": "Wenn aktiviert, wird ein Lesezeichen für die aktuelle Sitzung vorne in der Lesezeichenleiste angezeigt",
+      "tableGrouping": "Tabellengruppierungseinstellungen",
+      "tableGroupingLabel": "Tabellengruppierung",
+      "tableGroupingHelp": "Konfigurieren Sie, welche Registerkarten gruppierte Tabellen für jeden Inhaltstyp verwenden",
+      "enableVoiceRecording": "Sprachaufnahme aktivieren",
+      "enableVoiceRecordingHelp": "Erlaube das Aufzeichnen von Sprachproben für Charaktere, um Stimmen/Akzente besser zu merken"
     },
     "applications": {
       "sessionNotes": {
@@ -308,22 +313,25 @@
         "tabs": {
           "colors": "Connection Colors",
           "styles": "Connection Styles",
-          "fields": "Fields"
+          "fields": "Fields",
+          "shapeColors": "Formfarben"
         },
         "columns": {
           "name": "Name",
           "color": "Color",
           "style": "Style",
           "fieldName": "Field Name",
-          "fieldKey": "Field Key"
+          "foregroundColor": "Textfarbe",
+          "backgroundColor": "Hintergrundfarbe",
+          "preview": "Vorschau"
         },
         "fieldsHint": "The fields in this list will be displayed in the tooltip when hovering over entities in a Story Web.",
         "contentType": "Content Type",
         "selectField": "Select Field",
         "notifications": {
-          "noAvailableFields": "No available fields to add",
-          "duplicateColorIds": "Duplicate color IDs found. Please ensure all color IDs are unique.",
-          "duplicateStyleIds": "Duplicate style IDs found. Please ensure all style IDs are unique."
+          "duplicateColorIds": "Farb-IDs müssen eindeutig sein",
+          "duplicateStyleIds": "Stil-IDs müssen eindeutig sein",
+          "duplicateCustomColorSchemeIds": "Benutzerdefinierte Farbschema-IDs müssen eindeutig sein"
         }
       }
     },
@@ -425,7 +433,7 @@
         "addPCDrag": "(oder PC ziehen/ablegen)",
         "pcs": "SCs",
         "lore": "Überlieferung",
-        "todo": "Zu erledigen",
+        "toDo": "Zu erledigen",
         "addToDo": "Neues 'Zu erledigen' erstellen",
         "loreHelpText": "Verfolgen Sie große kampagnenweite Geheimnisse und kleinere, die Sie noch nicht preisgeben möchten. Klicken Sie, um mehr von Lazy DM zu lesen.",
         "ideas": "Ideen",
@@ -461,7 +469,7 @@
           "npcs": "NPCs",
           "monsters": "Monster",
           "magic": "Magische Gegenstände",
-          "todo": "Zu erledigen",
+          "toDo": "Zu erledigen",
           "noteBox": "Notizbox"
         },
         "front": {
@@ -564,7 +572,8 @@
       },
       "setting": {
         "setting": "Einstellung"
-      }
+      },
+      "newGroup": "Neue Gruppe"
     },
     "placeholders": {
       "search": "Suche",
@@ -773,6 +782,47 @@
           "errorDetails": "Fehlerdetails",
           "warnings": "Warnungen"
         }
+      },
+      "tableGrouping": {
+        "title": "Tabellengruppierungseinstellungen",
+        "description": "Wählen Sie, welche Registerkarten gruppierte Tabellen für jeden Inhaltstyp verwenden sollen.",
+        "contentTypes": {
+          "settings": "Einstellungen",
+          "entries": "Einträge",
+          "campaigns": "Kampagnen",
+          "arcs": "Arcs",
+          "sessions": "Sitzungen",
+          "fronts": "Fronten"
+        },
+        "tabs": {
+          "journals": "Zeitschriften",
+          "characters": "Charaktere",
+          "npcs": "NSCs",
+          "locations": "Orte",
+          "organizations": "Organisationen",
+          "pcs": "SCs",
+          "actors": "Schauspieler",
+          "sessions": "Sitzungen",
+          "items": "Gegenstände",
+          "magicItems": "Magische Gegenstände",
+          "monsters": "Monster",
+          "vignettes": "Vignetten",
+          "lore": "Überlieferung",
+          "ideas": "Ideen",
+          "todo": "Aufgaben",
+          "participants": "Teilnehmer",
+          "grimPortents": "Düstere Vorzeichen"
+        }
+      },
+      "voiceRecording": {
+        "title": "Sprachaufnahme",
+        "recording": "Aufnahme... Klicken Sie auf Stop, wenn Sie fertig sind.",
+        "stop": "Stop",
+        "overwriteTitle": "Aufnahme überschreiben?",
+        "overwriteMessage": "Eine Sprachaufnahme existiert bereits. Möchten Sie sie ersetzen?",
+        "deleteTitle": "Aufnahme löschen?",
+        "deleteMessage": "Sind Sie sicher, dass Sie diese Sprachaufnahme löschen möchten? Die Datei bleibt auf dem Server, wird jedoch nicht mehr mit diesem Charakter verknüpft.",
+        "selectFolderTitle": "Ordner für Sprachaufnahmen auswählen"
       }
     },
     "contextMenus": {
@@ -850,7 +900,8 @@
       },
       "storyWeb": {
         "duplicate": "Web duplizieren",
-        "delete": "Story-Netz löschen"
+        "delete": "Story-Netz löschen",
+        "exportAsPng": "Als PNG exportieren"
       },
       "storyWebGraph": {
         "delete": "Löschen",
@@ -867,12 +918,19 @@
         "openEntryInNewTab": "Eintrag in neuem Tab öffnen",
         "openDangerInNewTab": "Gefahr in neuem Tab öffnen",
         "setColor": "Set Color",
-        "setStyle": "Set Style"
+        "setStyle": "Set Style",
+        "resetToDefault": "Auf Standard zurücksetzen"
       },
       "addToStoryWeb": "Zum aktuellen Story-Web hinzufügen",
       "addWithRelationships": "Mit Beziehungen hinzufügen",
       "danger": {
         "delete": "Gefahr löschen"
+      },
+      "voice": {
+        "record": "Stimme aufnehmen",
+        "play": "Stimme abspielen",
+        "delete": "Aufnahme löschen",
+        "changeFolder": "Aufnahmeordner ändern"
       }
     },
     "tooltips": {
@@ -944,17 +1002,14 @@
       "editNotes": "Notizen bearbeiten",
       "copyToNextSession": "In die nächste Sitzung kopieren",
       "moveToArc": "Zum späteren Gebrauch in den Bogen verschieben",
-      "movetoLatestArc": "Zum neuesten Bogen verschieben",
+      "moveToLatestArc": "Zum neuesten Bogen verschieben",
       "editSession": "Sitzung bearbeiten",
       "generateAIContent": "KI-Inhalt generieren",
       "maximizeWindow": "Fenster maximieren",
       "restoreWindow": "Fenster wiederherstellen",
-      "currentSession": "aktuelle Sitzung"
-    },
-    "errors": {
-      "duplicateBookmark": "Bereits als Lesezeichen gespeichert",
-      "nameRequired": "Name darf nicht leer sein",
-      "failedToRepairIndexes": "Fehler beim Reparieren der Indizes. Überprüfen Sie die Konsole für Details."
+      "currentSession": "aktuelle Sitzung",
+      "voiceRecordingExists": "Sprachaufnahme vorhanden - klicken für Optionen",
+      "voiceRecordingNone": "Keine Sprachaufnahme - klicken zum Aufnehmen"
     },
     "notifications": {
       "backend": {
@@ -966,22 +1021,46 @@
       },
       "addedToSession": "zur Sitzung hinzugefügt",
       "changesSaved": "Änderungen gespeichert",
-      "todoReferenceNotFound": "Die verknüpfte Referenz für dieses To-Do-Element existiert nicht mehr.",
+      "toDoReferenceNotFound": "Die verknüpfte Referenz für dieses To-Do-Element existiert nicht mehr.",
       "changesDiscarded": "Änderungen verworfen",
       "migration": {
-        "minimumVersionRequired": "Campign Builder kann nicht von Version {0} migrieren. Sie müssen zuerst auf Version {1} oder höher aktualisieren, bevor Sie auf {2} upgraden.",
+        "minimumVersionRequired": "Campaign Builder kann nicht von Version {0} migrieren. Sie müssen zuerst auf Version {1} oder höher aktualisieren, bevor Sie auf {2} upgraden.",
         "cannotOpen": "Campaign Builder kann nicht geöffnet werden, da die Migration fehlgeschlagen ist. Bitte überprüfen Sie die Konsole auf Details und beheben Sie das Migrationsproblem."
       },
       "participantCopiedToNextSession": "Teilnehmer in die nächste Sitzung kopiert",
       "locationCopiedToNextSession": "Ort in die nächste Sitzung kopiert",
       "monsterCopiedToNextSession": "Monster in die nächste Sitzung kopiert",
-      "documentIndexesRepaired": "Alle Dokumentindizes wurden erfolgreich repariert!"
+      "documentIndexesRepaired": "Alle Dokumentindizes wurden erfolgreich repariert!",
+      "duplicateBookmark": "Bereits als Lesezeichen gespeichert",
+      "nameRequired": "Name darf nicht leer sein",
+      "failedToRepairIndexes": "Fehler beim Reparieren der Indizes. Überprüfen Sie die Konsole für Details.",
+      "failedToExportStoryWeb": "Fehler beim Exportieren des Story-Webs als PNG",
+      "export": {
+        "starting": "Starte den Export der Einstellungen...",
+        "complete": "Einstellungen erfolgreich exportiert",
+        "failed": "Fehler beim Exportieren der Einstellungen"
+      },
+      "voiceRecording": {
+        "saved": "Sprachaufnahme gespeichert",
+        "deleted": "Sprachaufnahme entfernt",
+        "permissionDenied": "Mikrofonzugriff verweigert. Bitte erlauben Sie den Mikrofonzugriff, um die Stimme aufzunehmen.",
+        "notSupported": "Sprachaufnahme wird in diesem Browser nicht unterstützt",
+        "uploadFailed": "Hochladen der Sprachaufnahme fehlgeschlagen"
+      }
     },
     "tags": {
       "tag": "Tag",
       "resultsFor": "Tag-Ergebnisse für",
       "entryFound": "Eintrag gefunden",
       "entriesFound": "Einträge gefunden"
+    },
+    "export": {
+      "relatedTopics": {
+        "1": "Verwandte Charaktere",
+        "2": "Verwandte Orte",
+        "3": "Verwandte Organisationen",
+        "4": "Verwandte PCs"
+      }
     }
   }
 }

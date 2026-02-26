@@ -1,9 +1,11 @@
 import { toRaw } from 'vue';
 import { JournalEntryFlagKey, moduleId, ModuleSettings, SettingKey } from '@/settings';
-import { ValidDocType } from '@/types';
+import { ValidDocType, TableGroup, DocumentGroups, GroupableItem, UNGROUPED_GROUP_ID } from '@/types';
 import { FCBSetting } from './FCBSetting';
 import { sanitizeHTML } from '@/utils/sanitizeHtml';
 import GlobalSettingService from '@/utils/globalSettings';
+import { useNavigationStore, useStoryWebStore } from '@/applications/stores';
+import { DOCUMENT_TYPES } from '@/documents';
 
 //pull the DocType out of a constructor for a child
 type DocTypeOf<T> =
@@ -70,6 +72,27 @@ export class FCBJournalEntryPage<
 
     // @ts-ignore - not sure how to specify customFields exists on all of these
     this._clone.system.customFields[key] = value;
+  }
+
+  public get customFieldHeights(): Readonly<Record<string, number>> {
+    // @ts-ignore - not sure how to specify customFieldHeights exists on all of these
+    return foundry.utils.deepClone(this._clone.system?.customFieldHeights) || {};
+  }
+  
+  public getCustomFieldHeight(key: string): number | undefined {
+    // @ts-ignore - not sure how to specify customFieldHeights exists on all of these
+    return this._clone.system?.customFieldHeights?.[key];
+  }
+
+  public setCustomFieldHeight(key: string, value: number): void {
+    // @ts-ignore - not sure how to specify customFieldHeights exists on all of these
+    if (!this._clone.system.customFieldHeights || typeof this._clone.system.customFieldHeights !== 'object') {
+    // @ts-ignore - not sure how to specify customFieldHeights exists on all of these
+      this._clone.system.customFieldHeights = {};
+    }
+
+    // @ts-ignore - not sure how to specify customFieldHeights exists on all of these
+    this._clone.system.customFieldHeights[key] = value;
   }
 
   /** Note that we always refer to the uuid of the wrapping JournalEntry  */
@@ -206,10 +229,51 @@ export class FCBJournalEntryPage<
         // reset the doc and clone
         this._doc = retval;
         this._clone = retval.clone({}, { keepId: true });
-      }      
+      }
+
+      // Refresh all panels showing this content to keep them in sync.
+      const navigationStore = useNavigationStore();
+      await navigationStore.refreshContentAcrossPanels(this.uuid);
+
+      // When a non-story-web document changes, regenerate story web graphs that
+      // reference it so they pick up updated entry names, relationships, etc.
+      if (this._doc.type !== DOCUMENT_TYPES.StoryWeb) {
+        const storyWebStore = useStoryWebStore();
+        await storyWebStore.regenerateAllGraphs(this.uuid);
+      }
     } catch (e) {
       throw new Error(`Error updating journal entry page ${this._doc.uuid} ${this._doc.name}: ${e}`);
     }
+  }
+
+  /**
+   * Universal getter for groups of a specific type
+   * @param itemType - The type of items (e.g., 'ideas', 'toDoItems')
+   * @returns The groups array for that item type
+   */
+  public getGroups(itemType: GroupableItem): readonly TableGroup[] {
+    // technically this isn't safe because not all documents have groups (ex. storywebs, fronts)
+    // but itemType mostly protects us, so we're going to ignore it
+    // @ts-ignore
+      return this._clone.system.groups?.[itemType] || [];
+  }
+
+  /**
+   * Universal setter for groups of a specific type
+   * @param itemType - The type of items (e.g., 'ideas', 'toDoItems')
+   * @param value - The new groups array
+   */
+  public setGroups(itemType: GroupableItem, value: TableGroup[] | readonly TableGroup[]): void {
+    // technically this isn't safe because not all documents have groups (ex. storywebs, fronts)
+    // but itemType mostly protects us, so we're going to ignore it
+    // @ts-ignore
+    if (!this._clone.system.groups) {
+      // @ts-ignore
+      this._clone.system.groups = {} as DocumentGroups;
+    }
+
+    // @ts-ignore
+    this._clone.system.groups[itemType] = value.slice(); // we clone it so it can't be edited outside (this is historical)
   }
   
   

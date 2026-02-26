@@ -7,6 +7,8 @@ import { StoryWebEdge, StoryWebNode, StoryWebNodeSource, StoryWebNodeTypes, Topi
 import { topicToNodeType } from '@/utils/misc';
 import { Entry, Front } from '@/classes';
 import CleanKeysService from '@/utils/cleanKeys';
+import type { Edge, Node } from 'vis-network';
+import { generateNetworkData } from '@/utils/storyWebGeneration';
 
 type StoryWebDocClass = JournalEntryPage<typeof DOCUMENT_TYPES.StoryWeb>;
 
@@ -18,6 +20,7 @@ export class StoryWeb extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.StoryWeb
     edges: [],
     positions: {},
     edgeStyles: {},
+    nodeStyles: {},
   } as unknown as StoryWebDocClass['system'];
 
   public campaign: Campaign | null;
@@ -103,11 +106,21 @@ export class StoryWeb extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.StoryWeb
     newStoryWeb.edges = [...originalStoryWeb.edges];
     newStoryWeb.positions = { ...originalStoryWeb.positions };
     newStoryWeb.edgeStyles = { ...originalStoryWeb.edgeStyles };
+    newStoryWeb.nodeStyles = { ...originalStoryWeb.nodeStyles };
     await newStoryWeb.save();
 
     return newStoryWeb;
   }
 
+  /**
+   * Generates network data for the story web
+   * @param forExport - true if this is being generated for export (i.e. PNG); impacts colors (default false)
+   * @returns Object containing nodes and edges arrays
+   */
+  public async generateNetworkData(forExport: boolean = false): Promise<{ nodes: Node[], edges: Edge[] }> {
+    return await generateNetworkData(this, forExport);
+  }
+  
   get name(): string {
     return this._clone.name;
   }
@@ -154,6 +167,14 @@ export class StoryWeb extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.StoryWeb
 
   set edgeStyles(value: {[x:string]: { colorId: string, styleId: string }}) {
     this._clone.system.edgeStyles = { ...value };
+  }
+
+  get nodeStyles(): {[x:string]: { colorSchemeId: string }} {
+    return this._clone.system.nodeStyles || {};
+  }
+
+  set nodeStyles(value: {[x:string]: { colorSchemeId: string }}) {
+    this._clone.system.nodeStyles = { ...value };
   }
 
   /** withRelationships will also bring in all the related entries */
@@ -320,6 +341,7 @@ export class StoryWeb extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.StoryWeb
     // convert unsafe keys
     data.system.positions = CleanKeysService.cleanKeysOnSave(data.system.positions);
     data.system.edgeStyles = CleanKeysService.cleanKeysOnSave(data.system.edgeStyles);
+    data.system.nodeStyles = CleanKeysService.cleanKeysOnSave(data.system.nodeStyles);
   }
 
   public async save(): Promise<void> {

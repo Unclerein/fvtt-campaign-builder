@@ -62,7 +62,7 @@
       "hideBackendWarning": "Hide missing backend warning?",
       "hideBackendWarningHelp": "If you're not using the backend, this lets you turn off the notification that it's missing",
       "enableToDoList": "Enable To-do List",
-      "enableToDoListHelp": "If disabled, the todo list feature will be turned off.",
+      "enableToDoListHelp": "If disabled, the To Do list feature will be turned off.",
       "autoRelationships": "Auto-suggest relationships",
       "autoRelationshipsHelp": "If enabled, the system will automatically suggest changes to relationships between entries based on changes made to the description.",
       "images": "Configure Content Images",
@@ -72,8 +72,8 @@
       "showTypesInTreeHelp": "When true, if the Setting directory is not grouped by type, it will show the type of each Entry in the tree.",
       "useFronts": "Use Fronts",
       "useFrontsHelp": "Turn on campaign \"front\" functionality.",
-      "useWebs": "Use Story Webs",
-      "useWebsHelp": "Turn on campaign \"story web\" functionality.",
+      "useStoryWebs": "Use Story Webs",
+      "useStoryWebsHelp": "Turn on campaign \"story web\" functionality.",
       "subTabsSavePosition": "Sub-tabs save position",
       "subTabsSavePositionHelp": "When enabled, every tab will remember which interior sub-tab was open and return to it when you re-open that tab. When disabled, tabs will always revert to the first one (usually description).",
       "storyWebAutoArrange": "Auto-arrange story webs",
@@ -83,7 +83,12 @@
       "customFieldsHelp": "Configure additional fields and AI instructions for each content type",
       "storyWebSettings": "Story Web Settings",
       "storyWebSettingsLabel": "Configure Settings",
-      "storyWebSettingsHelp": "Configure line colors/styles and element text for story webs"
+      "storyWebSettingsHelp": "Configure line colors/styles and element text for story webs",
+      "enableVoiceRecording": "Enable Voice Recording",
+      "enableVoiceRecordingHelp": "Allow recording voice samples for characters to help remember voices/accents",
+      "tableGrouping": "Table Grouping Settings",
+      "tableGroupingLabel": "Table Grouping",
+      "tableGroupingHelp": "Configure which tabs use grouped tables for each content type"
     },
     "applications": {
       "sessionNotes": {
@@ -286,22 +291,25 @@
         "tabs": {
           "colors": "Connection Colors",
           "styles": "Connection Styles",
+          "shapeColors": "Shape Colors",
           "fields": "Fields"
         },
         "columns": {
           "name": "Name",
           "color": "Color",
           "style": "Style",
-          "fieldName": "Field Name",
-          "fieldKey": "Field Key"
+          "foregroundColor": "Text Color",
+          "backgroundColor": "Background Color",
+          "preview": "Preview",
+          "fieldName": "Field Name"
         },
         "fieldsHint": "The fields in this list will be displayed in the tooltip when hovering over entities in a Story Web.",
         "contentType": "Content Type",
         "selectField": "Select Field",
         "notifications": {
-          "noAvailableFields": "No available fields to add",
-          "duplicateColorIds": "Duplicate color IDs found. Please ensure all color IDs are unique.",
-          "duplicateStyleIds": "Duplicate style IDs found. Please ensure all style IDs are unique."
+          "duplicateColorIds": "Color IDs must be unique",
+          "duplicateStyleIds": "Style IDs must be unique",
+          "duplicateCustomColorSchemeIds": "Custom color scheme IDs must be unique"
         }
       },
       "createEntry": {
@@ -334,6 +342,7 @@
     "labels": {
       "add": "Add",
       "newTab": "New Tab",
+      "newGroup": "New Group",
       "saveChanges": "Save Changes",
       "reset": "Reset",
       "cancel": "Cancel",
@@ -501,7 +510,7 @@
         "pcs": "PCs",
         "lore": "Lore",
         "loreHelpText": "Track big campaign-level secrets and smaller ones that you aren't ready to deliver. Click to read more from Lazy DM.",
-        "todo": "To-Do",
+        "toDo": "To-Do",
         "addToDo": "Add To-do Item",
         "ideas": "Ideas",
         "addIdea": "Add idea"
@@ -560,7 +569,7 @@
           "npcs": "NPCs",
           "monsters": "Monsters",
           "magic": "Magic Items",
-          "todo": "To-Do"
+          "toDo": "To-Do"
         }
       },
       "noResults": "Nothing here",
@@ -603,18 +612,34 @@
         "emailSettingsNotSet": "You have enabled the email idea list feature, but you haven't set a default Setting or Campaign.  Please set these in the advanced settings.",
         "rollTablesNotAvailable": "Backend is not available. Automatic RollTables will not be refreshed. Configure the backend in Advanced Settings to enable AI-generated names that match your world's theme."
       },
+      "duplicateBookmark": "Already stored as a bookmark",
+      "nameRequired": "Name cannot be blank",
+      "failedToRepairIndexes": "Failed to repair indexes. Check console for details.",
       "participantCopiedToNextSession": "Participant copied to next session",
       "locationCopiedToNextSession": "Location copied to next session",
       "monsterCopiedToNextSession": "Monster copied to next session",
-      "todoReferenceNotFound": "The linked reference for this to-do item no longer exists.",
+      "toDoReferenceNotFound": "The linked reference for this to-do item no longer exists.",
       "addedToSession": "added to session",
       "changesSaved": "Changes saved",
       "changesDiscarded": "Changes discarded",
+      "failedToExportStoryWeb": "Failed to export story web as PNG",
+      "export": {
+        "starting": "Starting setting export...",
+        "complete": "Setting exported successfully",
+        "failed": "Failed to export setting"
+      },
       "migration": {
-        "minimumVersionRequired": "Campign Builder cannot migrate from version {0}. You must first upgrade to version {1} or higher before upgrading to {2}.",
+        "minimumVersionRequired": "Campaign Builder cannot migrate from version {0}. You must first upgrade to version {1} or higher before upgrading to {2}.",
         "cannotOpen": "Campaign Builder cannot be opened because migration failed. Please check the console for details and resolve the migration issue."
       },
-      "documentIndexesRepaired": "All document indexes have been successfully repaired!"
+      "documentIndexesRepaired": "All document indexes have been successfully repaired!",
+      "voiceRecording": {
+        "saved": "Voice recording saved",
+        "deleted": "Voice recording removed",
+        "permissionDenied": "Microphone access denied. Please allow microphone access to record voice.",
+        "notSupported": "Voice recording is not supported in this browser",
+        "uploadFailed": "Failed to upload voice recording"
+      }
     },
     "dialogs": {
       "generateNameDialog": {
@@ -648,6 +673,16 @@
         "generatedDescription": "Generated description",
         "generatePrompt": "Press generate for results",
         "generatePrompt2": "Otherwise, \"Brief Description\" will be used as the new Entry description."
+      },
+      "voiceRecording": {
+        "title": "Voice Recording",
+        "recording": "Recording... Click Stop when finished.",
+        "stop": "Stop",
+        "overwriteTitle": "Overwrite Recording?",
+        "overwriteMessage": "A voice recording already exists. Do you want to replace it?",
+        "deleteTitle": "Delete Recording?",
+        "deleteMessage": "Are you sure you want to delete this voice recording? The file will remain on the server but will no longer be linked to this character.",
+        "selectFolderTitle": "Select Voice Recording Folder"
       },
       "arcManager": {
         "title": "Manage Arcs",
@@ -785,6 +820,37 @@
         "sessions": "Sessions",
         "fronts": "Fronts"
       },
+      "tableGrouping": {
+        "title": "Table Grouping Settings",
+        "description": "Choose which tabs should use grouped tables for each content type.",
+        "contentTypes": {
+          "settings": "Settings",
+          "entries": "Entries",
+          "campaigns": "Campaigns",
+          "arcs": "Arcs",
+          "sessions": "Sessions",
+          "fronts": "Fronts"
+        },
+        "tabs": {
+          "journals": "Journals",
+          "characters": "Characters",
+          "npcs": "NPCs",
+          "locations": "Locations",
+          "organizations": "Organizations",
+          "pcs": "PCs",
+          "actors": "Actors",
+          "sessions": "Sessions",
+          "items": "Items",
+          "magicItems": "Magic Items",
+          "monsters": "Monsters",
+          "vignettes": "Vignettes",
+          "lore": "Lore",
+          "ideas": "Ideas",
+          "todo": "To-Dos",
+          "participants": "Participants",
+          "grimPortents": "Grim Portents"
+        }
+      },
       "relatedEntriesManagement": {
         "title": "Manage Related Entries",
         "entryDescription": "Select Entries to link or unlink to this Entry based on your changes.",
@@ -839,7 +905,8 @@
       },
       "storyWeb": {
         "duplicate": "Duplicate Web",
-        "delete": "Delete Story Web"
+        "delete": "Delete Story Web",
+        "exportAsPng": "Export as PNG"
       },
       "storyWebGraph": {
         "delete": "Delete",
@@ -856,7 +923,8 @@
         "openEntryInNewTab": "Open Entry in new tab",
         "openDangerInNewTab": "Open Danger in new tab",
         "setColor": "Set Color",
-        "setStyle": "Set Style"
+        "setStyle": "Set Style",
+        "resetToDefault": "Reset to Default"
       },
       "dialogs": {
         "cannotActivateFromCompendium": "Cannot activate from compendium",
@@ -874,6 +942,12 @@
         "generateImage": "Generate image",
         "copyToClipboard": "Copy to clipboard",
         "copyLinkToClipboard": "Copy link to clipboard"
+      },
+      "voice": {
+        "record": "Record Voice",
+        "play": "Play Voice",
+        "delete": "Delete Recording",
+        "changeFolder": "Change Recording Folder"
       },
       "topicFolder": {
         "create": {
@@ -938,7 +1012,7 @@
       "copyToNextSession": "Copy to next session",
       "moveToCampaign": "Move to campaign for later usage",
       "moveToArc": "Move to arc for later usage",
-      "movetoLatestArc": "Move to latest arc",
+      "moveToLatestArc": "Move to latest arc",
       "addToCampaign": "Add to campaign",
       "addToASession": "Add to a session",
       "sessionUnavailable": "No campaigns with an active session, or this entry is already attached to them all",
@@ -970,7 +1044,9 @@
         "species": "If blank, a random species from your Setting will be used for AI generation. Custom entries will be passed to the AI but not added to your species list",
         "longDescriptions": "Generate detailed description or a short summary?",
         "generateImage": "Generate a new image in the background after creating"
-      }
+      },
+      "voiceRecordingExists": "Voice recording exists - click for options",
+      "voiceRecordingNone": "No voice recording - click to record"
     },
     "tags": {
       "tag": "Tag",
@@ -978,10 +1054,13 @@
       "entryFound": "entry found",
       "entriesFound": "entries found"
     },
-    "errors": {
-      "duplicateBookmark": "Already stored as a bookmark",
-      "nameRequired": "Name cannot be blank",
-      "failedToRepairIndexes": "Failed to repair indexes. Check console for details."
+    "export": {
+      "relatedTopics": {
+        "1": "Related Characters",
+        "2": "Related Locations",
+        "3": "Related Organizations",
+        "4": "Related PCs"
+      }
     }
   }
 }

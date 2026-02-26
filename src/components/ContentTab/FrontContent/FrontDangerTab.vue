@@ -35,7 +35,7 @@
         <div class="flexrow form-group" style="margin-top: 1rem">
           <Editor
             :initial-content="currentDanger?.description || ''"
-            fixed-height="120px"
+            :fixed-height="8"
             :current-entity-uuid="currentFront?.uuid"
             @related-entries-changed="onRelatedEntriesChanged"
             @editor-saved="onDescriptionEditorSaved"
@@ -84,7 +84,7 @@
         <div class="flexrow form-group">
           <Editor
             :initial-content="motivation || ''"
-            fixed-height="120px"
+            :fixed-height="8"
             :current-entity-uuid="currentFront?.uuid"
             @related-entries-changed="onRelatedEntriesChanged"
             @editor-saved="onMotivationEditorSaved"
@@ -124,11 +124,12 @@
 
 <script setup lang="ts">
   // library imports
-  import { ref, watch, onMounted, onBeforeUnmount, } from 'vue';
-  import { storeToRefs } from 'pinia';
+  import { ref, watch, onMounted, onBeforeUnmount, inject, } from 'vue';
 
   // local imports
-  import { useMainStore, useFrontStore, } from '@/applications/stores';
+  import { useMainStore, } from '@/applications/stores';
+  import { useContentState } from '@/composables/useContentState';
+  import { FRONT_DERIVED_STATE_KEY } from '@/composables/useFrontDerivedState';
   import { localize } from '@/utils/game';
   import { notifyWarn } from '@/utils/notifications';
   import { getDangerRelatedEntries } from '@/utils/uuidExtraction';
@@ -159,9 +160,8 @@
   ////////////////////////////////
   // store
   const mainStore = useMainStore();
-  const frontStore = useFrontStore();
-  const { currentFront, currentSetting } = storeToRefs(mainStore);
-  const { currentDangerIndex, currentDanger } = storeToRefs(frontStore);
+  const { currentSetting, currentFront } = useContentState();
+  const { currentDangerIndex, currentDanger } = inject(FRONT_DERIVED_STATE_KEY)!;
   
   ////////////////////////////////
   // data
@@ -194,7 +194,7 @@
 
       // name can't be blank
       if (newValue.trim() === '') {
-        notifyWarn(localize('errors.nameRequired'));
+        notifyWarn(localize('notifications.nameRequired'));
         name.value = currentDanger.value?.name || localize('placeholders.dangerName');
         return;
       }
@@ -263,7 +263,7 @@
     currentFront.value.updateDanger(currentDangerIndex.value, danger);
     await currentFront.value.save();
 
-    await useMainStore().refreshFront();
+    await mainStore.refreshFront();
   };
 
   const onMotivationEditorSaved = (newMotivation: string) => {
