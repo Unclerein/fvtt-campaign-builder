@@ -71,11 +71,18 @@ export class FCBJournalEntryPage<
    * After setting, call save() to persist the changes.
    */
   public async setSystemData(value: DocClass['system'] | Record<string, unknown>) {
+    // we need to convert system back to a data model and get _doc updated, too  
     // @ts-ignore - I couldn't figure out the right type of raw system
-    this._clone.system = value;
+    const retval = await toRaw(this._doc)?.update(value, { recursive: false, render: false })  as DocClass | undefined;
 
-    // we need to convert system back to a data model and get _doc updated, too
-    await this.save();
+    // no update done
+    if (!retval) {
+      throw new Error(`Failed to update system data for ${this._doc.uuid}`);
+    } else {
+      // reset the doc and clone
+      this._doc = retval;
+      this._clone = retval.clone({}, { keepId: true });
+    }
   }
 
   public get customFields(): Readonly<Record<string, string | boolean>> {
