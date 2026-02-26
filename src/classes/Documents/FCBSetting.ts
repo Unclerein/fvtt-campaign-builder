@@ -196,6 +196,8 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
   * @returns {Promise<Record<string, Campaign>>} A promise to the campaigns 
   */
   public async loadCampaigns(): Promise<Record<string, Campaign>> {
+    let needToSave = false;
+
     // we clean up bad ones because various old versions may have stranded entries
     for (const index of this.campaignIndex) {
       const campaign = await Campaign.fromUuid(index.uuid);
@@ -204,12 +206,15 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
         // clean it up
         this.campaignIndex = this.campaignIndex.filter((c) => c.uuid !== index.uuid);
         delete this.campaigns[index.uuid];
+        needToSave = true;
       } else {
         this.campaigns[index.uuid] = campaign;
       }
     }
 
-    await this.save();
+    if (needToSave)
+      await this.save();
+  
     return this.campaigns;
   }
 

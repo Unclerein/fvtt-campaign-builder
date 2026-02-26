@@ -527,12 +527,72 @@ async function updateDocumentSystemData<
 ): Promise<void> {
   try {
     // Set the system data through the FCB class's setter
-    doc.systemData = systemData as DocClass['system'];
-    await doc.save();
+    await doc.setSystemData(systemData as Record<string, unknown>);
   } catch (error) {
     // Log the error but don't throw - allow other documents to continue
     console.warn(`Failed to update document "${doc.uuid}":`, error);
   }
+}
+
+/**
+ * Remap UUIDs in a hierarchy object.
+ * This handles both the keys (entry UUIDs) and the values (parentId, ancestors, children).
+ *
+ * @param hierarchies - The hierarchies record to remap
+ * @param uuidMap - Map of old UUIDs to new UUIDs
+ * @returns A new hierarchies record with remapped UUIDs
+ */
+function remapHierarchies(
+  hierarchies: Record<string, unknown>,
+  uuidMap: Map<string, string>
+): Record<string, unknown> {
+  if (!hierarchies) return hierarchies;
+
+  const result: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(hierarchies)) {
+    // Remap the key (entry UUID)
+    const newKey = uuidMap.get(key) || key;
+
+    if (value && typeof value === 'object') {
+      const hierarchy = value as Record<string, unknown>;
+      const remappedHierarchy: Record<string, unknown> = {};
+
+      // Remap parentId
+      if (typeof hierarchy.parentId === 'string' && hierarchy.parentId) {
+        remappedHierarchy.parentId = uuidMap.get(hierarchy.parentId) || hierarchy.parentId;
+      } else {
+        remappedHierarchy.parentId = hierarchy.parentId;
+      }
+
+      // Remap ancestors array
+      if (Array.isArray(hierarchy.ancestors)) {
+        remappedHierarchy.ancestors = hierarchy.ancestors.map(
+          (uuid: string) => uuidMap.get(uuid) || uuid
+        );
+      } else {
+        remappedHierarchy.ancestors = hierarchy.ancestors;
+      }
+
+      // Remap children array
+      if (Array.isArray(hierarchy.children)) {
+        remappedHierarchy.children = hierarchy.children.map(
+          (uuid: string) => uuidMap.get(uuid) || uuid
+        );
+      } else {
+        remappedHierarchy.children = hierarchy.children;
+      }
+
+      // Copy type as-is (not a UUID)
+      remappedHierarchy.type = hierarchy.type;
+
+      result[newKey] = remappedHierarchy;
+    } else {
+      result[newKey] = value;
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -566,9 +626,9 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
         setting.description = remappedText;
       }
 
-      // Remap hierarchies keys
+      // Remap hierarchies (both keys and internal UUIDs)
       if (remappedSettingSystem.hierarchies) {
-        remappedSettingSystem.hierarchies = remapRecordKeys(
+        remappedSettingSystem.hierarchies = remapHierarchies(
           remappedSettingSystem.hierarchies as Record<string, unknown>,
           context.uuidMap
         );

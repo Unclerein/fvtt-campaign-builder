@@ -104,6 +104,10 @@ function addToDocuments<
   cleaningFunction?: (data: Record<string, unknown>) => Record<string, unknown>) 
 {
   let systemData = foundry.utils.deepClone(document.systemData);
+
+  if (!systemData)
+    throw new Error(`System data is undefined on ${document.name} in export.adToDocuments()`);
+
   if (cleaningFunction)
     systemData = cleaningFunction(systemData);
 

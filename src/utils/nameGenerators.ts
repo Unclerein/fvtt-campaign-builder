@@ -31,6 +31,8 @@ const NameGeneratorsService = {
       return;
     }
 
+    let needToSave = false;
+
     initializationInProgress = true;
 
     // Get or create the folder for roll tables for this setting
@@ -45,6 +47,7 @@ const NameGeneratorsService = {
       if (settingGeneratorConfig.folderId !== folderId) {
         settingGeneratorConfig.folderId = folderId;
         settingGeneratorConfig.rollTables = {} as Record<GeneratorType, string>;
+        needToSave = true;
       }
     } else {
       // create a new config
@@ -52,6 +55,7 @@ const NameGeneratorsService = {
         rollTables: {} as Record<GeneratorType, string>,
         folderId: folderId,
       };
+      needToSave = true;
     }
     
     // Ensure all generator types have a roll table
@@ -69,14 +73,17 @@ const NameGeneratorsService = {
       const table = await createSettingRollTable(type, folderId, setting);
       
       // Store the table ID in the mapping
-      if (table)
+      if (table) {
         settingGeneratorConfig.rollTables[type] = table.uuid;
+        needToSave = true;
+      }
     }
     
     // Save the setting generator config
-    setting.rollTableConfig = settingGeneratorConfig;
-    await setting.save();
-
+    if (needToSave) {
+      setting.rollTableConfig = settingGeneratorConfig;
+      await setting.save();
+    }
     initializationInProgress = false;
   },
 

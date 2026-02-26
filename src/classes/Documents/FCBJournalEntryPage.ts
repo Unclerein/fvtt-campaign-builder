@@ -1,6 +1,6 @@
 import { toRaw } from 'vue';
 import { JournalEntryFlagKey, moduleId, ModuleSettings, SettingKey } from '@/settings';
-import { ValidDocType, TableGroup, DocumentGroups, GroupableItem, UNGROUPED_GROUP_ID } from '@/types';
+import { ValidDocType, TableGroup, DocumentGroups, GroupableItem, } from '@/types';
 import { FCBSetting } from './FCBSetting';
 import { sanitizeHTML } from '@/utils/sanitizeHtml';
 import GlobalSettingService from '@/utils/globalSettings';
@@ -56,9 +56,13 @@ export class FCBJournalEntryPage<
   /**
    * Get the system data object for direct manipulation.
    * Used during import to set remapped data before calling save().
+   * 
+   * @returns The system data object as a Foundry DataModel
    */
-  public get systemData(): DocClass['system'] {
-    return this._clone.system;  
+  public get systemData(): JournalEntryPage.CreateData<DocType>['system'] {
+    // make sure that we use the current values - not "source" because we
+    //   we don't want the save transformations applied
+    return this._clone.system.toObject(false);  
   }
 
   /**
@@ -66,8 +70,12 @@ export class FCBJournalEntryPage<
    * Used during import to replace all system data with remapped data.
    * After setting, call save() to persist the changes.
    */
-  public set systemData(value: DocClass['system']) {
+  public async setSystemData(value: DocClass['system'] | Record<string, unknown>) {
+    // @ts-ignore - I couldn't figure out the right type of raw system
     this._clone.system = value;
+
+    // we need to convert system back to a data model and get _doc updated, too
+    await this.save();
   }
 
   public get customFields(): Readonly<Record<string, string | boolean>> {
@@ -215,9 +223,9 @@ export class FCBJournalEntryPage<
       throw new Error(`Invalid journal entry page in FCBJournalEntryPage.save() ${this.uuid}`);
   
     try {
-      // get the db-safe copy of the data     
+      // get the db-safe copy of the data
       // we do this so anything with a reference into _clone doesn't
-      //   break if there's a timing issue 
+      //   break if there's a timing issue
       const data = this._clone.toObject(false);
       this._prepData(data as DocClass);
 

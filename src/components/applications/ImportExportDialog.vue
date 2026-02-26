@@ -191,6 +191,7 @@ Dependencies
       await exportModuleJson(handleExportProgress);
     } catch (error) {
       errorMessage.value = error instanceof Error ? error.message : localize('applications.importExport.exportFailed');
+      console.error('Export failed:', error);
       exportProgress.value = 0;
     } finally {
       isExporting.value = false;
@@ -244,6 +245,7 @@ Dependencies
       }, 1000);
     } catch (error) {
       errorMessage.value = error instanceof Error ? error.message : localize('applications.importExport.importFailed');
+      console.error('Import failed:', error);
       importProgress.value = 0;
     } finally {
       isImporting.value = false;

@@ -40,7 +40,7 @@ export function isFCBUuid(uuid: string): boolean {
  * @returns True if the string is a UUID but not an FCB document UUID
  */
 export function isNonFCBUuid(uuid: string): boolean {
-  return (uuid && !!foundry.utils.parseUuid(uuid) && !isFCBUuid(uuid));
+  return (!!uuid && !!foundry.utils.parseUuid(uuid) && !isFCBUuid(uuid));
 }
 
 
