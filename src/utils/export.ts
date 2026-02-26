@@ -142,7 +142,7 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
     if (topicFolder) {
       const entries = await topicFolder.allEntries();
       for (const entry of entries) {
-        addToDocuments(data.documents.entries, entry, cleanInvalidRelationships);
+        addToDocuments(data.documents.entries, entry, cleanEntrySystemData);
       }
     }
   }
@@ -151,19 +151,19 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
   for (const campaignIndex of setting.campaignIndex) {
     const campaign = await Campaign.fromUuid(campaignIndex.uuid);
     if (campaign) {
-      addToDocuments(data.documents.campaigns, campaign);
+      addToDocuments(data.documents.campaigns, campaign, cleanCampaignSystemData);
 
       // Collect sessions
       const sessions = await campaign.allSessions();
       for (const session of sessions) {
-        addToDocuments(data.documents.sessions, session);
+        addToDocuments(data.documents.sessions, session, cleanSessionSystemData);
       }
 
       // Collect arcs
       for (const arcIndex of campaign.arcIndex) {
         const arc = await Arc.fromUuid(arcIndex.uuid);
         if (arc) {
-          addToDocuments(data.documents.arcs, arc);
+          addToDocuments(data.documents.arcs, arc, cleanArcSystemData);
         }
       }
 
@@ -187,6 +187,94 @@ async function collectSettingData(setting: FCBSetting): Promise<SettingExportDat
   }
 
   return data;
+}
+
+/**
+ * Clean entry system data for export.
+ * - Clears actors and scenes arrays (non-FCB Foundry documents)
+ * - Clears journals array (non-FCB Foundry documents)
+ * - Cleans invalid relationships
+ *
+ * @param system - The system data to clean
+ * @returns The cleaned system data
+ */
+function cleanEntrySystemData(system: Record<string, unknown>): Record<string, unknown> {
+  const cleaned = { ...system };
+
+  // Clear actors array - references non-FCB Foundry Actor documents
+  cleaned.actors = [];
+
+  // Clear scenes array - references non-FCB Foundry Scene documents
+  cleaned.scenes = [];
+
+  // Clear journals array - references non-FCB Foundry Journal documents
+  cleaned.journals = [];
+
+  // Clean invalid relationships (FCB-to-FCB references that may be corrupt)
+  return cleanInvalidRelationships(cleaned);
+}
+
+/**
+ * Clean session system data for export.
+ * - Clears items and monsters arrays (non-FCB Foundry documents)
+ * - Clears journals array (non-FCB Foundry documents)
+ *
+ * @param system - The system data to clean
+ * @returns The cleaned system data
+ */
+function cleanSessionSystemData(system: Record<string, unknown>): Record<string, unknown> {
+  const cleaned = { ...system };
+
+  // Clear items array - references non-FCB Foundry Item documents
+  cleaned.items = [];
+
+  // Clear monsters array - references non-FCB Foundry Actor documents
+  cleaned.monsters = [];
+
+  // Clear journals array - references non-FCB Foundry Journal documents
+  cleaned.journals = [];
+
+  return cleaned;
+}
+
+/**
+ * Clean arc system data for export.
+ * - Clears monsters array (non-FCB Foundry documents)
+ * - Clears journals array (non-FCB Foundry documents)
+ *
+ * @param system - The system data to clean
+ * @returns The cleaned system data
+ */
+function cleanArcSystemData(system: Record<string, unknown>): Record<string, unknown> {
+  const cleaned = { ...system };
+
+  // Clear monsters array - references non-FCB Foundry Actor documents
+  cleaned.monsters = [];
+
+  // Clear journals array - references non-FCB Foundry Journal documents
+  cleaned.journals = [];
+
+  return cleaned;
+}
+
+/**
+ * Clean campaign system data for export.
+ * - Clears pcs array (non-FCB Foundry Actor documents)
+ * - Clears journals array (non-FCB Foundry documents)
+ *
+ * @param system - The system data to clean
+ * @returns The cleaned system data
+ */
+function cleanCampaignSystemData(system: Record<string, unknown>): Record<string, unknown> {
+  const cleaned = { ...system };
+
+  // Clear pcs array - references non-FCB Foundry Actor documents
+  cleaned.pcs = [];
+
+  // Clear journals array - references non-FCB Foundry Journal documents
+  cleaned.journals = [];
+
+  return cleaned;
 }
 
 /**
@@ -214,13 +302,6 @@ function cleanInvalidRelationships(system: Record<string, unknown>): Record<stri
     for (const [entryUuid, details] of Object.entries(entries as Record<string, unknown>)) {
       // Check if the key UUID is valid - if it is, it basically has to be FCB; if it's not its corrupt
       if (!isValidUuid(entryUuid)) continue;
-
-      // Check if the details object has valid required fields
-      if (details && typeof details === 'object') {
-        const detailObj = details as Record<string, unknown>;
-        
-        // uuid matches the key, so don't need to check it        
-      }
 
       cleanedEntries[entryUuid] = details;
     }

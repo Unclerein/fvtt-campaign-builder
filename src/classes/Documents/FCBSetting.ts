@@ -466,7 +466,7 @@ export class FCBSetting extends FCBJournalEntryPage<typeof DOCUMENT_TYPES.Settin
   public async save() {
     const nameChanged = this._clone.name !== this._doc.name;
 
-    // we attempt to save first - because if it fails, we don't 
+    // we attempt to save first - because if it fails, we don't
     //    want to adjust anything else
     try {
       // populate the topic folders; important in case we changed anything in topics

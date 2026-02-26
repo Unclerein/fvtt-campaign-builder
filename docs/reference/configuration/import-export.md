@@ -8,6 +8,11 @@ prev:
 
 The Import/Export feature allows you to backup all your FCB content and settings, or transfer them to another Foundry world. 
 
+::: caution
+Any links to non-Campaign Builder Foundry content will be broken if you import into a new world.  This means all of your links to scenes, actors, items, journal entries, will not transition.
+:::
+
+
 ## Accessing Import/Export
 
 You access this by clicking the **Import/Export** button in the [Module Settings] menu. 
@@ -50,11 +55,3 @@ Importing will **DELETE ALL existing Campaign Builder content** in the current w
 Make sure to export your current data first if you want to preserve it.
 :::
 
-### What Happens During Import
-
-1. **Deletion**: All existing content is deleted
-2. **Module Settings**: Global and user-level Campaign Builder settings are restored
-3. **Content Recreation**: Each [^Setting] and all its documents are recreated:
-   - New compendiums are created for each Setting
-   - All entries, campaigns, sessions, arcs, fronts, and story webs are created
-4. **Reload**: Foundry reloads to ensure all settings take effect

@@ -67,25 +67,33 @@ export async function importModuleJson(
   onProgress?.(localize('applications.importExport.importingSettings'), 15);
   await importModuleSettings(data.moduleSettings);
 
-  // Import settings and documents
-  const totalSettings = data.settings.length;
+  // Skip session renumbering during import to prevent recursive save loops
+  Session.setSkipRenumbering(true);
 
-  for (let i = 0; i < data.settings.length; i++) {
-    const settingData = data.settings[i];
-    const progress = 15 + (i / totalSettings) * 80;
-    onProgress?.(
-      `${localize('applications.importExport.importingSetting')}: ${settingData.name}`,
-      progress
-    );
+  try {
+    // Import settings and documents
+    const totalSettings = data.settings.length;
 
-    await importSetting(settingData, context);
+    for (let i = 0; i < data.settings.length; i++) {
+      const settingData = data.settings[i];
+      const progress = 15 + (i / totalSettings) * 80;
+      onProgress?.(
+        `${localize('applications.importExport.importingSetting')}: ${settingData.name}`,
+        progress
+      );
+
+      await importSetting(settingData, context);
+    }
+
+    // Remap all UUIDs in all documents using original data
+    onProgress?.(localize('applications.importExport.remappingUuids'), 95);
+    await remapAllDocumentUuids(context);
+
+    onProgress?.(localize('applications.importExport.importComplete'), 100);
+  } finally {
+    // Always re-enable renumbering after import (even on error)
+    Session.setSkipRenumbering(false);
   }
-
-  // Remap all UUIDs in all documents using original data
-  onProgress?.(localize('applications.importExport.remappingUuids'), 95);
-  await remapAllDocumentUuids(context);
-
-  onProgress?.(localize('applications.importExport.importComplete'), 100);
 }
 
 /**
