@@ -563,8 +563,8 @@
     (e: 'dropNew', event: DragEvent): void;
     (e: 'setEditingRow', uuid: string): void;
 
-    /** Rows were reordered; param is rows in new order */
-    (e: 'reorder', reorderedRows: BaseTableGridRow[]): void;
+    /** Rows were reordered; reorderedRow is rows in new order; drag/drop are relative to new order */
+    (e: 'reorder', reorderedRows: BaseTableGridRow[], dragIndex: number, dropIndex: number): void;
 
     /** Groups were reordered; param is group IDs in new order */
     (e: 'reorderGroup', reorderedGroups: string[]): void;
@@ -1282,7 +1282,7 @@
       const insertIndex = reorderDropPosition.value === 'below' ? adjustedDropIndex + 1 : adjustedDropIndex;
       currentRows.splice(insertIndex, 0, removed);
 
-      emit('reorder', currentRows.filter(r => !isPlaceholderRow(r.uuid)));
+      emit('reorder', currentRows.filter(r => !isPlaceholderRow(r.uuid)), dragIndex, insertIndex);
 
       // Clean up
       reorderDragUuid.value = null;
@@ -1384,7 +1384,7 @@
         currentRows.push(removed);
       }
       
-      emit('reorder', currentRows.filter(r => !isPlaceholderRow(r.uuid)));
+      emit('reorder', currentRows.filter(r => !isPlaceholderRow(r.uuid)), dragIndex, dropIndex);
     }
     // Handle external drops on group - not allowed
     else if (props.allowDropRow && event.dataTransfer && event.dataTransfer.types.includes('text/plain')) {
