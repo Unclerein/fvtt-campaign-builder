@@ -52,6 +52,13 @@ export interface ArcJournal {
 
 // Database storage types for Session-related content
 // Note: No base types - each type explicitly declares all fields for clarity
+export type SessionRelatedItem = 
+  SessionLocation | 
+  SessionItem | 
+  SessionNPC | 
+  SessionMonster | 
+  SessionVignette | 
+  SessionLore;
 
 export interface SessionLocation {
   uuid: string;
@@ -166,3 +173,11 @@ export interface EntryJournal {
   packName: string | null;
   groupId: string | null;
 }
+
+export interface SettingTag {
+  count: number;
+  color: string | null;
+}
+
+// maps from the string name to the details
+export type SettingTags = Record<string, SettingTag>;
