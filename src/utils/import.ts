@@ -17,7 +17,6 @@ import {
   ProgressCallback,
   remapUuidsInObject,
   remapRecordKeys,
-  isValidUuid,
 } from './importExportCommon';
 
 /**
@@ -474,7 +473,7 @@ async function updateDocumentSystemData<
     await doc.setSystemData(systemData as Record<string, unknown>);
   } catch (error) {
     // Log the error but don't throw - allow other documents to continue
-    console.warn(`Failed to update document "${doc.uuid}":`, error);
+    console.error(`Failed to update document "${doc.uuid}":`, error);
   }
 }
 
@@ -815,7 +814,7 @@ function validateRelationshipsInSystem(system: Record<string, unknown>, document
 
     for (const [entryUuid, details] of Object.entries(entries as Record<string, unknown>)) {
       // Check if the key UUID is valid
-      if (!isValidUuid(entryUuid)) {
+      if (!foundry.utils.parseUuid(entryUuid)) {
         throw new Error(
           `Import validation failed for "${documentName}": Invalid relationship key UUID "${entryUuid}" in topic "${topicKey}". ` +
           `The export file may be corrupted.`
@@ -827,7 +826,7 @@ function validateRelationshipsInSystem(system: Record<string, unknown>, document
         const detailObj = details as Record<string, unknown>;
         
         // Check uuid field
-        if (!isValidUuid(detailObj.uuid)) {
+        if (!foundry.utils.parseUuid(detailObj.uuid)) {
           throw new Error(
             `Import validation failed for "${documentName}": Invalid relationship uuid field "${detailObj.uuid}" in topic "${topicKey}". ` +
             `The export file may be corrupted.`
@@ -852,9 +851,9 @@ function validatePositionsInSystem(system: Record<string, unknown>, documentName
 
   const positions = system.positions as Record<string, unknown>;
 
-  for (const [uuid, coords] of Object.entries(positions)) {
+  for (const uuid of Object.keys(positions)) {
     // Check if the key UUID is valid
-    if (!isValidUuid(uuid)) {
+    if (!foundry.utils.parseUuid(uuid)) {
       throw new Error(
         `Import validation failed for "${documentName}": Invalid position UUID "${uuid}". ` +
         `The export file may be corrupted.`

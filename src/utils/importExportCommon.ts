@@ -33,28 +33,6 @@ export function isFCBUuid(uuid: string): boolean {
   return FCB_COMPENDIUM_PATTERN.test(uuid);
 }
 
-/**
- * Check if a string is a UUID but not for an FCB document.
- *
- * @param uuid - The UUID to check
- * @returns True if the string is a UUID but not an FCB document UUID
- */
-export function isNonFCBUuid(uuid: string): boolean {
-  return (!!uuid && !!foundry.utils.parseUuid(uuid) && !isFCBUuid(uuid));
-}
-
-
-/**
- * Check if a UUID string is valid (either an FCB compendium UUID or other valid Foundry UUID).
- *
- * @param uuid - The UUID to check
- * @returns True if the UUID is valid or not a string
- */
-export function isValidUuid(uuid: unknown): boolean {
-  if (typeof uuid !== 'string') return true; // Non-strings are handled elsewhere
-
-  return !!foundry.utils.parseUuid(uuid);
-}
 
 /**
  * Remap @UUID[...] references in text content using the provided mapping.
@@ -330,7 +308,6 @@ export type ProgressCallback = (message: string, progress?: number) => void;
 export default {
   EXPORT_VERSION,
   isFCBUuid,
-  isValidUuid,
   remapUuidsInText,
   remapUuidsInObject,
   remapRecordKeys,

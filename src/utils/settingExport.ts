@@ -952,7 +952,7 @@ const downloadFilesSeparately = async (
   storyWebImages: Array<{ name: string; data: Blob }>
 ): Promise<void> => {
   // Download markdown file
-  const markdownFilename = `${setting.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.MD`;
+  const markdownFilename = `${setting.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
   downloadFile(markdownContent, markdownFilename, 'text/markdown');
 
   // Download images with a small delay between each

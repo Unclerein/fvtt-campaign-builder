@@ -14,7 +14,6 @@ import {
   ModuleExportData,
   SettingExportData,
   ProgressCallback,
-  isValidUuid,
   DocumentExportData,
 } from './importExportCommon';
 
@@ -305,7 +304,7 @@ function cleanInvalidRelationships(system: Record<string, unknown>): Record<stri
     const cleanedEntries: Record<string, unknown> = {};
     for (const [entryUuid, details] of Object.entries(entries as Record<string, unknown>)) {
       // Check if the key UUID is valid - if it is, it basically has to be FCB; if it's not its corrupt
-      if (!isValidUuid(entryUuid)) continue;
+      if (!foundry.utils.parseUuid(entryUuid)) continue;
 
       cleanedEntries[entryUuid] = details;
     }
@@ -332,7 +331,7 @@ function cleanInvalidPositions(system: Record<string, unknown>): Record<string, 
 
   for (const [uuid, coords] of Object.entries(positions)) {
     // Check if the key UUID is valid - we assume if valid it's an FCB doc
-    if (!isValidUuid(uuid)) {
+    if (!foundry.utils.parseUuid(uuid)) {
       console.warn(`Export: Removing position with invalid UUID: ${uuid}`);
       continue;
     }
