@@ -1,4 +1,10 @@
 # Change Log
+## 1.9.2 - Import/Export
+![](https://img.shields.io/badge/release%20date-February%2028%2C%202026-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.9.2/module.zip)
+
+- Added JSON export (and import!) functionality for settings
+
 ## 1.9.1 - Tag tweaks
 ![](https://img.shields.io/badge/release%20date-February%2027%2C%202026-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.9.1/module.zip)
