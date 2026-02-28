@@ -7,7 +7,7 @@
 import { localize } from '@/utils/game';
 import { ModuleSettings, SettingKey } from '@/settings/ModuleSettings';
 import { RootFolder, FCBSetting, Campaign, Session, Arc, Front, StoryWeb, Entry,FCBJournalEntryPage } from '@/classes';
-import { Topics, ValidDocType, ValidTopic } from '@/types';
+import { RelatedEntryDetails, Topics, ValidDocType, ValidTopic, ValidTopicRecord } from '@/types';
 import GlobalSettingService from '@/utils/globalSettings';
 import {
   ModuleExportData,
@@ -567,6 +567,7 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
       if (originalSettingData.description) {
         const remappedText = remapUuidsInObject(originalSettingData.description, context.uuidMap) as string;
         setting.description = remappedText;
+        await setting.save();
       }
 
       // Remap hierarchies (both keys and internal UUIDs)
@@ -614,6 +615,7 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
             // Apply text content
             if (originalEntryData.description) {
               entry.description = remapUuidsInObject(originalEntryData.description, context.uuidMap) as string;
+              await entry.save();
             }
 
             await updateDocumentSystemData(entry, remappedEntrySystem);
@@ -641,6 +643,7 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
 
         if (originalCampaignData.description) {
           campaign.description = remapUuidsInObject(originalCampaignData.description, context.uuidMap) as string;
+          await campaign.save();
         }
 
         await updateDocumentSystemData(campaign, remappedCampaignSystem);
@@ -663,6 +666,7 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
 
           if (originalSessionData.description) {
             session.description = remapUuidsInObject(originalSessionData.description, context.uuidMap) as string;
+            await session.save();
           }
 
           await updateDocumentSystemData(session, remappedSessionSystem);
@@ -688,6 +692,7 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
 
           if (originalArcData.description) {
             arc.description = remapUuidsInObject(originalArcData.description, context.uuidMap) as string;
+            await arc.save();
           }
 
           await updateDocumentSystemData(arc, remappedArcSystem);
@@ -713,6 +718,7 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
 
           if (originalFrontData.description) {
             front.description = remapUuidsInObject(originalFrontData.description, context.uuidMap) as string;
+            await front.save();
           }
 
           await updateDocumentSystemData(front, remappedFrontSystem);
@@ -796,7 +802,7 @@ function validateRelationshipsInSystem(system: Record<string, unknown>, document
     return;
   }
 
-  const relationships = system.relationships as Record<string, unknown>;
+  const relationships = system.relationships as ValidTopicRecord<Record<string, RelatedEntryDetails<any, any>>>;
   const validTopicKeys = ['1', '2', '3', '4']; // Topics.Character=1, Location=2, Organization=3, PC=4
 
   for (const [topicKey, entries] of Object.entries(relationships)) {
@@ -812,7 +818,7 @@ function validateRelationshipsInSystem(system: Record<string, unknown>, document
       continue;
     }
 
-    for (const [entryUuid, details] of Object.entries(entries as Record<string, unknown>)) {
+    for (const [entryUuid, details] of Object.entries(entries)) {
       // Check if the key UUID is valid
       if (!foundry.utils.parseUuid(entryUuid)) {
         throw new Error(
@@ -823,12 +829,10 @@ function validateRelationshipsInSystem(system: Record<string, unknown>, document
 
       // Check if the details object has valid required fields
       if (details && typeof details === 'object') {
-        const detailObj = details as Record<string, unknown>;
-        
         // Check uuid field
-        if (!foundry.utils.parseUuid(detailObj.uuid)) {
+        if (!foundry.utils.parseUuid(details.uuid)) {
           throw new Error(
-            `Import validation failed for "${documentName}": Invalid relationship uuid field "${detailObj.uuid}" in topic "${topicKey}". ` +
+            `Import validation failed for "${documentName}": Invalid relationship uuid field "${details.uuid}" in topic "${topicKey}". ` +
             `The export file may be corrupted.`
           );
         }

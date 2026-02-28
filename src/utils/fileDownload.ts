@@ -26,10 +26,13 @@
  *
  * // Download a markdown file
  * downloadFile(markdownContent, 'readme.md', 'text/markdown');
+ * 
+ * // Download a zip file (from UInt8Array)
+ * downloadFile(zipData, 'export.zip', 'application/zip');
  * ```
  */
 export function downloadFile(
-  content: string | Blob,
+  content: string | Blob | Uint8Array<ArrayBufferLike>,
   filename: string,
   mimeType: string
 ): void {

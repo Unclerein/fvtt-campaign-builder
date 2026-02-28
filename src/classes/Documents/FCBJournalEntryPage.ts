@@ -71,17 +71,17 @@ export class FCBJournalEntryPage<
    * After setting, call save() to persist the changes.
    */
   public async setSystemData(value: DocClass['system'] | Record<string, unknown>) {
-    // DEBUG: Log what we're trying to update
-    console.log(`[setSystemData] Updating ${this._doc.uuid}`);
-    console.log(`[setSystemData] value keys:`, Object.keys(value as Record<string, unknown>));
-    console.log(`[setSystemData] value:`, value);
-    console.log(`[setSystemData] current doc.system keys:`, this._doc.system ? Object.keys(this._doc.system) : 'no system');
-    console.log(`[setSystemData] current doc.system.type:`, (this._doc.system as Record<string, unknown>)?.type);
-    console.log(`[setSystemData] value.type:`, (value as Record<string, unknown>)?.type);
+    // Create a data object from the clone and apply the new system data
+    const data = this._clone.toObject(false);
+    data.system = value;
+    
+    // Transform UUID keys with dots to #&# before saving (prevents Foundry from
+    // treating dots as path separators in expandObject)
+    this._prepData(data as DocClass);
     
     // we need to convert system back to a data model and get _doc updated, too
     // @ts-ignore - I couldn't figure out the right type of raw system
-    const retval = await toRaw(this._doc)?.update({system: value}, { recursive: false, render: false })  as DocClass | undefined;
+    const retval = await toRaw(this._doc)?.update({system: data.system}, { recursive: false, render: false })  as DocClass | undefined;
 
     // no update done
     if (!retval) {

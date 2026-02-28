@@ -56,7 +56,8 @@ export function remapUuidsInText(text: string, uuidMap: Map<string, string>): st
 }
 
 /** Pattern for matching UUIDs that appear before a pipe (danger node format) */
-const FRONT_UUID_PATTERN = /^([^.|]+\.[^.|]+\.[^.|]+\.[^.|]+)\|/;
+/** Danger node UUIDs have format: Compendium.world.xxx.JournalEntry.yyy|index (5 segments) */
+const FRONT_UUID_PATTERN = /^([^.|]+\.[^.|]+\.[^.|]+\.[^.|]+\.[^.|]+)\|/;
 
 /**
  * Remap all UUIDs found in a string.
