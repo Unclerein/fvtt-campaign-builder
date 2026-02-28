@@ -6,7 +6,7 @@
 
 import { localize } from '@/utils/game';
 import { ModuleSettings, SettingKey } from '@/settings/ModuleSettings';
-import { RootFolder, FCBSetting, Campaign, Session, Arc, Front, StoryWeb, Entry,FCBJournalEntryPage } from '@/classes';
+import { FCBSetting, Campaign, Session, Arc, Front, StoryWeb, Entry,FCBJournalEntryPage } from '@/classes';
 import { RelatedEntryDetails, Topics, ValidDocType, ValidTopic, ValidTopicRecord } from '@/types';
 import GlobalSettingService from '@/utils/globalSettings';
 import {
@@ -15,6 +15,7 @@ import {
   ImportContext,
   DocumentExportData,
   ProgressCallback,
+  ExportMode,
   remapUuidsInObject,
   remapRecordKeys,
 } from './importExportCommon';
@@ -47,6 +48,20 @@ export async function importModuleJson(
     throw new Error(localize('applications.importExport.invalidFile'));
   }
 
+  // Determine export mode (default to ALL for backwards compatibility)
+  const exportMode = data.exportMode ?? ExportMode.ALL;
+
+  // For CONFIGURATION_ONLY mode, only import module settings
+  if (exportMode === ExportMode.CONFIGURATION_ONLY) {
+    onProgress?.(localize('applications.importExport.importingSettings'), 10);
+    if (data.moduleSettings) {
+      await importModuleSettings(data.moduleSettings);
+    }
+    onProgress?.(localize('applications.importExport.importComplete'), 100);
+    return;
+  }
+
+  // For ALL and SETTINGS_ONLY modes, validate and import full data
   // Validate all data before making any changes
   onProgress?.(localize('applications.importExport.validatingData'), 8);
   validateExportDataForImport(data);
@@ -63,30 +78,34 @@ export async function importModuleJson(
   };
 
   // Import module settings (remapped to remove old setting UUIDs)
-  onProgress?.(localize('applications.importExport.importingSettings'), 15);
-  await importModuleSettings(data.moduleSettings);
+  if (data.moduleSettings) {
+    onProgress?.(localize('applications.importExport.importingSettings'), 15);
+    await importModuleSettings(data.moduleSettings);
+  }
 
   // Skip session renumbering during import to prevent recursive save loops
   Session.setSkipRenumbering(true);
 
   try {
     // Import settings and documents
-    const totalSettings = data.settings.length;
+    if (data.settings) {
+      const totalSettings = data.settings.length;
 
-    for (let i = 0; i < data.settings.length; i++) {
-      const settingData = data.settings[i];
-      const progress = 15 + (i / totalSettings) * 80;
-      onProgress?.(
-        `${localize('applications.importExport.importingSetting')}: ${settingData.name}`,
-        progress
-      );
+      for (let i = 0; i < data.settings.length; i++) {
+        const settingData = data.settings[i];
+        const progress = 15 + (i / totalSettings) * 80;
+        onProgress?.(
+          `${localize('applications.importExport.importingSetting')}: ${settingData.name}`,
+          progress
+        );
 
-      await importSetting(settingData, context);
+        await importSetting(settingData, context);
+      }
+
+      // Remap all UUIDs in all documents using original data
+      onProgress?.(localize('applications.importExport.remappingUuids'), 95);
+      await remapAllDocumentUuids(context);
     }
-
-    // Remap all UUIDs in all documents using original data
-    onProgress?.(localize('applications.importExport.remappingUuids'), 95);
-    await remapAllDocumentUuids(context);
 
     onProgress?.(localize('applications.importExport.importComplete'), 100);
   } finally {
@@ -107,12 +126,29 @@ function validateExportData(data: unknown): boolean {
   
   const d = data as Record<string, unknown>;
 
+  // Check required fields
   if (
     (typeof d.version !== 'string') ||
-    (typeof d.exportedAt !== 'string') ||
-    (typeof d.moduleSettings !== 'object') ||
-    (!Array.isArray(d.settings))
+    (typeof d.exportedAt !== 'string')
   ) 
+    return false;
+
+  // Validate export mode if present
+  if (d.exportMode !== undefined && !Object.values(ExportMode).includes(d.exportMode as ExportMode)) {
+    return false;
+  }
+
+  // For CONFIGURATION_ONLY mode, only moduleSettings is required
+  const exportMode = d.exportMode as ExportMode | undefined;
+  if (exportMode === ExportMode.CONFIGURATION_ONLY) {
+    return typeof d.moduleSettings === 'object';
+  }
+
+  // For ALL and SETTINGS_ONLY modes, validate full structure
+  if (typeof d.moduleSettings !== 'object' && d.moduleSettings !== null) 
+    return false;
+  
+  if (!Array.isArray(d.settings) && d.settings !== null)
     return false;
 
   const valid = (collection: DocumentExportData[]): boolean => {
@@ -130,25 +166,27 @@ function validateExportData(data: unknown): boolean {
     return true;
   }
 
-  for (const setting of d.settings) {
-    if (
-      !setting ||
-      typeof setting !== 'object' ||
-      typeof setting.name !== 'string' ||
-      typeof setting.description !== 'string' ||
-      typeof setting.uuid !== 'string' ||
-      typeof setting.documents !== 'object'
-    ) 
-      return false;
-    else if (
-      !valid(setting.documents.entries) ||
-      !valid(setting.documents.campaigns) ||
-      !valid(setting.documents.sessions) ||
-      !valid(setting.documents.arcs) ||
-      !valid(setting.documents.fronts) ||
-      !valid(setting.documents.storyWebs) 
-    )
-      return false;
+  if (d.settings) {
+    for (const setting of d.settings as SettingExportData[]) {
+      if (
+        !setting ||
+        typeof setting !== 'object' ||
+        typeof setting.name !== 'string' ||
+        typeof setting.description !== 'string' ||
+        typeof setting.uuid !== 'string' ||
+        typeof setting.documents !== 'object'
+      ) 
+        return false;
+      else if (
+        !valid(setting.documents.entries) ||
+        !valid(setting.documents.campaigns) ||
+        !valid(setting.documents.sessions) ||
+        !valid(setting.documents.arcs) ||
+        !valid(setting.documents.fronts) ||
+        !valid(setting.documents.storyWebs) 
+      )
+        return false;
+    }
   }
 
   return true;
@@ -778,6 +816,9 @@ async function remapAllDocumentUuids(context: ImportContext): Promise<void> {
  * @throws Error if any invalid data is found
  */
 function validateExportDataForImport(data: ModuleExportData): void {
+  // Skip validation if no settings data
+  if (!data.settings) return;
+
   for (const settingData of data.settings) {
     // Validate entries
     for (const entryData of settingData.documents.entries) {

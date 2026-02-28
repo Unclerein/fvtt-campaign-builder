@@ -11,6 +11,7 @@ import { Topics, ValidTopic } from '@/types';
 import { downloadFile } from '@/utils/fileDownload';
 import {
   EXPORT_VERSION,
+  ExportMode,
   ModuleExportData,
   SettingExportData,
   ProgressCallback,
@@ -18,11 +19,13 @@ import {
 } from './importExportCommon';
 
 /**
- * Export all module data to a JSON file and trigger download.
+ * Export module data to a JSON file and trigger download.
  *
+ * @param mode - The export mode determining what data to include
  * @param onProgress - Optional callback for progress updates
  */
 export async function exportModuleJson(
+  mode: ExportMode = ExportMode.ALL,
   onProgress?: ProgressCallback
 ): Promise<void> {
   onProgress?.(localize('applications.importExport.exportStarting'), 0);
@@ -30,21 +33,52 @@ export async function exportModuleJson(
   const exportData: ModuleExportData = {
     version: EXPORT_VERSION,
     exportedAt: new Date().toISOString(),
-    moduleSettings: {},
-    settings: [],
+    exportMode: mode,
+    moduleSettings: null,
+    settings: null,
   };
 
-  // Collect module settings
-  onProgress?.(localize('applications.importExport.collectingSettings'), 10);
-  exportData.moduleSettings = collectModuleSettings();
+  // Collect module settings if needed
+  if (mode === ExportMode.ALL || mode === ExportMode.CONFIGURATION_ONLY) {
+    onProgress?.(localize('applications.importExport.collectingSettings'), 10);
+    exportData.moduleSettings = collectModuleSettings();
+  }
 
-  // Collect all settings and their documents
+  // Collect FCB settings if needed
+  if (mode === ExportMode.ALL || mode === ExportMode.SETTINGS_ONLY) {
+    const settingsProgress = mode === ExportMode.ALL ? 20 : 10;
+    exportData.settings = await collectAllSettings(onProgress, settingsProgress);
+  }
+
+  // Create and download the file
+  onProgress?.(localize('applications.importExport.creatingFile'), 95);
+  const json = JSON.stringify(exportData, null, 2);
+  const modeSuffix = mode === ExportMode.ALL ? '' : `-${mode}`;
+  const filename = `wcb-export${modeSuffix}-${new Date().toISOString().split('T')[0]}.json`;
+  downloadFile(json, filename, 'application/json');
+
+  onProgress?.(localize('applications.importExport.exportComplete'), 100);
+}
+
+/**
+ * Collect all FCB settings and their documents for export.
+ *
+ * @param onProgress - Optional callback for progress updates
+ * @param progressStart - Starting progress percentage (default 0)
+ * @returns Array of setting export data
+ */
+async function collectAllSettings(
+  onProgress?: ProgressCallback,
+  progressStart: number = 0
+): Promise<SettingExportData[]> {
+  const settings: SettingExportData[] = [];
   const settingIndex = ModuleSettings.get(SettingKey.settingIndex);
   const totalSettings = settingIndex.length;
+  const progressRange = 85 - progressStart;
 
   for (let i = 0; i < settingIndex.length; i++) {
     const settingInfo = settingIndex[i];
-    const progress = 10 + (i / totalSettings) * 80;
+    const progress = progressStart + (i / totalSettings) * progressRange;
     onProgress?.(
       `${localize('applications.importExport.exportingSetting')}: ${settingInfo.name}`,
       progress
@@ -53,17 +87,11 @@ export async function exportModuleJson(
     const setting = await FCBSetting.fromUuid(settingInfo.settingId);
     if (setting) {
       const settingData = await collectSettingData(setting);
-      exportData.settings.push(settingData);
+      settings.push(settingData);
     }
   }
 
-  // Create and download the file
-  onProgress?.(localize('applications.importExport.creatingFile'), 95);
-  const json = JSON.stringify(exportData, null, 2);
-  const filename = `fcb-export-${new Date().toISOString().split('T')[0]}.json`;
-  downloadFile(json, filename, 'application/json');
-
-  onProgress?.(localize('applications.importExport.exportComplete'), 100);
+  return settings;
 }
 
 /**
@@ -79,6 +107,8 @@ function collectModuleSettings(): Record<string, unknown> {
     SettingKey.lastKnownVersion,
     SettingKey.settingIndex,
     SettingKey.isInPlayMode,
+    SettingKey.rootFolderId,
+    SettingKey.contentTags,  // this isn't used any more
   ];
 
   // Add all setting except excluded ones
@@ -344,4 +374,5 @@ function cleanInvalidPositions(system: Record<string, unknown>): Record<string, 
 
 export default {
   exportModuleJson,
+  ExportMode,
 };

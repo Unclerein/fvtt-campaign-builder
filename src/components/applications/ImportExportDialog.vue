@@ -36,6 +36,16 @@ Dependencies
           <h3>{{ localize('applications.importExport.exportTitle') }}</h3>
           <p class="notes">{{ localize('applications.importExport.exportDescription') }}</p>
 
+          <!-- Export Mode Selection -->
+          <div class="fcb-export-mode">
+            <label class="fcb-label">{{ localize('applications.importExport.exportModeLabel') }}</label>
+            <select v-model="selectedExportMode" class="fcb-select">
+              <option v-for="option in exportModeOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+
           <button
             @click="onExportClick"
             class="fcb-button fcb-button-primary"
@@ -123,7 +133,7 @@ Dependencies
   import { localize } from '@/utils/game';
   import { exportModuleJson } from '@/utils/export';
   import { importModuleJson } from '@/utils/import';
-  import { ProgressCallback } from '@/utils/importExportCommon';
+  import { ProgressCallback, ExportMode } from '@/utils/importExportCommon';
   import { importExportApp } from '@/applications/settings/ImportExportApplication';
   import { FCBDialog } from '@/dialogs';
 
@@ -155,9 +165,15 @@ Dependencies
   const selectedFile = ref<File | null>(null);
   const selectedFileName = ref('');
   const fileInput = ref<HTMLInputElement | null>(null);
+  const selectedExportMode = ref<ExportMode>(ExportMode.ALL);
 
   ////////////////////////////////
   // computed data
+  const exportModeOptions = [
+    { value: ExportMode.ALL, label: localize('applications.importExport.exportModeAll') },
+    { value: ExportMode.CONFIGURATION_ONLY, label: localize('applications.importExport.exportModeConfiguration') },
+    { value: ExportMode.SETTINGS_ONLY, label: localize('applications.importExport.exportModeSettings') },
+  ];
 
   ////////////////////////////////
   // methods
@@ -188,7 +204,7 @@ Dependencies
     exportStatus.value = '';
 
     try {
-      await exportModuleJson(handleExportProgress);
+      await exportModuleJson(selectedExportMode.value, handleExportProgress);
     } catch (error) {
       errorMessage.value = error instanceof Error ? error.message : localize('applications.importExport.exportFailed');
       console.error('Export failed:', error);
@@ -289,6 +305,33 @@ Dependencies
         color: var(--fcb-text-muted);
         font-size: var(--fcb-font-size-small);
         line-height: 1.4;
+      }
+    }
+
+    .fcb-export-mode {
+      margin-bottom: 16px;
+
+      .fcb-label {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--fcb-text-primary);
+        font-size: var(--fcb-font-size-medium);
+      }
+
+      .fcb-select {
+        width: 100%;
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid var(--fcb-border-color);
+        background-color: var(--fcb-surface);
+        color: var(--fcb-text-primary);
+        font-size: var(--fcb-font-size-medium);
+        cursor: pointer;
+
+        &:focus {
+          outline: none;
+          border-color: var(--fcb-primary);
+        }
       }
     }
 

@@ -8,6 +8,16 @@
 /** Current export format version */
 export const EXPORT_VERSION = '1.0.0';
 
+/** Export mode determines what data is included in the export */
+export enum ExportMode {
+  /** Export all data: module settings and FCB settings */
+  ALL = 'all',
+  /** Export only module configuration settings */
+  CONFIGURATION_ONLY = 'configuration_only',
+  /** Export only FCB settings (no module settings) */
+  SETTINGS_ONLY = 'settings_only',
+}
+
 /** Pattern for matching @UUID[...] references in text content */
 const UUID_LINK_PATTERN = /@UUID\[([^\]]+)\]/g;
 
@@ -260,8 +270,12 @@ export function remapUuid(uuid: string | null | undefined, uuidMap: Map<string, 
 export interface ModuleExportData {
   version: string;
   exportedAt: string;
-  moduleSettings: Record<string, unknown>;
-  settings: SettingExportData[];
+  /** Export mode determines what data is included */
+  exportMode: ExportMode;
+  /** Module configuration settings (present when mode is ALL or CONFIGURATION_ONLY) */
+  moduleSettings: Record<string, unknown> | null;
+  /** FCB settings data (present when mode is ALL or SETTINGS_ONLY) */
+  settings: SettingExportData[] | null;
 }
 
 /** Import context to track original data and mappings */
