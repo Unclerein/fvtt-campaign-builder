@@ -62,7 +62,13 @@ export default defineConfig(({ mode }) => {
       copy({
         targets: [
           { src: 'static/lang', dest: 'dist' },
-          { src: 'static/templates', dest: 'dist' }
+          { src: 'static/templates', dest: 'dist' },
+          // changelog for big bag module manager; strip the badges
+          { 
+            src: 'CHANGELOG.md', 
+            dest: 'dist',
+            transform: (contents) => contents.toString().replace(/!\[.*\]\(.*\)/g, '')
+          }
         ],
         hook: 'writeBundle',
       }),
@@ -81,7 +87,8 @@ export default defineConfig(({ mode }) => {
         sourceMap: isDevelopment,
         include: ['src/**/*.scss', 'src/**/*.css', 
           'node_modules/@imengyu/vue3-context-menu/lib/vue3-context-menu.css',
-          'node_modules/@yaireo/tagify/dist/tagify.css'
+          'node_modules/@yaireo/tagify/dist/tagify.css',
+          'node_modules/vis-timeline/styles/vis-timeline-graph2d.css'
         ],
         watch: ['src/**/*.scss', 'src/**/*.css', 'src/'],
       }),

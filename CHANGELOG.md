@@ -1,4 +1,18 @@
+# Notes 
+
+**Documentation**: See the [user documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/) for full details.
+
+**Roadmap**: See [current roadmap](https://github.com/users/dovrosenberg/projects/8) for a general sense of what might be coming soon
+
+**Discord**: Join the [Discord Server](https://discord.gg/zKWCkwbnn3) for discussion, questions, or requests
+
 # Change Log
+## 1.9.3 - Changelog distribution
+![](https://img.shields.io/badge/release%20date-February%2028%2C%202026-blue)
+![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.9.3/module.zip)
+
+- No functional changes, but the changelog is now distributed with the module so that things like Big Bad Module Manager can display the changelog on updates.  Also added some helpful links to the top of it.
+
 ## 1.9.2 - Import/Export
 ![](https://img.shields.io/badge/release%20date-February%2028%2C%202026-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.9.2/module.zip)
