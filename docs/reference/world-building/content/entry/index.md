@@ -20,11 +20,13 @@ The Entry header has these main components:
   
   ![Push to session button](/assets/images/push-to-session.webp)
   
-  3. [Generate Button](generate) [[Advanced Feature]] - This gives you the option to generate a description or image for the current entry.
+  3. Open Foundry Document Button (for Characters and Locations) - This provides quick access to linked Foundry documents. For Characters, clicking this button opens the actor sheet for any linked [Actors](/reference/world-building/content/character/#actors). For Locations, it views the linked [Scene](/reference/world-building/content/location/#scenes). If multiple documents are linked, a menu will appear letting you choose which one to open. The button is disabled if no documents are linked.
+
+  4. [Generate Button](generate) [[Advanced Feature]] - This gives you the option to generate a description or image for the current entry.
 
   ![Generate button](/assets/images/generate-button.webp)
 
-  4. [Tags] - An easy way to categorize entries. Particularly helpful for [searching](/reference/navigation/search). 
+  5. [Tags] - An easy way to categorize entries. Particularly helpful for [searching](/reference/navigation/search). 
 
 ## Type
 Among other fields, every Entry has a [^Type], which is used to categorize it. 
@@ -45,3 +47,4 @@ There are several tabs on the Entry details screen:
   - Foundry document tabs: After the Entry relationship tabs, you'll find an [Actors tab](/reference/world-building/content/character/#actors) when looking at a Character and a [Scenes tab](/reference/world-building/content/location/#scenes) when looking at a Location.
   - [Sessions tab](./sessions) - a quick way to find game session notes that mention this entry
   - [Generic Foundry Document tab](./generic-foundry) - When enabled in [Module Settings], provides a table for linking any type of Foundry document (Scenes, Actors, Items, RollTables, Playlists, etc.) to the entry. 
+  - [Timeline tab](./timeline) - view calendar events from Calendaria that reference this Entry

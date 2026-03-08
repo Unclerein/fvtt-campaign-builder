@@ -80,8 +80,6 @@
       "storyWebSettings": "Story Web Settings",
       "storyWebSettingsLabel": "Configure Settings",
       "storyWebSettingsHelp": "Configure line colors/styles and element text for story webs",
-      "genericFoundryTab": "Zeige Foundry-Tab auf Einträgen",
-      "genericFoundryTabHelp": "Wenn aktiviert, haben Einträge einen Foundry-Tab, der jede Art von Foundry-Dokument (Szenen, Schauspieler, Gegenstände, etc.) enthalten kann. Dies ist nützlich, um Spielsitzungen vollständig von Einträgen aus zu steuern, ohne Kampagnen/Sitzungen zu verwenden.",
       "sessionBookmark": "Sitzungs-Lesezeichen anzeigen",
       "sessionBookmarkHelp": "Wenn aktiviert, wird ein Lesezeichen für die aktuelle Sitzung vorne in der Lesezeichenleiste angezeigt",
       "tableGrouping": "Tabellengruppierungseinstellungen",
@@ -91,7 +89,12 @@
       "enableVoiceRecordingHelp": "Erlaube das Aufzeichnen von Sprachproben für Charaktere, um Stimmen/Akzente besser zu merken",
       "importExport": "Moduldaten importieren/exportieren",
       "importExportLabel": "Moduldaten importieren/exportieren",
-      "importExportHelp": "Alle Moduldaten in eine Datei exportieren oder aus einem vorherigen Export importieren"
+      "importExportHelp": "Alle Moduldaten in eine Datei exportieren oder aus einem vorherigen Export importieren",
+      "useTimeline": "Zeitleiste verwenden",
+      "useTimelineHelp": "Zeitleistenfunktion aktivieren (erfordert das Calendaria-Modul).",
+      "tabVisibility": "Einstellungen zur Tab-Sichtbarkeit",
+      "tabVisibilityLabel": "Tab-Sichtbarkeit",
+      "tabVisibilityHelp": "Konfigurieren Sie, welche Tabs für jeden Inhaltstyp sichtbar sind"
     },
     "applications": {
       "sessionNotes": {
@@ -489,13 +492,15 @@
           "locations": "Orte",
           "organizations": "Organisationen",
           "pcs": "PCs",
-          "foundry": "Foundry"
+          "foundry": "Foundry",
+          "timeline": "Zeitleiste"
         },
         "campaign": {
           "pcs": "PCs",
           "lore": "Überlieferung",
           "toDo": "Zu erledigen",
-          "ideas": "Ideen"
+          "ideas": "Ideen",
+          "timeline": "Zeitleiste"
         },
         "session": {
           "notes": "Notizen",
@@ -508,7 +513,8 @@
           "monsters": "Monster",
           "magic": "Magische Gegenstände",
           "toDo": "Zu erledigen",
-          "noteBox": "Notizbox"
+          "noteBox": "Notizbox",
+          "timeline": "Zeitleiste"
         },
         "front": {
           "createNewDanger": "Neue Gefahr erstellen"
@@ -520,7 +526,11 @@
           "participants": "Teilnehmer",
           "monsters": "Monster",
           "ideas": "Ideen",
-          "vignettes": "Vignetten"
+          "vignettes": "Vignetten",
+          "timeline": "Zeitleiste"
+        },
+        "setting": {
+          "timeline": "Zeitleiste"
         }
       },
       "noResults": "Nichts hier",
@@ -611,7 +621,27 @@
       "setting": {
         "setting": "Einstellung"
       },
-      "newGroup": "Neue Gruppe"
+      "newGroup": "Neue Gruppe",
+      "timeline": {
+        "loading": "Zeitleiste wird geladen...",
+        "textSearch": "Suche",
+        "textSearchPlaceholder": "Ereignisse suchen...",
+        "categories": "Kategorien",
+        "selectCategories": "Kategorien auswählen...",
+        "excludeGMOnly": "Nur GM ausschließen",
+        "referenceEntity": "Diese {entity} referenzieren",
+        "resetFilters": "Zurücksetzen",
+        "resetRange": "Bereich zurücksetzen",
+        "noFilters": "Keine Filter",
+        "filterSummaryCategories": "Kategorien: {categories}",
+        "filterSummarySearch": "Suche: \"{search}\"",
+        "calendar": "Kalender",
+        "selectCalendar": "Kalender auswählen...",
+        "includeChildren": "Kinder einschließen",
+        "includeArcAndSessionReferences": "Arc- und Sitzungsreferenzen einschließen",
+        "includeSessionReferences": "Sitzungsreferenzen einschließen",
+        "includeAllReferences": "Eintrag-, Kampagnen-, Arc- und Sitzungsreferenzen einschließen"
+      }
     },
     "placeholders": {
       "search": "Suche",
@@ -861,6 +891,41 @@
         "deleteTitle": "Aufnahme löschen?",
         "deleteMessage": "Sind Sie sicher, dass Sie diese Sprachaufnahme löschen möchten? Die Datei bleibt auf dem Server, wird jedoch nicht mehr mit diesem Charakter verknüpft.",
         "selectFolderTitle": "Ordner für Sprachaufnahmen auswählen"
+      },
+      "tabVisibility": {
+        "title": "Einstellungen zur Tab-Sichtbarkeit",
+        "description": "Wählen Sie, welche Tabs für jeden Inhaltstyp sichtbar sein sollen. Beschreibungstabs werden immer angezeigt.",
+        "contentTypes": {
+          "setting": "Einstellung",
+          "campaign": "Kampagne",
+          "arc": "Bogen",
+          "session": "Sitzung",
+          "entryCharacter": "Eintrag - Charakter",
+          "entryLocation": "Eintrag - Ort",
+          "entryOrganization": "Eintrag - Organisation",
+          "entryPC": "Eintrag - PC"
+        },
+        "tabs": {
+          "journals": "Tagebücher",
+          "characters": "Charaktere",
+          "npcs": "NSCs",
+          "locations": "Orte",
+          "organizations": "Organisationen",
+          "pcs": "PCs",
+          "actors": "Schauspieler",
+          "scenes": "Szenen",
+          "sessions": "Sitzungen",
+          "foundry": "Gießerei",
+          "monsters": "Monster",
+          "vignettes": "Vignetten",
+          "lore": "Überlieferung",
+          "ideas": "Ideen",
+          "todo": "Aufgaben",
+          "participants": "Teilnehmer",
+          "magic": "Magische Gegenstände",
+          "storyWebs": "Geschichten-Netze",
+          "timeline": "Zeitachse"
+        }
       }
     },
     "contextMenus": {
@@ -1051,7 +1116,11 @@
       "restoreWindow": "Fenster wiederherstellen",
       "currentSession": "aktuelle Sitzung",
       "voiceRecordingExists": "Sprachaufnahme vorhanden - klicken für Optionen",
-      "voiceRecordingNone": "Keine Sprachaufnahme - klicken zum Aufnehmen"
+      "voiceRecordingNone": "Keine Sprachaufnahme - klicken zum Aufnehmen",
+      "openFoundryActor": "Foundry-Schauspieler öffnen",
+      "openFoundryScene": "Foundry-Szene öffnen",
+      "noActorsAttached": "Keine Schauspieler angehängt",
+      "noScenesAttached": "Keine Szenen angehängt"
     },
     "notifications": {
       "backend": {

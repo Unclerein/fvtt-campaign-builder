@@ -29,6 +29,16 @@
           <i class="fas fa-share"></i>
         </button>
         <button
+          v-if="showFoundryDocButton"
+          class="fcb-foundry-doc-button"
+          data-testid="entry-foundry-doc-button"
+          @click="onFoundryDocButtonClick"
+          :disabled="foundryDocButtonDisabled"
+          :title="foundryDocButtonTitle"
+        >
+          <i :class="`fas ${foundryDocButtonIcon}`"></i>
+        </button>
+        <button
           v-if="showVoiceButton"
           class="fcb-voice-button"
           :class="{ 'has-recording': !!currentEntry?.voiceRecordingPath }"
@@ -137,7 +147,7 @@
 
         </DescriptionTab>
         <JournalTab
-          v-if="currentEntry"
+          v-if="currentEntry && topic && tabVisibility[topicTabMap[topic]['journals']]"
           :initial-journals="currentEntry.journals"
           @journals-updated="onJournalsUpdate"
         />
@@ -153,7 +163,7 @@
           </div>
         </div>
         <div 
-          v-if="topic===Topics.Location"
+          v-if="topic && topic === Topics.Location && tabVisibility[topicTabMap[topic]['scenes']]"
           class="tab flexcol" 
           data-group="primary" 
           data-tab="scenes"
@@ -165,7 +175,7 @@
           </div>
         </div>
         <div 
-          v-if="topic===Topics.Character"
+          v-if="topic && topic === Topics.Character && tabVisibility[topicTabMap[topic]['actors']]"
           class="tab flexcol" 
           data-group="primary" 
           data-tab="actors"
@@ -176,11 +186,16 @@
             />
           </div>
         </div>
-        <div class="tab flexcol" data-group="primary" data-tab="sessions">
+        <div 
+          v-if="topic && tabVisibility[topicTabMap[topic]['sessions']]"
+          class="tab flexcol" 
+          data-group="primary" 
+          data-tab="sessions"
+        >
           <SessionsTab />
         </div>
         <div 
-          v-if="ModuleSettings.get(SettingKey.genericFoundryTab)"
+          v-if="topic && tabVisibility[topicTabMap[topic]['foundry']]"
           class="tab flexcol" 
           data-group="primary" 
           data-tab="foundry"
@@ -189,6 +204,16 @@
             <RelatedDocumentTable 
               :document-link-type="DocumentLinkType.GenericFoundry"
             />
+          </div>
+        </div>
+        <div 
+          v-if="showTimelineTab"
+          class="tab flexcol" 
+          data-group="primary" 
+          data-tab="timeline"
+        >
+          <div class="tab-inner">
+            <TimelineTab />
           </div>
         </div>
       </ContentTabStrip>
@@ -238,6 +263,7 @@
   import { notifyError } from '@/utils/notifications';
   import { FCBDialog } from '@/dialogs';
   import VoiceRecordingService from '@/utils/voiceRecording';
+  import { calendariaAvailable, calendarActive } from '@/utils/calendar/calendarState';
 
   // library components
   import InputText from 'primevue/inputtext';
@@ -260,9 +286,10 @@
   import ContentTabStrip from '@/components/ContentTab/ContentTabStrip.vue';
   import CustomFieldsBlocks from '@/components/CustomFieldsBlocks.vue';
   import VoiceRecordingDialog from '@/components/dialogs/VoiceRecordingDialog.vue';
+  import TimelineTab from '@/components/ContentTab/TimelineTab.vue';
   
   // types
-  import { CustomFieldContentType, DocumentLinkType, Topics, ValidTopic, WindowTabType, RelatedJournal, ContentTabDescriptor } from '@/types';
+  import { CustomFieldContentType, DocumentLinkType, Topics, ValidTopic, WindowTabType, RelatedJournal, ContentTabDescriptor, TabVisibilityItem, } from '@/types';
   import { FCBSetting, TopicFolder, Entry, Session, Campaign } from '@/classes';
 
   ////////////////////////////////
@@ -292,6 +319,46 @@
     [Topics.Character]: { namePlaceholder: 'placeholders.characterName', },
     [Topics.Location]: { namePlaceholder: 'placeholders.locationName', },
     [Topics.Organization]: { namePlaceholder: 'placeholders.organizationName', },
+  };
+
+  const topicTabMap: Record<ValidTopic, Record<string, TabVisibilityItem>> = {
+    [Topics.Character]: {
+      journals: TabVisibilityItem.EntryCharacterJournals,
+      locations: TabVisibilityItem.EntryCharacterLocations,
+      organizations: TabVisibilityItem.EntryCharacterOrganizations,
+      pcs: TabVisibilityItem.EntryCharacterPCs,
+      sessions: TabVisibilityItem.EntryCharacterSessions,
+      foundry: TabVisibilityItem.EntryCharacterFoundry,
+      actors: TabVisibilityItem.EntryCharacterActors,
+      timeline: TabVisibilityItem.EntryCharacterTimeline,
+    },
+    [Topics.Location]: {
+      journals: TabVisibilityItem.EntryLocationJournals,
+      characters: TabVisibilityItem.EntryLocationCharacters,
+      organizations: TabVisibilityItem.EntryLocationOrganizations,
+      pcs: TabVisibilityItem.EntryLocationPCs,
+      sessions: TabVisibilityItem.EntryLocationSessions,
+      foundry: TabVisibilityItem.EntryLocationFoundry,
+      scenes: TabVisibilityItem.EntryLocationScenes,
+      timeline: TabVisibilityItem.EntryLocationTimeline,
+    },
+    [Topics.Organization]: {
+      journals: TabVisibilityItem.EntryOrganizationJournals,
+      characters: TabVisibilityItem.EntryOrganizationCharacters,
+      locations: TabVisibilityItem.EntryOrganizationLocations,
+      pcs: TabVisibilityItem.EntryOrganizationPCs,
+      sessions: TabVisibilityItem.EntryOrganizationSessions,
+      foundry: TabVisibilityItem.EntryOrganizationFoundry,
+      timeline: TabVisibilityItem.EntryOrganizationTimeline,
+    },
+    [Topics.PC]: {
+      journals: TabVisibilityItem.EntryPCJournals,
+      characters: TabVisibilityItem.EntryPCCharacters,
+      locations: TabVisibilityItem.EntryPCLocations,
+      organizations: TabVisibilityItem.EntryPCOrganizations,
+      foundry: TabVisibilityItem.EntryPCFoundry,
+      timeline: TabVisibilityItem.EntryPCTimeline,
+    },
   };
 
   const relationships = [
@@ -324,23 +391,68 @@
   ////////////////////////////////
   // computed data
     
+  const tabVisibility = computed(() => {
+    ModuleSettings.getReactiveVersion();
+    return ModuleSettings.get(SettingKey.tabVisibilitySettings);
+  });
+
   const icon = computed((): string => (!topic.value ? '' : getTopicIcon(topic.value)));
   const namePlaceholder = computed((): string => (topic.value===null ? '' : (localize(topicData[topic.value]?.namePlaceholder || '') || '')));
   const canGenerate = computed(() => topic.value && [Topics.Character, Topics.Location, Topics.Organization].includes(topic.value));
   const generateDisabled = computed(() => !available.value);
   const showHierarchy = computed((): boolean => (topic.value===null ? false : hasHierarchy(topic.value)));
-  
+
   // Voice recording computed properties
   const showVoiceButton = computed(() => {
     return ModuleSettings.get(SettingKey.enableVoiceRecording) &&
            topic.value === Topics.Character &&
            VoiceRecordingService.isRecordingSupported();
   });
+
   const voiceButtonTitle = computed(() => {
     if (!currentEntry.value?.voiceRecordingPath) {
       return localize('tooltips.voiceRecordingNone');
     }
     return localize('tooltips.voiceRecordingExists');
+  });
+
+  // Foundry document button computed properties
+  const showFoundryDocButton = computed(() => {
+    return topic.value && [Topics.Character, Topics.Location].includes(topic.value);
+  });
+
+  const foundryDocButtonDisabled = computed(() => {
+    if (!currentEntry.value) {
+      return true;
+    }
+    if (topic.value === Topics.Character) {
+      return currentEntry.value.actors.length === 0;
+    }
+    if (topic.value === Topics.Location) {
+      return currentEntry.value.scenes.length === 0;
+    }
+    return true;
+  });
+
+  const foundryDocButtonIcon = computed(() => {
+    return topic.value === Topics.Character ? 'fa-user' : 'fa-map';
+  });
+
+  const foundryDocButtonTitle = computed(() => {
+    if (topic.value === Topics.Character) {
+      return currentEntry.value?.actors.length ? localize('tooltips.openFoundryActor') : localize('tooltips.noActorsAttached');
+    }
+
+    if (topic.value === Topics.Location) {
+      return currentEntry.value?.scenes.length ? localize('tooltips.openFoundryScene') : localize('tooltips.noScenesAttached');
+    }
+    return '';
+  });
+
+  const showTimelineTab = computed(() => {
+    return ModuleSettings.get(SettingKey.useTimeline) && 
+      calendariaAvailable.value && 
+      calendarActive.value;
   });
 
   const customFieldContentType = computed<CustomFieldContentType | null>(() => {
@@ -359,27 +471,47 @@
   });
 
   const tabs = computed(() => {
-    let tabs = [
+    const baseTabs = [
       { id: 'description', label: localize('labels.description') },
-      { id: 'journals', label: localize('labels.journals') },
     ] as ContentTabDescriptor[];
-
     // TODO-PC - only show the PC tab if there's already a connection... rare that we'd need to add from here 
-    for (const relationship of relationships) {
-      tabs.push({ id: relationship.tab, label: localize(relationship.label) });
+    // Journals tab
+    if (topic.value && tabVisibility.value[topicTabMap[topic.value]['journals']]) {
+      baseTabs.push({ id: 'journals', label: localize('labels.journals') });
     }
 
-    if (topic.value===Topics.Character)
-      tabs.push({ id: 'actors', label: localize('labels.actors') });
-    if (topic.value===Topics.Location)
-      tabs.push({ id: 'scenes', label: localize('labels.scenes') });
-    if (topic.value!==Topics.PC)
-      tabs.push({ id: 'sessions', label: localize('labels.sessions') });
-    ModuleSettings.getReactiveVersion();
-    if (ModuleSettings.get(SettingKey.genericFoundryTab))
-      tabs.push({ id: 'foundry', label: localize('labels.tabs.entry.foundry') });
+    // Relationship tabs (characters, locations, organizations, pcs)
+    for (const relationship of relationships) {
+      if (topic.value && tabVisibility.value[topicTabMap[topic.value][relationship.tab]]) {
+        baseTabs.push({ id: relationship.tab, label: localize(relationship.label) });
+      }
+    }
 
-    return tabs;
+    // Actors tab (Character only)
+    if (topic.value === Topics.Character && tabVisibility.value[topicTabMap[topic.value]['actors']]) {
+      baseTabs.push({ id: 'actors', label: localize('labels.actors') });
+    }
+
+    // Scenes tab (Location only)
+    if (topic.value === Topics.Location && tabVisibility.value[topicTabMap[topic.value]['scenes']]) {
+      baseTabs.push({ id: 'scenes', label: localize('labels.scenes') });
+    }
+
+    // Sessions tab (not for PC)
+    if (topic.value && topic.value !== Topics.PC && tabVisibility.value[topicTabMap[topic.value]['sessions']]) {
+      baseTabs.push({ id: 'sessions', label: localize('labels.sessions') });
+    }
+
+    // Foundry tab
+    if (topic.value && tabVisibility.value[topicTabMap[topic.value]['foundry']]) {
+      baseTabs.push({ id: 'foundry', label: localize('labels.tabs.entry.foundry') });
+    }
+
+    if (topic.value && showTimelineTab.value && tabVisibility.value[topicTabMap[topic.value]['timeline']]) {
+      baseTabs.push({ id: 'timeline', label: localize('labels.tabs.entry.timeline') });
+    }
+
+    return baseTabs;
   });
 
   ////////////////////////////////
@@ -701,6 +833,74 @@
       zIndex: 300,
       items: menuItems,
     });
+  };
+
+  /**
+   * Handle Foundry document button click - open actor sheet or activate scene.
+   * If multiple documents are attached, show a context menu to select which one.
+   */
+  const onFoundryDocButtonClick = async (event: MouseEvent): Promise<void> => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!currentEntry.value || !topic.value) {
+      return;
+    }
+
+    // Get the appropriate document list based on topic
+    const docUuids = topic.value === Topics.Character 
+      ? currentEntry.value.actors 
+      : topic.value === Topics.Location 
+        ? currentEntry.value.scenes 
+        : [];
+
+    if (docUuids.length === 0) {
+      return;
+    }
+
+    // If only one document, open/activate it directly
+    if (docUuids.length === 1) {
+      await openFoundryDocument(docUuids[0]);
+      return;
+    }
+
+    // Multiple documents - show context menu
+    const menuItems = await Promise.all(docUuids.map(async (uuid) => {
+      const doc = await foundry.utils.fromUuid(uuid);
+      return {
+        icon: topic.value === Topics.Character ? 'fa-user' : 'fa-map',
+        iconFontClass: 'fas',
+        label: doc?.name || 'Unknown',
+        onClick: async () => {
+          await openFoundryDocument(uuid);
+        }
+      };
+    }));
+
+    ContextMenu.showContextMenu({
+      customClass: 'fcb',
+      x: event.x,
+      y: event.y,
+      zIndex: 300,
+      items: menuItems,
+    });
+  };
+
+  /**
+   * Open a Foundry document - actor sheet or scene activation.
+   */
+  const openFoundryDocument = async (uuid: string): Promise<void> => {
+    const doc = await foundry.utils.fromUuid(uuid);
+    if (!doc) {
+      return;
+    }
+
+    if (topic.value === Topics.Character) {
+      // Open actor sheet
+      await (doc as Actor).sheet?.render(true);
+    } else if (topic.value === Topics.Location) {
+      await (doc as Scene).view();
+    }
   };
 
   /**

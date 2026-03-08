@@ -1,6 +1,7 @@
 {
   "cSpell.words": [
     "APIURL",
+    "Calendaria",
     "datatable",
     "dragdrop",
     "iconfield",
@@ -17,15 +18,18 @@
     "parsemirror",
     "progressspinner",
     "prosemirror",
+    "rangechanged",
     "Roleplay",
     "SHADOWROOT",
     "splitterpanel",
     "subsheet",
+    "subtab",
     "tagify",
     "tinymce",
     "toggleswitch",
     "Undrawn",
-    "Unmark"
+    "Unmark",
+    "zoomable"
   ],
   "zencoder.enableRepoIndexing": true,
   "cSpell.ignoreWords": [
@@ -34,5 +38,15 @@
     "xmark",
     "yaireo"
   ],
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "cSpell.ignorePaths": [
+    "package-lock.json",
+    "node_modules",
+    "vscode-extension",
+    ".git/{info,lfs,logs,refs,objects}/**",
+    ".git/{index,*refs,*HEAD}",
+    ".vscode",
+    ".vscode-insiders",
+    "package.json"
+  ]
 }

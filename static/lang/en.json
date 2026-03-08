@@ -38,8 +38,6 @@
       },
       "autoRefreshRollTables": "Automatically refresh RollTables",
       "autoRefreshRollTablesHelp": "When enabled, generator roll tables will be automatically refreshed with new values when the module loads",
-      "genericFoundryTab": "Show Foundry tab on Entries",
-      "genericFoundryTabHelp": "When enabled, Entries will have a Foundry tab that can hold any type of Foundry document (scenes, actors, items, etc.). This is useful for driving play sessions entirely from Entries without using Campaigns/Sessions.",
       "rollTableSettings": "Roll Table Settings",
       "rollTableSettingsLabel": "Roll Table Settings",
       "rollTableSettingsHelp": "Configure settings for the random generators",
@@ -74,6 +72,8 @@
       "useFrontsHelp": "Turn on campaign \"front\" functionality.",
       "useStoryWebs": "Use Story Webs",
       "useStoryWebsHelp": "Turn on campaign \"story web\" functionality.",
+      "useTimeline": "Use Timeline",
+      "useTimelineHelp": "Turn on timeline functionality (requires Calendaria module).",
       "subTabsSavePosition": "Sub-tabs save position",
       "subTabsSavePositionHelp": "When enabled, every tab will remember which interior sub-tab was open and return to it when you re-open that tab. When disabled, tabs will always revert to the first one (usually description).",
       "storyWebAutoArrange": "Auto-arrange story webs",
@@ -89,6 +89,9 @@
       "tableGrouping": "Table Grouping Settings",
       "tableGroupingLabel": "Table Grouping",
       "tableGroupingHelp": "Configure which tabs use grouped tables for each content type",
+      "tabVisibility": "Tab Visibility Settings",
+      "tabVisibilityLabel": "Tab Visibility",
+      "tabVisibilityHelp": "Configure which tabs are visible for each content type",
       "importExport": "Import/Export Module Data",
       "importExportLabel": "Import/Export Module Data",
       "importExportHelp": "Export all module data to a file or import from a previous export"
@@ -569,6 +572,26 @@
       "setting": {
         "setting": "Setting"
       },
+      "timeline": {
+        "loading": "Loading timeline...",
+        "textSearch": "Search",
+        "textSearchPlaceholder": "Search events...",
+        "categories": "Categories",
+        "selectCategories": "Select categories...",
+        "excludeGMOnly": "Exclude GM Only",
+        "referenceEntity": "Reference this {entity}",
+        "resetFilters": "Reset",
+        "resetRange": "Reset Range",
+        "noFilters": "No filters",
+        "filterSummaryCategories": "Categories: {categories}",
+        "filterSummarySearch": "Search: \"{search}\"",
+        "calendar": "Calendar",
+        "selectCalendar": "Select calendar...",
+        "includeChildren": "Include children",
+        "includeArcAndSessionReferences": "Include Arc and Session references",
+        "includeSessionReferences": "Include Session references",
+        "includeAllReferences": "Include Entry, Campaign, Arc, and Session references"
+      },
       "groupTree": "Group tree by type",
       "tabs": {
         "entry": {
@@ -576,13 +599,18 @@
           "locations": "Locations",
           "pcs": "PCs",
           "organizations": "Organizations",
-          "foundry": "Foundry"
+          "foundry": "Foundry",
+          "timeline": "Timeline"
+        },
+        "setting": {
+          "timeline": "Timeline"
         },
         "campaign": {
           "pcs": "PCs",
           "lore": "Lore",
           "toDo": "To-Do",
-          "ideas": "Ideas"
+          "ideas": "Ideas",
+          "timeline": "Timeline"
         },
         "front": {
           "createNewDanger": "Create new Danger"
@@ -594,7 +622,8 @@
           "locations": "Locations",
           "participants": "Participants",
           "monsters": "Monsters",
-          "ideas": "Ideas"
+          "ideas": "Ideas",
+          "timeline": "Timeline"
         },
         "session": {
           "notes": "Notes",
@@ -607,7 +636,8 @@
           "npcs": "NPCs",
           "monsters": "Monsters",
           "magic": "Magic Items",
-          "toDo": "To-Do"
+          "toDo": "To-Do",
+          "timeline": "Timeline"
         }
       },
       "noResults": "Nothing here",
@@ -889,6 +919,41 @@
           "grimPortents": "Grim Portents"
         }
       },
+      "tabVisibility": {
+        "title": "Tab Visibility Settings",
+        "description": "Choose which tabs should be visible for each content type. Description tabs are always shown.",
+        "contentTypes": {
+          "setting": "Setting",
+          "campaign": "Campaign",
+          "arc": "Arc",
+          "session": "Session",
+          "entryCharacter": "Entry - Character",
+          "entryLocation": "Entry - Location",
+          "entryOrganization": "Entry - Organization",
+          "entryPC": "Entry - PC"
+        },
+        "tabs": {
+          "journals": "Journals",
+          "characters": "Characters",
+          "npcs": "NPCs",
+          "locations": "Locations",
+          "organizations": "Organizations",
+          "pcs": "PCs",
+          "actors": "Actors",
+          "scenes": "Scenes",
+          "sessions": "Sessions",
+          "foundry": "Foundry",
+          "monsters": "Monsters",
+          "vignettes": "Vignettes",
+          "lore": "Lore",
+          "ideas": "Ideas",
+          "todo": "To-Dos",
+          "participants": "Participants",
+          "magic": "Magic Items",
+          "storyWebs": "Story Webs",
+          "timeline": "Timeline"
+        }
+      },
       "relatedEntriesManagement": {
         "title": "Manage Related Entries",
         "entryDescription": "Select Entries to link or unlink to this Entry based on your changes.",
@@ -1088,7 +1153,11 @@
         "generateImage": "Generate a new image in the background after creating"
       },
       "voiceRecordingExists": "Voice recording exists - click for options",
-      "voiceRecordingNone": "No voice recording - click to record"
+      "voiceRecordingNone": "No voice recording - click to record",
+      "openFoundryActor": "Open Foundry Actor",
+      "openFoundryScene": "Open Foundry Scene",
+      "noActorsAttached": "No actors attached",
+      "noScenesAttached": "No scenes attached"
     },
     "tags": {
       "tag": "Tag",
