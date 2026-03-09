@@ -53,7 +53,7 @@
 	
   // local components
   import BaseTable from '@/components/tables/BaseTable.vue';
-  import RelatedDocumentsDialog from '@/components/tables/RelatedDocumentsDialog.vue';
+  import RelatedDocumentsDialog from '@/components/dialogs/RelatedDocumentsDialog.vue';
 
   // types
   import { CellEditCompleteEvent, ArcTableTypes, SessionTableTypes, BaseTableColumn, GroupableItem, } from '@/types';
@@ -239,7 +239,7 @@
       const campaign = await newArc?.loadCampaign();
       campaignHasSessions.value = (campaign?.sessionIndex?.length || 0) > 0;
     } else {
-      campaignHasSessions.value = true;
+      campaignHasSessions.value = true;  // means we're in session mode
     }
   }, { immediate: true });
 

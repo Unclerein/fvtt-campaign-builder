@@ -281,8 +281,9 @@ function cleanSessionSystemData(system: Record<string, unknown>): Record<string,
 function cleanArcSystemData(system: Record<string, unknown>): Record<string, unknown> {
   const cleaned = { ...system };
 
-  // Clear monsters array - references non-FCB Foundry Actor documents
+  // Clear monsters and items arrays - references non-FCB Foundry Actor/Item documents
   cleaned.monsters = [];
+  cleaned.items = [];
 
   // Clear journals array - references non-FCB Foundry Journal documents
   cleaned.journals = [];
@@ -344,7 +345,35 @@ function cleanInvalidRelationships(system: Record<string, unknown>): Record<stri
   return { ...system, relationships: cleanedRelationships };
 }
 
+/**
+ * Export a single setting to a JSON file and trigger download.
+ *
+ * @param settingId - The UUID of the setting to export
+ */
+export async function exportSingleSettingJson(settingId: string): Promise<void> {
+  const setting = await FCBSetting.fromUuid(settingId);
+  if (!setting) {
+    throw new Error('Setting not found');
+  }
+
+  const settingData = await collectSettingData(setting);
+
+  // Wrap in ModuleExportData structure for compatibility with importModuleJson
+  const exportData: ModuleExportData = {
+    version: EXPORT_VERSION,
+    exportedAt: new Date().toISOString(),
+    exportMode: ExportMode.SETTINGS_ONLY,
+    moduleSettings: null,
+    settings: [settingData],
+  };
+
+  const json = JSON.stringify(exportData, null, 2);
+  const filename = `${setting.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`;
+  downloadFile(json, filename, 'application/json');
+}
+
 export default {
   exportModuleJson,
+  exportSingleSettingJson,
   ExportMode,
 };

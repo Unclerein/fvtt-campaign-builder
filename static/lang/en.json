@@ -34,7 +34,9 @@
         "historyForward": "Move forward in tab history",
         "historyForwardHelp": "Move \"forward\" in the history of the current tab",
         "toggleWindow": "Open/Close Main Window",
-        "toggleWindowHelp": "Open/Close the Campaign Builder window"
+        "toggleWindowHelp": "Open/Close the Campaign Builder window",
+        "addToDo": "Add To-do Item",
+        "addToDoHelp": "Open a dialog to add a new to-do item to a campaign"
       },
       "autoRefreshRollTables": "Automatically refresh RollTables",
       "autoRefreshRollTablesHelp": "When enabled, generator roll tables will be automatically refreshed with new values when the module loads",
@@ -622,6 +624,7 @@
           "locations": "Locations",
           "participants": "Participants",
           "monsters": "Monsters",
+          "items": "Magic Items",
           "ideas": "Ideas",
           "timeline": "Timeline"
         },
@@ -686,6 +689,7 @@
       "participantCopiedToNextSession": "Participant copied to next session",
       "locationCopiedToNextSession": "Location copied to next session",
       "monsterCopiedToNextSession": "Monster copied to next session",
+      "itemCopiedToNextSession": "Item copied to next session",
       "toDoReferenceNotFound": "The linked reference for this to-do item no longer exists.",
       "addedToSession": "added to session",
       "changesSaved": "Changes saved",
@@ -802,7 +806,11 @@
       },
       "addToDo": {
         "title": "Add To-do",
-        "text": "Enter to-do text:"
+        "prompt": "Enter to-do text:"
+      },
+      "selectCampaign": {
+        "title": "Select Campaign",
+        "prompt": "Which campaign should this to-do be added to?"
       },
       "relatedEntries": {
         "additionalInformation": "Additional Information",
@@ -978,7 +986,8 @@
       },
       "settingFolder": {
         "delete": "Delete Setting",
-        "createCampaign": "Create campaign"
+        "createCampaign": "Create campaign",
+        "exportJson": "Export as JSON"
       },
       "campaignsHeader": {
         "createCampaign":"Create campaign"
