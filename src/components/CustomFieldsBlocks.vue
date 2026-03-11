@@ -96,6 +96,7 @@
   import { nameStyles } from '@/utils/nameStyles';
   import { promptReplace } from '@/utils/generation';
   import { replaceUUIDsInText } from '@/utils/sanitizeHtml';
+  import { FCBDialog } from '@/dialogs';
 
   // library components
   import InputText from 'primevue/inputtext';
@@ -407,9 +408,11 @@
     if (!field.aiEnabled) return;
 
     // if there's already a value there, confirm that user wants to overwrite
-    if (!(await FCBDialog.confirmDialog('Overwrite field?', `Are you sure you want to overwrite ${field.label} with new text?`)))
-      return;
-
+    if (values[field.name]) {
+      if (!(await FCBDialog.confirmDialog(localize('dialogs.overwriteField.title'), localize('dialogs.overwriteField.message', { field: field.label }))))
+        return;
+    }
+    
     const key = aiGenerationKey(field);
     if (isGeneratingAi[key]) return;
     isGeneratingAi[key] = true;
