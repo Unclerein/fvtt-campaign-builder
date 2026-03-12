@@ -63,6 +63,7 @@
         <Tags
           v-if="currentEntry"
           v-model="currentEntry.tags"
+          :whitelist-supplement="tagsWhitelistSupplement"
           @tag-added="onTagChange"
           @tag-removed="onTagChange"
           @tag-click="onTagClick"
@@ -324,6 +325,7 @@
   const topicTabMap: Record<ValidTopic, Record<string, TabVisibilityItem>> = {
     [Topics.Character]: {
       journals: TabVisibilityItem.EntryCharacterJournals,
+      characters: TabVisibilityItem.EntryCharacterCharacters,
       locations: TabVisibilityItem.EntryCharacterLocations,
       organizations: TabVisibilityItem.EntryCharacterOrganizations,
       pcs: TabVisibilityItem.EntryCharacterPCs,
@@ -335,6 +337,7 @@
     [Topics.Location]: {
       journals: TabVisibilityItem.EntryLocationJournals,
       characters: TabVisibilityItem.EntryLocationCharacters,
+      locations: TabVisibilityItem.EntryLocationLocations,
       organizations: TabVisibilityItem.EntryLocationOrganizations,
       pcs: TabVisibilityItem.EntryLocationPCs,
       sessions: TabVisibilityItem.EntryLocationSessions,
@@ -346,6 +349,7 @@
       journals: TabVisibilityItem.EntryOrganizationJournals,
       characters: TabVisibilityItem.EntryOrganizationCharacters,
       locations: TabVisibilityItem.EntryOrganizationLocations,
+      organizations: TabVisibilityItem.EntryOrganizationOrganizations,
       pcs: TabVisibilityItem.EntryOrganizationPCs,
       sessions: TabVisibilityItem.EntryOrganizationSessions,
       foundry: TabVisibilityItem.EntryOrganizationFoundry,
@@ -407,6 +411,19 @@
     return ModuleSettings.get(SettingKey.enableVoiceRecording) &&
            topic.value === Topics.Character &&
            VoiceRecordingService.isRecordingSupported();
+  });
+
+  // Whitelist supplement for tags - include actor tags for characters, scene tags for locations
+  const tagsWhitelistSupplement = computed((): string[] => {
+    if (topic.value === Topics.Character) {
+      const actorTags = ModuleSettings.get(SettingKey.actorTags);
+      return actorTags.map((t: { name: string }) => t.name);
+    }
+    if (topic.value === Topics.Location) {
+      const sceneTags = ModuleSettings.get(SettingKey.sceneTags);
+      return sceneTags.map((t: { name: string }) => t.name);
+    }
+    return [];
   });
 
   const voiceButtonTitle = computed(() => {

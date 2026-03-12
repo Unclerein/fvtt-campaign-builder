@@ -10,8 +10,9 @@ import { RollTableSettingsApplication } from '@/applications/settings/RollTableS
 import { StoryWebSettingsApplication } from '@/applications/settings/StoryWebSettingsApplication';
 import { ImportExportApplication } from '@/applications/settings/ImportExportApplication';
 import { TabVisibilitySettingsApplication } from '@/applications/settings/TabVisibilitySettingsApplication';
+import { AssociationTagsApplication } from '@/applications/settings/AssociationTagsApplication';
 import { ApiCustomGenerateImagePostRequestImageConfiguration, ApiCustomGenerateImagePostRequestImageModelEnum, ApiCustomGenerateImagePostRequestTextModelEnum } from '@/apiClient';
-import { StoryWebNodeTypes, SessionDisplayMode, Species, TagList, GeneratorType, SettingIndex, CustomFieldContentType, CustomFieldDescription, GroupableItem, TabVisibilityItem, TabVisibilitySettings, } from '@/types';
+import { StoryWebNodeTypes, SessionDisplayMode, Species, TagList, GeneratorType, SettingIndex, CustomFieldContentType, CustomFieldDescription, GroupableItem, TabVisibilityItem, TabVisibilitySettings, FoundryTag } from '@/types';
 
 export type ImageConfiguration = ApiCustomGenerateImagePostRequestImageConfiguration & {
   descriptionField?: string;
@@ -111,6 +112,11 @@ export enum SettingKey {
   // tab visibility settings
   tabVisibilityMenu = 'tabVisibilityMenu', // display the tab visibility menu
   tabVisibilitySettings = 'tabVisibilitySettings', // tab visibility settings per content type
+
+  // association tags settings
+  associationTagsMenu = 'associationTagsMenu', // display the association tags menu
+  actorTags = 'actorTags', // actor tag associations for characters
+  sceneTags = 'sceneTags', // scene tag associations for locations
 }
 
 export type SettingKeyType<K extends SettingKey> =
@@ -164,6 +170,9 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.enableVoiceRecording ? boolean :
     K extends SettingKey.voiceRecordingFolder ? VoiceRecordingFolderConfig | null :
     K extends SettingKey.tabVisibilitySettings ? TabVisibilitySettings :
+    K extends SettingKey.associationTagsMenu ? never :
+    K extends SettingKey.actorTags ? FoundryTag[] :
+    K extends SettingKey.sceneTags ? FoundryTag[] :
     never;
 
 export class ModuleSettings {
@@ -300,11 +309,19 @@ export class ModuleSettings {
     {
       settingID: SettingKey.tabVisibilityMenu,
       name: 'settings.tabVisibility',
-      label: 'fcb.settings.tabVisibilityLabel',
+      label: 'fcb.settings.tabVisibilityLabel',  // localized by Foundry
       hint: 'settings.tabVisibilityHelp',
       icon: 'fa-solid fa-folder-tree',
       permissions: ['SETTINGS_WRITE'],
       type: TabVisibilitySettingsApplication,
+    },
+    {
+      settingID: SettingKey.associationTagsMenu,
+      name: 'settings.associationTags',
+      label: 'fcb.settings.associationTagsLabel',  // localized by Foundry
+      hint: 'settings.associationTagsHelp',
+      icon: 'fa-solid fa-tags',
+      type: AssociationTagsApplication,
     },
     {
       settingID: SettingKey.importExportMenu,
@@ -649,6 +666,7 @@ export class ModuleSettings {
         [TabVisibilityItem.SessionStoryWebs]: true,
         [TabVisibilityItem.SessionTimeline]: true,
         [TabVisibilityItem.EntryCharacterJournals]: true,
+        [TabVisibilityItem.EntryCharacterCharacters]: true,
         [TabVisibilityItem.EntryCharacterLocations]: true,
         [TabVisibilityItem.EntryCharacterOrganizations]: true,
         [TabVisibilityItem.EntryCharacterPCs]: true,
@@ -658,6 +676,7 @@ export class ModuleSettings {
         [TabVisibilityItem.EntryCharacterTimeline]: true,
         [TabVisibilityItem.EntryLocationJournals]: true,
         [TabVisibilityItem.EntryLocationCharacters]: true,
+        [TabVisibilityItem.EntryLocationLocations]: true,
         [TabVisibilityItem.EntryLocationOrganizations]: true,
         [TabVisibilityItem.EntryLocationPCs]: true,
         [TabVisibilityItem.EntryLocationSessions]: true,
@@ -667,6 +686,7 @@ export class ModuleSettings {
         [TabVisibilityItem.EntryOrganizationJournals]: true,
         [TabVisibilityItem.EntryOrganizationCharacters]: true,
         [TabVisibilityItem.EntryOrganizationLocations]: true,
+        [TabVisibilityItem.EntryOrganizationOrganizations]: true,
         [TabVisibilityItem.EntryOrganizationPCs]: true,
         [TabVisibilityItem.EntryOrganizationSessions]: true,
         [TabVisibilityItem.EntryOrganizationFoundry]: true,
@@ -679,6 +699,16 @@ export class ModuleSettings {
         [TabVisibilityItem.EntryPCTimeline]: true,
       } as TabVisibilitySettings,
       type: Object,
+    },
+    {
+      settingID: SettingKey.actorTags,
+      default: [],
+      type: Array,
+    },
+    {
+      settingID: SettingKey.sceneTags,
+      default: [],
+      type: Array,
     },
   ];
   

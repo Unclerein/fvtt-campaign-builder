@@ -35,13 +35,30 @@ While you can attach as many Actors as you want for a Character, the top-most on
 :::
 
 ::: info
+If you have [Association Tags](/reference/configuration/#association-tags) configured, the first matching tags on the Character will automatically show the associated actor above the table. You can drag the actor name into Foundry just like you can drag a row from the table.  If you have any manually added actors, they will override it and the info label won't appear.  
+:::
+
+::: info
 Deleting an actor in Foundry that is attached to a Character will automatically and safely remove it from the Character.
+:::
+
+::: warning KNOWN ISSUE 
+Fairly obscure, but if you reorder the actors on a Character that is showing in the related -Characters list of something in another panel, it won't immediately refresh and dragging the Character will bring the wrong Actor.  Just change the tab in the other panel to refresh the list.
 :::
 
 #### Adding actors
 Click "Add actor" to select a Foundry actor and connect it to the Character.
 
 You can also drag and drop Foundry actors from Foundry VTT onto the box at the top to make the connection.  
+
+#### Tag-based Actor Association
+If you've configured [Association Tags](/reference/configuration/association-tags) to link tags to actors, any matching tags on the Character will automatically show the associated actor in this tab. This provides a convenient way to automatically connect actors based on tags.
+
+When the Actors tab is empty and a tag has an actor association:
+- An info message displays showing which tag created the association
+- The associated actor appears and can be dragged onto scenes
+
+If you manually add actors, the tag-associated actor won't be displayed separately because it won't be applied -- it is overriden by the manual entries (though the tag color will still show in the tag list).
 
 #### The actor list
 For each actor, you can see it's name and whether it is in the current Foundry world or inside a compendium.  You can click the actor name to open its character sheet.  
