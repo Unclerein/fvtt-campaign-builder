@@ -1,32 +1,38 @@
 import { vueHost } from '@/libraries/fvtt-vue/VueHost';
-import InputDialogComponent from '@/components/dialogs/InputDialog.vue';
+import CreateBranchesDialogComponent from '@/components/dialogs/CreateBranchesDialog.vue';
+import { Entry } from '@/classes';
 
-// creates a simple input dialog with the given title
-// returns the entered value or null if canceled
-export async function inputDialog(title: string, prompt: string, initialValue?: string): Promise<string | null> {
-  return new Promise<string | null>(async (resolve) => {
+/**
+ * Creates a dialog for selecting locations to create branches for an organization.
+ * The dialog handles the full creation flow including creating branch entries.
+ * 
+ * @param organizationId - UUID of the parent organization
+ * @returns Array of created branch entries, or empty array if canceled
+ */
+export async function createBranchesDialog(
+  organizationId: string
+): Promise<Entry[]> {
+  return new Promise<Entry[]>(async (resolve) => {
     // Create a container for the dialog
     const container = document.createElement('div');
     document.body.appendChild(container);
 
     let portalId: string | null = null;
 
-    // Register the input dialog with VueHost singleton
+    // Register the dialog with VueHost singleton
     portalId = await vueHost.registerPortal(
-      InputDialogComponent,
+      CreateBranchesDialogComponent,
       {
         modelValue: true,
-        title,
-        message: prompt,
-        initialValue: initialValue || '',
+        organizationId,
         'onUpdate:modelValue': (value: boolean) => {
           if (!value) {
             // Dialog was closed without a definitive answer
             cleanup();
           }
         },
-        onResult: (result: string | null) => {
-          resolve(result);
+        onConfirm: (branches: Entry[]) => {
+          resolve(branches);
           cleanup();
         },
       },

@@ -317,6 +317,8 @@ export const settingDirectoryStore = () => {
           ancestors: [],
           children: [],
           type: '',
+          locationParentId: null,
+          childBranches: [],
         } as Hierarchy
       );
 
@@ -429,7 +431,7 @@ export const settingDirectoryStore = () => {
     if (!external && !(await FCBDialog.confirmDialog(localize('dialogs.deleteSetting.title'), localize('dialogs.deleteSetting.message'))))
       return false;
     
-    await setting.delete(external);
+    await setting.delete();
 
     // pick another setting
     setting = await getCurrentSetting();
@@ -458,12 +460,49 @@ export const settingDirectoryStore = () => {
     if (!currentSetting.value)
       return false;
 
-    // confirm
-    if (!external && !(await FCBDialog.confirmDialog(localize('dialogs.deleteEntry.title'), localize('dialogs.deleteEntry.message'))))
-      return false;
+    // Check if this entry has branches that will be cascade-deleted
+    const hierarchy = currentSetting.value.getEntryHierarchy(entryId);
+    const childBranches = hierarchy?.childBranches || [];
+    
+    // confirm - show different message if there are branches to cascade-delete
+    if (!external) {
+      if (childBranches.length > 0) {
+        if (!(await FCBDialog.confirmDialog(
+          localize('dialogs.deleteEntryWithBranches.title'),
+          localize('dialogs.deleteEntryWithBranches.message', { count: String(childBranches.length) })
+        ))) {
+          return false;
+        }
+      } else {
+        if (!(await FCBDialog.confirmDialog(localize('dialogs.deleteEntry.title'), localize('dialogs.deleteEntry.message')))) {
+          return false;
+        }
+      }
+    }
 
-    // save the parent
-    const parentId = currentSetting.value.getEntryHierarchy(entryId)?.parentId || null;
+    // save the parent(s) - branches have both parentId (org) and locationParentId (location)
+    const parentId = hierarchy?.parentId || null;
+    const locationParentId = hierarchy?.locationParentId || null;
+
+    // Collect location and org IDs from branches so we can refresh those locations/orgs after cascade-delete
+    // This ensures the branch folders in those locations update to remove deleted branches
+    const branchLocationIds = [] as string[];
+    const branchOrgIds = [] as string[];
+    for (const branchId of childBranches) {
+      const branchHierarchy = currentSetting.value.getEntryHierarchy(branchId);
+      if (branchHierarchy?.locationParentId) {
+        branchLocationIds.push(branchHierarchy.locationParentId);
+      }
+      if (branchHierarchy?.parentId) {
+        branchOrgIds.push(branchHierarchy.parentId);
+      }
+    }
+
+    // Cleanup tabs/bookmarks for branches BEFORE cascade-delete
+    // Otherwise tabs will reference deleted entries
+    for (const branchId of childBranches) {
+      await navigationStore.cleanupDeletedEntry(branchId);
+    }
 
     const entry = await Entry.fromUuid(entryId);
     if (!entry)
@@ -471,11 +510,15 @@ export const settingDirectoryStore = () => {
 
     await entry.delete(external);
 
-    // update tabs/bookmarks
+    // update tabs/bookmarks for the parent entry
     await navigationStore.cleanupDeletedEntry(entryId);
 
-    // refresh and force its parent to update
-    await refreshSettingDirectoryTree(parentId ? [parentId] : []);
+    // refresh and force its parent(s) to update
+    // Include branch location IDs so their branch folders update
+    const parentIds = [locationParentId, parentId, ...branchLocationIds, ...branchOrgIds].filter(id=>id != null);
+    // Add branch folder IDs so they get refreshed (branch folder ID format is ${entryUuid}.branches)
+    const branchFolderIds = parentIds.map(id => `${id}.branches`);
+    await refreshSettingDirectoryTree([...parentIds, ...branchFolderIds]);
 
     return true;
   };
@@ -556,7 +599,6 @@ export const settingDirectoryStore = () => {
       await DirectoryTopicFolderNode.loadTypeEntries(topicFolders[DirectoryTopicFolderNode.topicFolder.topic]!.types, expandedNodes);
     }
 
-    // @ts-ignore (fvtt circularity issue)
     currentSettingTree.value = [currentSettingBlock];
 
     // make sure the node list is up to date
@@ -596,6 +638,18 @@ export const settingDirectoryStore = () => {
       });
     }
 
+    // Add "Create Branches" option for organizations
+    if (topic === Topics.Organization) {
+      items.push({
+        icon: 'fa-code-branch',
+        iconFontClass: 'fas',
+        label: localize('contextMenus.directoryEntry.createBranches'),
+        onClick: async () => {
+          await FCBDialog.createBranchesDialog(entryId);
+        }
+      });
+    }
+
     items.push({
       icon: 'fa-trash',
       iconFontClass: 'fas',
@@ -612,7 +666,7 @@ export const settingDirectoryStore = () => {
       label: localize('contextMenus.addToStoryWeb'),
       disabled: !currentStoryWeb.value,
       onClick: async () => {
-        await storyWebStore.addEntry(entryId, null, false);
+        await storyWebStore.addEntry(entryId, false);
       }
     });
     items.push({
@@ -621,7 +675,7 @@ export const settingDirectoryStore = () => {
       label: localize('contextMenus.addWithRelationships'),
       disabled: !currentStoryWeb.value,
       onClick: async () => {
-        await storyWebStore.addEntry(entryId, null, true);
+        await storyWebStore.addEntry(entryId, true);
       }
     });
 
