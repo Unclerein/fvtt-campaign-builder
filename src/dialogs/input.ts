@@ -1,5 +1,5 @@
 import { vueHost } from '@/libraries/fvtt-vue/VueHost';
-import InputDialogComponent from '@/components/InputDialog.vue';
+import InputDialogComponent from '@/components/dialogs/InputDialog.vue';
 
 // creates a simple input dialog with the given title
 // returns the entered value or null if canceled
@@ -32,7 +32,7 @@ export async function inputDialog(title: string, prompt: string, initialValue?: 
       },
       container,
       () => {} // No ref callback needed
-    );
+    ) || null;
 
     // Cleanup function
     function cleanup() {

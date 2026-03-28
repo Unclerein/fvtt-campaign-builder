@@ -45,15 +45,28 @@ You can create and adjust Hierarchies in two ways:
 1. Dragging entries within the sidebar.  By dragging an Entry onto another, the dragged Entry will become a child of the target.
 2. Using the Parent field in the Entry editor.  Simply choose the parent you want (or set it to blank to make the Entry a top-level one).
 
+### Branches folder {#branches-folder}
+Organizations and locations that have [Branches] will show a "Branches" folder in the directory tree. This folder contains all the branches for that organization or location, making it easy to find organization presence in specific locations.
+
 ### Context menus
 Right-clicking on items in the Entry tree provides additional options depending on the item type:
-1. Settings - Delete the [^Setting], Create a new [^Campaign], Export the Setting (as a markdown file or as a zip file containing the markdown file and all of its Story Web images)
+1. Settings - Delete the [^Setting], Create a new [^Campaign], Export the Setting (as a JSON file, a markdown file, or as a zip file containing the markdown file and all of its Story Web images)
 2. Topics - [Create a new Entry](/reference/world-building/create-entry) in that Topic
 3. Entries - Delete the Entry
+4. Organization entries - Create [Branches]
 
 ::: info
-Exporting a Setting creates a markdown (.MD) file with all of the details for the Setting, all Entries, and all Campaigns (including all Fronts, Arcs, and Sessions).  This is useful for reviewing everything in a different platform, or for providing to an LLM to enable it to answer questions about the Setting/Campaign.
+Exporting a Setting has three options:
+- **Export as JSON** - Creates a JSON file with all data for the Setting, including all Entries, Campaigns, Sessions, Arcs, Fronts, and Story Webs. This is useful for backing up or transferring a single Setting to another world.  See [Import/Export](/reference/configuration/import-export)
+- **Export Setting** - Creates a markdown (.MD) file with all of the details for the Setting, all Entries, and all Campaigns (including all Fronts, Arcs, and Sessions). This is useful for reviewing everything in a different platform, or for providing to an LLM to enable it to answer questions about the Setting/Campaign.
+- **Export Setting with Story Webs** - Creates a zip file containing the markdown export plus PNG images of all Story Webs in the Setting.
 :::
+
+
+### Dropping Actors {#dropping-actors}
+You can drag an Actor from the Foundry Actors directory and drop it anywhere in the Setting directory to create a new Character entry, taking the key information from the Actor.
+
+This provides a quick way to import existing actors into your setting as Characters.
 
 ### Group by type {#group-by-type}
 Using the "Group tree by type" checkbox at the top of the sidebar, you can choose to organize the entries by [^Type] instead of Topic.  This will eliminate the Hierarchy representation and instead show all the Entries grouped by their Types.  Entries without a Type will not be shown.

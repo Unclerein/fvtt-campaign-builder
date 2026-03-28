@@ -11,6 +11,7 @@
           class="fcb-input-name"
           data-testid="entry-name-input"
           unstyled
+          :disabled="currentEntry?.isBranch"
           :placeholder="namePlaceholder"
           :pt="{
             root: { class: 'full-height' }
@@ -63,6 +64,7 @@
         <Tags
           v-if="currentEntry"
           v-model="currentEntry.tags"
+          :whitelist-supplement="tagsWhitelistSupplement"
           @tag-added="onTagChange"
           @tag-removed="onTagChange"
           @tag-click="onTagClick"
@@ -105,6 +107,33 @@
               @species-selection-made="onSpeciesSelectionMade"
             />
           </div>
+
+          <!-- Branch info: show parent org and location as read-only links -->
+          <template v-if="currentEntry?.isBranch">
+            <div 
+              class="flexrow form-group"
+            >
+              <LabelWithHelp
+                label-text="labels.fields.parentOrganization"
+              />
+              <div class="fcb-branch-link">
+                <a @click.prevent.stop="onParentOrgClick">{{ parentOrgName }}</a>
+              </div>
+            </div>
+
+            <div 
+              v-if="currentEntry?.isBranch"
+              class="flexrow form-group"
+              style="margin-bottom: 8px;"
+            >
+              <LabelWithHelp
+                label-text="labels.fields.branchLocation"
+              />
+              <div class="fcb-branch-link">
+                <a @click.prevent.stop="onLocationClick">{{ locationName }}</a>
+              </div>
+            </div>
+          </template>
 
           <div 
             v-if="showHierarchy"
@@ -244,7 +273,7 @@
 <script setup lang="ts">
 
   // library imports
-  import { computed, ref, watch, provide, onUnmounted, } from 'vue';
+  import { computed, ref, watch, provide, onUnmounted, onBeforeUnmount, } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
@@ -282,7 +311,7 @@
   import LabelWithHelp from '@/components/LabelWithHelp.vue';
   import Tags from '@/components/Tags.vue';
   import SessionsTab from '@/components/ContentTab/EntryContent/SessionsTab.vue';
-  import RelatedEntriesManagementDialog from '@/components/RelatedEntriesManagementDialog.vue';
+  import RelatedEntriesManagementDialog from '@/components/dialogs/RelatedEntriesManagementDialog.vue';
   import ContentTabStrip from '@/components/ContentTab/ContentTabStrip.vue';
   import CustomFieldsBlocks from '@/components/CustomFieldsBlocks.vue';
   import VoiceRecordingDialog from '@/components/dialogs/VoiceRecordingDialog.vue';
@@ -324,6 +353,7 @@
   const topicTabMap: Record<ValidTopic, Record<string, TabVisibilityItem>> = {
     [Topics.Character]: {
       journals: TabVisibilityItem.EntryCharacterJournals,
+      characters: TabVisibilityItem.EntryCharacterCharacters,
       locations: TabVisibilityItem.EntryCharacterLocations,
       organizations: TabVisibilityItem.EntryCharacterOrganizations,
       pcs: TabVisibilityItem.EntryCharacterPCs,
@@ -335,6 +365,7 @@
     [Topics.Location]: {
       journals: TabVisibilityItem.EntryLocationJournals,
       characters: TabVisibilityItem.EntryLocationCharacters,
+      locations: TabVisibilityItem.EntryLocationLocations,
       organizations: TabVisibilityItem.EntryLocationOrganizations,
       pcs: TabVisibilityItem.EntryLocationPCs,
       sessions: TabVisibilityItem.EntryLocationSessions,
@@ -346,6 +377,7 @@
       journals: TabVisibilityItem.EntryOrganizationJournals,
       characters: TabVisibilityItem.EntryOrganizationCharacters,
       locations: TabVisibilityItem.EntryOrganizationLocations,
+      organizations: TabVisibilityItem.EntryOrganizationOrganizations,
       pcs: TabVisibilityItem.EntryOrganizationPCs,
       sessions: TabVisibilityItem.EntryOrganizationSessions,
       foundry: TabVisibilityItem.EntryOrganizationFoundry,
@@ -400,13 +432,47 @@
   const namePlaceholder = computed((): string => (topic.value===null ? '' : (localize(topicData[topic.value]?.namePlaceholder || '') || '')));
   const canGenerate = computed(() => topic.value && [Topics.Character, Topics.Location, Topics.Organization].includes(topic.value));
   const generateDisabled = computed(() => !available.value);
-  const showHierarchy = computed((): boolean => (topic.value===null ? false : hasHierarchy(topic.value)));
+  const showHierarchy = computed((): boolean => {
+    if (topic.value === null) return false;
+    if (!hasHierarchy(topic.value)) return false;
+    // Branches can't change parent - hide the dropdown
+    if (currentEntry.value?.isBranch) return false;
+    return true;
+  });
+
+  // Branch parent name computed properties
+  const parentOrgName = computed((): string => {
+    // parse the branch name
+    const branchName = currentEntry.value?.name || '';
+    const parts = branchName.split(' (');
+    return (parts.length < 2) ? '' : parts[0]; 
+  });
+
+  const locationName = computed((): string => {
+    // parse the branch name
+    const branchName = currentEntry.value?.name || '';
+    const parts = branchName.split(' (');
+    return (parts.length < 2) ? '' : parts[1].replace(')', ''); 
+  });
 
   // Voice recording computed properties
   const showVoiceButton = computed(() => {
     return ModuleSettings.get(SettingKey.enableVoiceRecording) &&
            topic.value === Topics.Character &&
            VoiceRecordingService.isRecordingSupported();
+  });
+
+  // Whitelist supplement for tags - include actor tags for characters, scene tags for locations
+  const tagsWhitelistSupplement = computed((): string[] => {
+    if (topic.value === Topics.Character) {
+      const actorTags = ModuleSettings.get(SettingKey.actorTags);
+      return actorTags.map((t: { name: string }) => t.name);
+    }
+    if (topic.value === Topics.Location) {
+      const sceneTags = ModuleSettings.get(SettingKey.sceneTags);
+      return sceneTags.map((t: { name: string }) => t.name);
+    }
+    return [];
   });
 
   const voiceButtonTitle = computed(() => {
@@ -455,14 +521,15 @@
       calendarActive.value;
   });
 
-  const customFieldContentType = computed<CustomFieldContentType | null>(() => {
+  const customFieldContentType = computed<CustomFieldContentType | null>(() => {    
     switch (topic.value) {
       case Topics.Character:
         return CustomFieldContentType.Character;
       case Topics.Location:
         return CustomFieldContentType.Location;
       case Topics.Organization:
-        return CustomFieldContentType.Organization;
+        // Branches use their own content type for custom fields
+        return currentEntry.value?.isBranch ? CustomFieldContentType.Branch : CustomFieldContentType.Organization;
       case Topics.PC:
         return CustomFieldContentType.PC;
       default:
@@ -591,6 +658,21 @@
     descriptionHeight.value = height;
     currentEntry.value?.setCustomFieldHeight('###description###', height);
     await currentEntry.value?.save();
+  };
+
+  // Click handlers for branch parent links
+  const onParentOrgClick = async (event: MouseEvent) => {
+    if (currentEntry.value) {
+      const id = await currentEntry.value.getParentId();
+      await navigationStore.openEntry(id, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
+    }
+  };
+
+  const onLocationClick = async (event: MouseEvent) => {
+    if (currentEntry.value) {
+      const id = await currentEntry.value.getLocationId();
+      await navigationStore.openEntry(id, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
+    }
   };
 
   // debounce changes to name
@@ -1191,6 +1273,14 @@
     cancelActiveRecording();
   });
 
+  // Clear debounce timer on unmount
+  onBeforeUnmount(() => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+      debounceTimer = undefined;
+    }
+  });
+
 </script>
 
 <style lang="scss" scoped>
@@ -1229,5 +1319,14 @@
   .fcb-voice-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  .fcb-branch-link {
+    a {
+      cursor: pointer;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
 </style>

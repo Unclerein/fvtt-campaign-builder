@@ -13,11 +13,15 @@
           <span v-if="currentNode.expanded">-</span><span v-else>+</span>
         </div>
         <div 
-          :class="`${currentNode.id===currentEntry?.uuid ? 'fcb-current-directory-entry' : 'fcb-directory-entry'}`"
+          :class="
+            currentNode.id===currentEntry?.uuid && props.topic===Topics.Organization ? 'fcb-current-directory-entry' : 
+            currentNode.id===currentEntry?.uuid ? 'fcb-current-directory-branch' : 
+            'fcb-directory-entry'
+          "
           draggable="true"
           :data-testid="`directory-entry-with-children-${currentNode.id}`"
           @click="onDirectoryItemClick($event, currentNode as DirectoryEntryNode)"
-          @dragstart="onDragStart($event, currentNode.id, currentNode.name)"
+          @dragstart="onDragstart($event, currentNode.id, currentNode.name)"
           @drop="onDrop"
           @dragover="DragDropService.standardDragover"
           @contextmenu="onEntryContextMenu"
@@ -28,6 +32,15 @@
       <ul>
         <!-- if not expanded, we style the same way, but don't add any of the children (because they might not be loaded) -->
         <template v-if="currentNode.expanded">
+          <!-- Branches folder - shown above regular children for organizations and locations -->
+          <SettingDirectoryBranchFolderComponent
+            v-if="branchFolderNode"
+            :key="branchFolderNode.id"
+            :node="branchFolderNode"
+            :setting-id="props.settingId"
+            :topic="props.topic"
+          />
+          
           <SettingDirectoryNodeComponent 
             v-for="child in sortedChildren"
             :key="child.id"
@@ -58,10 +71,11 @@
 
   // local components
   import SettingDirectoryNodeComponent from './SettingDirectoryNode.vue';
+  import SettingDirectoryBranchFolderComponent from './SettingDirectoryBranchFolder.vue';
   
   // types
-  import { EntryNodeDragData, ValidTopic } from '@/types';
-  import { Entry, DirectoryEntryNode, FCBSetting, TopicFolder } from '@/classes';
+  import { EntryNodeDragData, ValidTopic, Topics } from '@/types';
+  import { Entry, DirectoryEntryNode, FCBSetting, TopicFolder, DirectoryBranchFolderNode } from '@/classes';
 
   ////////////////////////////////
   // props
@@ -104,7 +118,24 @@
   // computed data
   const sortedChildren = computed((): DirectoryEntryNode[] => {
     const children = (currentNode.value).loadedChildren;
-    return children.sort((a, b) => a.name.localeCompare(b.name)) as DirectoryEntryNode[];
+    // Filter out branch folder nodes - they're handled separately
+    const entryChildren = children.filter((c) => !c.id.endsWith('.branches'));
+    return entryChildren.sort((a, b) => a.name.localeCompare(b.name)) as DirectoryEntryNode[];
+  });
+
+  /**
+   * Returns a Branches folder node if this entry has child branches.
+   * The branch folder is now loaded via the children array like story webs.
+   */
+  const branchFolderNode = computed((): DirectoryBranchFolderNode | null => {
+    // Only organizations and locations can have branches
+    if (props.topic !== Topics.Organization && props.topic !== Topics.Location) {
+      return null;
+    }
+
+    // The branch folder is now in loadedChildren (loaded via _loadNodeList)
+    const branchFolderId = `${currentNode.value.id}.branches`;
+    return currentNode.value.loadedChildren.find((c) => c.id === branchFolderId) as DirectoryBranchFolderNode || null;
   });
 
   const showTypesInTree = computed(() => {
@@ -140,7 +171,7 @@
 
   
   // handle an entry dragging to another or to canvas
-  const onDragStart = async (event: DragEvent, id: string, name: string): Promise<void> => {
+  const onDragstart = async (event: DragEvent, id: string, name: string): Promise<void> => {
     event.stopPropagation();
     
     if (!currentSetting.value) { 
@@ -176,6 +207,10 @@
     if (!fcbData) 
       return;
           
+    // branches can't be re-parented
+    if (fcbData.isBranch)
+      return;
+
     // make sure it's not the same item
     const parentId = currentNode.value.id;
     if (fcbData.childId===parentId)

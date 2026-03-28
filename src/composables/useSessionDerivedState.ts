@@ -10,6 +10,7 @@ import { useContentState } from '@/composables/useContentState';
 import { useGroupedTableState } from '@/composables/useGroupedTableState';
 import { Entry } from '@/classes';
 import { localize } from '@/utils/game';
+import { SettingKey } from '@/settings';
 
 // types
 import {
@@ -121,6 +122,12 @@ export function useSessionDerivedState(): SessionDerivedState {
 
           if (!entry) continue;
 
+          // Use manual actor if present, otherwise fall back to tag-associated actor
+          const draggableId = 
+            entry.actors?.[0] || 
+            entry.getFoundryTags(SettingKey.actorTags)?.[0]?.uuid || 
+            undefined;
+
           retval.push({
             uuid: item.uuid,
             delivered: item.delivered,
@@ -128,6 +135,8 @@ export function useSessionDerivedState(): SessionDerivedState {
             type: entry.type,
             notes: item.notes || '',
             groupId: item.groupId,
+            draggableId,
+            dragTooltip: draggableId ? localize('tooltips.dragToScene') : undefined,
           });
         }
 
@@ -155,7 +164,8 @@ export function useSessionDerivedState(): SessionDerivedState {
               number: item.number,
               notes: item.notes || '',
               name: entry.name,
-              dragTooltip: localize('tooltips.dragMonsterFromSession'),
+              draggableId: item.uuid,
+              dragTooltip: localize('tooltips.dragToScene'),
             });
           } else {
             // the actor was deleted - remove it from our session
@@ -185,6 +195,7 @@ export function useSessionDerivedState(): SessionDerivedState {
               delivered: item.delivered,
               name: entry.name,
               notes: item.notes || '',
+              draggableId: item.uuid,
               dragTooltip: localize('tooltips.dragItemFromSession'),
               groupId: item.groupId,
             });

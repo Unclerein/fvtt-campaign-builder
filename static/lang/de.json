@@ -59,7 +59,9 @@
         "historyForward": "In der Tab-Historie vorwärts gehen",
         "historyForwardHelp": "In der Historie des aktuellen Tabs \"vorwärts\" gehen",
         "toggleWindow": "Hauptfenster öffnen/schließen",
-        "toggleWindowHelp": "Fenster des Kampagnenbauers öffnen/schließen"
+        "toggleWindowHelp": "Fenster des Kampagnenbauers öffnen/schließen",
+        "addToDo": "To-do-Element hinzufügen",
+        "addToDoHelp": "Öffnen Sie einen Dialog, um ein neues To-do-Element zu einer Kampagne hinzuzufügen"
       },
       "showTypesInTree": "Typen im Einstellungsbaum anzeigen",
       "showTypesInTreeHelp": "Wenn wahr, zeigt es den Typ jedes Eintrags im Baum an, wenn das Einstellungsverzeichnis nicht nach Typ gruppiert ist.",
@@ -94,7 +96,10 @@
       "useTimelineHelp": "Zeitleistenfunktion aktivieren (erfordert das Calendaria-Modul).",
       "tabVisibility": "Einstellungen zur Tab-Sichtbarkeit",
       "tabVisibilityLabel": "Tab-Sichtbarkeit",
-      "tabVisibilityHelp": "Konfigurieren Sie, welche Tabs für jeden Inhaltstyp sichtbar sind"
+      "tabVisibilityHelp": "Konfigurieren Sie, welche Tabs für jeden Inhaltstyp sichtbar sind",
+      "associationTags": "Assoziationstags",
+      "associationTagsLabel": "Assoziationstags konfigurieren",
+      "associationTagsHelp": "Konfigurieren Sie Tags, die mit Schauspielern (für Charaktere) und Szenen (für Orte) verknüpft sind"
     },
     "applications": {
       "sessionNotes": {
@@ -374,6 +379,30 @@
         "importingSettings": "Moduleinstellungen werden importiert...",
         "importingSetting": "Einstellung wird importiert",
         "remappingUuids": "Dokumentenreferenzen werden neu zugeordnet..."
+      },
+      "associationTags": {
+        "title": "Assoziationstags konfigurieren",
+        "tabs": {
+          "characters": "Charaktere",
+          "locations": "Orte"
+        },
+        "columns": {
+          "name": "Tag-Name",
+          "color": "Farbe",
+          "actor": "Zugeordneter Schauspieler",
+          "scene": "Zugeordnete Szene"
+        },
+        "labels": {
+          "add": "Tag hinzufügen",
+          "noSelection": "Keine Auswahl",
+          "selectActor": "Schauspieler auswählen",
+          "selectScene": "Szene auswählen"
+        },
+        "notifications": {
+          "duplicateName": "Tag-Name '{name}' existiert bereits in der anderen Tag-Liste",
+          "duplicateActorNames": "Schauspieler-Tag-Namen müssen eindeutig sein",
+          "duplicateSceneNames": "Szenen-Tag-Namen müssen eindeutig sein"
+        }
       }
     },
     "help": {
@@ -421,7 +450,9 @@
         "strongStartHelpText": "Ein starker Start ist ein kurzes, wirkungsvolles Ereignis, das den Ton für die Sitzung angibt. Klicken Sie, um mehr von Lazy DM zu lesen.",
         "notes": "Notizen",
         "boxedText": "Gerahmter Text",
-        "gmNotes": "GM-Notizen"
+        "gmNotes": "GM-Notizen",
+        "parentOrganization": "Übergeordnete Organisation",
+        "branchLocation": "Ort"
       },
       "addTopic": {
         "character": "Charakter hinzufügen",
@@ -527,7 +558,8 @@
           "monsters": "Monster",
           "ideas": "Ideen",
           "vignettes": "Vignetten",
-          "timeline": "Zeitleiste"
+          "timeline": "Zeitleiste",
+          "items": "Magische Gegenstände"
         },
         "setting": {
           "timeline": "Zeitleiste"
@@ -613,7 +645,8 @@
         "character": "Charakter"
       },
       "organization": {
-        "organization": "Organisation"
+        "organization": "Organisation",
+        "branch": "Zweig"
       },
       "location": {
         "location": "Ort"
@@ -641,7 +674,8 @@
         "includeArcAndSessionReferences": "Arc- und Sitzungsreferenzen einschließen",
         "includeSessionReferences": "Sitzungsreferenzen einschließen",
         "includeAllReferences": "Eintrag-, Kampagnen-, Arc- und Sitzungsreferenzen einschließen"
-      }
+      },
+      "branchesFolder": "Zweige"
     },
     "placeholders": {
       "search": "Suche",
@@ -710,7 +744,7 @@
       },
       "addToDo": {
         "title": "Aufgabe hinzufügen",
-        "text": "Geben Sie den Aufgabentext ein:"
+        "prompt": "To-do-Text eingeben:"
       },
       "configureNames": {
         "title": "Namensstile konfigurieren",
@@ -926,6 +960,81 @@
           "storyWebs": "Geschichten-Netze",
           "timeline": "Zeitachse"
         }
+      },
+      "selectCampaign": {
+        "title": "Kampagne auswählen",
+        "prompt": "Zu welcher Kampagne soll dieses To-do hinzugefügt werden?"
+      },
+      "overwriteField": {
+        "title": "Feld überschreiben?",
+        "message": "Sind Sie sicher, dass Sie {field} mit neuem Text überschreiben möchten?"
+      },
+      "deleteGroup": {
+        "title": "Gruppe löschen?",
+        "message": "Sind Sie sicher, dass Sie diese Gruppe löschen möchten? Alle Elemente werden in 'Nicht gruppiert' verschoben"
+      },
+      "deleteSetting": {
+        "title": "Einstellung löschen?",
+        "message": "Sind Sie sicher, dass Sie diese Einstellung löschen möchten?"
+      },
+      "deleteLocation": {
+        "title": "Ort löschen?",
+        "message": "Sind Sie sicher, dass Sie diesen Ort löschen möchten? Dies wird die zugehörige Einstellungslokation nicht beeinflussen"
+      },
+      "deleteParticipant": {
+        "title": "Teilnehmer löschen?",
+        "message": "Sind Sie sicher, dass Sie diesen Teilnehmer löschen möchten? Dies wird den zugehörigen Eintrag nicht beeinflussen"
+      },
+      "deleteLore": {
+        "title": "Überlieferung löschen?",
+        "message": "Sind Sie sicher, dass Sie diese Überlieferung löschen möchten?"
+      },
+      "deleteVignette": {
+        "title": "Vignette löschen?",
+        "message": "Sind Sie sicher, dass Sie diese Vignette löschen möchten?"
+      },
+      "deleteMonster": {
+        "title": "Monster löschen?",
+        "message": "Sind Sie sicher, dass Sie dieses Monster löschen möchten?"
+      },
+      "deleteItem": {
+        "title": "Gegenstand löschen?",
+        "message": "Sind Sie sicher, dass Sie diesen Gegenstand löschen möchten?"
+      },
+      "deleteIdea": {
+        "title": "Idee löschen?",
+        "message": "Sind Sie sicher, dass Sie diese Idee löschen möchten?"
+      },
+      "deleteNPC": {
+        "title": "NPC löschen?",
+        "message": "Sind Sie sicher, dass Sie diesen NPC löschen möchten? Dies wird den zugehörigen Charakter nicht beeinflussen"
+      },
+      "deleteSession": {
+        "title": "Sitzung löschen?",
+        "message": "Sind Sie sicher, dass Sie diese Sitzung löschen möchten?"
+      },
+      "deleteFront": {
+        "title": "Front löschen?",
+        "message": "Sind Sie sicher, dass Sie diese Front löschen möchten?"
+      },
+      "deleteStoryWeb": {
+        "title": "Story-Web löschen?",
+        "message": "Sind Sie sicher, dass Sie dieses Story-Web löschen möchten?"
+      },
+      "createEntryTitle": {
+        "title": "{topic} erstellen"
+      },
+      "deleteEntryWithBranches": {
+        "title": "Eintrag löschen?",
+        "message": "Dies wird auch {count} Zweig(e) löschen. Sind Sie sicher, dass Sie fortfahren möchten?"
+      },
+      "createBranches": {
+        "title": "Zweige erstellen",
+        "message": "Wählen Sie Orte aus, um Zweige für {organization} zu erstellen:",
+        "loading": "Orte werden geladen...",
+        "noLocations": "Keine Orte verfügbar",
+        "selectedCount": "{count} Ort(e) ausgewählt",
+        "existingBranch": "(Zweig existiert)"
       }
     },
     "contextMenus": {
@@ -970,7 +1079,8 @@
         }
       },
       "directoryEntry": {
-        "delete": "Eintrag löschen"
+        "delete": "Eintrag löschen",
+        "createBranches": "Zweige erstellen"
       },
       "typeFolder": {
         "create": "Neu erstellen"
@@ -987,7 +1097,8 @@
       },
       "settingFolder": {
         "delete": "Einstellung löschen",
-        "createCampaign": "Kampagne erstellen"
+        "createCampaign": "Kampagne erstellen",
+        "exportJson": "Als JSON exportieren"
       },
       "arcFolder": {
         "createSession": "Eine Sitzung erstellen",
@@ -1077,7 +1188,6 @@
         "7": "Geschichten-Netz",
         "8": "Tag-Ergebnisse"
       },
-      "dragActorFromEntry": "In Szene ziehen",
       "addToASession": "Zu einer Sitzung hinzufügen",
       "sessionUnavailable": "Keine Kampagnen mit einer aktiven Sitzung oder dieser Eintrag ist bereits an alle angehängt",
       "createEntry": {
@@ -1120,7 +1230,8 @@
       "openFoundryActor": "Foundry-Schauspieler öffnen",
       "openFoundryScene": "Foundry-Szene öffnen",
       "noActorsAttached": "Keine Schauspieler angehängt",
-      "noScenesAttached": "Keine Szenen angehängt"
+      "noScenesAttached": "Keine Szenen angehängt",
+      "dragToScene": "In Szene ziehen"
     },
     "notifications": {
       "backend": {
@@ -1157,13 +1268,20 @@
         "permissionDenied": "Mikrofonzugriff verweigert. Bitte erlauben Sie den Mikrofonzugriff, um die Stimme aufzunehmen.",
         "notSupported": "Sprachaufnahme wird in diesem Browser nicht unterstützt",
         "uploadFailed": "Hochladen der Sprachaufnahme fehlgeschlagen"
-      }
+      },
+      "itemCopiedToNextSession": "Element in die nächste Sitzung kopiert"
     },
     "tags": {
       "tag": "Tag",
       "resultsFor": "Tag-Ergebnisse für",
       "entryFound": "Eintrag gefunden",
-      "entriesFound": "Einträge gefunden"
+      "entriesFound": "Einträge gefunden",
+      "actorAssociated": "Schauspieler über Tag \"{tagName}\" zugeordnet:",
+      "sceneAssociated": "Szene über Tag \"{tagName}\" zugeordnet:",
+      "dragActorHint": "Zum Foundry ziehen",
+      "clickSceneHint": "Klicken, um zu konfigurieren. Rechtsklick für weitere Optionen.",
+      "multipleActorTagsWarning": "Mehrere Schauspieler-Tags angewendet. Nur das erste ({name}) wird verwendet.",
+      "multipleSceneTagsWarning": "Mehrere Szenen-Tags angewendet. Nur das erste ({name}) wird verwendet."
     },
     "export": {
       "relatedTopics": {

@@ -7,13 +7,27 @@
 **Discord**: Join the [Discord Server](https://discord.gg/zKWCkwbnn3) for discussion, questions, or requests
 
 # Change Log
-## 1.10.0 - [____________]
-![](https://img.shields.io/badge/release%20date-March%20___%2C%202026-blue)
+## 1.10.0 - Timelines! Configurable Tabs! Location/Org Branches! And More!
+![](https://img.shields.io/badge/release%20date-March%2028%2C%202026-blue)
 ![GitHub release](https://img.shields.io/github/downloads/dovrosenberg/fvtt-campaign-builder/v1.10.0/module.zip)
 
 - Timelines! These are available on all content types.  They allow you to see notes from your world calendar.  Requires Calendaria to be used as your calendar.  ([documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/reference/navigation/timelines))
-- There are now module settings that give you control over exactly which tabs you want to use for each type of content. This changes nothing else, so (for example) if you move lore to an arc but you've hidden the lore tab on arcs, you won't see it.  It's still there, though, if you un-hide the tab.  ([documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/reference/configuration/tab-visibility))
+
+Note: Known issue (as of Calendaria 0.11.9) - with some calendars, notes on certain days don't show on the timeline where they should.  This is a Calendaria bug (https://github.com/Sayshal/Calendaria/issues/500).  When it gets fixed in Calendaria, it will start working properly.
+- Branches: New system for creating and managing organization branches to represent an organization's presence in specific locations. Branches can be quickly created from the parent organization, and appear under both the parent organization and the location in the directory tree. ([documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/reference/world-building/content/organization#branches))
+- Added magic items tab to Arcs.  ([documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/reference/campaign-mgt/content/arc/items))
+- Don't want another tab in Arcs?  No problem - there are now module settings that give you control over exactly which tabs you want to use for each type of content. This changes nothing else, so (for example) if you move lore to an arc but you've hidden the lore tab on arcs, you won't see it.  It's still there, though, if you un-hide the tab.  ([documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/reference/configuration/tab-visibility))
 - New button on main screen for Characters and Locations that lets you open the Foundry character sheet/scene right from there. ([documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/reference/world-building/content/entry))
+- Can export a single Setting as a json from the Setting context menu in the directory.  ([documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/reference/navigation/sidebar))
+- You can now drop an Actor in the setting directory and it will convert it to a Character.  It copies name, image, and for dnd5e and pf2e the biography field.  It also then connects the character to the actor.  ([documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/reference/navigation/sidebar#dropping-actors)) 
+- The "To-Do" button in play mode now pops up a dialog for you to quickly record a to-do item, instead of just bringing you to the campaign's To-Do tab.  There's also a keyboard shortcut to quickly add a to-do (Shift-Alt-T by default).  ([documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/reference/play-mode/session-links))
+- You can now drag a character row (from an entry related characters tab, the arc participants tab, or the session NPCs tab) into Foundry, as long as that character has at least one Actor attached to it.  This will be the equivalent of doing a drag with the 1st Actor in the associated actors list.  This makes it easy, for example, to drag an NPC from the session's NPC list right to the current scene.  ([documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/reference/campaign-mgt/content/session/npcs#drag-to-scene))
+- You can now connect tags to Actors and Scenes.  This way if you have common Actors/Scenes that you reuse across Characters/Locations (ex. a "commoner" actor for all your generic townspeople NPCs), you can simply apply the tag instead of having to individually connect them.    ([documentation](https://dovrosenberg.github.io/fvtt-campaign-builder/reference/configuration/association-tags)).
+- Localized the text in a number of dialog boxes
+- Fixed a bug where adding monster names were missing in the Arc monster list.
+- Fixed a bug where AI text generation on custom fields wasn't working.
+- Fixed a bug where you couldn't add Entries to Story Webs from the directory context menu. 
+- Fixed a bug where picking a newly created species in the Character Generate dialog to use with AI generation didn't actually pass that species name to the AI.
 
 ## 1.9.3 - Changelog distribution
 ![](https://img.shields.io/badge/release%20date-February%2028%2C%202026-blue)

@@ -2,11 +2,15 @@
   <!-- an entry node beneath a topic -- don't show children -->
   <li v-if="filterNodes[props.topic]?.includes(props.node.id)">
     <div 
-      :class="`${props.node.id===currentEntry?.uuid ? 'fcb-current-directory-entry' : 'fcb-directory-entry'}`"
+      :class="
+        props.node.id===currentEntry?.uuid && props.topic===Topics.Organization ? 'fcb-current-directory-entry' : 
+        props.node.id===currentEntry?.uuid ? 'fcb-current-directory-branch' : 
+        'fcb-directory-entry'
+      "
       style="pointer-events: auto;"
       draggable="true"
       @click="onDirectoryItemClick"
-      @dragstart="onDragStart"
+      @dragstart="onDragstart"
       @contextmenu="onEntryContextMenu"
     >
       {{ props.node.name }}
@@ -31,7 +35,7 @@
   // local components
 
   // types
-  import { EntryNodeDragData, ValidTopic } from '@/types';
+  import { EntryNodeDragData, Topics, ValidTopic } from '@/types';
   import { DirectoryTypeEntryNode, } from '@/classes';
   
   ////////////////////////////////
@@ -81,7 +85,7 @@
     await navigationStore.openEntry(props.node.id, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
   };
 
-  const onDragStart = async (event: DragEvent): Promise<void> => {
+  const onDragstart = async (event: DragEvent): Promise<void> => {
     event.stopPropagation();
     
     if (!currentSetting.value) { 
@@ -132,19 +136,19 @@
         {
           icon: 'fa-diagram-project',
           iconFontClass: 'fas',
-          label: 'Add to current Story Web',
+          label: localize('contextMenus.addToStoryWeb'),
           disabled: !currentStoryWeb.value,
           onClick: async () => {
-            await storyWebStore.addEntry(props.node.id, null, false);
+            await storyWebStore.addEntry(props.node.id, false);
           }
         },
         {
           icon: 'fa-sitemap',
           iconFontClass: 'fas',
-          label: 'Add with Relationships',
+          label: localize('contextMenus.addWithRelationships'),
           disabled: !currentStoryWeb.value,
           onClick: async () => {
-            await storyWebStore.addEntry(props.node.id, null, true);
+            await storyWebStore.addEntry(props.node.id, true);
           }
         }
       ]

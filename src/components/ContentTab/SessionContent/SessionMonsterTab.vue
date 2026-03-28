@@ -8,7 +8,6 @@
     :extra-add-text="localize('labels.session.addMonsterDrag')"
     :allow-drop-row="false"
     :allow-edit="true"
-    :draggable-rows="true"
     :grouped="isGrouped"
     :groups="monsterGroups"
     :help-text="localize('labels.session.monsterHelpText')"
@@ -18,7 +17,7 @@
     @add-item="showMonsterPicker=true"
     @drop-new="onDropNew"
     @dragoverNew="DragDropService.standardDragover"
-    @dragstart="onDragStart"
+    @dragstart="onDragstart"
     @cell-edit-complete="onCellEditComplete"
     @reorder="groupedTable.onReorder"
     @reorder-group="(items) => groupedTable.onReorderGroup(items, monsterGroups)"
@@ -53,7 +52,7 @@
 	
   // local components
   import BaseTable from '@/components/tables/BaseTable.vue';
-  import RelatedDocumentsDialog from '@/components/tables/RelatedDocumentsDialog.vue';
+  import RelatedDocumentsDialog from '@/components/dialogs/RelatedDocumentsDialog.vue';
 
   // types
   import { CellEditCompleteEvent, ArcTableTypes, SessionTableTypes, BaseTableColumn, GroupableItem, } from '@/types';
@@ -112,12 +111,13 @@
   
   const columns = computed((): BaseTableColumn[] => {
     const actionColumn = { field: 'actions', style: 'text-align: left; width: 100px; max-width: 100px', header: 'Actions' };
+    const dragColumn = { field: 'drag', style: 'text-align: center; width: 40px; max-width: 40px', header: '' };
 
     const extraFields = props.arcMode ? 
       arcStore.extraFields[ArcTableTypes.Monster] :
       sessionStore.extraFields[SessionTableTypes.Monster]
 
-    return [ actionColumn, ...extraFields];
+    return [ actionColumn, dragColumn, ...extraFields];
   });
 
   const actions = computed(() => ([
@@ -228,7 +228,7 @@
     }
   }
 
-  const onDragStart = async (event: DragEvent, uuid: string) => {
+  const onDragstart = async (event: DragEvent, uuid: string) => {
     await DragDropService.actorDragStart(event, uuid);
   }
 
@@ -239,7 +239,7 @@
       const campaign = await newArc?.loadCampaign();
       campaignHasSessions.value = (campaign?.sessionIndex?.length || 0) > 0;
     } else {
-      campaignHasSessions.value = true;
+      campaignHasSessions.value = true;  // means we're in session mode
     }
   }, { immediate: true });
 

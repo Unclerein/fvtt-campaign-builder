@@ -16,6 +16,7 @@ export enum CustomFieldContentType {
   PC,
   Session,
   Campaign,
+  Branch,
 }
 
 // types and functions used to manage topic hierarchies

@@ -4,8 +4,8 @@ prev:
   text: 'Arc Participants Tab'
   link: '/reference/campaign-mgt/content/arc/participants'
 next: 
-  text: 'Arc Ideas Tab'
-  link: '/reference/campaign-mgt/content/arc/ideas'
+  text: 'Arc Magic Items Tab'
+  link: '/reference/campaign-mgt/content/arc/items'
 ---
 
 # Arc Monsters Tab
@@ -29,10 +29,13 @@ This list contains the individual Monsters.  For each Monster, you can see its n
 
 Click the name of the Monster to open the (system-dependent) stat/character sheet for the actor.
 
-You can also add notes to each Monster to track how it will be used in the Arc.  Double click the notes field for a row or click the "Edit" icon to open the row editor.
+You can also add notes to each Monster to track how it will be used in the Arc.  Click the notes field for a row or click the "Edit" icon to open the row editor.
 
 ### Moveable
 You can reorder the monster list by dragging the handle on the left side of each row to move rows up and down.
+
+### Drag to Scene
+A drag handle appears in the drag column for each Monster. Drag this handle to drop the Actor onto a scene in Foundry.
 
 ### Monster actions
 The actions column lets you take several actions with the Monster entries:

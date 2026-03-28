@@ -84,7 +84,7 @@
 
 <script setup lang="ts">
   // library imports
-  import { computed, reactive, watch, PropType, } from 'vue';
+  import { computed, reactive, watch, onBeforeUnmount, PropType } from 'vue';
   import { storeToRefs } from 'pinia';
 
   // local imports
@@ -96,6 +96,7 @@
   import { nameStyles } from '@/utils/nameStyles';
   import { promptReplace } from '@/utils/generation';
   import { replaceUUIDsInText } from '@/utils/sanitizeHtml';
+  import { FCBDialog } from '@/dialogs';
 
   // library components
   import InputText from 'primevue/inputtext';
@@ -142,6 +143,7 @@
     [CustomFieldContentType.PC]: ApiCustomGeneratePostRequestContentTypeEnum.Pc,
     [CustomFieldContentType.Location]: ApiCustomGeneratePostRequestContentTypeEnum.Location,
     [CustomFieldContentType.Organization]: ApiCustomGeneratePostRequestContentTypeEnum.Organization,
+    [CustomFieldContentType.Branch]: ApiCustomGeneratePostRequestContentTypeEnum.Organization,
     [CustomFieldContentType.Campaign]: ApiCustomGeneratePostRequestContentTypeEnum.Campaign,
     [CustomFieldContentType.Arc]: ApiCustomGeneratePostRequestContentTypeEnum.Arc,
     [CustomFieldContentType.Session]: ApiCustomGeneratePostRequestContentTypeEnum.Session,
@@ -179,6 +181,7 @@
       case CustomFieldContentType.PC:
       case CustomFieldContentType.Location:
       case CustomFieldContentType.Organization:
+      case CustomFieldContentType.Branch:
         return currentEntry.value;
 
       default:
@@ -259,6 +262,7 @@
       break;
     case CustomFieldContentType.Location:
     case CustomFieldContentType.Organization:
+    case CustomFieldContentType.Branch:
       type = (content.value as Entry)?.type ?? '';
 
       const entry = content.value as unknown as Entry;
@@ -363,6 +367,16 @@
   };
 
   ////////////////////////////////
+  // lifecycle events
+  onBeforeUnmount(() => {
+    // Clear debounce timer to prevent saves after unmount
+    if (saveDebounceTimer) {
+      clearTimeout(saveDebounceTimer);
+      saveDebounceTimer = undefined;
+    }
+  });
+
+  ////////////////////////////////
   // event handlers
 
   const onHelpIconClick = (field: CustomFieldDescription) => {
@@ -397,9 +411,11 @@
     if (!field.aiEnabled) return;
 
     // if there's already a value there, confirm that user wants to overwrite
-    if (!(await FCBDialog.confirmDialog('Overwrite field?', `Are you sure you want to overwrite ${field.label} with new text?`)))
-      return;
-
+    if (values[field.name]) {
+      if (!(await FCBDialog.confirmDialog(localize('dialogs.overwriteField.title'), localize('dialogs.overwriteField.message', { field: field.label }))))
+        return;
+    }
+    
     const key = aiGenerationKey(field);
     if (isGeneratingAi[key]) return;
     isGeneratingAi[key] = true;

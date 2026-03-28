@@ -8,6 +8,7 @@ import { useCampaignDirectoryStore, useMainStore, useNavigationStore, usePlaying
 import { FCBDialog } from '@/dialogs';
 import ArcIndexService from '@/utils/arcIndex';
 import { createGroupedTableStores } from '@/composables/createGroupedTableStores';
+import { localize } from '@/utils/game';
 
 // types
 import {
@@ -34,7 +35,6 @@ export const sessionStore = () => {
       { field: 'notes', style: 'text-align: left', header: 'Notes', editable: true },
     ],
     [SessionTableTypes.Item]: [
-      { field: 'drag', style: 'text-align: center; width: 40px; max-width: 40px', header: '' },
       { field: 'name', style: 'text-align: left', header: 'Name', sortable: true, onClick: onItemClick },
       { field: 'notes', style: 'text-align: left', header: 'Notes', editable: true },
     ],
@@ -44,7 +44,6 @@ export const sessionStore = () => {
       { field: 'notes', style: 'text-align: left', header: 'Notes', editable: true },
     ],
     [SessionTableTypes.Monster]: [
-      { field: 'drag', style: 'text-align: center; width: 40px; max-width: 40px', header: '' },
       { field: 'name', style: 'text-align: left', header: 'Name', sortable: true, onClick: onMonsterClick },
       { field: 'number', header: 'Number', style: 'width: 80px; max-width: 80px', editable: true, smallEditBox: true },
       { field: 'notes', style: 'text-align: left', header: 'Notes', editable: true },
@@ -119,7 +118,7 @@ export const sessionStore = () => {
       throw new Error('Invalid session in sessionStore.deleteLocation()');
 
     // confirm
-    if (!skipConfirm && !(await FCBDialog.confirmDialog('Delete location?', 'Are you sure you want to delete this location? This will not impact the associated Setting Location')))
+    if (!skipConfirm && !(await FCBDialog.confirmDialog(localize('dialogs.deleteLocation.title'), localize('dialogs.deleteLocation.message'))))
       return false;
 
     await currentSession.value.deleteLocation(uuid);
@@ -236,7 +235,7 @@ export const sessionStore = () => {
       throw new Error('Invalid session in sessionStore.deleteNPC()');
 
     // confirm
-    if (!skipConfirm && !(await FCBDialog.confirmDialog('Delete NPC?', 'Are you sure you want to delete this NPC? This will not impact the associated Character')))
+    if (!skipConfirm && !(await FCBDialog.confirmDialog(localize('dialogs.deleteNPC.title'), localize('dialogs.deleteNPC.message'))))
       return false;
 
     await currentSession.value.deleteNPC(uuid);
@@ -351,7 +350,7 @@ export const sessionStore = () => {
       throw new Error('Invalid session in sessionStore.deleteVignette()');
 
     // confirm
-    if (!skipConfirm && !(await FCBDialog.confirmDialog('Delete vignette?', 'Are you sure you want to delete this vignette?')))
+    if (!skipConfirm && !(await FCBDialog.confirmDialog(localize('dialogs.deleteVignette.title'), localize('dialogs.deleteVignette.message'))))
       return false;
 
     await currentSession.value.deleteVignette(uuid);
@@ -440,7 +439,7 @@ export const sessionStore = () => {
       throw new Error('Invalid session in sessionStore.deleteLore()');
 
     // confirm
-    if (!skipConfirm && !(await FCBDialog.confirmDialog('Delete lore?', 'Are you sure you want to delete this lore?')))
+    if (!skipConfirm && !(await FCBDialog.confirmDialog(localize('dialogs.deleteLore.title'), localize('dialogs.deleteLore.message'))))
       return false;
 
     await currentSession.value.deleteLore(uuid);

@@ -317,6 +317,8 @@ export const settingDirectoryStore = () => {
           ancestors: [],
           children: [],
           type: '',
+          locationParentId: null,
+          childBranches: [],
         } as Hierarchy
       );
 
@@ -345,6 +347,71 @@ export const settingDirectoryStore = () => {
   };
 
   /**
+   * Creates a Character entry from a dropped Foundry actor.
+   * Extracts name, image, and description/biography from the actor,
+   * creates a Character entry, links the actor, and returns the entry.
+   * 
+   * @param actorUuid - The UUID of the actor to create an entry from
+   * @returns The created Entry, or null if creation failed
+   */
+  const createEntryFromActor = async (actorUuid: string): Promise<Entry | null> => {
+    if (!currentSetting.value)
+      return null;
+
+    // Load the actor
+    const actor = await foundry.utils.fromUuid<Actor>(actorUuid);
+    if (!actor)
+      return null;
+
+    // Get the Character topic folder
+    const topicFolder = currentSetting.value.topicFolders[Topics.Character];
+    if (!topicFolder)
+      return null;
+
+    // Extract actor data
+    const name = actor.name;
+    const img = actor.img || (actor.prototypeToken as any)?.texture?.src || '';
+
+    // Get description based on system
+    let description = '';
+    const systemId = game.system.id;
+    
+    if (systemId === 'dnd5e') {
+      // dnd5e uses system.details.biography.value
+      description = (actor as any).system?.details?.biography?.value || '';
+    } else if (systemId === 'pf2e') {
+      // pf2e uses system.details.biography.value or system.description.value
+      description = (actor as any).system?.details?.biography?.value 
+        || (actor as any).system?.description?.value 
+        || '';
+    } else {
+      // Try common biography/description patterns for other systems
+      description = (actor as any).system?.details?.biography?.value 
+        || (actor as any).system?.biography?.value 
+        || (actor as any).system?.description?.value 
+        || '';
+    }
+
+    // Create the entry using createEntry (handles hierarchy, top nodes, tree refresh)
+    const entry = await createEntry(topicFolder, { name });
+
+    if (!entry)
+      return null;
+
+    // Set the image and description
+    entry.img = img;
+    entry.description = description;
+
+    // Link the actor
+    entry.actors = [actorUuid];
+
+    // Save the entry
+    await entry.save();
+
+    return entry;
+  };
+
+  /**
    * Deletes a setting identified by the given settingId.
    * This includes deleting all associated compendia and the setting folder itself.
    * After deletion, the directory tree is refreshed.
@@ -361,10 +428,10 @@ export const settingDirectoryStore = () => {
       return false;
 
     // confirm
-    if (!external && !(await FCBDialog.confirmDialog('Delete setting?', 'Are you sure you want to delete this setting?')))
+    if (!external && !(await FCBDialog.confirmDialog(localize('dialogs.deleteSetting.title'), localize('dialogs.deleteSetting.message'))))
       return false;
     
-    await setting.delete(external);
+    await setting.delete();
 
     // pick another setting
     setting = await getCurrentSetting();
@@ -393,12 +460,49 @@ export const settingDirectoryStore = () => {
     if (!currentSetting.value)
       return false;
 
-    // confirm
-    if (!external && !(await FCBDialog.confirmDialog(localize('dialogs.deleteEntry.title'), localize('dialogs.deleteEntry.message'))))
-      return false;
+    // Check if this entry has branches that will be cascade-deleted
+    const hierarchy = currentSetting.value.getEntryHierarchy(entryId);
+    const childBranches = hierarchy?.childBranches || [];
+    
+    // confirm - show different message if there are branches to cascade-delete
+    if (!external) {
+      if (childBranches.length > 0) {
+        if (!(await FCBDialog.confirmDialog(
+          localize('dialogs.deleteEntryWithBranches.title'),
+          localize('dialogs.deleteEntryWithBranches.message', { count: String(childBranches.length) })
+        ))) {
+          return false;
+        }
+      } else {
+        if (!(await FCBDialog.confirmDialog(localize('dialogs.deleteEntry.title'), localize('dialogs.deleteEntry.message')))) {
+          return false;
+        }
+      }
+    }
 
-    // save the parent
-    const parentId = currentSetting.value.getEntryHierarchy(entryId)?.parentId || null;
+    // save the parent(s) - branches have both parentId (org) and locationParentId (location)
+    const parentId = hierarchy?.parentId || null;
+    const locationParentId = hierarchy?.locationParentId || null;
+
+    // Collect location and org IDs from branches so we can refresh those locations/orgs after cascade-delete
+    // This ensures the branch folders in those locations update to remove deleted branches
+    const branchLocationIds = [] as string[];
+    const branchOrgIds = [] as string[];
+    for (const branchId of childBranches) {
+      const branchHierarchy = currentSetting.value.getEntryHierarchy(branchId);
+      if (branchHierarchy?.locationParentId) {
+        branchLocationIds.push(branchHierarchy.locationParentId);
+      }
+      if (branchHierarchy?.parentId) {
+        branchOrgIds.push(branchHierarchy.parentId);
+      }
+    }
+
+    // Cleanup tabs/bookmarks for branches BEFORE cascade-delete
+    // Otherwise tabs will reference deleted entries
+    for (const branchId of childBranches) {
+      await navigationStore.cleanupDeletedEntry(branchId);
+    }
 
     const entry = await Entry.fromUuid(entryId);
     if (!entry)
@@ -406,11 +510,15 @@ export const settingDirectoryStore = () => {
 
     await entry.delete(external);
 
-    // update tabs/bookmarks
+    // update tabs/bookmarks for the parent entry
     await navigationStore.cleanupDeletedEntry(entryId);
 
-    // refresh and force its parent to update
-    await refreshSettingDirectoryTree(parentId ? [parentId] : []);
+    // refresh and force its parent(s) to update
+    // Include branch location IDs so their branch folders update
+    const parentIds = [locationParentId, parentId, ...branchLocationIds, ...branchOrgIds].filter(id=>id != null);
+    // Add branch folder IDs so they get refreshed (branch folder ID format is ${entryUuid}.branches)
+    const branchFolderIds = parentIds.map(id => `${id}.branches`);
+    await refreshSettingDirectoryTree([...parentIds, ...branchFolderIds]);
 
     return true;
   };
@@ -491,7 +599,6 @@ export const settingDirectoryStore = () => {
       await DirectoryTopicFolderNode.loadTypeEntries(topicFolders[DirectoryTopicFolderNode.topicFolder.topic]!.types, expandedNodes);
     }
 
-    // @ts-ignore (fvtt circularity issue)
     currentSettingTree.value = [currentSettingBlock];
 
     // make sure the node list is up to date
@@ -510,25 +617,49 @@ export const settingDirectoryStore = () => {
     }
   };
 
-  const getTopicNodeContextMenuItems = (topic: ValidTopic, entryId: string): MenuItem[] => {
+  /**
+   * Gets context menu items for an entry node.
+   * 
+   * @param topic - The topic for the entry
+   * @param entryId - The UUID of the entry
+   * @param isBranch - If true, excludes parent/child creation actions that could corrupt branch hierarchies
+   * @returns Array of menu items for the entry
+   */
+  const getTopicNodeContextMenuItems = (topic: ValidTopic, entryId: string, isBranch = false): MenuItem[] => {
     if (!topic || !currentSetting.value)
       throw new Error('Invalid topic in getTopicNodeContextMenuItems()');
 
     const items = [] as MenuItem[];
 
-    if (hasHierarchy(topic)) {
-      items.push({ 
-        icon: 'fa-atlas',
-        iconFontClass: 'fas',
-        label: localize(`contextMenus.topicFolder.create.${topic}`) + ' as child',
-        onClick: async () => {
-          const entry = await FCBDialog.createEntryDialog(topic, { parentId: entryId, generateMode: true } );
+    // Branches should not expose parent/child creation actions - they can corrupt branch hierarchies
+    // Branches should not have "Create Branches" - they are already branches
+    if (!isBranch) {
+      if (!isBranch && hasHierarchy(topic)) {
+        items.push({ 
+          icon: 'fa-atlas',
+          iconFontClass: 'fas',
+          label: localize(`contextMenus.topicFolder.create.${topic}`) + ' as child',
+          onClick: async () => {
+            const entry = await FCBDialog.createEntryDialog(topic, { parentId: entryId, generateMode: true } );
 
-          if (entry) {
-            await navigationStore.openEntry(entry.uuid, { newTab: true, activate: true, });
+            if (entry) {
+              await navigationStore.openEntry(entry.uuid, { newTab: true, activate: true, });
+            }
           }
-        }
-      });
+        });
+      }
+
+      // Add "Create Branches" option for organizations
+      if (topic === Topics.Organization) {
+        items.push({
+          icon: 'fa-code-branch',
+          iconFontClass: 'fas',
+          label: localize('contextMenus.directoryEntry.createBranches'),
+          onClick: async () => {
+            await FCBDialog.createBranchesDialog(entryId);
+          }
+        });
+      }
     }
 
     items.push({
@@ -547,7 +678,7 @@ export const settingDirectoryStore = () => {
       label: localize('contextMenus.addToStoryWeb'),
       disabled: !currentStoryWeb.value,
       onClick: async () => {
-        await storyWebStore.addEntry(entryId, null, false);
+        await storyWebStore.addEntry(entryId, false);
       }
     });
     items.push({
@@ -556,7 +687,7 @@ export const settingDirectoryStore = () => {
       label: localize('contextMenus.addWithRelationships'),
       disabled: !currentStoryWeb.value,
       onClick: async () => {
-        await storyWebStore.addEntry(entryId, null, true);
+        await storyWebStore.addEntry(entryId, true);
       }
     });
 
@@ -681,11 +812,13 @@ export const settingDirectoryStore = () => {
   //@ts-ignore - Vue can't handle reactive classes
   watch(currentSetting, async (newSetting: FCBSetting | null, oldSetting: FCBSetting | null): Promise<void> => {
     if (!newSetting) {
+      // Clear the tree when setting becomes null
+      currentSettingTree.value = [];
       return;
     }
 
     // Only refresh if the setting actually changed (not just a reactive update)
-        if (newSetting.uuid !== oldSetting?.uuid) {
+    if (newSetting.uuid !== oldSetting?.uuid) {
       await refreshSettingDirectoryTree();
     }
   });
@@ -736,6 +869,7 @@ export const settingDirectoryStore = () => {
     deleteSetting,
     createSetting,
     createEntry,
+    createEntryFromActor,
     deleteEntry,
     getTopicNodeContextMenuItems,
     getGroupedTypeNodeContextMenuItems,

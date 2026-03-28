@@ -279,14 +279,15 @@
           <!-- DRAG HANDLE (FOR DRAGGING ELSEWHERE) -->
           <div v-else-if="field === 'drag'">
             <div
-              v-if="!isPlaceholderRow(data.uuid)"
+              v-if="!isPlaceholderRow(data.uuid) && data.draggableId"
               :class="['fcb-row-wrapper', isDragHoverRow===data.uuid ? 'valid-drag-hover' : '',
               ]"
+              :data-tooltip="data.dragTooltip"
             >
               <div 
                 class="fcb-drag-handle" 
                 draggable="true"
-                @dragstart="onDragstart($event, data.uuid)"
+                @dragstart="onDragstart($event, data.draggableId)"
               >
                 <i class="fas fa-bars"></i>
               </div>
@@ -478,6 +479,7 @@
       type: Boolean,
       default: false,
     },
+    /** can rows be dragged around to reorder them (prevents sorting by column headers) */
     canReorder: {
       type: Boolean,
       default: true,
@@ -498,12 +500,6 @@
     actions: {
       type: Array as PropType<ActionButtonDefinition[]>,
       default: [],
-    },
-    // can a row be dragged to the canvas/other places in Foundry
-    draggableRows: {
-      type: Boolean,
-      required: false,
-      default: false,
     },
     // displays an info icon with this tooltip
     helpText: {   
@@ -548,7 +544,7 @@
     (e: 'moveToNextSession', uuid: string): void;
 
     /** Start of a drag into foundry */
-    (e: 'dragstart', event: DragEvent, uuid: string): void;
+    (e: 'dragstart', event: DragEvent, draggableId: string): void;
 
     /** Dragging something external over a new drop zone */
     (e: 'dragoverNew', event: DragEvent): void;
@@ -1015,13 +1011,17 @@
     setEditingRow(uuid);
   };
   
-  /** For dragging a row into Foundry */
-  const onDragstart = (event: DragEvent, uuid: string) => {
-    if (!event.target || !uuid) return;
+  /** For dragging a row into Foundry 
+   * 
+   * @param event - The drag event
+   * @param draggableId - The Foundry document UUID to be dropped
+   */
+  const onDragstart = (event: DragEvent, draggableId: string) => {
+    if (!event.target || !draggableId) return;
 
     // Emit the dragstart event with the uuid
     // This lets the parent component handle the drag data
-    emit('dragstart', event, uuid);
+    emit('dragstart', event, draggableId);
   };
 
   const onDragoverNew = (event: DragEvent) => {

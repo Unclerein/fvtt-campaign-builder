@@ -24,6 +24,8 @@
 [^NPCs]: Called "Important NPCs" by The Lazy DM, the NPCs that the players may encounter in a session.  We connect them directly to Characters in the Setting.
 [^Organization]: An organization within the Setting.  Organizations represent a group of characters and can describe anything from a clan to a guild to a religion. They have a hierarchichal structure.
 [^Organizations]: An organization within the Setting.  Organizations represent a group of characters and can describe anything from a clan to a guild to a religion. They have a hierarchichal structure.
+[^Branch]: A child Organization that is tied to a specific Location.  It's a subtype of Organizations with slightly a different interface.
+[^Branches]: A child Organization that is tied to a specific Location.  It's a subtype of Organizations with slightly a different interface.
 [^Play mode]: Indicated by the Prep/Play toggle in the title bar, this is the mode where you're actively running a session with your players.  It enables a variety of special functionality.
 [^PC]: A player character - linked to Campaigns/Sessions. Generally NOT tied to Setting Characters.
 [^PCs]: Player characters - linked to Campaigns/Sessions. Generally NOT tied to Setting Characters.
@@ -35,6 +37,7 @@
 [^Setting]: The fictional setting where your Campaigns take place (i.e. the equivalent of The Forgotten Realms, Eberron, etc.).
 [^Settings]: The fictional settings where your Campaigns take place (i.e. the equivalent of The Forgotten Realms, Eberron, etc.).
 [^Setting Directory]: The top section of the Directory Sidebar, where you can see all of the Entries in each Setting.
+[^Campaign Directory]: The bottom section of the Directory Sidebar, where you can see all the Campaigns, Arcs, Sessions, Fronts, and Story Webs.
 [^Species]: The species or race of a Character.  They are defined in the module's settings and are used to facilitate search and AI character description/image creation.
 [^Strong start]: Per The Lazy DM, a situation that immediately immerses players in the action and world of the game, pulling them out of their real-world distractions.
 [^Topic]: A category that organizes related Entries. There are three Topics: Characters, Locations, and Organizations.

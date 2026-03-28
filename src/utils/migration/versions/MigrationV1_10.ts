@@ -47,6 +47,7 @@ export class MigrationV1_10 implements Migration {
       [TabVisibilityItem.ArcLocations]: true,
       [TabVisibilityItem.ArcParticipants]: true,
       [TabVisibilityItem.ArcMonsters]: true,
+      [TabVisibilityItem.ArcItems]: true,
       [TabVisibilityItem.ArcIdeas]: true,
       [TabVisibilityItem.ArcStoryWebs]: true,
       [TabVisibilityItem.SessionLore]: true,
@@ -59,6 +60,7 @@ export class MigrationV1_10 implements Migration {
       [TabVisibilityItem.SessionStoryWebs]: true,
       [TabVisibilityItem.SessionTimeline]: true,
       [TabVisibilityItem.EntryCharacterJournals]: true,
+      [TabVisibilityItem.EntryCharacterCharacters]: true,
       [TabVisibilityItem.EntryCharacterLocations]: true,
       [TabVisibilityItem.EntryCharacterOrganizations]: true,
       [TabVisibilityItem.EntryCharacterPCs]: true,
@@ -68,6 +70,7 @@ export class MigrationV1_10 implements Migration {
       [TabVisibilityItem.EntryCharacterTimeline]: true,
       [TabVisibilityItem.EntryLocationJournals]: true,
       [TabVisibilityItem.EntryLocationCharacters]: true,
+      [TabVisibilityItem.EntryLocationLocations]: true,
       [TabVisibilityItem.EntryLocationOrganizations]: true,
       [TabVisibilityItem.EntryLocationPCs]: true,
       [TabVisibilityItem.EntryLocationSessions]: true,
@@ -77,6 +80,7 @@ export class MigrationV1_10 implements Migration {
       [TabVisibilityItem.EntryOrganizationJournals]: true,
       [TabVisibilityItem.EntryOrganizationCharacters]: true,
       [TabVisibilityItem.EntryOrganizationLocations]: true,
+      [TabVisibilityItem.EntryOrganizationOrganizations]: true,
       [TabVisibilityItem.EntryOrganizationPCs]: true,
       [TabVisibilityItem.EntryOrganizationSessions]: true,
       [TabVisibilityItem.EntryOrganizationFoundry]: true,
@@ -108,7 +112,7 @@ export class MigrationV1_10 implements Migration {
     // Migrate genericFoundryTab -> Entry foundry tabs for all topics
     const genericFoundryTab = ModuleSettings.get(SettingKey.genericFoundryTab);
 
-    // Actually, I'll handle this properly: if genericFoundryTab was false, hide the foundry tabs
+    // if genericFoundryTab was false, hide the foundry tabs
     if (genericFoundryTab === false) {
       newSettings[TabVisibilityItem.EntryCharacterFoundry] = false;
       newSettings[TabVisibilityItem.EntryLocationFoundry] = false;

@@ -8,10 +8,12 @@ import { watch, type InjectionKey, type Ref } from 'vue';
 // local imports
 import { useContentState } from '@/composables/useContentState';
 import { useGroupedTableState } from '@/composables/useGroupedTableState';
+import { localize } from '@/utils/game';
 
 // types
 import {
   ArcIdeaRow,
+  ArcItemRow,
   ArcLocationRow,
   ArcLoreRow,
   ArcMonsterRow,
@@ -20,6 +22,8 @@ import {
   Topics,
   TableGroup,
   ArcParticipant,
+  ArcMonster,
+  ArcItem,
   GroupableItem,
 } from '@/types';
 import { getTopicText } from '@/compendia';
@@ -33,6 +37,8 @@ export interface ArcDerivedState {
   participantGroups: Ref<TableGroup[]>;
   monsterRows: Ref<ArcMonsterRow[]>;
   monsterGroups: Ref<TableGroup[]>;
+  itemRows: Ref<ArcItemRow[]>;
+  itemGroups: Ref<TableGroup[]>;
   vignetteRows: Ref<ArcVignetteRow[]>;
   vignetteGroups: Ref<TableGroup[]>;
   loreRows: Ref<ArcLoreRow[]>;
@@ -81,6 +87,8 @@ export function useArcDerivedState(): ArcDerivedState {
           notes: item.notes,
           topic: isChar ? Topics.Character : Topics.Organization,
           type: entry.type || (isChar ? getTopicText(Topics.Character) : getTopicText(Topics.Organization)),
+          draggableId: isChar ? entry.actors?.[0] : undefined,
+          dragTooltip: (isChar && entry.actors?.length) ? localize('tooltips.dragToScene') : undefined,
         });
       }
 
@@ -89,7 +97,58 @@ export function useArcDerivedState(): ArcDerivedState {
   );
 
   const { rows: monsterRows, groups: monsterGroups, refresh: _refreshMonsters } = 
-    useGroupedTableState(currentArc, 'monsters', GroupableItem.ArcMonsters);
+    useGroupedTableState(currentArc, 'monsters', GroupableItem.ArcMonsters,
+    async (items: ArcMonster[]): Promise<ArcMonsterRow[]> => {
+      if (!currentArc.value)
+        return [];
+      
+      const retval: ArcMonsterRow[] = [];
+
+      for (const item of items) {
+        const actor = await foundry.utils.fromUuid<Actor>(item.uuid);
+
+        if (actor) {
+          retval.push({
+            uuid: item.uuid,
+            groupId: item.groupId || null,
+            name: actor.name,
+            notes: item.notes || '',
+            draggableId: item.uuid,
+            dragTooltip: localize('tooltips.dragToScene'),
+          });
+        }
+      }
+
+      return retval;
+    }
+  );
+
+  const { rows: itemRows, groups: itemGroups, refresh: _refreshItems } = 
+    useGroupedTableState(currentArc, 'items', GroupableItem.ArcItems,
+    async (items: ArcItem[]): Promise<ArcItemRow[]> => {
+      if (!currentArc.value)
+        return [];
+      
+      const retval: ArcItemRow[] = [];
+
+      for (const item of items) {
+        const itemDoc = await foundry.utils.fromUuid<Item>(item.uuid);
+
+        if (itemDoc) {
+          retval.push({
+            uuid: item.uuid,
+            groupId: item.groupId || null,
+            name: itemDoc.name,
+            notes: item.notes || '',
+            draggableId: item.uuid,
+            dragTooltip: localize('tooltips.dragItemFromSession'),
+          });
+        }
+      }
+
+      return retval;
+    }
+  );
 
   // methods
   const isEntryCharacter = (uuid: string) => {
@@ -134,6 +193,9 @@ export function useArcDerivedState(): ArcDerivedState {
       case 'monsters':
         await _refreshMonsters();
         break;
+      case 'items':
+        await _refreshItems();
+        break;
       default:
         break;
     }
@@ -146,6 +208,8 @@ export function useArcDerivedState(): ArcDerivedState {
     participantGroups,
     monsterRows,
     monsterGroups,
+    itemRows,
+    itemGroups,
     vignetteRows,
     vignetteGroups,
     loreRows,

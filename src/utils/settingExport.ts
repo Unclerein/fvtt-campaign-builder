@@ -11,6 +11,7 @@ import { htmlToMarkdown } from '@/utils/sanitizeHtml';
 import { ModuleSettings, SettingKey } from '@/settings';
 import ZipFileService from '@/utils/zipFiles';
 import { downloadFile, downloadBlob } from '@/utils/fileDownload';
+import { notifyError, notifyInfo } from './notifications';
 
 /**
  * Exports an entire setting to a markdown file with story web images in a zip archive.
@@ -25,7 +26,7 @@ const exportSetting = async (settingId: string): Promise<void> => {
     }
 
     // Show loading notification
-    ui.notifications.info(localize('notifications.export.starting'));
+    notifyInfo(localize('notifications.export.starting'));
 
     // Generate markdown content
     const markdownContent = await generateSettingMarkdown(setting);
@@ -40,10 +41,10 @@ const exportSetting = async (settingId: string): Promise<void> => {
     // Create and download zip file
     await createAndDownloadZip(setting, markdownContent, storyWebImages);
 
-    ui.notifications.info(localize('notifications.export.complete'));
+    notifyInfo(localize('notifications.export.complete'));
   } catch (error) {
     console.error('Error exporting setting:', error);
-    ui.notifications.error(localize('notifications.export.failed'));
+    notifyError(localize('notifications.export.failed'));
   }
 };
 
@@ -60,7 +61,7 @@ const exportSettingMarkdown = async (settingId: string): Promise<void> => {
     }
 
     // Show loading notification
-    ui.notifications.info(localize('notifications.export.starting'));
+    notifyInfo(localize('notifications.export.starting'));
 
     // Generate markdown content
     const markdownContent = await generateSettingMarkdown(setting);
@@ -69,10 +70,10 @@ const exportSettingMarkdown = async (settingId: string): Promise<void> => {
     const filename = `${setting.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
     downloadFile(markdownContent, filename, 'text/markdown');
 
-    ui.notifications.info(localize('notifications.export.complete'));
+    notifyInfo(localize('notifications.export.complete'));
   } catch (error) {
     console.error('Error exporting setting markdown:', error);
-    ui.notifications.error(localize('notifications.export.failed'));
+    notifyError(localize('notifications.export.failed'));
   }
 };
 
@@ -359,10 +360,13 @@ const exportCampaign = async (
       if (!pc.actorId)
         continue;
 
-      // lookup the actor
-      const actorName = resolveUuidNameSync(pc.actorId);
-      if (actorName)
-        markdown += `- ${actorName} (player name: ${pc.name})\n`;
+      // lookup the actor and the player name 
+      const entry = await Entry.fromUuid(pc.uuid);
+
+      if (entry) {
+          if (entry.name)
+          markdown += `- ${entry.name} (player name: ${entry.playerName})\n`;
+      }
     }
     markdown += '\n';
   }
@@ -574,6 +578,21 @@ const exportArc = async (arc: Arc, setting: FCBSetting, customFieldDefinitions: 
       const docName = resolveFoundryDocumentName(monster.uuid, true);
       if (docName) {
         const notes = cleanText(monster.notes, 5);
+        markdown += `| ${docName} | ${notes} |\n`;
+      }
+    }
+    markdown += '\n';
+  }
+
+  // Magic items (table format)
+  if (arc.items && arc.items.length > 0) {
+    markdown += `#### Magic Items\n`;
+    markdown += `| Name | Notes |\n`;
+    markdown += `|------|-------|\n`;
+    for (const item of arc.items) {
+      const docName = resolveFoundryDocumentName(item.uuid, true);
+      if (docName) {
+        const notes = cleanText(item.notes, 5);
         markdown += `| ${docName} | ${notes} |\n`;
       }
     }

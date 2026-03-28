@@ -399,6 +399,7 @@
   import AppWindowService from '@/utils/appWindow';
   import CustomFieldsService from '@/utils/customFields';
   import { generateIdFromName } from '@/utils/idGeneration';
+  import { notifyError, notifyInfo } from '@/utils/notifications';
 
   // library components
   import DataTable from 'primevue/datatable';
@@ -410,7 +411,7 @@
   import Checkbox from 'primevue/checkbox';
 
   // local components
-  import Dialog from '@/components/Dialog.vue';
+  import Dialog from '@/components/dialogs/Dialog.vue';
   import ConfigDialogLayout from '@/components/layout/ConfigDialogLayout.vue';
 
   // local components
@@ -495,6 +496,7 @@
     { value: CustomFieldContentType.Character, label: localize('labels.character.character') },
     { value: CustomFieldContentType.Location, label: localize('labels.location.location') },
     { value: CustomFieldContentType.Organization, label: localize('labels.organization.organization') },
+    { value: CustomFieldContentType.Branch, label: localize('labels.organization.branch') },
     { value: CustomFieldContentType.PC, label: localize('labels.pc.pc') },
     { value: CustomFieldContentType.Setting, label: localize('labels.setting.setting') },
   ];
@@ -575,6 +577,7 @@
       || t === CustomFieldContentType.Character
       || t === CustomFieldContentType.Location
       || t === CustomFieldContentType.Organization
+      || t === CustomFieldContentType.Branch
       || t === CustomFieldContentType.PC;
   });
 
@@ -601,6 +604,12 @@
       { key: 'parent', labelKey: 'labels.fields.parent' },
     ],
     [CustomFieldContentType.Organization]: [
+      { key: 'name', labelKey: 'labels.fields.name' },
+      { key: 'description', labelKey: 'labels.labels.description' },
+      { key: 'type', labelKey: 'labels.fields.type' },
+      { key: 'parent', labelKey: 'labels.fields.parent' },
+    ],
+    [CustomFieldContentType.Branch]: [
       { key: 'name', labelKey: 'labels.fields.name' },
       { key: 'description', labelKey: 'labels.labels.description' },
       { key: 'type', labelKey: 'labels.fields.type' },
@@ -915,7 +924,7 @@
       r.label = (r.label || '').trim();
 
       if (!r.deleted && !r.label) {
-        ui.notifications?.error(localize('applications.customFields.notifications.missingLabel'));
+        notifyError(localize('applications.customFields.notifications.missingLabel'));
         return false;
       }
 
@@ -1303,7 +1312,7 @@
       await mainStore.refreshCurrentContent();
     }
 
-    ui.notifications?.info(localize('notifications.changesSaved'));
+    notifyInfo(localize('notifications.changesSaved'));
 
     if (indexedToggled.value && currentSetting.value) {
       // Rebuild search index to reflect any changes to which custom fields are searchable.

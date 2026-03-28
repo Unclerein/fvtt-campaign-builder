@@ -59,7 +59,9 @@
         "historyForward": "Avancer dans l'historique des onglets",
         "historyForwardHelp": "Avancer dans l'historique de l'onglet actuel",
         "toggleWindow": "Ouvrir/Fermer la fenêtre principale",
-        "toggleWindowHelp": "Ouvrir/Fermer la fenêtre du constructeur de campagne"
+        "toggleWindowHelp": "Ouvrir/Fermer la fenêtre du constructeur de campagne",
+        "addToDo": "Ajouter une tâche",
+        "addToDoHelp": "Ouvrir une boîte de dialogue pour ajouter une nouvelle tâche à une campagne"
       },
       "showTypesInTree": "Afficher les types dans l'arborescence des paramètres",
       "showTypesInTreeHelp": "Lorsque c'est vrai, si le répertoire des paramètres n'est pas groupé par type, il affichera le type de chaque entrée dans l'arborescence.",
@@ -94,7 +96,10 @@
       "useTimelineHelp": "Activer la fonctionnalité de chronologie (nécessite le module Calendaria).",
       "tabVisibility": "Paramètres de visibilité des onglets",
       "tabVisibilityLabel": "Visibilité des onglets",
-      "tabVisibilityHelp": "Configurer quels onglets sont visibles pour chaque type de contenu"
+      "tabVisibilityHelp": "Configurer quels onglets sont visibles pour chaque type de contenu",
+      "associationTags": "Tags d'association",
+      "associationTagsLabel": "Configurer les tags d'association",
+      "associationTagsHelp": "Configurer les tags associés aux acteurs (pour les personnages) et aux scènes (pour les lieux)"
     },
     "applications": {
       "sessionNotes": {
@@ -374,6 +379,30 @@
         "importingSettings": "Importation des paramètres du module...",
         "importingSetting": "Importation du paramètre",
         "remappingUuids": "Remappage des références de documents..."
+      },
+      "associationTags": {
+        "title": "Configurer les tags d'association",
+        "tabs": {
+          "characters": "Personnages",
+          "locations": "Lieux"
+        },
+        "columns": {
+          "name": "Nom du tag",
+          "color": "Couleur",
+          "actor": "Acteur associé",
+          "scene": "Scène associée"
+        },
+        "labels": {
+          "add": "Ajouter un tag",
+          "noSelection": "Aucune sélection",
+          "selectActor": "Sélectionner un acteur",
+          "selectScene": "Sélectionner une scène"
+        },
+        "notifications": {
+          "duplicateName": "Le nom du tag '{name}' existe déjà dans l'autre liste de tags",
+          "duplicateActorNames": "Les noms des tags d'acteur doivent être uniques",
+          "duplicateSceneNames": "Les noms des tags de scène doivent être uniques"
+        }
       }
     },
     "help": {
@@ -421,7 +450,9 @@
         "strongStartHelpText": "Un début fort est un événement court et percutant qui donne le ton à la session. Cliquez pour en savoir plus de Lazy DM.",
         "notes": "Notes",
         "boxedText": "Texte Encadré",
-        "gmNotes": "Notes du MJ"
+        "gmNotes": "Notes du MJ",
+        "parentOrganization": "Organisation parente",
+        "branchLocation": "Lieu"
       },
       "addTopic": {
         "character": "Ajouter un Personnage",
@@ -527,7 +558,8 @@
           "monsters": "Monstres",
           "ideas": "Idées",
           "vignettes": "Vignettes",
-          "timeline": "Chronologie"
+          "timeline": "Chronologie",
+          "items": "Objets magiques"
         },
         "setting": {
           "timeline": "Chronologie"
@@ -613,7 +645,8 @@
         "character": "Personnage"
       },
       "organization": {
-        "organization": "Organisation"
+        "organization": "Organisation",
+        "branch": "Branche"
       },
       "location": {
         "location": "Lieu"
@@ -641,7 +674,8 @@
         "includeArcAndSessionReferences": "Inclure les références d'Arc et de Session",
         "includeSessionReferences": "Inclure les références de Session",
         "includeAllReferences": "Inclure les références d'Entrée, de Campagne, d'Arc et de Session"
-      }
+      },
+      "branchesFolder": "Branches"
     },
     "placeholders": {
       "search": "Rechercher",
@@ -710,7 +744,7 @@
       },
       "addToDo": {
         "title": "Ajouter une tâche",
-        "text": "Entrez le texte de la tâche :"
+        "prompt": "Entrez le texte de la tâche :"
       },
       "configureNames": {
         "title": "Configurer les styles de nom",
@@ -926,6 +960,81 @@
           "storyWebs": "Toiles d'histoires",
           "timeline": "Chronologie"
         }
+      },
+      "selectCampaign": {
+        "title": "Sélectionner une campagne",
+        "prompt": "À quelle campagne cette tâche doit-elle être ajoutée ?"
+      },
+      "overwriteField": {
+        "title": "Écraser le champ ?",
+        "message": "Êtes-vous sûr de vouloir écraser {field} avec un nouveau texte ?"
+      },
+      "deleteGroup": {
+        "title": "Supprimer le groupe ?",
+        "message": "Êtes-vous sûr de vouloir supprimer ce groupe ? Tous les éléments seront placés dans 'Non groupé'"
+      },
+      "deleteSetting": {
+        "title": "Supprimer le paramètre ?",
+        "message": "Êtes-vous sûr de vouloir supprimer ce paramètre ?"
+      },
+      "deleteLocation": {
+        "title": "Supprimer l'emplacement ?",
+        "message": "Êtes-vous sûr de vouloir supprimer cet emplacement ? Cela n'affectera pas l'emplacement de paramètre associé"
+      },
+      "deleteParticipant": {
+        "title": "Supprimer le participant ?",
+        "message": "Êtes-vous sûr de vouloir supprimer ce participant ? Cela n'affectera pas l'entrée associée"
+      },
+      "deleteLore": {
+        "title": "Supprimer le savoir ?",
+        "message": "Êtes-vous sûr de vouloir supprimer ce savoir ?"
+      },
+      "deleteVignette": {
+        "title": "Supprimer la vignette ?",
+        "message": "Êtes-vous sûr de vouloir supprimer cette vignette ?"
+      },
+      "deleteMonster": {
+        "title": "Supprimer le monstre ?",
+        "message": "Êtes-vous sûr de vouloir supprimer ce monstre ?"
+      },
+      "deleteItem": {
+        "title": "Supprimer l'objet ?",
+        "message": "Êtes-vous sûr de vouloir supprimer cet objet ?"
+      },
+      "deleteIdea": {
+        "title": "Supprimer l'idée ?",
+        "message": "Êtes-vous sûr de vouloir supprimer cette idée ?"
+      },
+      "deleteNPC": {
+        "title": "Supprimer le PNJ ?",
+        "message": "Êtes-vous sûr de vouloir supprimer ce PNJ ? Cela n'affectera pas le personnage associé"
+      },
+      "deleteSession": {
+        "title": "Supprimer la session ?",
+        "message": "Êtes-vous sûr de vouloir supprimer cette session ?"
+      },
+      "deleteFront": {
+        "title": "Supprimer le front ?",
+        "message": "Êtes-vous sûr de vouloir supprimer ce front ?"
+      },
+      "deleteStoryWeb": {
+        "title": "Supprimer le réseau d'histoires ?",
+        "message": "Êtes-vous sûr de vouloir supprimer ce réseau d'histoires ?"
+      },
+      "createEntryTitle": {
+        "title": "Créer {topic}"
+      },
+      "deleteEntryWithBranches": {
+        "title": "Supprimer l'entrée ?",
+        "message": "Cela supprimera également {count} branche(s). Êtes-vous sûr de vouloir continuer ?"
+      },
+      "createBranches": {
+        "title": "Créer des branches",
+        "message": "Sélectionnez les lieux pour créer des branches pour {organization} :",
+        "loading": "Chargement des lieux...",
+        "noLocations": "Aucun lieu disponible",
+        "selectedCount": "{count} lieu(x) sélectionné(s)",
+        "existingBranch": "(branche existante)"
       }
     },
     "contextMenus": {
@@ -970,7 +1079,8 @@
         }
       },
       "directoryEntry": {
-        "delete": "Supprimer l'entrée"
+        "delete": "Supprimer l'entrée",
+        "createBranches": "Créer des branches"
       },
       "typeFolder": {
         "create": "Créer un nouveau"
@@ -987,7 +1097,8 @@
       },
       "settingFolder": {
         "delete": "Supprimer le paramètre",
-        "createCampaign": "Créer une campagne"
+        "createCampaign": "Créer une campagne",
+        "exportJson": "Exporter en JSON"
       },
       "arcFolder": {
         "createSession": "Créer une session",
@@ -1077,7 +1188,6 @@
         "7": "Toile de l'histoire",
         "8": "Résultats des tags"
       },
-      "dragActorFromEntry": "Glisser vers la scène",
       "addToASession": "Ajouter à une session",
       "sessionUnavailable": "Aucune campagne avec une session active, ou cette entrée est déjà attachée à toutes",
       "createEntry": {
@@ -1120,7 +1230,8 @@
       "openFoundryActor": "Ouvrir l'acteur de la fonderie",
       "openFoundryScene": "Ouvrir la scène de la fonderie",
       "noActorsAttached": "Aucun acteur attaché",
-      "noScenesAttached": "Aucune scène attachée"
+      "noScenesAttached": "Aucune scène attachée",
+      "dragToScene": "Faites glisser vers la scène"
     },
     "notifications": {
       "backend": {
@@ -1157,13 +1268,20 @@
         "permissionDenied": "Accès au microphone refusé. Veuillez autoriser l'accès au microphone pour enregistrer la voix.",
         "notSupported": "L'enregistrement vocal n'est pas pris en charge dans ce navigateur",
         "uploadFailed": "Échec du téléchargement de l'enregistrement vocal"
-      }
+      },
+      "itemCopiedToNextSession": "Élément copié à la session suivante"
     },
     "tags": {
       "tag": "Étiquette",
       "resultsFor": "Résultats de l'étiquette pour",
       "entryFound": "entrée trouvée",
-      "entriesFound": "entrées trouvées"
+      "entriesFound": "entrées trouvées",
+      "actorAssociated": "Acteur associé via le tag \"{tagName}\" :",
+      "sceneAssociated": "Scène associée via le tag \"{tagName}\" :",
+      "dragActorHint": "Glisser vers Foundry",
+      "clickSceneHint": "Cliquez pour configurer. Clic droit pour plus d'options.",
+      "multipleActorTagsWarning": "Plusieurs tags d'acteur appliqués. Seul le premier ({name}) sera utilisé.",
+      "multipleSceneTagsWarning": "Plusieurs tags de scène appliqués. Seul le premier ({name}) sera utilisé."
     },
     "export": {
       "relatedTopics": {

@@ -1,9 +1,9 @@
 import { GroupableItem, RelatedJournal, TimelineConfig } from '@/types';
-import type { ArcLocation, ArcParticipant, ArcMonster, ArcVignette, ArcLore, ArcIdea } from '@/types/dbTypes';
+import type { ArcLocation, ArcParticipant, ArcMonster, ArcItem, ArcVignette, ArcLore, ArcIdea } from '@/types/dbTypes';
 import { schemas } from './fields';
 
 // Re-export types for backward compatibility
-export type { ArcLocation, ArcParticipant, ArcMonster, ArcVignette, ArcLore, ArcIdea } from '@/types/dbTypes';
+export type { ArcLocation, ArcParticipant, ArcMonster, ArcItem, ArcVignette, ArcLore, ArcIdea } from '@/types/dbTypes';
 
 const fields = foundry.data.fields;
 
@@ -49,6 +49,7 @@ export const ArcSchema = {
     [GroupableItem.ArcLocations]: schemas.GroupArray(),
     [GroupableItem.ArcParticipants]: schemas.GroupArray(),
     [GroupableItem.ArcMonsters]: schemas.GroupArray(),
+    [GroupableItem.ArcItems]: schemas.GroupArray(),
     [GroupableItem.ArcIdeas]: schemas.GroupArray(),
   }, { required: true, nullable: false, initial: {
     // [GroupableItem.ArcJournals]: [],
@@ -57,6 +58,7 @@ export const ArcSchema = {
     [GroupableItem.ArcLocations]: [],
     [GroupableItem.ArcParticipants]: [],
     [GroupableItem.ArcMonsters]: [],
+    [GroupableItem.ArcItems]: [],
     [GroupableItem.ArcIdeas]: [],
   } }),
 
@@ -68,21 +70,27 @@ export const ArcSchema = {
 
   /** array of locations */
   locations: new fields.ArrayField(
-    schemas.ArcLocation(),
+    schemas.ArcListItem(),
     { initial: [] as ArcLocation[] }
   ),  
 
   /** array of npcs/organizations */
   participants: new fields.ArrayField(
-    schemas.ArcParticipant(),
+    schemas.ArcListItem(),
     { initial: [] as ArcParticipant[] }
   ),  
 
   /** array of monsters */
   monsters: new fields.ArrayField(
-    schemas.ArcMonster(),
+    schemas.ArcListItem(),
     { initial: [] as ArcMonster[] }
   ),  
+
+  /** array of magic items */
+  items: new fields.ArrayField(
+    schemas.ArcListItem(),
+    { initial: [] as ArcItem[] }
+  ),
 
   /** array of vignettes */
   vignettes: new fields.ArrayField(
@@ -139,6 +147,7 @@ export interface ArcDoc extends JournalEntryPage {
     locations: ArcLocation[];
     participants: ArcParticipant[];
     monsters: ArcMonster[];
+    items: ArcItem[];
     vignettes: ArcVignette[];
     lore: ArcLore[];
   };

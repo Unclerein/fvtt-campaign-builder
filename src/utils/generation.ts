@@ -132,6 +132,7 @@ export const generateImage = async (forSetting: FCBSetting, windowTabType: Windo
       [CustomFieldContentType.Character]: ApiCustomGenerateImagePostRequestContentTypeEnum.Character,
       [CustomFieldContentType.Location]: ApiCustomGenerateImagePostRequestContentTypeEnum.Location,
       [CustomFieldContentType.Organization]: ApiCustomGenerateImagePostRequestContentTypeEnum.Organization,
+      [CustomFieldContentType.Branch]: ApiCustomGenerateImagePostRequestContentTypeEnum.Organization,
       [CustomFieldContentType.Arc]: ApiCustomGenerateImagePostRequestContentTypeEnum.Arc,
       [CustomFieldContentType.Front]: ApiCustomGenerateImagePostRequestContentTypeEnum.Front,
       [CustomFieldContentType.PC]: ApiCustomGenerateImagePostRequestContentTypeEnum.Pc,
@@ -154,7 +155,7 @@ export const generateImage = async (forSetting: FCBSetting, windowTabType: Windo
     let parent: Entry | null = null;
     let grandparent: Entry | null = null;
 
-    if ([CustomFieldContentType.Location, CustomFieldContentType.Organization].includes(contentType)) {
+    if ([CustomFieldContentType.Location, CustomFieldContentType.Organization, CustomFieldContentType.Branch].includes(contentType)) {
       let parentId = await (entry as Entry).getParentId();
       if (parentId) {
         parent = await Entry.fromUuid(parentId);

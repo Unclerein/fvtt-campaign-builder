@@ -1,6 +1,6 @@
 <template>
   <SettingDirectoryNodeWithChildren 
-    v-if="props.node.children.length && filterNodes[props.topic]?.includes(props.node.id)" 
+    v-if="(props.node.children.length || props.node.childBranches?.length) && filterNodes[props.topic]?.includes(props.node.id)" 
     :node="props.node"
     :setting-id="props.settingId"
     :topic="props.topic"
@@ -10,12 +10,16 @@
     <div class="details">
       <div class="summary">
         <div 
-          :class="`${props.node.id===currentEntry?.uuid ? 'fcb-current-directory-entry' : 'fcb-directory-entry'}`"
+          :class="
+            props.node.id===currentEntry?.uuid && currentEntry?.isBranch ? 'fcb-current-directory-branch' : 
+            props.node.id===currentEntry?.uuid ? 'fcb-current-directory-entry' : 
+            'fcb-directory-entry'
+          "
           style="pointer-events: auto;"
           draggable="true"
           :data-testid="`directory-entry-${props.node.id}`"
           @click="onDirectoryItemClick"
-          @dragstart="onDragStart($event, props.node.id, props.node.name)"
+          @dragstart="onDragstart($event, props.node.id, props.node.name)"
           @drop="onDrop"
           @dragover="DragDropService.standardDragover"
           @contextmenu="onEntryContextMenu"
@@ -45,7 +49,7 @@
   import SettingDirectoryNodeWithChildren from './SettingDirectoryNodeWithChildren.vue';
   
   // types
-  import { EntryNodeDragData, ValidTopic } from '@/types';
+  import { EntryNodeDragData, ValidTopic, Topics } from '@/types';
   import { DirectoryEntryNode, Entry, FCBSetting, TopicFolder } from '@/classes';
 
   ////////////////////////////////
@@ -113,7 +117,7 @@
   };
 
   // handle an entry dragging to another or to canvas
-  const onDragStart = async (event: DragEvent, id: string, name: string): Promise<void> => {
+  const onDragstart = async (event: DragEvent, id: string, name: string): Promise<void> => {
     event.stopPropagation();
     
     if (!currentSetting.value) { 
@@ -152,6 +156,10 @@
     }
 
     const topicFolder = currentSetting.value?.topicFolders[props.topic];
+
+    // branches can't be re-parented
+    if (fcbData.isBranch)
+      return;
 
     // make sure it's not the same item
     const parentId = props.node.id;
