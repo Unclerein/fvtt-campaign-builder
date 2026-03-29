@@ -5,7 +5,7 @@ prev:
   link: '/reference/world-building/content/character'
 next: 
   text: 'Organizations'
-  link: '/reference/world-building/content/organization'
+  link: '/reference/world-building/content/organization/'
 ---
 # Location Details
 ![Location Content](/assets/images/location-content.webp)
