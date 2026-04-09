@@ -325,23 +325,38 @@ async function loginToWorld(page: Page): Promise<void> {
 
 /**
  * Resets the world using the test API.
+ * Note: This may cause the page to reload, so callers should handle reconnection.
  *
  * @param page - Page handle (optional, uses shared page if not provided)
  */
 export async function resetWorld(page?: Page): Promise<void> {
   const p = page || await getPage();
+  console.log('[resetWorld] Starting world reset...');
 
-  await p.evaluate(async () => {
-    const module = game?.modules?.get('campaign-builder') as { api?: { testAPI?: { resetAll: () => Promise<void> } } } | undefined;
-    const api = module?.api;
-    if (api?.testAPI?.resetAll) {
-      await api.testAPI.resetAll();
-    } else {
-      throw new Error('Test API not available. Ensure module is loaded with debug:test build.');
+  try {
+    await p.evaluate(async () => {
+      const module = game?.modules?.get('campaign-builder') as { api?: { testAPI?: { resetAll: () => Promise<void> } } } | undefined;
+      const api = module?.api;
+      console.log('[resetWorld] Module found:', !!module, 'API found:', !!api);
+      if (api?.testAPI?.resetAll) {
+        console.log('[resetWorld] Calling testAPI.resetAll()...');
+        await api.testAPI.resetAll();
+        console.log('[resetWorld] testAPI.resetAll() complete');
+      } else {
+        throw new Error('Test API not available. Ensure module is loaded with debug:test build.');
+      }
+    });
+
+    console.log('[resetWorld] World reset complete');
+  } catch (error) {
+    // Frame may detach during reset - this is expected
+    if (error instanceof Error && error.message.includes('detached')) {
+      console.log('[resetWorld] World reset complete (frame detached during reset)');
+      return;
     }
-  });
-
-  console.log('World reset complete');
+    console.log('[resetWorld] Error:', error);
+    throw error;
+  }
 }
 
 /**

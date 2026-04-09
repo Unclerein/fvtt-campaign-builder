@@ -9,7 +9,7 @@ import { getByTestId } from '../helpers';
 describe.serial('Basic Directory functions', () => {
 	beforeAll(async () => {
 		// Ensure setup is done with test data populated
-		await ensureSetup(true);
+		await ensureSetup(false);
 		
 		const setting = testData.settings[0];
 

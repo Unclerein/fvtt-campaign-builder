@@ -171,7 +171,21 @@ class TestAPI {
   }
 
   public async createEntry(setting: FCBSetting, topic: ValidTopic, name: string): Promise<Entry | null> {
-    return await Entry.create(setting.topicFolders[topic]!, { name });
+    const entry = await Entry.create(setting.topicFolders[topic]!, { name });
+    
+    if (entry) {
+      // Create hierarchy for the entry (required for filtering/type changes)
+      await setting.setEntryHierarchy(entry.uuid, {
+        parentId: '',
+        ancestors: [],
+        children: [],
+        type: '',
+        locationParentId: null,
+        childBranches: [],
+      });
+    }
+    
+    return entry;
   }
 
   /**

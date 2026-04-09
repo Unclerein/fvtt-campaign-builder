@@ -68,7 +68,7 @@ describe.serial('Location Entry Tests', () => {
 
   beforeAll(async () => {
     // Ensure setup is done with test data populated
-    await ensureSetup(true);
+    await ensureSetup(false);
     
     const setting = testData.settings[0];
 

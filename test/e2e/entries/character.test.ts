@@ -34,8 +34,8 @@ describe.serial('Character Entry Tests', () => {
   const testEntryName = 'Test Character Entry';
 
   beforeAll(async () => {
-    // Ensure setup is done with test data populated
-    await ensureSetup(true);
+    // Ensure setup is done with test data populated (don't rebuild)
+    await ensureSetup(false);
     
     const setting = testData.settings[0];
 

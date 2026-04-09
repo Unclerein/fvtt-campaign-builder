@@ -27,15 +27,18 @@ async function testDataExists(): Promise<boolean> {
  * Ensures that the global setup (browser connection, initialize, open) has been run.
  * Call this in beforeAll of each test file. It will only run once per test session.
  * 
- * Uses the agent infrastructure for browser connection and Foundry navigation.
+ * @param rebuild - If true, always reset world and repopulate data (used by test:rebuild)
  */
 export async function ensureSetup(rebuild = false) {
-  if (setupComplete && sharedContext.page && sharedContext.context) {
-    console.log('Setup already complete, skipping...');
+  console.log(`[ensureSetup] Called with rebuild=${rebuild}, setupComplete=${setupComplete}`);
+  
+  // Skip only if already complete AND not a rebuild request
+  if (!rebuild && setupComplete && sharedContext.page && sharedContext.context) {
+    console.log('[ensureSetup] Setup already complete, skipping...');
     return;
   }
   
-  console.log('Running setup...');
+  console.log('[ensureSetup] Running setup...');
   
   // Use agent infrastructure to connect/navigate
   const { browser, page } = await launchBrowser({ refresh: false });
@@ -46,21 +49,37 @@ export async function ensureSetup(rebuild = false) {
   // Navigate to game (handles login, world selection, etc.)
   await navigateToGame(page);
   
-  // Only reset and populate if data doesn't already exist
-  const needsData = rebuild && !dataPopulated && !(await testDataExists());
+  // Determine if we need to reset and populate data
+  // rebuild=true: always reset and repopulate (used by test:rebuild)
+  // rebuild=false: only populate if data doesn't exist
+  const dataExists = await testDataExists();
+  const needsData = rebuild || (!dataPopulated && !dataExists);
+  console.log(`[ensureSetup] dataExists=${dataExists}, dataPopulated=${dataPopulated}, needsData=${needsData}`);
   
   if (needsData) {
-    console.log('Resetting world and populating test data...');
+    console.log('[ensureSetup] Resetting world...');
     await resetWorld(page);
+    console.log('[ensureSetup] World reset complete, waiting for stabilization...');
+
+    // Wait for page to stabilize after reset (may trigger Foundry reload)
+    await page.waitForSelector('#game', { timeout: 10000 }).catch(() => {
+      console.log('[ensureSetup] waitForSelector #game timed out (expected if page reloaded)');
+    });
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('[ensureSetup] Stabilization wait complete');
   }
   
   // Open the Campaign Builder window
+  console.log('[ensureSetup] Opening Campaign Builder...');
   await openCampaignBuilder(page);
+  console.log('[ensureSetup] Campaign Builder opened');
   
   // Populate test data only if needed
   if (needsData) {
-    for (const setting of testData.settings) {
-      await populateSetting(setting);
+    console.log(`[ensureSetup] Populating ${testData.settings.length} settings...`);
+    for (let i = 0; i < testData.settings.length; i++) {
+      console.log(`[ensureSetup] Populating setting ${i + 1}: ${testData.settings[i].name}`);
+      await populateSetting(testData.settings[i]);
     }
     // Close and reopen to refresh the UI with new data
     console.log('Closing Campaign Builder...');
