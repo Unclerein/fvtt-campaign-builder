@@ -229,10 +229,29 @@ describe.serial('Character Entry Tests', () => {
     // Make sure there's a campaign with a current session
     const campaign = setting.campaigns[0];
     if (campaign && campaign.sessions.length > 0) {
+      // Create a new entry for this test (avoids issues with shared test data being modified)
+      const testEntryName = 'Push Test Character';
+      const entryUuid = await createEntryViaAPI(Topics.Character, testEntryName, setting.name);
+
+      if (!entryUuid) {
+        // Failed to create entry - skip test
+        return;
+      }
+
+      // Expand the character topic folder
+      await expandTopicNode(Topics.Character);
+
+      // Expand the (none) type folder (new entries have no type)
+      await expandTypeNode(Topics.Character, '(none)');
+
+      // Open the entry
+      await openEntry(Topics.Character, testEntryName);
+
       // Click the push to session button
       const clicked = await clickPushToSession();
       if (!clicked) {
         // Button not available or disabled - skip test
+        await deleteEntryViaAPI(entryUuid);
         return;
       }
 
@@ -247,6 +266,9 @@ describe.serial('Character Entry Tests', () => {
         // Wait for notification
         await new Promise(resolve => setTimeout(resolve, 500));
       }
+
+      // Clean up
+      await deleteEntryViaAPI(entryUuid);
     }
   });
 
