@@ -1,6 +1,6 @@
 // resets the world and then repopulates with the setup test data
 
-import { test } from '@playwright/test';
+import { describe, test, beforeAll, afterAll } from './testRunner';
 import { sharedContext } from './sharedContext';
 import { populateSetting } from './setup';
 import { testData } from './data';
@@ -8,16 +8,13 @@ import { ensureSetup } from './ensureSetup';
 
 // Step functions are imported from separate files for organization
 
-test.beforeAll(async ({ browser }) => {
-	test.setTimeout(90000);  // the initialization of everything could take a while
-
-	// Ensure setup is done (will only run once per test session)
-	await ensureSetup(browser, true);
+beforeAll(async () => {
+	// the initialization of everything could take a while
+	await ensureSetup(true);
 });
 
-test.describe.serial('Setup', () => {
+describe.serial('Setup', () => {
 	test('Populate Settings', async () => {
-		test.slow();
 		await populateSetting(testData.settings[0]);
 		await populateSetting(testData.settings[1]);
 	});
@@ -35,8 +32,14 @@ test.describe.serial('Setup', () => {
 	//    can open each content type from there
 
 
-	test.afterAll(async () => {
-		if (sharedContext.page) await sharedContext.page.close();
-		if (sharedContext.context) await sharedContext.context.close();
+	afterAll(async () => {
+		// In attach mode, disconnect from browser instead of closing it
+		if (sharedContext.context) {
+			try {
+				await sharedContext.context.disconnect();
+			} catch {
+				// Ignore disconnect errors
+			}
+		}
 	});
 });

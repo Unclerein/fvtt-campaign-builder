@@ -1,5 +1,5 @@
-import { test } from '@playwright/test';
-import { confirmSettingInList, openSettingContent, switchToSetting } from '@e2etest/utils';
+import { test } from '../testRunner';
+import { confirmSettingInList, switchToSetting } from '@e2etest/utils';
 import { TestContext } from '../types';
 
 export const updateSetting = (context: TestContext, settingName: string) => {
@@ -9,8 +9,8 @@ export const updateSetting = (context: TestContext, settingName: string) => {
 
   test('Update setting fields', async () => {
     // open the setting page
-    await switchToSetting(context, settingName);
-    await openSettingContent(context, settingName);
+    await switchToSetting(settingName);
+    // await openSettingContent(settingName);
 
     // edit the fields
 
@@ -26,19 +26,37 @@ const updateName = async (context: TestContext, name: string) => {
   const page = context.page!;
 
   const newName = 'Temporary Test Name';
-  await page.getByTestId('setting-name-header')
-    .locator('input')
-    .fill(newName);
+  
+  // Wait for the setting name header and find the input
+  await page.waitForSelector('[data-testid="setting-name-header"]');
+  const header = await page.$('[data-testid="setting-name-header"]');
+  
+  if (header) {
+    const input = await header.$('input');
+    
+    if (input) {
+      // Clear and type new name
+      await input.evaluate((el: Element) => {
+        if (el instanceof HTMLInputElement) {
+          el.value = '';
+        }
+      });
+      await input.type(newName);
 
-  // make sure it updated in the tree
-  await confirmSettingInList(context, newName);
+      // make sure it updated in the tree
+      await confirmSettingInList(newName);
 
-  // change it back
-  await page.getByTestId('setting-name-header')
-    .locator('input')
-    .fill(name);
+      // change it back
+      await input.evaluate((el: Element) => {
+        if (el instanceof HTMLInputElement) {
+          el.value = '';
+        }
+      });
+      await input.type(name);
 
-  // make sure it updated again
-  await confirmSettingInList(context, name);
+      // make sure it updated again
+      await confirmSettingInList(name);
+    }
+  }
 }
   

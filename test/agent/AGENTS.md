@@ -89,6 +89,10 @@ Environment variables (in `.env`):
 | `BROWSER_MODE` | Override browser mode |
 | `FVTT_BROWSER_HOST` | Override Windows host IP |
 
+## Timeout Guidelines
+
+**Do not increase timeouts past 10 seconds.** If tests are timing out, the issue is not slowness - it's a real problem that needs investigation. Long timeouts mask real issues and slow down the test-debug cycle.
+
 ## Files
 
 - `config.ts` - Configuration

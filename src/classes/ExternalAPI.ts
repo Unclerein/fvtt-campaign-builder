@@ -2,6 +2,7 @@
  * ExternalAPI class that provides external access to the campaign builder module functionality
  */
 import { useCampaignDirectoryStore, useMainStore, } from '@/applications/stores';
+import { ModuleSettings, SettingKey } from '@/settings';
 import { Topics, ValidTopic } from '@/types';
 import { log } from '@/utils/log';
 import { Campaign } from '@/classes/Documents/Campaign';
@@ -171,5 +172,15 @@ class TestAPI {
 
   public async createEntry(setting: FCBSetting, topic: ValidTopic, name: string): Promise<Entry | null> {
     return await Entry.create(setting.topicFolders[topic]!, { name });
+  }
+
+  /**
+   * Gets the names of all settings in the world
+   * @returns Array of setting names
+   */
+  public getSettingNames(): string[] {
+    // Return from the setting index since getAllSettings is async
+    const settingIndex = ModuleSettings.get(SettingKey.settingIndex) || [];
+    return settingIndex.map((s: { name: string }) => s.name);
   }
 }

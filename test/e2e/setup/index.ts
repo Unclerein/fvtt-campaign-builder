@@ -1,7 +1,7 @@
 // starts from an assumed empty world and creates the base settings
 import { SettingDescriptor } from '@e2etest/data/setting';
 import { sharedContext } from '@e2etest/sharedContext';
-import { Topics } from '@/types';
+import { Topics, ValidTopic } from '@/types';
 
 const topicValues = {
   Character: Topics.Character,
@@ -29,7 +29,8 @@ export const populateSetting = async (settingDescriptor: SettingDescriptor) => {
     setting.description = settingDescriptor.description;
 
     // entries
-    for (const topic in settingDescriptor.topics) {
+    for (const topicKey in settingDescriptor.topics) {
+      const topic = Number.parseInt(topicKey) as ValidTopic;
       for (const descriptor of settingDescriptor.topics[topic]) {
         const entry = await api.createEntry(setting, topic, descriptor.name);
         if (!entry) {

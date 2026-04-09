@@ -1,14 +1,15 @@
-import { expect, test } from '@playwright/test';
+import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
 import { expandTopicNode, expandTypeNode, switchToSetting } from '@e2etest/utils';
-import { Topics } from '@/types';
+import { Topics, ValidTopic } from '@/types';
+import { getByTestId } from '../helpers';
 
-test.describe.serial('Basic Directory functions', () => {
-	test.beforeAll(async ({ browser }) => {
-		// Ensure setup is done (will only run once per test session)
-		await ensureSetup(browser);
+describe.serial('Basic Directory functions', () => {
+	beforeAll(async () => {
+		// Ensure setup is done with test data populated
+		await ensureSetup(true);
 		
 		const setting = testData.settings[0];
 
@@ -23,38 +24,63 @@ test.describe.serial('Basic Directory functions', () => {
 		const setting = testData.settings[0];
 
 		// make sure everything closed to start, just in case
-		await page.getByTestId('collapse-all-button').click();
+		await getByTestId(page, 'collapse-all-button').click();
 
 		// Wait for the collapse to complete
-		await expect(page.locator('.fcb-topic-folder.collapsed').first()).toBeAttached();
+		await page.waitForSelector('.fcb-topic-folder.collapsed');
 
-		// make sure the 1st topic isn't visible
-		await expect(page.locator('.fcb-directory-entry')
-			.filter({ hasText: setting.topics[Topics.Character][0].name}))
-			.toHaveCount(0);
+		// make sure the 1st topic isn't visible (check visibility, not just DOM presence)
+		const found = await page.evaluate((entryName: string) => {
+			const entries = Array.from(document.querySelectorAll('.fcb-directory-entry'));
+			return entries.some(el => {
+				// Check if visible (not hidden by collapsed parent)
+				const style = window.getComputedStyle(el);
+				const isVisible = style.display !== 'none' && style.visibility !== 'hidden';
+				return isVisible && el.textContent?.includes(entryName);
+			});
+		}, setting.topics[Topics.Character][0].name);
+		expect(found).toBe(false);
 
 		// open each folder and make sure the 1st node is visible
-		for (const topic in setting.topics) {
-			await expandTopicNode(Number.parseInt(topic));
+		for (const topicKey in setting.topics) {
+			const topic = Number.parseInt(topicKey) as ValidTopic;
+			await expandTopicNode(topic);
 
 			// for characters, we need to expand the 'none' folder first
-			if (Number.parseInt(topic) === Topics.Character) {
-				await expandTypeNode(Number.parseInt(topic), '(none)');
+			if (topic === Topics.Character) {
+				await expandTypeNode(topic, '(none)');
 			}
 
-			const entries = setting.topics[topic];
-			await expect(page.locator('.fcb-directory-entry')
-				.filter({ hasText: entries[0].name}))
-				.toHaveCount(1);
+			const topicEntries = setting.topics[topic];
+			await page.waitForSelector('.fcb-directory-entry');
+			
+			// Verify the entry is visible
+			const entriesAfter = await page.$$('.fcb-directory-entry');
+			let entryFound = false;
+			for (const entry of entriesAfter) {
+				const text = await entry.evaluate(el => el.textContent);
+				if (text?.includes(topicEntries[0].name)) {
+					entryFound = true;
+					break;
+				}
+			}
+			expect(entryFound).toBe(true);
 		}
 
 		// also check collapse all
-		await page.getByTestId('collapse-all-button').click();
+		await getByTestId(page, 'collapse-all-button').click();
 
-		// make sure the 1st topic isn't visible
-		await expect(page.locator('.fcb-directory-entry')
-			.filter({ hasText: setting.topics[Topics.Character][0].name}))
-			.toHaveCount(0);
+		// make sure the 1st topic isn't visible (check visibility, not just DOM presence)
+		const foundAfterCollapse = await page.evaluate((entryName: string) => {
+			const entries = Array.from(document.querySelectorAll('.fcb-directory-entry'));
+			return entries.some(el => {
+				// Check if visible (not hidden by collapsed parent)
+				const style = window.getComputedStyle(el);
+				const isVisible = style.display !== 'none' && style.visibility !== 'hidden';
+				return isVisible && el.textContent?.includes(entryName);
+			});
+		}, setting.topics[Topics.Character][0].name);
+		expect(foundAfterCollapse).toBe(false);
 	});
 
 	test('Expand campaign folders', async () => {
@@ -96,8 +122,19 @@ test.describe.serial('Basic Directory functions', () => {
 	//    can open each content type from there
 
 
-	test.afterAll(async () => {
-		if (sharedContext.page) await sharedContext.page.close();
-		if (sharedContext.context) await sharedContext.context.close();
+	afterAll(async () => {
+		// In attach mode, disconnect from browser instead of closing it
+		if (sharedContext.context) {
+			try {
+				await sharedContext.context.disconnect();
+			} catch {
+				// Ignore disconnect errors
+			}
+		}
 	});
+});
+
+// Run tests after file is fully loaded
+runTests().then(passed => {
+	process.exit(passed ? 0 : 1);
 });

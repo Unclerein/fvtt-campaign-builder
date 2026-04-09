@@ -30,20 +30,41 @@ export async function openCampaignBuilder(page?: Page): Promise<void> {
   });
   console.log('Module status:', moduleStatus);
 
-  // Wait for the launch button to appear
-  await p.waitForSelector('#fcb-launch', { timeout: 10000 });
+  // Check if window is already open
+  const alreadyOpen = await p.$('.fcb-main-window');
+  if (alreadyOpen) {
+    console.log('Campaign Builder already open');
+    return;
+  }
 
-  // Click the launch button
-  await p.click('#fcb-launch');
+  // Wait for the launch button to appear
+  console.log('Waiting for launch button...');
+  await p.waitForSelector('#fcb-launch', { timeout: 10000 });
+  console.log('Launch button found');
+
+  // Click the launch button using evaluate for reliability
+  await p.evaluate(() => {
+    const btn = document.querySelector('#fcb-launch');
+    if (btn instanceof HTMLElement) {
+      btn.click();
+    }
+  });
+  console.log('Launch button clicked');
 
   // Wait for the main window to appear
   await p.waitForSelector('.fcb-main-window', { visible: true, timeout: 10000 });
+  console.log('Main window appeared');
 
   // Wait for Vue app to be ready
   await p.waitForFunction(() => {
     const win = document.querySelector('.fcb-main-window');
-    return win && win.querySelectorAll('.fcb-content-tab').length > 0;
+    if (!win) return false;
+    const tabs = win.querySelectorAll('.fcb-content-tab');
+    // Also check for home page (no settings case)
+    const homePage = win.querySelector('.fcb-home-page');
+    return tabs.length > 0 || homePage != null;
   }, { timeout: 10000 });
+  console.log('Vue app ready');
 }
 
 /**
@@ -54,8 +75,8 @@ export async function openCampaignBuilder(page?: Page): Promise<void> {
 export async function closeCampaignBuilder(page?: Page): Promise<void> {
   const p = page || await getPage();
 
-  // Click the close button in the header
-  const closeButton = await p.$('.fcb-main-window .fcb-header-close');
+  // Click the close button in the window header (Foundry uses [data-action="close"])
+  const closeButton = await p.$('.fcb-main-window [data-action="close"]');
   if (closeButton) {
     await closeButton.click();
     await p.waitForSelector('.fcb-main-window', { hidden: true, timeout: 5000 });

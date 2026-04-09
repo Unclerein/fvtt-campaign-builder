@@ -9,12 +9,16 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
 Write-Host "Setting up portproxy for Edge remote debugging..."
 
+# Remove any existing rule first
+netsh interface portproxy delete v4tov4 listenport=9222 listenaddress=0.0.0.0 2>$null
+
 # Add portproxy rule (persists across reboots)
-netsh interface portproxy add v4tov4 `
+# Edge listens on IPv6 [::1], so connect to ::1 not 127.0.0.1
+netsh interface portproxy add v4tov6 `
     listenport=9222 `
     listenaddress=0.0.0.0 `
     connectport=9222 `
-    connectaddress=127.0.0.1
+    connectaddress=::1
 
 # Add firewall rule (persists across reboots)
 $ruleName = "Edge Remote Debug"
@@ -37,7 +41,7 @@ Write-Host "Setup complete!" -ForegroundColor Green
 Write-Host ""
 Write-Host "To use:"
 Write-Host "1. Launch Edge with remote debugging:"
-Write-Host "   & 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe' --remote-debugging-port=9222 --user-data-dir='C:\temp\foundry-edge'"
+Write-Host "   & 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe' --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --user-data-dir='C:\temp\foundry-edge'"
 Write-Host "2. Navigate to Foundry and log in"
 Write-Host "3. Run Puppeteer agent from WSL2"
 Write-Host ""
@@ -45,5 +49,5 @@ Write-Host "To verify the portproxy rule:"
 Write-Host "   netsh interface portproxy show all"
 Write-Host ""
 Write-Host "To remove the rules later:"
-Write-Host "   netsh interface portproxy delete v4tov4 listenport=9222 listenaddress=0.0.0.0"
+Write-Host "   netsh interface portproxy delete v4tov6 listenport=9222 listenaddress=0.0.0.0"
 Write-Host "   Remove-NetFirewallRule -DisplayName 'Edge Remote Debug'"

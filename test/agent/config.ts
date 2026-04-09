@@ -17,9 +17,21 @@ dotenvConfig({ path: path.resolve(__dirname, '../../.env') });
 /**
  * Get the Windows host IP from WSL2.
  * This is the gateway IP that WSL2 uses to reach the Windows host.
+ * Returns 'localhost' for native Linux environments.
  */
 function getWindowsHostIP(): string {
   try {
+    // Check if we're actually in WSL2
+    const procVersion = execSync('cat /proc/version 2>/dev/null || echo ""')
+      .toString()
+      .toLowerCase();
+    const isWSL = procVersion.includes('microsoft') || procVersion.includes('wsl');
+    
+    if (!isWSL) {
+      // Native Linux - use localhost
+      return 'localhost';
+    }
+    
     // Get the default gateway IP (Windows host in WSL2)
     return execSync("ip route show default | awk '{print $3}'")
       .toString()
