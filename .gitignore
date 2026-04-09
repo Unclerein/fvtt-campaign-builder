@@ -7,4 +7,5 @@ coverage/
 tsconfig.tsbuildinfo
 docs/.vitepress/cache
 playwright-report/
-test-results/
+test-results
+.env
