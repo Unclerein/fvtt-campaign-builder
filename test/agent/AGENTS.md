@@ -111,3 +111,57 @@ Environment variables (in `.env`):
 ### Module Not Loading
 
 Check browser console for errors. The module may have failed to initialize due to migration issues or missing dependencies.
+
+### Viewport Resets to 800x600 After Reload
+
+**Problem**: In attach mode, page reloads (via `page.reload()`, `page.goto()`, or navigation) reset the viewport to Puppeteer's default 800x600, even if you previously set it to 1920x1080.
+
+**Root Cause**: When connected to an existing browser, Puppeteer doesn't control the browser's default viewport. After any navigation, Puppeteer resets to its internal default.
+
+**Solution**: The `launchBrowser()` helper now includes a `framenavigated` listener that automatically re-applies the viewport after navigation. Using `launchBrowser()` should keep the viewport at the configured size.
+
+For direct connection (bypassing the helper), manually re-apply after navigation:
+
+```typescript
+await page.reload({ waitUntil: 'networkidle2' });
+await page.setViewport({ width: 1920, height: 1080 });
+```
+
+### Extracting Text from Elements with Icons
+
+Many UI elements contain nested `<i>` icons. To get just the text:
+
+```typescript
+const text = await page.evaluate(() => {
+  const el = document.querySelector('.some-element');
+  return Array.from(el.childNodes)
+    .filter(n => n.nodeType === Node.TEXT_NODE)
+    .map(n => n.textContent?.trim())
+    .join('')
+    .trim();
+});
+```
+
+## Quick Connection Pattern
+
+For quick scripts when already in-game (avoids viewport issues):
+
+```typescript
+import puppeteer from 'puppeteer';
+import { config } from './test/agent/config';
+
+const browser = await puppeteer.connect({
+  browserURL: `http://${config.browserHost}:${config.debuggingPort}`,
+});
+const page = (await browser.pages())[0];
+
+// Open Campaign Builder if not already open
+if (!(await page.$('.fcb-main-window'))) {
+  await page.click('#fcb-launch');
+  await page.waitForSelector('.fcb-main-window', { visible: true });
+}
+
+// ... interact with UI ...
+
+await browser.disconnect(); // Keeps browser running
+```

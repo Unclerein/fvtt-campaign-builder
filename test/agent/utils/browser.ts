@@ -56,6 +56,17 @@ export async function launchBrowser(options: LaunchOptions = {}): Promise<Browse
       width: config.viewportWidth,
       height: config.viewportHeight,
     });
+
+    // Re-apply viewport after navigation (Puppeteer resets to 800x600 default)
+    page.on('framenavigated', async () => {
+      const currentViewport = page.viewport();
+      if (currentViewport?.width !== config.viewportWidth || currentViewport?.height !== config.viewportHeight) {
+        await page.setViewport({
+          width: config.viewportWidth,
+          height: config.viewportHeight,
+        });
+      }
+    });
   } else if (config.browserMode === 'headed') {
     // Launch headed browser (visible) with WebGL support via swiftshader
     browser = await puppeteer.launch({
