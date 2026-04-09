@@ -120,21 +120,6 @@ describe.serial('Basic Directory functions', () => {
 	// header - make sure bookmarks work, forward/back buttons, close tab controls
 	// check the compendium folder structure and contents and that you
 	//    can open each content type from there
-
-
-	afterAll(async () => {
-		// In attach mode, disconnect from browser instead of closing it
-		if (sharedContext.context) {
-			try {
-				await sharedContext.context.disconnect();
-			} catch {
-				// Ignore disconnect errors
-			}
-		}
-	});
 });
 
-// Run tests after file is fully loaded
-runTests().then(passed => {
-	process.exit(passed ? 0 : 1);
-});
+// Note: runTests() is called by the main runner (all.test.ts)

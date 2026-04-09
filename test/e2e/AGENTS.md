@@ -51,6 +51,8 @@ npm run test              # Run basic directory tests
 npm run test:rebuild      # Run rebuild tests
 ```
 
+**Note:** Use `npm run test` to run E2E tests. Only use `npm run debug` (which rebuilds the module) if application code was changed. If only test code was modified, no rebuild is needed.
+
 ## Architecture
 
 - `testRunner.ts` - Custom Jest-like test runner (describe/test/beforeAll/afterAll/expect)

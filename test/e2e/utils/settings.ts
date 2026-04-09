@@ -98,16 +98,20 @@ export const expandTypeNode = async (topic: ValidTopic, typeName: string) => {
   if (!topicFolder) return;
 
   // Find the type node with the type name
+  // Structure is: <div class="summary top"><div class="fcb-directory-expand-button">+/-</div><div class="fcb-directory-type">name</div></div>
   const typeNodes = await topicFolder.$$('.fcb-directory-type');
   for (const typeNode of typeNodes) {
     const text = await typeNode.evaluate(el => el.textContent);
     if (text?.includes(typeName)) {
-      // the actual click button is on the previous sibling div
-      const parent = await typeNode.evaluateHandle(el => el.parentElement);
-      if (parent) {
-        const expandButton = await (parent as import('puppeteer').ElementHandle<Element>).$('.fcb-directory-expand-button');
-        if (expandButton) {
-          await expandButton.click();
+      // The expand button is a previous sibling within the same parent
+      const expandButton = await typeNode.evaluateHandle(el => el.previousElementSibling);
+      if (expandButton) {
+        const btnText = await (expandButton as import('puppeteer').ElementHandle<Element>).evaluate(el => el.textContent);
+        // Only click if it shows '+' (collapsed)
+        if (btnText?.includes('+')) {
+          await (expandButton as import('puppeteer').ElementHandle<Element>).click();
+          // Wait for entries to appear
+          await page.waitForSelector('.fcb-directory-entry', { timeout: 5000 });
         }
       }
       break;

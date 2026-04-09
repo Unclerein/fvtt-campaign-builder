@@ -29,7 +29,7 @@
     "docs:preview": "vitepress preview docs",
     "translate": "node .scripts/translate.cjs",
     "test:rebuild": "tsx --tsconfig test/e2e/tsconfig.json test/e2e/rebuild.test.ts",
-    "test": "tsx --tsconfig test/e2e/tsconfig.json test/e2e/directory/basic.test.ts"
+    "test": "tsx --tsconfig test/e2e/tsconfig.json test/e2e/all.test.ts"
   },
   "devDependencies": {
     "@ethaks/fvtt-quench": "^0.10.0",
