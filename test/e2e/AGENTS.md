@@ -71,3 +71,16 @@ npm run test:rebuild      # Run rebuild tests
 3. **Disconnect, don't close**: In `afterAll`, use `browser.disconnect()` not `browser.close()` to keep the Windows browser running.
 
 4. **Explicit runTests()**: Each test file must call `runTests()` at the end to execute the registered tests.
+
+5. **Test data isolation**: Tests that modify or delete data must create their own objects and clean them up. The basic structure created during setup (settings, campaigns, sessions, entries) is shared across tests and should only be used for read operations.
+
+6. **User experience**: Unless a test is designed to specifically test the module API, it should simulate a real user's actions as much as possible. This means using the UI elements and interactions that a user would use, rather than directly calling the API.
+
+## Test Data Guidelines
+
+The `ensureSetup(true)` call creates a standard set of test data:
+- 2 settings with entries, campaigns, and sessions
+- This data persists across test runs (check with `testDataExists()`)
+- **Read-only**: Use this data for navigation, display, and read-only tests
+- **Write tests**: Create your own objects within the test and delete them afterward
+
