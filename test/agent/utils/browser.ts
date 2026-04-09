@@ -50,14 +50,25 @@ export async function launchBrowser(options: LaunchOptions = {}): Promise<Browse
     });
     const pages = await browser.pages();
     page = pages[0] || await browser.newPage();
+
+    // Set viewport size (attach mode uses actual window size, override it)
+    await page.setViewport({
+      width: config.viewportWidth,
+      height: config.viewportHeight,
+    });
   } else if (config.browserMode === 'headed') {
-    // Launch headed browser (visible) - use Windows Edge for better WebGL support in WSL
+    // Launch headed browser (visible) with WebGL support via swiftshader
     browser = await puppeteer.launch({
       headless: false,
       executablePath: config.executablePath,
       args: [
         '--no-sandbox',
         '--disable-dev-shm-usage',
+        '--enable-webgl',
+        '--use-gl=swiftshader',
+        '--enable-unsafe-swiftshader',
+        '--enable-unsafe-webgl',
+        '--ignore-gpu-blocklist',
       ],
       defaultViewport: {
         width: config.viewportWidth,
@@ -66,7 +77,7 @@ export async function launchBrowser(options: LaunchOptions = {}): Promise<Browse
     });
     page = await browser.newPage();
   } else {
-    // Headless mode (default) - use Windows Edge with swiftshader for WebGL support
+    // Headless mode (default) with WebGL support via swiftshader
     browser = await puppeteer.launch({
       headless: true,
       executablePath: config.executablePath,
@@ -75,6 +86,7 @@ export async function launchBrowser(options: LaunchOptions = {}): Promise<Browse
         '--disable-dev-shm-usage',
         '--enable-webgl',
         '--use-gl=swiftshader',
+        '--enable-unsafe-swiftshader',
         '--enable-unsafe-webgl',
         '--ignore-gpu-blocklist',
       ],

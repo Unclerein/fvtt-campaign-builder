@@ -5,6 +5,7 @@
 import { config as dotenvConfig } from 'dotenv';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 // Get directory name in ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -12,6 +13,22 @@ const __dirname = path.dirname(__filename);
 
 // Load .env file from project root
 dotenvConfig({ path: path.resolve(__dirname, '../../.env') });
+
+/**
+ * Get the Windows host IP from WSL2.
+ * This is the gateway IP that WSL2 uses to reach the Windows host.
+ */
+function getWindowsHostIP(): string {
+  try {
+    // Get the default gateway IP (Windows host in WSL2)
+    return execSync("ip route show default | awk '{print $3}'")
+      .toString()
+      .trim();
+  } catch {
+    // Fall back to localhost for non-WSL environments
+    return 'localhost';
+  }
+}
 
 /** Browser mode - controls how Puppeteer connects to the browser */
 export type BrowserMode = 'headless' | 'headed' | 'attach';
@@ -57,9 +74,9 @@ export const config: AgentConfig = {
   user: process.env.FVTT_GM_USER || 'Gamemaster',
   worldId: process.env.FVTT_WORLDID || 'campaignbuildertest',
   adminPassword: process.env.FVTT_ADMIN_PASSWORD || '',
-  browserMode: (process.env.BROWSER_MODE as BrowserMode) || 'headless',
+  browserMode: (process.env.BROWSER_MODE as BrowserMode) || 'attach',
   debuggingPort: 9222,
-  browserHost: process.env.FVTT_BROWSER_HOST || 'localhost',
+  browserHost: process.env.FVTT_BROWSER_HOST || getWindowsHostIP(),
   viewportWidth: 1920,
   viewportHeight: 1080,
   executablePath: process.env.FVTT_BROWSER_PATH || '/usr/bin/google-chrome',

@@ -14,6 +14,22 @@ import { getPage } from './browser';
 export async function openCampaignBuilder(page?: Page): Promise<void> {
   const p = page || await getPage();
 
+  // Check if module is loaded
+  const moduleStatus = await p.evaluate(() => {
+    const module = game?.modules?.get('campaign-builder') as {
+      active?: boolean;
+      initialized?: boolean;
+      api?: unknown;
+    } | undefined;
+    return {
+      exists: !!module,
+      active: module?.active,
+      initialized: module?.initialized,
+      hasApi: !!module?.api,
+    };
+  });
+  console.log('Module status:', moduleStatus);
+
   // Wait for the launch button to appear
   await p.waitForSelector('#fcb-launch', { timeout: 10000 });
 
