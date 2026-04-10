@@ -3,6 +3,10 @@
  * Provides Jest-like describe/it/test syntax without requiring Jest.
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
+import { sharedContext } from './sharedContext';
+
 type TestFn = () => Promise<void> | void;
 type HookFn = () => Promise<void> | void;
 
@@ -19,6 +23,14 @@ interface TestSuite {
 const suites: TestSuite[] = [];
 let currentSuite: TestSuite | null = null;
 let onlySuite: TestSuite | null = null;
+let grepPattern: string | null = null;
+
+/**
+ * Set a grep pattern to filter suites and tests by name (case-insensitive substring match).
+ */
+export function setGrep(pattern: string): void {
+  grepPattern = pattern;
+}
 
 /**
  * Creates a test suite. Use .serial to run tests sequentially.
@@ -267,10 +279,71 @@ export function expect<T>(actual: T) {
 }
 
 /**
+ * Collect Istanbul coverage data from the browser and write to .nyc_output.
+ * Call this after all tests have run but before disconnecting the browser.
+ */
+export async function collectCoverage(): Promise<void> {
+  const page = sharedContext.page;
+  if (!page) {
+    console.log('\x1b[33mNo page available for coverage collection\x1b[0m');
+    return;
+  }
+
+  try {
+    // Pull coverage data from the browser
+    const coverage = await page.evaluate(() => {
+      return (window as any).__coverage__ ?? null;
+    });
+
+    if (!coverage) {
+      console.log('\x1b[33mNo coverage data found (build with --mode test to enable instrumentation)\x1b[0m');
+      return;
+    }
+
+    // Write coverage JSON to .nyc_output for nyc to pick up
+    const outputDir = path.resolve(process.cwd(), '.nyc_output');
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+
+    const outputFile = path.join(outputDir, `coverage-${Date.now()}.json`);
+    fs.writeFileSync(outputFile, JSON.stringify(coverage));
+    console.log(`\x1b[36mCoverage data written to ${outputFile}\x1b[0m`);
+  } catch (error) {
+    console.error(`\x1b[31mFailed to collect coverage: ${error}\x1b[0m`);
+  }
+}
+
+/**
  * Run all registered test suites.
  */
 export async function runTests(): Promise<boolean> {
-  const suitesToRun = onlySuite ? [onlySuite] : suites;
+  let suitesToRun = onlySuite ? [onlySuite] : suites;
+
+  // Apply grep filter if set
+  if (grepPattern) {
+    const lowerGrep = grepPattern.toLowerCase();
+    suitesToRun = suitesToRun
+      .map(suite => {
+        // If suite name matches, run all its tests
+        if (suite.name.toLowerCase().includes(lowerGrep)) {
+          return suite;
+        }
+        // Otherwise, filter individual tests
+        const filteredTests = suite.tests.filter(t => t.name.toLowerCase().includes(lowerGrep));
+        if (filteredTests.length > 0) {
+          return { ...suite, tests: filteredTests };
+        }
+        return null;
+      })
+      .filter((s): s is TestSuite => s !== null);
+
+    if (suitesToRun.length === 0) {
+      console.log(`\x1b[33mNo suites or tests match grep pattern: "${grepPattern}"\x1b[0m`);
+      return true;
+    }
+  }
+
   let allPassed = true;
   
   for (const suite of suitesToRun) {

@@ -47,11 +47,35 @@ Should return JSON with browser version info.
 ## Running Tests
 
 ```bash
-npm run test              # Run basic directory tests
-npm run test:rebuild      # Run rebuild tests
+npm test                                        # Run all tests
+npm test -- --file directory/basic               # Run only directory/basic.test
+npm test -- --file entries/character --file entries/location  # Run multiple files
+npm test -- --grep "character"                   # Run suites/tests matching "character"
+npm test -- --file entries/character --grep "name"  # Combine file + grep filters
+npm run test:coverage                            # Run all tests with coverage report
+npm run test:rebuild                             # Reset world and repopulate test data
 ```
 
-**Note:** Use `npm run test` to run E2E tests. Only use `npm run debug` (which rebuilds the module) if application code was changed. If only test code was modified, no rebuild is needed.
+**Note:** Use `npm test` to run E2E tests. Only use `npm run debug` (which rebuilds the module) if application code was changed. If only test code was modified, no rebuild is needed.
+
+### Test Filtering
+
+- **`--file <path>`** — Filter by test file path (relative to `test/e2e/`, without `.test.ts`). Can be specified multiple times.
+- **`--grep <pattern>`** — Filter by suite or test name (case-insensitive substring match). If a suite name matches, all its tests run. Otherwise, only matching tests within each suite run.
+
+### Code Coverage
+
+Coverage uses Istanbul instrumentation via `vite-plugin-istanbul`.
+
+1. Build with instrumentation: `npm run debug:test`
+2. Reload Foundry so it picks up the instrumented build
+3. Run tests with coverage: `npm run test:coverage`
+4. Run `npx nyc report` to generate the report summary
+5. `xdg-open coverage/index.html` to open the HTML report
+
+The `debug:test` build mode adds Istanbul instrumentation to the source code. When tests run, coverage data is collected from `window.__coverage__` in the browser and written to `.nyc_output/`. The `nyc report` command then generates human-readable reports.
+
+If you run `npm test` without an instrumented build, coverage collection is silently skipped.
 
 ## Architecture
 

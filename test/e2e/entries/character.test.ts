@@ -13,6 +13,7 @@ import {
   selectType,
   addNewType,
   getTypeValue,
+  clearType,
   selectSpecies,
   getSpeciesValue,
   addTag,
@@ -125,6 +126,9 @@ describe.serial('Character Entry Tests', () => {
         // Verify type was set
         const typeValue = await getTypeValue();
         expect(typeValue).toBe(firstOptionText.trim());
+
+        // Clear the type so the entry appears in (none) folder in future runs
+        await clearType();
       }
     }
   });
@@ -138,6 +142,9 @@ describe.serial('Character Entry Tests', () => {
     // Verify the type was added and selected
     const typeValue = await getTypeValue();
     expect(typeValue).toBe(newType);
+
+    // Clear the type so the entry appears in (none) folder in future runs
+    await clearType();
   });
 
   test('Select species for character', async () => {

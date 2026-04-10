@@ -32,8 +32,8 @@ export const populateSetting = async (settingDescriptor: SettingDescriptor) => {
     for (const topicKey in settingDescriptor.topics) {
       const topic = Number.parseInt(topicKey) as ValidTopic;
       for (const descriptor of settingDescriptor.topics[topic]) {
-        const entry = await api.createEntry(setting, topic, descriptor.name);
-        if (!entry) {
+        const entryUuid = await api.createEntry(topic, descriptor.name, settingDescriptor.name);
+        if (!entryUuid) {
           throw new Error('Failed to create entry in populateSetting()');
         }
         console.error(`Entry created ${descriptor.name}`);

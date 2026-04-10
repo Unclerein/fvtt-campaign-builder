@@ -230,9 +230,10 @@ export const selectType = async (typeName: string): Promise<void> => {
 export const addNewType = async (typeName: string): Promise<void> => {
   const page = sharedContext.page!;
 
-  // Click on the type input
+  // Click on the type input and clear any existing value
   const input = getTypeSelectInput();
   await input.click();
+  await input.fill('');  // Clear existing value
   await input.type(typeName);
 
   // Wait for dropdown to appear

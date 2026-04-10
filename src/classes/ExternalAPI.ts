@@ -170,9 +170,23 @@ class TestAPI {
     return await Session.create(campaign, name);
   }
 
-  public async createEntry(setting: FCBSetting, topic: ValidTopic, name: string): Promise<Entry | null> {
+  /**
+   * Creates a new entry in the specified setting.
+   * @param topic The topic for the entry
+   * @param name The name of the entry
+   * @param settingName The name of the setting (will be looked up)
+   * @returns The created entry or null
+   */
+  public async createEntry(topic: ValidTopic, name: string, settingName: string): Promise<string | null> {
+    // Find the setting by name
+    const allSettings = await useMainStore().getAllSettings();
+    const setting = allSettings.find(s => s.name === settingName);
+    if (!setting) {
+      return null;
+    }
+
     const entry = await Entry.create(setting.topicFolders[topic]!, { name });
-    
+
     if (entry) {
       // Create hierarchy for the entry (required for filtering/type changes)
       await setting.setEntryHierarchy(entry.uuid, {
@@ -183,9 +197,21 @@ class TestAPI {
         locationParentId: null,
         childBranches: [],
       });
+      return entry.uuid;
     }
-    
-    return entry;
+
+    return null;
+  }
+
+  /**
+   * Deletes an entry by UUID.
+   * @param uuid The UUID of the entry to delete
+   */
+  public async deleteEntry(uuid: string): Promise<void> {
+    const entry = await Entry.fromUuid(uuid);
+    if (entry) {
+      await entry.delete();
+    }
   }
 
   /**
