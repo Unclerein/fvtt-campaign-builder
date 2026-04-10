@@ -37,7 +37,6 @@ export const openEntry = async (topic: ValidTopic, entryName: string, retries = 
 
   // Find the entry node with the name within this topic folder
   const entries = await topicFolder.$$('.fcb-directory-entry');
-  console.log(`[openEntry] Found ${entries.length} entries in topic ${topic}, looking for: ${entryName}`);
   
   let found = false;
   for (const entry of entries) {
@@ -52,10 +51,8 @@ export const openEntry = async (topic: ValidTopic, entryName: string, retries = 
   if (!found) {
     // Debug: log all entry names
     const allNames = await Promise.all(entries.map(e => e.evaluate(el => el.textContent)));
-    console.log(`[openEntry] Available entries in topic: ${allNames.join(', ')}`);
     
     if (retries > 0) {
-      console.log(`[openEntry] Retrying in 500ms... (${retries} retries left)`);
       await new Promise(resolve => setTimeout(resolve, 500));
       return openEntry(topic, entryName, retries - 1);
     }

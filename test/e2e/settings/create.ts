@@ -52,7 +52,6 @@ export const createSettingFromSidebar = (context: TestContext, settingName: stri
       }
     }
     
-    console.log(found ? 'Found setting folder' : 'Setting folder not found');
     expect(found).toBe(true);
 
     await confirmSettingInList(settingName);

@@ -7,13 +7,10 @@ export const switchToSetting = async (settingName: string) => {
 
   // Debug: Check what's in the DOM
   const settingSelectExists = await page.$('[data-testid="setting-select"]');
-  console.log(`[switchToSetting] Setting select exists: ${!!settingSelectExists}`);
 
   if (!settingSelectExists) {
     // If no setting select, there might be only one setting - check for setting folder directly
-    console.log(`[switchToSetting] No setting select, checking for setting folder: ${settingName}`);
     const folderExists = await page.$(`[data-testid="setting-folder-${settingName}"]`);
-    console.log(`[switchToSetting] Setting folder exists: ${!!folderExists}`);
     if (folderExists) {
       // Already on the right setting
       return;
@@ -116,18 +113,15 @@ export const expandTypeNode = async (topic: ValidTopic, typeName: string) => {
   // Find type nodes within the topic folder
   const topicFolder = await page.$(`.fcb-topic-folder[data-topic="${topic}"]`);
   if (!topicFolder) {
-    console.log(`[expandTypeNode] Topic folder not found for topic: ${topic}`);
     return;
   }
 
   // Find the type node with the type name (uses .fcb-directory-type class)
   // Structure is: <div class="summary top"><div class="fcb-directory-expand-button">+/-</div><div class="fcb-directory-type">name</div></div>
   const typeNodes = await topicFolder.$$('.fcb-directory-type');
-  console.log(`[expandTypeNode] Found ${typeNodes.length} type nodes in topic ${topic}`);
   
   // Log all type node texts first
   const typeTexts = await Promise.all(typeNodes.map(n => n.evaluate(el => el.textContent)));
-  console.log(`[expandTypeNode] All type nodes: ${typeTexts.join(', ')}`);
   
   for (const typeNode of typeNodes) {
     const text = await typeNode.evaluate(el => el.textContent);
@@ -136,7 +130,6 @@ export const expandTypeNode = async (topic: ValidTopic, typeName: string) => {
       const expandButton = await typeNode.evaluateHandle(el => el.previousElementSibling);
       if (expandButton) {
         const btnText = await (expandButton as import('puppeteer').ElementHandle<Element>).evaluate(el => el.textContent);
-        console.log(`[expandTypeNode] Expand button text: ${btnText}`);
         // Only click if it shows '+' (collapsed)
         if (btnText?.includes('+')) {
           await (expandButton as import('puppeteer').ElementHandle<Element>).click();
