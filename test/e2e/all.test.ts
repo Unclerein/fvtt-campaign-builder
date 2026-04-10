@@ -36,8 +36,19 @@ if (grepPattern) {
 // --- All available test files (path relative to this directory, without .test.ts) ---
 const allTestFiles: Record<string, () => Promise<void>> = {
   'directory/basic': () => import('./directory/basic.test').then(() => {}),
+  'directory/tree': () => import('./directory/tree.test').then(() => {}),
   'entries/character': () => import('./entries/character.test').then(() => {}),
   'entries/location': () => import('./entries/location.test').then(() => {}),
+  'entries/organization': () => import('./entries/organization.test').then(() => {}),
+  'entries/pc': () => import('./entries/pc.test').then(() => {}),
+  'campaigns/campaign': () => import('./campaigns/campaign.test').then(() => {}),
+  'sessions/session': () => import('./sessions/session.test').then(() => {}),
+  'navigation/header': () => import('./navigation/header.test').then(() => {}),
+  'components/editor': () => import('./components/editor.test').then(() => {}),
+  'components/tags': () => import('./components/tags.test').then(() => {}),
+  'components/typeahead': () => import('./components/typeahead.test').then(() => {}),
+  'components/imagePicker': () => import('./components/imagePicker.test').then(() => {}),
+  'components/relationshipTabs': () => import('./components/relationshipTabs.test').then(() => {}),
 };
 
 // Determine which files to load

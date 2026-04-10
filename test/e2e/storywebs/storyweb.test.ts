@@ -1,0 +1,229 @@
+/**
+ * StoryWeb management tests.
+ * Tests story web creation, editing, and navigation.
+ */
+
+import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
+import { sharedContext } from '@e2etest/sharedContext';
+import { testData } from '@e2etest/data';
+import { ensureSetup } from '../ensureSetup';
+import { switchToSetting } from '@e2etest/utils';
+import { getByTestId, Locator } from '../helpers';
+
+/**
+ * Helper delay function.
+ */
+const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Expands a campaign folder in the directory.
+ */
+const expandCampaignFolder = async (campaignName: string): Promise<void> => {
+  const page = sharedContext.page!;
+
+  const campaignNodes = await page.$$('.fcb-campaign-folder');
+  for (const node of campaignNodes) {
+    const text = await node.evaluate(el => el.textContent);
+    if (text?.includes(campaignName)) {
+      const isCollapsed = await node.evaluate(el => el.classList.contains('collapsed'));
+      if (isCollapsed) {
+        const toggle = await node.$('[data-testid="campaign-folder-toggle"]');
+        if (toggle) {
+          await toggle.click();
+          await delay(200);
+        }
+      }
+      break;
+    }
+  }
+};
+
+/**
+ * Opens a story web from the campaign directory.
+ */
+const openStoryWeb = async (campaignName: string, storyWebName: string): Promise<void> => {
+  const page = sharedContext.page!;
+
+  await expandCampaignFolder(campaignName);
+
+  // Find the story web node
+  const storyWebNodes = await page.$$('.fcb-storyweb-node');
+  for (const node of storyWebNodes) {
+    const text = await node.evaluate(el => el.textContent);
+    if (text?.includes(storyWebName)) {
+      const nameEl = await node.$('[data-testid="storyweb-name"], .node-name');
+      if (nameEl) {
+        await nameEl.click();
+        break;
+      }
+    }
+  }
+
+  await page.waitForSelector('.fcb-name-header', { timeout: 10000 });
+};
+
+/**
+ * Gets the story web name input value.
+ */
+const getStoryWebNameValue = async (): Promise<string> => {
+  const page = sharedContext.page!;
+  const input = await page.$('.fcb-input-name input');
+  if (!input) return '';
+  return await input.evaluate(el => (el as HTMLInputElement).value || '');
+};
+
+/**
+ * Sets the story web name.
+ */
+const setStoryWebName = async (name: string): Promise<void> => {
+  const page = sharedContext.page!;
+  const input = await page.$('.fcb-input-name input');
+  if (input) {
+    await input.evaluate((el, name) => { (el as HTMLInputElement).value = name; }, name);
+    await input.type('');
+    await delay(700);
+  }
+};
+
+/**
+ * Creates a story web via the API.
+ */
+const createStoryWebViaAPI = async (name: string, campaignUuid: string): Promise<string> => {
+  const page = sharedContext.page!;
+
+  return await page.evaluate(
+    async ({ name, campaignUuid }: { name: string; campaignUuid: string }) => {
+      const api = (game as any).modules.get('campaign-builder')!.api!.testAPI;
+      return await api.createStoryWeb(name, campaignUuid);
+    },
+    { name, campaignUuid }
+  );
+};
+
+/**
+ * Deletes a story web via the API.
+ */
+const deleteStoryWebViaAPI = async (uuid: string): Promise<void> => {
+  const page = sharedContext.page!;
+
+  await page.evaluate(async (uuid: string) => {
+    const api = (game as any).modules.get('campaign-builder')!.api!.testAPI;
+    await api.deleteStoryWeb(uuid);
+  }, uuid);
+};
+
+/**
+ * Gets a campaign UUID via the API.
+ */
+const getCampaignUuidViaAPI = async (campaignName: string, settingName: string): Promise<string | null> => {
+  const page = sharedContext.page!;
+
+  return await page.evaluate(
+    async ({ campaignName, settingName }: { campaignName: string; settingName: string }) => {
+      const api = (game as any).modules.get('campaign-builder')!.api!.testAPI;
+      return await api.getCampaignUuid(campaignName, settingName);
+    },
+    { campaignName, settingName }
+  );
+};
+
+describe.serial('StoryWeb Management Tests', () => {
+  let createdStoryWebUuid: string | null = null;
+  let campaignUuid: string | null = null;
+  const testStoryWebName = 'Test StoryWeb E2E';
+
+  beforeAll(async () => {
+    await ensureSetup(false);
+    const setting = testData.settings[0];
+    await switchToSetting(setting.name);
+
+    campaignUuid = await getCampaignUuidViaAPI(setting.campaigns[0].name, setting.name);
+    
+    // Create a story web for testing
+    if (campaignUuid) {
+      createdStoryWebUuid = await createStoryWebViaAPI(testStoryWebName, campaignUuid);
+    }
+  });
+
+  afterAll(async () => {
+    if (createdStoryWebUuid) {
+      try {
+        await deleteStoryWebViaAPI(createdStoryWebUuid);
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+  });
+
+  test('Create new story web via API', async () => {
+    expect(createdStoryWebUuid).not.toBeNull();
+  });
+
+  test('Open created story web and verify name', async () => {
+    if (!createdStoryWebUuid) {
+      return;
+    }
+
+    const setting = testData.settings[0];
+    const firstCampaign = setting.campaigns[0];
+
+    // Refresh directory
+    await switchToSetting(testData.settings[1].name);
+    await switchToSetting(setting.name);
+
+    await openStoryWeb(firstCampaign.name, testStoryWebName);
+
+    const nameValue = await getStoryWebNameValue();
+    expect(nameValue).toBe(testStoryWebName);
+  });
+
+  test('Edit story web name with debounce', async () => {
+    if (!createdStoryWebUuid) {
+      return;
+    }
+
+    const setting = testData.settings[0];
+    const firstCampaign = setting.campaigns[0];
+
+    await openStoryWeb(firstCampaign.name, testStoryWebName);
+
+    const newName = 'Renamed StoryWeb E2E';
+    await setStoryWebName(newName);
+
+    const nameValue = await getStoryWebNameValue();
+    expect(nameValue).toBe(newName);
+  });
+
+  test('Story web shows graph component', async () => {
+    if (!createdStoryWebUuid) {
+      return;
+    }
+
+    const setting = testData.settings[0];
+    const firstCampaign = setting.campaigns[0];
+
+    await openStoryWeb(firstCampaign.name, testStoryWebName);
+
+    const page = sharedContext.page!;
+    // Look for the graph container
+    const graphComponent = await page.$('.story-web-graph, .fcb-graph-container, canvas');
+    expect(graphComponent).not.toBeNull();
+  });
+
+  test('Story web has name header', async () => {
+    if (!createdStoryWebUuid) {
+      return;
+    }
+
+    const setting = testData.settings[0];
+    const firstCampaign = setting.campaigns[0];
+
+    await openStoryWeb(firstCampaign.name, testStoryWebName);
+
+    const page = sharedContext.page!;
+    const header = await page.$('.fcb-name-header');
+    expect(header).not.toBeNull();
+  });
+});
+
+runTests();
