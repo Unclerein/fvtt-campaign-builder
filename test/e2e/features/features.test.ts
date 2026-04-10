@@ -1,6 +1,6 @@
 /**
- * Specialized feature tests.
- * Tests timeline, tag results, and custom fields functionality.
+ * Specialized features E2E tests.
+ * Tests timeline, tag results navigation, and custom fields functionality.
  */
 
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
@@ -126,7 +126,11 @@ const deleteEntryViaAPI = async (uuid: string): Promise<void> => {
   }, uuid);
 };
 
-describe.serial('Specialized Feature Tests', () => {
+/**
+ * Features Tests
+ * Verifies specialized feature functionality.
+ */
+describe.serial('Features Tests', () => {
   let createdEntryUuid: string | null = null;
   const testEntryName = 'Test Feature Entry';
 
@@ -146,8 +150,11 @@ describe.serial('Specialized Feature Tests', () => {
     }
   });
 
-  // Timeline Tests
-  test('Open campaign for timeline test', async () => {
+  /**
+   * What it tests: Timeline component is visible when opening a campaign.
+   * Expected behavior: Timeline element is present in the DOM.
+   */
+  test('Timeline is visible on campaign', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     
@@ -158,12 +165,20 @@ describe.serial('Specialized Feature Tests', () => {
     expect(nameHeader).not.toBeNull();
   });
 
+  /**
+   * What it tests: Timeline tab is present in the campaign.
+   * Expected behavior: Timeline tab is present.
+   */
   test('Campaign has timeline tab', async () => {
     const page = sharedContext.page!;
     const timelineTab = await page.$('[data-tab="timeline"]');
     expect(timelineTab).not.toBeNull();
   });
 
+  /**
+   * What it tests: Timeline tab can be navigated to.
+   * Expected behavior: Timeline tab is active after navigation.
+   */
   test('Navigate to timeline tab', async () => {
     await clickContentTab('timeline');
     
@@ -172,6 +187,10 @@ describe.serial('Specialized Feature Tests', () => {
     expect(activeTab).not.toBeNull();
   });
 
+  /**
+   * What it tests: Timeline container is visible after navigation.
+   * Expected behavior: Timeline container is present.
+   */
   test('Timeline container is visible', async () => {
     await clickContentTab('timeline');
     await delay(500);
@@ -180,12 +199,20 @@ describe.serial('Specialized Feature Tests', () => {
     expect(hasTimeline).toBe(true);
   });
 
+  /**
+   * What it tests: Timeline component has filter panel.
+   * Expected behavior: Filter panel is present.
+   */
   test('Timeline has filter panel', async () => {
     const page = sharedContext.page!;
     const filterPanel = await page.$('.timeline-filter-panel, .fcb-filter-panel');
     expect(filterPanel).not.toBeNull();
   });
 
+  /**
+   * What it tests: Timeline displays loading indicator.
+   * Expected behavior: Loading indicator is present.
+   */
   test('Timeline has loading indicator', async () => {
     const page = sharedContext.page!;
     await clickContentTab('timeline');
@@ -195,7 +222,10 @@ describe.serial('Specialized Feature Tests', () => {
     expect(loading).not.toBeNull();
   });
 
-  // Tag Results Tests
+  /**
+   * What it tests: Search for tag shows tag results.
+   * Expected behavior: Tag results are displayed.
+   */
   test('Search for tag shows tag results', async () => {
     const setting = testData.settings[0];
     const characters = setting.topics[1];
@@ -213,6 +243,10 @@ describe.serial('Specialized Feature Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Tag results view shows tag icon.
+   * Expected behavior: Tag icon is present.
+   */
   test('Tag results show tag icon', async () => {
     const page = sharedContext.page!;
     
@@ -221,6 +255,10 @@ describe.serial('Specialized Feature Tests', () => {
     expect(tagIcon).not.toBeNull();
   });
 
+  /**
+   * What it tests: Clicking a tag navigates to tag results view.
+   * Expected behavior: Tag results view opens with filtered entries.
+   */
   test('Click tag result opens tag results tab', async () => {
     const page = sharedContext.page!;
     
@@ -236,20 +274,31 @@ describe.serial('Specialized Feature Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Tag results tab shows table.
+   * Expected behavior: Table is present.
+   */
   test('Tag results tab shows table', async () => {
     const page = sharedContext.page!;
     const table = await page.$('.base-table, table');
     expect(table).not.toBeNull();
   });
 
+  /**
+   * What it tests: Tag results tab shows count.
+   * Expected behavior: Count is present.
+   */
   test('Tag results tab shows count', async () => {
     const page = sharedContext.page!;
     const countEl = await page.$('.tag-results-count');
     expect(countEl).not.toBeNull();
   });
 
-  // Custom Fields Tests
-  test('Open entry for custom fields test', async () => {
+  /**
+   * What it tests: Custom fields are visible when opening an entry.
+   * Expected behavior: Custom fields section is present.
+   */
+  test('Custom fields are visible on entry', async () => {
     const setting = testData.settings[0];
     const locations = setting.topics[2]; // Topics.Location = 2
     
@@ -317,4 +366,4 @@ describe.serial('Specialized Feature Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)

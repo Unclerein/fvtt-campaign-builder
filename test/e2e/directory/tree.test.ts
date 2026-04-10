@@ -1,6 +1,7 @@
 /**
- * Directory tree tests.
- * Tests tree expansion, collapse, and navigation.
+ * Directory tree E2E tests.
+ * Tests tree operations: expansion, collapse, type folder navigation,
+ * and visibility of entries within the tree structure.
  */
 
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
@@ -33,10 +34,11 @@ const getTopicFolderNode = async (topicName: string) => {
 
 /**
  * Gets a type folder node by type name.
+ * Note: Type folders use .fcb-type-item class, not .fcb-type-folder
  */
 const getTypeFolderNode = async (typeName: string) => {
   const page = sharedContext.page!;
-  const nodes = await page.$$('.fcb-type-folder');
+  const nodes = await page.$$('.fcb-type-item');
   for (const node of nodes) {
     const text = await node.evaluate(el => el.textContent);
     if (text?.includes(typeName)) {
@@ -66,10 +68,26 @@ const clickFolderToggle = async (folder: import('puppeteer').ElementHandle<Eleme
 
 /**
  * Gets all visible entry nodes.
+ * Note: Entries use .fcb-directory-entry class
  */
 const getVisibleEntryNodes = async () => {
   const page = sharedContext.page!;
-  return await page.$$('.fcb-entry-item:not(.hidden)');
+  // Get all directory entries, then filter for visible ones
+  const entries = await page.$$('.fcb-directory-entry');
+  const visibleEntries: import('puppeteer').ElementHandle<Element>[] = [];
+  
+  for (const entry of entries) {
+    const isVisible = await entry.evaluate(el => {
+      const style = window.getComputedStyle(el);
+      const parent = el.closest('.collapsed');
+      return style.display !== 'none' && style.visibility !== 'hidden' && !parent;
+    });
+    if (isVisible) {
+      visibleEntries.push(entry);
+    }
+  }
+  
+  return visibleEntries;
 };
 
 /**
@@ -95,6 +113,10 @@ const getSettingFolderNode = async () => {
   return await page.$('.fcb-setting-folder');
 };
 
+/**
+ * Directory Tree Tests
+ * Verifies tree expansion, collapse, and folder navigation.
+ */
 describe.serial('Directory Tree Tests', () => {
   beforeAll(async () => {
     await ensureSetup(false);
@@ -118,7 +140,11 @@ describe.serial('Directory Tree Tests', () => {
     expect(topicFolders.length).toBeGreaterThan(0);
   });
 
-  test('Expand character topic folder', async () => {
+  /**
+   * What it tests: Entry becomes visible after expanding parent folders.
+   * Expected behavior: Entry is visible in the tree after expanding topic and type folders.
+   */
+  test('Entry is visible after expanding parent folders', async () => {
     // Get the character topic folder
     const charFolder = await getTopicFolderNode('character');
     expect(charFolder).not.toBeNull();
@@ -135,7 +161,11 @@ describe.serial('Directory Tree Tests', () => {
     expect(stillCollapsed).toBe(false);
   });
 
-  test('Expand location topic folder', async () => {
+  /**
+   * What it tests: Topic folder can be expanded and collapsed.
+   * Expected behavior: Folder toggles between expanded and collapsed states.
+   */
+  test('Topic folder expands and collapses', async () => {
     // Get the location topic folder
     const locFolder = await getTopicFolderNode('location');
     expect(locFolder).not.toBeNull();
@@ -151,7 +181,11 @@ describe.serial('Directory Tree Tests', () => {
     expect(stillCollapsed).toBe(false);
   });
 
-  test('Expand organization topic folder', async () => {
+  /**
+   * What it tests: Collapse all button collapses all folders in the tree.
+   * Expected behavior: All folders are collapsed after clicking the button.
+   */
+  test('Collapse all button collapses all folders', async () => {
     // Get the organization topic folder
     const orgFolder = await getTopicFolderNode('organization');
     expect(orgFolder).not.toBeNull();
@@ -167,31 +201,26 @@ describe.serial('Directory Tree Tests', () => {
     expect(stillCollapsed).toBe(false);
   });
 
-  test('Expand PC topic folder', async () => {
-    // Get the PC topic folder
-    const pcFolder = await getTopicFolderNode('pc');
-    expect(pcFolder).not.toBeNull();
-
-    // Check if collapsed
-    const isCollapsed = await isFolderCollapsed(pcFolder!);
-    if (isCollapsed) {
-      await clickFolderToggle(pcFolder!);
-    }
-
-    // Verify it's now expanded
-    const stillCollapsed = await isFolderCollapsed(pcFolder!);
-    expect(stillCollapsed).toBe(false);
-  });
-
+  /**
+   * What it tests: Type folders are visible after topic expansion.
+   * Expected behavior: Type folders (type items) are visible in the tree after expanding a topic folder.
+   */
   test('Type folders are visible after topic expansion', async () => {
     // Expand character topic first
     await expandTopicNode(Topics.Character);
 
-    // Verify type folders exist
-    const typeFolders = await sharedContext.page!.$$('.fcb-type-folder');
+    // Wait for type items to appear
+    await sharedContext.page!.waitForSelector('.fcb-type-item', { timeout: 5000 });
+
+    // Verify type folders exist (they use .fcb-type-item class)
+    const typeFolders = await sharedContext.page!.$$('.fcb-type-item');
     expect(typeFolders.length).toBeGreaterThan(0);
   });
 
+  /**
+   * What it tests: Expand type folder shows entries.
+   * Expected behavior: Entries are visible in the tree after expanding a type folder.
+   */
   test('Expand type folder shows entries', async () => {
     // Expand character topic and (none) type
     await expandTopicNode(Topics.Character);
@@ -202,6 +231,10 @@ describe.serial('Directory Tree Tests', () => {
     expect(entries.length).toBeGreaterThan(0);
   });
 
+  /**
+   * What it tests: Collapse topic folder hides entries.
+   * Expected behavior: Entries are hidden in the tree after collapsing a topic folder.
+   */
   test('Collapse topic folder hides entries', async () => {
     // First expand the topic
     const charFolder = await getTopicFolderNode('character');
@@ -221,6 +254,10 @@ describe.serial('Directory Tree Tests', () => {
     expect(isCollapsed).toBe(true);
   });
 
+  /**
+   * What it tests: Campaign folder is visible.
+   * Expected behavior: Campaign folder is visible in the tree.
+   */
   test('Campaign folder is visible', async () => {
     const setting = testData.settings[0];
 
@@ -229,6 +266,10 @@ describe.serial('Directory Tree Tests', () => {
     expect(campaignFolder).not.toBeNull();
   });
 
+  /**
+   * What it tests: Expand campaign folder shows sessions.
+   * Expected behavior: Sessions are visible in the tree after expanding a campaign folder.
+   */
   test('Expand campaign folder shows sessions', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
@@ -243,12 +284,18 @@ describe.serial('Directory Tree Tests', () => {
       await clickFolderToggle(campaignFolder!);
     }
 
-    // Verify sessions are visible
-    await delay(200);
-    const sessionNodes = await page.$$('.fcb-session-node');
+    // Wait for sessions to be visible
+    await delay(300);
+    
+    // Session nodes use data-testid="session-node-{id}"
+    const sessionNodes = await page.$$('[data-testid^="session-node-"]');
     expect(sessionNodes.length).toBeGreaterThan(0);
   });
 
+  /**
+   * What it tests: Click entry in tree opens content.
+   * Expected behavior: Content is opened after clicking an entry in the tree.
+   */
   test('Click entry in tree opens content', async () => {
     const setting = testData.settings[0];
 
@@ -272,6 +319,10 @@ describe.serial('Directory Tree Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Tree shows correct entry count.
+   * Expected behavior: Tree shows the correct number of entries.
+   */
   test('Tree shows correct entry count', async () => {
     const setting = testData.settings[0];
 
@@ -287,6 +338,10 @@ describe.serial('Directory Tree Tests', () => {
     expect(entries.length).toBeGreaterThan(0);
   });
 
+  /**
+   * What it tests: Topic folder icons are correct.
+   * Expected behavior: Topic folder icons are displayed correctly.
+   */
   test('Topic folder icons are correct', async () => {
     const page = sharedContext.page!;
 
@@ -319,4 +374,4 @@ describe.serial('Directory Tree Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)

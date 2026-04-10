@@ -1,3 +1,9 @@
+/**
+ * Location entry E2E tests.
+ * Tests location entry operations: opening, editing name, type selection,
+ * tag management, parent hierarchy, journals, scenes, push-to-session.
+ */
+
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
@@ -60,6 +66,10 @@ import {
   addSceneToLocationViaAPI,
 } from '@e2etest/utils';
 
+/**
+ * Location Entry Tests
+ * Verifies location entry CRUD operations, hierarchy, journals, scenes, and navigation.
+ */
 describe.serial('Location Entry Tests', () => {
   let createdEntryUuid: string | null = null;
   let createdJournalUuid: string | null = null;
@@ -96,6 +106,10 @@ describe.serial('Location Entry Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Opening an existing location entry from the directory tree.
+   * Expected behavior: Entry opens and displays the correct location name in the name input.
+   */
   test('Open existing location entry', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
@@ -113,9 +127,14 @@ describe.serial('Location Entry Tests', () => {
     // Verify the entry is open
     const nameInput = getEntryNameInput();
     const nameValue = await nameInput.inputValue();
+    // Expected behavior: Name input contains the location's name
     expect(nameValue).toBe(firstLocation.name);
   });
 
+  /**
+   * What it tests: Editing a location's name with debounced auto-save.
+   * Expected behavior: Name change persists after debounce period.
+   */
   test('Edit location name with debounce', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
@@ -134,9 +153,14 @@ describe.serial('Location Entry Tests', () => {
 
     // Verify the name changed
     const nameValue = await getEntryNameValue();
+    // Expected behavior: Name input reflects the new name after save
     expect(nameValue).toBe(newName);
   });
 
+  /**
+   * What it tests: Selecting an existing type from the typeahead dropdown.
+   * Expected behavior: Type is selected and displayed in the type input field.
+   */
   test('Select existing type for location', async () => {
     const page = sharedContext.page!;
 
@@ -162,11 +186,16 @@ describe.serial('Location Entry Tests', () => {
 
         // Verify type was set
         const typeValue = await getTypeValue();
+        // Expected behavior: Type value matches the selected option
         expect(typeValue).toBe(firstOptionText.trim());
       }
     }
   });
 
+  /**
+   * What it tests: Creating a new type via the typeahead input.
+   * Expected behavior: New type is created, selected, and displayed.
+   */
   test('Add new type for location', async () => {
     const page = sharedContext.page!;
 
@@ -175,9 +204,14 @@ describe.serial('Location Entry Tests', () => {
 
     // Verify the type was added and selected
     const typeValue = await getTypeValue();
+    // Expected behavior: Type value reflects the newly created type
     expect(typeValue).toBe(newType);
   });
 
+  /**
+   * What it tests: Adding and removing tags from a location entry.
+   * Expected behavior: Tags can be added and removed, with UI reflecting changes.
+   */
   test('Add and remove tags', async () => {
     const page = sharedContext.page!;
 
@@ -195,6 +229,7 @@ describe.serial('Location Entry Tests', () => {
         break;
       }
     }
+    // Expected behavior: Tag appears in the tags list after adding
     expect(found).toBe(true);
 
     // Remove the tag
@@ -204,10 +239,15 @@ describe.serial('Location Entry Tests', () => {
     const tagsAfter = await page.$$('.tagify__tag');
     for (const tag of tagsAfter) {
       const text = await tag.evaluate(el => el.textContent);
+      // Expected behavior: Tag no longer appears in the tags list
       expect(text?.includes(testTag)).toBe(false);
     }
   });
 
+  /**
+   * What it tests: Clicking a tag opens a tag results tab showing entries with that tag.
+   * Expected behavior: New tab opens displaying tag search results.
+   */
   test('Click tag opens tag results tab', async () => {
     const page = sharedContext.page!;
 
@@ -228,6 +268,10 @@ describe.serial('Location Entry Tests', () => {
     // Note: The exact selector depends on the TagResultsTab implementation
   });
 
+  /**
+   * What it tests: Selecting a parent location for hierarchy relationships.
+   * Expected behavior: Parent location is selected and displayed in the parent input.
+   */
   test('Select parent location (hierarchy)', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
@@ -245,10 +289,15 @@ describe.serial('Location Entry Tests', () => {
 
       // Verify parent was set
       const parentValue = await getParentValue();
+      // Expected behavior: Parent value matches the selected parent name
       expect(parentValue).toBe(parentName);
     }
   });
 
+  /**
+   * What it tests: Editing and saving content in the ProseMirror description editor.
+   * Expected behavior: Content is saved and persists after save operation.
+   */
   test('Save description editor content', async () => {
     const page = sharedContext.page!;
 
@@ -264,9 +313,14 @@ describe.serial('Location Entry Tests', () => {
 
     // Verify content was saved by checking it persisted
     const savedContent = await getDescriptionEditorContent();
+    // Expected behavior: Saved content contains the test description text
     expect(savedContent.includes('Test location description')).toBe(true);
   });
 
+  /**
+   * What it tests: Pushing a location entry to a session via the push-to-session button.
+   * Expected behavior: Context menu appears with campaign options, entry is linked to session.
+   */
   test('Push location to session', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
@@ -291,6 +345,10 @@ describe.serial('Location Entry Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Generate button displays a context menu with AI generation options.
+   * Expected behavior: Context menu appears with generation options.
+   */
   test('Generate button shows context menu', async () => {
     const page = sharedContext.page!;
 
@@ -308,6 +366,7 @@ describe.serial('Location Entry Tests', () => {
 
     // Verify menu items exist
     const menuItems = await page.$$('.mx-context-menu-item');
+    // Expected behavior: Context menu contains at least one generation option
     expect(menuItems.length).toBeGreaterThan(0);
 
     // Close menu by clicking elsewhere
@@ -316,6 +375,11 @@ describe.serial('Location Entry Tests', () => {
     });
   });
 
+  /**
+   * What it tests: Generate image option exists in the generate context menu.
+   * Expected behavior: Generate image option is present in the menu.
+   * Note: Actual image generation requires backend, so only menu presence is tested.
+   */
   test('Generate image - requires Backend', async () => {
     const page = sharedContext.page!;
 
@@ -342,6 +406,7 @@ describe.serial('Location Entry Tests', () => {
       }
     }
 
+    // Expected behavior: Generate image option exists in the menu
     expect(foundImageOption).toBe(true);
 
     // Close menu
@@ -351,6 +416,10 @@ describe.serial('Location Entry Tests', () => {
     console.log("Didn't test onGenerateImage - requires Backend");
   });
 
+  /**
+   * What it tests: Foundry document button state when no scenes are attached.
+   * Expected behavior: Button disabled state is defined (true if no scenes, false if scenes exist).
+   */
   test('Foundry doc button disabled when no scenes attached', async () => {
     const page = sharedContext.page!;
 
@@ -365,11 +434,17 @@ describe.serial('Location Entry Tests', () => {
       return (el as HTMLButtonElement).disabled;
     });
 
+    // Expected behavior: Button has a defined disabled state
     // If the location has no scenes, button should be disabled
     // If it has scenes, this test will pass anyway
     expect(isDisabled !== undefined).toBe(true);
   });
 
+  /**
+   * What it tests: Image picker component exists for scene creation.
+   * Expected behavior: Image picker is present in the location entry.
+   * Note: Actual scene creation requires backend, so only picker presence is tested.
+   */
   test('Create scene from image - requires Backend', async () => {
     const page = sharedContext.page!;
 
@@ -378,12 +453,17 @@ describe.serial('Location Entry Tests', () => {
     
     // Verify image picker exists
     const imagePicker = await getImagePicker();
+    // Expected behavior: Image picker component is present
     expect(imagePicker).not.toBeNull();
 
     // Log that we didn't test actual scene creation
     console.log("Didn't test onCreateScene - requires Backend");
   });
 
+  /**
+   * What it tests: Switching to the journals tab and verifying journal data is displayed.
+   * Expected behavior: Journals tab is visible and shows linked journals.
+   */
   test('Switch to journals tab and verify data', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
@@ -410,13 +490,19 @@ describe.serial('Location Entry Tests', () => {
       const style = window.getComputedStyle(el);
       return style.display !== 'none';
     });
+    // Expected behavior: Journals tab is visible
     expect(isVisible).toBe(true);
 
     // Verify journal data is present
     const journalCount = await getJournalCount();
+    // Expected behavior: At least one journal is linked to the location
     expect(journalCount).toBeGreaterThan(0);
   });
 
+  /**
+   * What it tests: Adding a journal via the journal picker dialog.
+   * Expected behavior: Journal is added and count increases by one.
+   */
   test('Add journal via picker dialog', async () => {
     const page = sharedContext.page!;
 
@@ -442,10 +528,15 @@ describe.serial('Location Entry Tests', () => {
 
       // Verify count increased
       const newCount = await getJournalCount();
+      // Expected behavior: Journal count increases by one after adding
       expect(newCount).toBe(initialCount + 1);
     }
   });
 
+  /**
+   * What it tests: Clicking a journal row opens the journal sheet.
+   * Expected behavior: Journal sheet opens when clicking the journal name.
+   */
   test('Click journal row opens journal sheet', async () => {
     const page = sharedContext.page!;
 
@@ -464,6 +555,10 @@ describe.serial('Location Entry Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Removing a journal via the delete button in the journals table.
+   * Expected behavior: Journal is removed after confirming deletion, count decreases.
+   */
   test('Remove journal via delete button', async () => {
     const page = sharedContext.page!;
 
@@ -490,6 +585,7 @@ describe.serial('Location Entry Tests', () => {
 
             // Verify count decreased
             const newCount = await getJournalCount();
+            // Expected behavior: Journal count decreases by one after removal
             expect(newCount).toBe(initialCount - 1);
           }
         }
@@ -497,6 +593,10 @@ describe.serial('Location Entry Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Adding a journal via drag-drop simulation onto the journals tab.
+   * Expected behavior: Journal is added after dropping, count increases.
+   */
   test('Drop journal via drag-drop simulation', async () => {
     const page = sharedContext.page!;
 
@@ -518,6 +618,7 @@ describe.serial('Location Entry Tests', () => {
 
       // Verify count increased
       const newCount = await getJournalCount();
+      // Expected behavior: Journal count increases by one after drag-drop
       expect(newCount).toBe(initialCount + 1);
 
       // Clean up
@@ -525,6 +626,10 @@ describe.serial('Location Entry Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Switching to the characters relationship tab.
+   * Expected behavior: Characters relationship tab becomes visible.
+   */
   test('Switch to characters relationship tab and verify data', async () => {
     const page = sharedContext.page!;
 
@@ -542,9 +647,14 @@ describe.serial('Location Entry Tests', () => {
       const style = window.getComputedStyle(el);
       return style.display !== 'none';
     });
+    // Expected behavior: Characters tab is visible
     expect(isVisible).toBe(true);
   });
 
+  /**
+   * What it tests: Switching to the locations relationship tab (child locations).
+   * Expected behavior: Locations relationship tab becomes visible.
+   */
   test('Switch to locations relationship tab and verify data', async () => {
     const page = sharedContext.page!;
 
@@ -562,9 +672,14 @@ describe.serial('Location Entry Tests', () => {
       const style = window.getComputedStyle(el);
       return style.display !== 'none';
     });
+    // Expected behavior: Locations tab is visible
     expect(isVisible).toBe(true);
   });
 
+  /**
+   * What it tests: Switching to the organizations relationship tab.
+   * Expected behavior: Organizations relationship tab becomes visible.
+   */
   test('Switch to organizations relationship tab and verify data', async () => {
     const page = sharedContext.page!;
 
@@ -582,9 +697,14 @@ describe.serial('Location Entry Tests', () => {
       const style = window.getComputedStyle(el);
       return style.display !== 'none';
     });
+    // Expected behavior: Organizations tab is visible
     expect(isVisible).toBe(true);
   });
 
+  /**
+   * What it tests: Switching to the scenes tab and verifying linked scenes.
+   * Expected behavior: Scenes tab is visible and shows linked scenes.
+   */
   test('Switch to scenes tab and verify data', async () => {
     const page = sharedContext.page!;
 
@@ -610,13 +730,19 @@ describe.serial('Location Entry Tests', () => {
       const style = window.getComputedStyle(el);
       return style.display !== 'none';
     });
+    // Expected behavior: Scenes tab is visible
     expect(isVisible).toBe(true);
 
     // Verify scene data is present
     const sceneCount = await getSceneCount();
+    // Expected behavior: At least one scene is linked to the location
     expect(sceneCount).toBeGreaterThan(0);
   });
 
+  /**
+   * What it tests: Switching to the sessions tab showing sessions this location appears in.
+   * Expected behavior: Sessions tab is visible.
+   */
   test('Switch to sessions tab and verify data', async () => {
     const page = sharedContext.page!;
 
@@ -634,6 +760,7 @@ describe.serial('Location Entry Tests', () => {
       const style = window.getComputedStyle(el);
       return style.display !== 'none';
     });
+    // Expected behavior: Sessions tab is visible
     expect(isVisible).toBe(true);
 
     // Verify session data is present (locations can be in sessions)
@@ -641,6 +768,10 @@ describe.serial('Location Entry Tests', () => {
     // Note: May be 0 if location hasn't been added to any session
   });
 
+  /**
+   * What it tests: Clicking a session row opens the session content.
+   * Expected behavior: Session opens when clicking the session name.
+   */
   test('Click session row opens session', async () => {
     const page = sharedContext.page!;
 
@@ -660,6 +791,10 @@ describe.serial('Location Entry Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Switching to the foundry documents tab.
+   * Expected behavior: Foundry documents tab becomes visible.
+   */
   test('Switch to foundry tab and verify data', async () => {
     const page = sharedContext.page!;
 
@@ -677,9 +812,14 @@ describe.serial('Location Entry Tests', () => {
       const style = window.getComputedStyle(el);
       return style.display !== 'none';
     });
+    // Expected behavior: Foundry tab is visible
     expect(isVisible).toBe(true);
   });
 
+  /**
+   * What it tests: Foundry document button activates the linked scene.
+   * Expected behavior: Button is enabled and activates scene when clicked.
+   */
   test('Foundry doc button opens scene when scenes attached', async () => {
     const page = sharedContext.page!;
 
@@ -687,6 +827,7 @@ describe.serial('Location Entry Tests', () => {
     if (createdSceneUuid) {
       // Verify button is not disabled
       const isDisabled = await isFoundryDocButtonDisabled();
+      // Expected behavior: Button is enabled when scenes are attached
       expect(isDisabled).toBe(false);
 
       // Click the button
@@ -697,6 +838,11 @@ describe.serial('Location Entry Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Editor is present for related entries functionality.
+   * Expected behavior: ProseMirror editor is visible in the description tab.
+   * Note: Full related entries testing requires complex editor interaction.
+   */
   test('Related entries from editor links', async () => {
     const page = sharedContext.page!;
 
@@ -708,6 +854,7 @@ describe.serial('Location Entry Tests', () => {
     
     // For now, verify the editor is present
     const editor = await page.$('.ProseMirror');
+    // Expected behavior: ProseMirror editor is present
     expect(editor).not.toBeNull();
 
     // Log that we didn't test full related entries flow

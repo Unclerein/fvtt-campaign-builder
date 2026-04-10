@@ -5,7 +5,14 @@ import { Locator, getByTestId } from '../helpers';
 export const switchToSetting = async (settingName: string) => {
   const page = sharedContext.page!;
 
+  // Click the setting select dropdown
   await getByTestId(page, 'setting-select').click();
+  
+  // Wait for PrimeVue dropdown portal to render (it's attached to body, not the component)
+  await page.waitForSelector('.p-select-list-container', { timeout: 5000 });
+  
+  // Small delay for options to populate
+  await new Promise(resolve => setTimeout(resolve, 100));
   
   // Click the option with the setting name
   const options = await page.$$('.p-select-option-label');
@@ -18,10 +25,10 @@ export const switchToSetting = async (settingName: string) => {
   }
 
   // Wait for the setting folder header to be visible
-  await page.waitForSelector(`[data-testid="setting-folder-${settingName}"]`);
+  await page.waitForSelector(`[data-testid="setting-folder-${settingName}"]`, { timeout: 5000 });
   
   // Wait for topic folders to load
-  await page.waitForSelector('.fcb-topic-folder');
+  await page.waitForSelector('.fcb-topic-folder', { timeout: 5000 });
 }
 
 export const confirmSettingInList = async (settingName: string): Promise<Locator> => {
@@ -83,23 +90,12 @@ export const expandTypeNode = async (topic: ValidTopic, typeName: string) => {
 
   await expandTopicNode(topic);
 
-  // Find the folder with the topic text
-  const folders = await page.$$('.fcb-topic-folder');
-  let topicFolder: import('puppeteer').ElementHandle<Element> | null = null;
-  
-  for (const folder of folders) {
-    const text = await folder.evaluate(el => el.textContent);
-    if (text?.includes(topicText[topic])) {
-      topicFolder = folder;
-      break;
-    }
-  }
-  
-  if (!topicFolder) return;
+  // Small delay for DOM to update after topic expansion
+  await new Promise(resolve => setTimeout(resolve, 100));
 
-  // Find the type node with the type name
+  // Find the type node with the type name (uses .fcb-directory-type class)
   // Structure is: <div class="summary top"><div class="fcb-directory-expand-button">+/-</div><div class="fcb-directory-type">name</div></div>
-  const typeNodes = await topicFolder.$$('.fcb-directory-type');
+  const typeNodes = await page.$$('.fcb-directory-type');
   for (const typeNode of typeNodes) {
     const text = await typeNode.evaluate(el => el.textContent);
     if (text?.includes(typeName)) {

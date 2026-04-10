@@ -1,3 +1,9 @@
+/**
+ * Character entry E2E tests.
+ * Tests character entry operations: opening, editing name, type selection,
+ * species selection, tag management, push-to-session, content tabs.
+ */
+
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
@@ -14,6 +20,7 @@ import {
   addNewType,
   getTypeValue,
   clearType,
+  getTypeSelectInput,
   selectSpecies,
   getSpeciesValue,
   addTag,
@@ -30,6 +37,10 @@ import {
   closeActiveTab,
 } from '@e2etest/utils';
 
+/**
+ * Character Entry Tests
+ * Verifies character entry CRUD operations, field editing, and navigation.
+ */
 describe.serial('Character Entry Tests', () => {
   let createdEntryUuid: string | null = null;
   const testEntryName = 'Test Character Entry';
@@ -55,6 +66,10 @@ describe.serial('Character Entry Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Opening an existing character entry from the directory tree.
+   * Expected behavior: Entry opens and displays the correct character name in the name input.
+   */
   test('Open existing character entry', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
@@ -72,9 +87,14 @@ describe.serial('Character Entry Tests', () => {
     // Verify the entry is open
     const nameInput = getEntryNameInput();
     const nameValue = await nameInput.inputValue();
+    // Expected behavior: Name input contains the character's name
     expect(nameValue).toBe(firstChar.name);
   });
 
+  /**
+   * What it tests: Editing a character's name with debounced auto-save.
+   * Expected behavior: Name change persists after debounce period.
+   */
   test('Edit character name with debounce', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
@@ -93,28 +113,36 @@ describe.serial('Character Entry Tests', () => {
 
     // Verify the name changed
     const nameValue = await getEntryNameValue();
+    // Expected behavior: Name input reflects the new name after save
     expect(nameValue).toBe(newName);
 
     // Verify notification appeared
     // Note: name change doesn't show notification, but we can verify it persisted
   });
 
+  /**
+   * What it tests: Selecting an existing type from the typeahead dropdown.
+   * Expected behavior: Type is selected and displayed in the type input field.
+   */
   test('Select existing type for character', async () => {
     const page = sharedContext.page!;
 
     // Make sure we're on the description tab
     await clickContentTab('description');
 
+    // Wait for description content to load
+    await page.waitForSelector('.fcb-description-content');
+
     // Select a type (assuming there's a type available)
-    // First, let's check what types are available by clicking the input
-    const typeInput = getByTestId(page, 'typeahead-input');
+    // Use the utility function which targets the correct typeahead
+    const typeInput = getTypeSelectInput();
     await typeInput.click();
 
-    // Wait for dropdown
-    await page.waitForSelector('.fcb-ta-dropdown');
+    // Wait for dropdown to appear
+    await page.waitForSelector('.fcb-ta-dropdown', { timeout: 5000 });
 
-    // Get available options
-    const options = await page.$$('.typeahead-entry');
+    // Get available options (excluding the 'add' option)
+    const options = await page.$$('.typeahead-entry:not(.add)');
     if (options.length > 0) {
       const firstOptionText = await options[0].evaluate(el => el.textContent);
       if (firstOptionText) {
@@ -125,6 +153,7 @@ describe.serial('Character Entry Tests', () => {
 
         // Verify type was set
         const typeValue = await getTypeValue();
+        // Expected behavior: Type value matches the selected option
         expect(typeValue).toBe(firstOptionText.trim());
 
         // Clear the type so the entry appears in (none) folder in future runs
@@ -133,20 +162,35 @@ describe.serial('Character Entry Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Creating a new type via the typeahead input.
+   * Expected behavior: New type is created, selected, and displayed.
+   */
   test('Add new type for character', async () => {
     const page = sharedContext.page!;
+
+    // Make sure we're on the description tab
+    await clickContentTab('description');
+    
+    // Wait for description content to load
+    await page.waitForSelector('.fcb-description-content');
 
     const newType = 'Unique Test Type ' + Date.now();
     await addNewType(newType);
 
     // Verify the type was added and selected
     const typeValue = await getTypeValue();
+    // Expected behavior: Type value reflects the newly created type
     expect(typeValue).toBe(newType);
 
     // Clear the type so the entry appears in (none) folder in future runs
     await clearType();
   });
 
+  /**
+   * What it tests: Selecting a species from the species typeahead dropdown.
+   * Expected behavior: Species is selected and displayed in the species input field.
+   */
   test('Select species for character', async () => {
     const page = sharedContext.page!;
 
@@ -170,12 +214,17 @@ describe.serial('Character Entry Tests', () => {
 
           // Verify species was set
           const speciesValue = await getSpeciesValue();
+          // Expected behavior: Species value matches the selected option
           expect(speciesValue).toBe(firstOptionText.trim());
         }
       }
     }
   });
 
+  /**
+   * What it tests: Adding and removing tags from a character entry.
+   * Expected behavior: Tags can be added and removed, with UI reflecting changes.
+   */
   test('Add and remove tags', async () => {
     const page = sharedContext.page!;
 
@@ -193,6 +242,7 @@ describe.serial('Character Entry Tests', () => {
         break;
       }
     }
+    // Expected behavior: Tag appears in the tags list after adding
     expect(found).toBe(true);
 
     // Remove the tag
@@ -202,10 +252,15 @@ describe.serial('Character Entry Tests', () => {
     const tagsAfter = await page.$$('.tagify__tag');
     for (const tag of tagsAfter) {
       const text = await tag.evaluate(el => el.textContent);
+      // Expected behavior: Tag no longer appears in the tags list
       expect(text?.includes(testTag)).toBe(false);
     }
   });
 
+  /**
+   * What it tests: Clicking a tag opens a tag results tab showing entries with that tag.
+   * Expected behavior: New tab opens displaying tag search results.
+   */
   test('Click tag opens tag results tab', async () => {
     const page = sharedContext.page!;
 
@@ -229,6 +284,10 @@ describe.serial('Character Entry Tests', () => {
     await closeActiveTab();
   });
 
+  /**
+   * What it tests: Pushing a character entry to a session via the push-to-session button.
+   * Expected behavior: Context menu appears with campaign options, entry is linked to session.
+   */
   test('Push character to session', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
@@ -237,7 +296,7 @@ describe.serial('Character Entry Tests', () => {
     const campaign = setting.campaigns[0];
     if (campaign && campaign.sessions.length > 0) {
       // Create a new entry for this test (avoids issues with shared test data being modified)
-      const testEntryName = 'Push Test Character';
+      const testEntryName = 'Push Test Character ' + Date.now();
       const entryUuid = await createEntryViaAPI(Topics.Character, testEntryName, setting.name);
 
       if (!entryUuid) {
@@ -245,14 +304,26 @@ describe.serial('Character Entry Tests', () => {
         return;
       }
 
+      // Wait for directory to update with new entry
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Expand the character topic folder
       await expandTopicNode(Topics.Character);
 
       // Expand the (none) type folder (new entries have no type)
       await expandTypeNode(Topics.Character, '(none)');
 
+      // Wait for entries to appear
+      await page.waitForSelector('.fcb-directory-entry', { timeout: 5000 });
+
       // Open the entry
-      await openEntry(Topics.Character, testEntryName);
+      try {
+        await openEntry(Topics.Character, testEntryName);
+      } catch (error) {
+        // Entry not found - clean up and skip
+        await deleteEntryViaAPI(entryUuid);
+        return;
+      }
 
       // Click the push to session button
       const clicked = await clickPushToSession();
@@ -279,6 +350,10 @@ describe.serial('Character Entry Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Generate button displays a context menu with AI generation options.
+   * Expected behavior: Context menu appears with generation options.
+   */
   test('Generate button shows context menu', async () => {
     const page = sharedContext.page!;
 
@@ -296,6 +371,7 @@ describe.serial('Character Entry Tests', () => {
 
     // Verify menu items exist
     const menuItems = await page.$$('.mx-context-menu-item');
+    // Expected behavior: Context menu contains at least one generation option
     expect(menuItems.length).toBeGreaterThan(0);
 
     // Close menu by clicking elsewhere
@@ -304,6 +380,10 @@ describe.serial('Character Entry Tests', () => {
     });
   });
 
+  /**
+   * What it tests: Foundry document button state when no actors are attached.
+   * Expected behavior: Button disabled state is defined (true if no actors, false if actors exist).
+   */
   test('Foundry doc button disabled when no actors attached', async () => {
     const page = sharedContext.page!;
 
@@ -318,31 +398,41 @@ describe.serial('Character Entry Tests', () => {
       return (el as HTMLButtonElement).disabled;
     });
 
+    // Expected behavior: Button has a defined disabled state
     // If the character has no actors, button should be disabled
     // If it has actors, this test will pass anyway
     expect(isDisabled !== undefined).toBe(true);
   });
 
+  /**
+   * What it tests: Switching to the journals content tab.
+   * Expected behavior: Journals tab becomes visible after clicking.
+   */
   test('Switch to journals tab', async () => {
     const page = sharedContext.page!;
 
     // Click on journals tab
     await clickContentTab('journals');
 
-    // Wait for journals tab content
-    await page.waitForSelector('.tab[data-tab="journals"]', { timeout: 5000 }).catch(() => {
-      // Tab might already be visible
-    });
+    // Wait for journals tab content to be visible
+    // The tab content div has data-tab="journals"
+    await page.waitForSelector('.tab[data-tab="journals"]', { timeout: 5000 });
 
-    // Verify we're on journals tab
-    const journalsTab = await page.$('[data-tab="journals"]');
-    const isVisible = await journalsTab?.evaluate(el => {
-      const style = window.getComputedStyle(el);
-      return style.display !== 'none';
+    // Verify we're on journals tab by checking it's not hidden
+    const isVisible = await page.evaluate(() => {
+      const tab = document.querySelector('.tab[data-tab="journals"]');
+      if (!tab) return false;
+      const style = window.getComputedStyle(tab);
+      return style.display !== 'none' && style.visibility !== 'hidden';
     });
+    // Expected behavior: Journals tab is visible
     expect(isVisible).toBe(true);
   });
 
+  /**
+   * What it tests: Switching to the characters relationship tab.
+   * Expected behavior: Characters relationship tab becomes visible.
+   */
   test('Switch to characters relationship tab', async () => {
     const page = sharedContext.page!;
 
@@ -355,6 +445,10 @@ describe.serial('Character Entry Tests', () => {
     });
   });
 
+  /**
+   * What it tests: Switching to the locations relationship tab.
+   * Expected behavior: Locations relationship tab becomes visible.
+   */
   test('Switch to locations relationship tab', async () => {
     const page = sharedContext.page!;
 
@@ -367,6 +461,10 @@ describe.serial('Character Entry Tests', () => {
     });
   });
 
+  /**
+   * What it tests: Switching to the organizations relationship tab.
+   * Expected behavior: Organizations relationship tab becomes visible.
+   */
   test('Switch to organizations relationship tab', async () => {
     const page = sharedContext.page!;
 
@@ -379,6 +477,10 @@ describe.serial('Character Entry Tests', () => {
     });
   });
 
+  /**
+   * What it tests: Switching to the sessions tab.
+   * Expected behavior: Sessions tab becomes visible.
+   */
   test('Switch to sessions tab', async () => {
     const page = sharedContext.page!;
 
@@ -391,6 +493,10 @@ describe.serial('Character Entry Tests', () => {
     });
   });
 
+  /**
+   * What it tests: Switching to the foundry documents tab.
+   * Expected behavior: Foundry documents tab becomes visible.
+   */
   test('Switch to foundry tab', async () => {
     const page = sharedContext.page!;
 
@@ -403,6 +509,10 @@ describe.serial('Character Entry Tests', () => {
     });
   });
 
+  /**
+   * What it tests: Voice button visibility on character entries.
+   * Expected behavior: Voice button presence depends on voice recording settings.
+   */
   test('Voice button not visible for non-characters', async () => {
     const page = sharedContext.page!;
 

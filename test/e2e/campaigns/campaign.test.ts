@@ -1,6 +1,7 @@
 /**
- * Campaign management tests.
- * Tests campaign creation, editing, session management, and deletion.
+ * Campaign E2E tests.
+ * Tests campaign operations: opening, editing name, session management,
+ * PC management, tab navigation, and arc/session creation.
  */
 
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
@@ -205,7 +206,11 @@ const clickCampaignTab = async (tabId: string): Promise<void> => {
   }
 };
 
-describe.serial('Campaign Management Tests', () => {
+/**
+ * Campaign Tests
+ * Verifies campaign CRUD operations, session/PC management, and navigation.
+ */
+describe.serial('Campaign Tests', () => {
   let createdCampaignUuid: string | null = null;
   let createdSessionUuids: string[] = [];
   const testCampaignName = 'Test Campaign E2E';
@@ -236,7 +241,11 @@ describe.serial('Campaign Management Tests', () => {
     }
   });
 
-  test('Open existing campaign from directory', async () => {
+  /**
+   * What it tests: Opening an existing campaign from the directory tree.
+   * Expected behavior: Campaign opens and displays the correct name in the header.
+   */
+  test('Open existing campaign', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
 
@@ -253,6 +262,10 @@ describe.serial('Campaign Management Tests', () => {
     expect(nameValue).toBe(firstCampaign.name);
   });
 
+  /**
+   * What it tests: Creating a new campaign via API and verifying in directory.
+   * Expected behavior: New campaign is created and appears in the directory.
+   */
   test('Create new campaign via API and verify in directory', async () => {
     const setting = testData.settings[0];
 
@@ -272,6 +285,10 @@ describe.serial('Campaign Management Tests', () => {
     expect(nameValue).toBe(testCampaignName);
   });
 
+  /**
+   * What it tests: Editing a campaign's name with debounced auto-save.
+   * Expected behavior: Name change persists after debounce period.
+   */
   test('Edit campaign name with debounce', async () => {
     const page = sharedContext.page!;
 
@@ -287,6 +304,10 @@ describe.serial('Campaign Management Tests', () => {
     expect(nameValue).toBe(newName);
   });
 
+  /**
+   * What it tests: Expanding a campaign folder to show sessions.
+   * Expected behavior: Sessions are visible after expanding the folder.
+   */
   test('Expand campaign folder to show sessions', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
@@ -299,7 +320,11 @@ describe.serial('Campaign Management Tests', () => {
     expect(sessionCount).toBeGreaterThan(0);
   });
 
-  test('Add session to campaign via API', async () => {
+  /**
+   * What it tests: Creating a new session within a campaign.
+   * Expected behavior: New session is created and appears in the campaign's session list.
+   */
+  test('Create new session in campaign', async () => {
     // Create a session via API
     const sessionName = 'Test Session E2E';
     const sessionUuid = await createSessionViaAPI(sessionName, 1, createdCampaignUuid!);
@@ -318,6 +343,10 @@ describe.serial('Campaign Management Tests', () => {
     expect(count).toBeGreaterThan(0);
   });
 
+  /**
+   * What it tests: Opening a session from the campaign directory.
+   * Expected behavior: Session opens and displays the correct name in the header.
+   */
   test('Open session from campaign directory', async () => {
     const sessionName = 'Test Session E2E';
 
@@ -333,6 +362,10 @@ describe.serial('Campaign Management Tests', () => {
     expect(header).not.toBeNull();
   });
 
+  /**
+   * What it tests: Switching between campaigns in different settings.
+   * Expected behavior: Campaigns in different settings can be opened successfully.
+   */
   test('Switch between campaigns in different settings', async () => {
     const setting1 = testData.settings[0];
     const setting2 = testData.settings[1];
@@ -354,7 +387,11 @@ describe.serial('Campaign Management Tests', () => {
     expect(nameValue).toBe(setting2.campaigns[0].name);
   });
 
-  test('Navigate to description tab', async () => {
+  /**
+   * What it tests: Switching to the description tab showing campaign description.
+   * Expected behavior: Description tab becomes visible with description content.
+   */
+  test('Switch to description tab', async () => {
     const setting = testData.settings[0];
     await openCampaign(setting.campaigns[0].name);
 
@@ -367,7 +404,11 @@ describe.serial('Campaign Management Tests', () => {
     expect(editor).not.toBeNull();
   });
 
-  test('Navigate to PCs tab', async () => {
+  /**
+   * What it tests: Switching to the PCs tab showing player characters in this campaign.
+   * Expected behavior: PCs tab becomes visible with PC list.
+   */
+  test('Switch to PCs tab', async () => {
     const setting = testData.settings[0];
     await openCampaign(setting.campaigns[0].name);
 
@@ -380,7 +421,11 @@ describe.serial('Campaign Management Tests', () => {
     expect(pcsTab).not.toBeNull();
   });
 
-  test('Navigate to Lore tab', async () => {
+  /**
+   * What it tests: Switching to the Lore tab showing campaign lore.
+   * Expected behavior: Lore tab becomes visible with lore content.
+   */
+  test('Switch to Lore tab', async () => {
     const setting = testData.settings[0];
     await openCampaign(setting.campaigns[0].name);
 
@@ -407,4 +452,4 @@ describe.serial('Campaign Management Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)

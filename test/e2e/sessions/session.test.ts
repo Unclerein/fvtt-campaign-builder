@@ -1,6 +1,7 @@
 /**
- * Session management tests.
- * Tests session creation, editing, content tabs, and navigation.
+ * Session E2E tests.
+ * Tests session operations: opening, editing name, date, summary,
+ * location/NPC management, tab navigation, and play mode.
  */
 
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
@@ -178,7 +179,11 @@ const setSessionNumber = async (number: string): Promise<void> => {
   }
 };
 
-describe.serial('Session Management Tests', () => {
+/**
+ * Session Tests
+ * Verifies session CRUD operations, location/NPC management, and navigation.
+ */
+describe.serial('Session Tests', () => {
   let createdSessionUuid: string | null = null;
   let campaignUuid: string | null = null;
   const testSessionName = 'Test Session E2E';
@@ -203,7 +208,11 @@ describe.serial('Session Management Tests', () => {
     }
   });
 
-  test('Open existing session from campaign directory', async () => {
+  /**
+   * What it tests: Opening an existing session from the campaign directory tree.
+   * Expected behavior: Session opens and displays the correct name in the header.
+   */
+  test('Open existing session', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -216,6 +225,10 @@ describe.serial('Session Management Tests', () => {
     expect(nameValue).toBe(firstSession.name);
   });
 
+  /**
+   * What it tests: Creating a new session via the API and verifying it in the directory.
+   * Expected behavior: Session is created and visible in the directory.
+   */
   test('Create new session via API and verify in directory', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
@@ -237,6 +250,10 @@ describe.serial('Session Management Tests', () => {
     expect(nameValue).toBe(testSessionName);
   });
 
+  /**
+   * What it tests: Editing a session's name with debounced auto-save.
+   * Expected behavior: Name change persists after debounce period.
+   */
   test('Edit session name with debounce', async () => {
     // Make sure we have the session open
     const setting = testData.settings[0];
@@ -252,7 +269,11 @@ describe.serial('Session Management Tests', () => {
     expect(nameValue).toBe(newName);
   });
 
-  test('View session number field', async () => {
+  /**
+   * What it tests: Session number is displayed in the header.
+   * Expected behavior: Session number is visible.
+   */
+  test('Session number is displayed', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -265,7 +286,11 @@ describe.serial('Session Management Tests', () => {
     expect(numberValue).toBe(firstSession.number.toString());
   });
 
-  test('Navigate to notes tab (default)', async () => {
+  /**
+   * What it tests: Switching to the notes tab showing session notes.
+   * Expected behavior: Notes tab becomes visible with editor.
+   */
+  test('Switch to notes tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -279,7 +304,11 @@ describe.serial('Session Management Tests', () => {
     expect(editor).not.toBeNull();
   });
 
-  test('Navigate to items tab', async () => {
+  /**
+   * What it tests: Switching to the items tab showing items for this session.
+   * Expected behavior: Items tab becomes visible with item list.
+   */
+  test('Switch to items tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -296,7 +325,11 @@ describe.serial('Session Management Tests', () => {
     expect(itemsTab).not.toBeNull();
   });
 
-  test('Navigate to locations tab', async () => {
+  /**
+   * What it tests: Switching to the locations tab showing locations for this session.
+   * Expected behavior: Locations tab becomes visible with location list.
+   */
+  test('Switch to locations tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -313,7 +346,11 @@ describe.serial('Session Management Tests', () => {
     expect(locationsTab).not.toBeNull();
   });
 
-  test('Navigate to lore tab', async () => {
+  /**
+   * What it tests: Switching to the journals tab showing linked journals.
+   * Expected behavior: Journals tab becomes visible.
+   */
+  test('Switch to journals tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -321,16 +358,20 @@ describe.serial('Session Management Tests', () => {
     // Open the session
     await openSession(firstCampaign.name, firstSession.name);
 
-    // Click on lore tab
-    await clickSessionTab('lore');
+    // Click on journals tab
+    await clickSessionTab('journals');
 
-    // Verify lore tab content is visible
+    // Verify journals tab content is visible
     const page = sharedContext.page!;
-    const loreTab = await page.$('[data-tab="lore"]');
-    expect(loreTab).not.toBeNull();
+    const journalsTab = await page.$('[data-tab="journals"]');
+    expect(journalsTab).not.toBeNull();
   });
 
-  test('Navigate to monsters tab', async () => {
+  /**
+   * What it tests: Switching to the monsters tab showing monsters for this session.
+   * Expected behavior: Monsters tab becomes visible with monster list.
+   */
+  test('Switch to monsters tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -347,7 +388,11 @@ describe.serial('Session Management Tests', () => {
     expect(monstersTab).not.toBeNull();
   });
 
-  test('Navigate to NPCs tab', async () => {
+  /**
+   * What it tests: Switching to the NPCs tab showing NPCs for this session.
+   * Expected behavior: NPCs tab becomes visible with NPC list.
+   */
+  test('Switch to NPCs tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -364,7 +409,11 @@ describe.serial('Session Management Tests', () => {
     expect(npcsTab).not.toBeNull();
   });
 
-  test('Navigate to vignettes tab', async () => {
+  /**
+   * What it tests: Switching to the vignettes tab showing vignettes for this session.
+   * Expected behavior: Vignettes tab becomes visible with vignette list.
+   */
+  test('Switch to vignettes tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -381,7 +430,11 @@ describe.serial('Session Management Tests', () => {
     expect(vignettesTab).not.toBeNull();
   });
 
-  test('Navigate to PCs tab', async () => {
+  /**
+   * What it tests: Switching to the PCs tab showing PCs for this session.
+   * Expected behavior: PCs tab becomes visible with PC list.
+   */
+  test('Switch to PCs tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -398,6 +451,10 @@ describe.serial('Session Management Tests', () => {
     expect(pcsTab).not.toBeNull();
   });
 
+  /**
+   * What it tests: Session tags are visible.
+   * Expected behavior: Tags component is present.
+   */
   test('Session tags are visible', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
@@ -413,4 +470,4 @@ describe.serial('Session Management Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)

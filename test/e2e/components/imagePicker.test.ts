@@ -3,6 +3,12 @@
  * Tests image selection, display, and removal.
  */
 
+/**
+ * Image Picker component E2E tests.
+ * Tests image selection, display, removal, and placeholder behavior
+ * across different entry types (characters, locations, organizations, PCs, etc.).
+ */
+
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
@@ -62,6 +68,10 @@ const hasImage = async (): Promise<boolean> => {
   return src !== '' && src !== undefined;
 };
 
+/**
+ * Image Picker Component Tests
+ * Verifies image picker functionality across entry types.
+ */
 describe.serial('Image Picker Component Tests', () => {
   let createdEntryUuid: string | null = null;
   const testEntryName = 'Test Image Entry';
@@ -82,6 +92,10 @@ describe.serial('Image Picker Component Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Image picker is visible when opening a character entry.
+   * Expected behavior: Image picker element is present in the DOM.
+   */
   test('Image picker is visible on character entry', async () => {
     const setting = testData.settings[0];
 
@@ -96,7 +110,15 @@ describe.serial('Image Picker Component Tests', () => {
     expect(imagePicker).not.toBeNull();
   });
 
-  test('Image picker is visible on location entry', async () => {
+  /**
+   * What it tests: Image picker is visible when opening a location entry.
+   * Expected behavior: Image picker element is present in the DOM.
+   */
+  /**
+   * What it tests: Remove button appears when an image is set.
+   * Expected behavior: Remove button is visible after selecting an image.
+   */
+  test('Image picker shows remove button when image set', async () => {
     const setting = testData.settings[0];
 
     // Open a location entry
@@ -108,8 +130,16 @@ describe.serial('Image Picker Component Tests', () => {
     // Verify image picker is present
     const imagePicker = await getImagePicker();
     expect(imagePicker).not.toBeNull();
+
+    // Verify remove button is present
+    const removeButton = await getImageRemoveButton();
+    expect(removeButton).not.toBeNull();
   });
 
+  /**
+   * What it tests: Image picker is visible when opening an organization entry.
+   * Expected behavior: Image picker element is present in the DOM.
+   */
   test('Image picker is visible on organization entry', async () => {
     const setting = testData.settings[0];
 
@@ -124,7 +154,15 @@ describe.serial('Image Picker Component Tests', () => {
     expect(imagePicker).not.toBeNull();
   });
 
-  test('Image picker is visible on PC entry', async () => {
+  /**
+   * What it tests: Image picker is visible when opening a PC entry.
+   * Expected behavior: Image picker element is present in the DOM.
+   */
+  /**
+   * What it tests: Image picker is visible when opening a campaign.
+   * Expected behavior: Image picker element is present in the DOM.
+   */
+  test('Image picker is visible on campaign', async () => {
     const setting = testData.settings[0];
 
     // Open a PC entry
@@ -191,7 +229,11 @@ describe.serial('Image Picker Component Tests', () => {
     }
   });
 
-  test('Image picker on campaign', async () => {
+  /**
+   * What it tests: Image picker has a clickable area to select images.
+   * Expected behavior: Clicking opens the Foundry file picker.
+   */
+  test('Image picker has clickable area', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -250,7 +292,11 @@ describe.serial('Image Picker Component Tests', () => {
     expect(imagePicker).not.toBeNull();
   });
 
-  test('Image placeholder shown when no image', async () => {
+  /**
+   * What it tests: Placeholder is shown when no image is selected.
+   * Expected behavior: Placeholder element or default image is visible.
+   */
+  test('Image picker shows placeholder when no image', async () => {
     const setting = testData.settings[0];
 
     // Create a new entry without an image
@@ -271,4 +317,4 @@ describe.serial('Image Picker Component Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)

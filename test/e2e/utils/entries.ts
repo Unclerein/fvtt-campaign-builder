@@ -57,20 +57,24 @@ export const getEntryNameInput = (): Locator => {
 
 /**
  * Gets the type select input locator (first typeahead on description tab).
+ * Note: Uses a more specific selector to find the type input within the TypeSelect component.
  */
 export const getTypeSelectInput = (): Locator => {
   const page = sharedContext.page!;
   // Type is the first typeahead in the description tab
-  return new Locator(page, '.fcb-typeahead:first-of-type input[data-testid="typeahead-input"]');
+  // Use a function to find it since :first-of-type doesn't work with class selectors
+  return new Locator(page, '.fcb-description-content .fcb-typeahead input[data-testid="typeahead-input"]');
 };
 
 /**
  * Gets the species select input locator (second typeahead on description tab, for characters).
+ * Note: Species input is within the SpeciesSelect component wrapper.
  */
 export const getSpeciesSelectInput = (): Locator => {
   const page = sharedContext.page!;
   // Species is the second typeahead in the description tab (after type)
-  return new Locator(page, '.fcb-typeahead:nth-of-type(2) input[data-testid="typeahead-input"]');
+  // Find all typeaheads and return the second one
+  return new Locator(page, '.fcb-description-content .fcb-typeahead:nth-child(2) input[data-testid="typeahead-input"]');
 };
 
 /**
@@ -187,6 +191,16 @@ export const setEntryName = async (name: string): Promise<void> => {
 };
 
 /**
+ * Clears the type selection.
+ */
+export const clearType = async (): Promise<void> => {
+  const input = getTypeSelectInput();
+  await input.click();
+  await input.fill('');
+  await delay(200);
+};
+
+/**
  * Gets the current type value.
  */
 export const getTypeValue = async (): Promise<string> => {
@@ -289,14 +303,23 @@ export const selectSpecies = async (speciesName: string): Promise<void> => {
 
 /**
  * Adds a tag to the entry.
+ * Note: Tags component uses Tagify library which has a specific input structure.
  */
 export const addTag = async (tagName: string): Promise<void> => {
   const page = sharedContext.page!;
 
-  // Wait for tags component to be initialized
-  await page.waitForSelector('.tags-wrapper:not(.uninitialized)', { timeout: 5000 });
+  // Wait for tags component to be initialized (class is removed when ready)
+  // Use a more robust check that waits for the tagify instance to be ready
+  await page.waitForFunction(() => {
+    const wrapper = document.querySelector('.tags-wrapper');
+    return wrapper && !wrapper.classList.contains('uninitialized');
+  }, { timeout: 5000 });
+
+  // Small delay for Tagify to be fully interactive
+  await delay(100);
 
   // Find the tagify input area and type the tag
+  // Tagify creates a contenteditable element or input with class tagify__input
   const tagsInput = await page.$('.tagify__input');
   if (tagsInput) {
     await tagsInput.focus();
@@ -336,9 +359,16 @@ export const removeTag = async (tagName: string): Promise<void> => {
 
 /**
  * Clicks a tag to open tag results.
+ * Note: Waits for tags to be initialized before attempting to click.
  */
 export const clickTag = async (tagName: string): Promise<void> => {
   const page = sharedContext.page!;
+
+  // Wait for tags component to be initialized
+  await page.waitForFunction(() => {
+    const wrapper = document.querySelector('.tags-wrapper');
+    return wrapper && !wrapper.classList.contains('uninitialized');
+  }, { timeout: 5000 });
 
   // Find the tag with the name and click it
   const tags = await page.$$('.tagify__tag');

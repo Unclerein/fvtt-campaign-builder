@@ -3,6 +3,12 @@
  * Tests typeahead dropdown, selection, and new value creation.
  */
 
+/**
+ * Typeahead component E2E tests.
+ * Tests typeahead dropdown functionality: visibility, selection, filtering,
+ * new value creation, placeholder text, and clearing selections.
+ */
+
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
@@ -60,6 +66,10 @@ const typeInTypeahead = async (text: string): Promise<void> => {
   }
 };
 
+/**
+ * Typeahead Component Tests
+ * Verifies typeahead dropdown behavior across entry types.
+ */
 describe.serial('Typeahead Component Tests', () => {
   let createdEntryUuid: string | null = null;
   const testEntryName = 'Test Typeahead Entry';
@@ -80,7 +90,11 @@ describe.serial('Typeahead Component Tests', () => {
     }
   });
 
-  test('Typeahead input is visible on entry open', async () => {
+  /**
+   * What it tests: Typeahead input is visible when opening a character entry.
+   * Expected behavior: Typeahead input element is present in the DOM.
+   */
+  test('Typeahead input is visible on character entry', async () => {
     const setting = testData.settings[0];
 
     // Open a character entry
@@ -94,7 +108,11 @@ describe.serial('Typeahead Component Tests', () => {
     expect(input).not.toBeNull();
   });
 
-  test('Click typeahead opens dropdown', async () => {
+  /**
+   * What it tests: Clicking the typeahead input opens the dropdown.
+   * Expected behavior: Dropdown becomes visible after clicking the input.
+   */
+  test('Typeahead dropdown opens on click', async () => {
     const page = sharedContext.page!;
 
     // Make sure entry is open
@@ -115,7 +133,11 @@ describe.serial('Typeahead Component Tests', () => {
     }
   });
 
-  test('Dropdown shows existing types', async () => {
+  /**
+   * What it tests: Dropdown shows available options when opened.
+   * Expected behavior: Dropdown contains at least one selectable option.
+   */
+  test('Typeahead shows options in dropdown', async () => {
     const page = sharedContext.page!;
 
     // Make sure entry is open
@@ -136,7 +158,11 @@ describe.serial('Typeahead Component Tests', () => {
     }
   });
 
-  test('Select existing type from dropdown', async () => {
+  /**
+   * What it tests: Clicking an option in the dropdown selects it.
+   * Expected behavior: Selected value appears in the typeahead input.
+   */
+  test('Typeahead selects option on click', async () => {
     const setting = testData.settings[0];
 
     // Create a new entry for this test
@@ -165,7 +191,11 @@ describe.serial('Typeahead Component Tests', () => {
     expect(typeValue.length).toBeGreaterThan(0);
   });
 
-  test('Type to filter options', async () => {
+  /**
+   * What it tests: Typing in the typeahead filters the dropdown options.
+   * Expected behavior: Options are filtered based on typed text.
+   */
+  test('Typeahead filters options by typing', async () => {
     const page = sharedContext.page!;
 
     // Make sure entry is open
@@ -185,7 +215,11 @@ describe.serial('Typeahead Component Tests', () => {
     expect(options).not.toBeNull();
   });
 
-  test('Add new type via typeahead', async () => {
+  /**
+   * What it tests: Adding a new type via the typeahead input.
+   * Expected behavior: New type is added and selected.
+   */
+  test('Typeahead adds new type', async () => {
     const page = sharedContext.page!;
 
     // Make sure entry is open
@@ -212,6 +246,10 @@ describe.serial('Typeahead Component Tests', () => {
     expect(typeValue.includes(newType)).toBe(true);
   });
 
+  /**
+   * What it tests: Typeahead shows placeholder text.
+   * Expected behavior: Placeholder text is visible in the typeahead input.
+   */
   test('Typeahead shows placeholder text', async () => {
     const page = sharedContext.page!;
 
@@ -240,7 +278,11 @@ describe.serial('Typeahead Component Tests', () => {
     }
   });
 
-  test('Typeahead on location entry', async () => {
+  /**
+   * What it tests: Typeahead input is visible on location entry.
+   * Expected behavior: Typeahead input element is present in the DOM.
+   */
+  test('Typeahead input is visible on location entry', async () => {
     const setting = testData.settings[0];
 
     // Open a location entry
@@ -254,7 +296,11 @@ describe.serial('Typeahead Component Tests', () => {
     expect(input).not.toBeNull();
   });
 
-  test('Typeahead on organization entry', async () => {
+  /**
+   * What it tests: Typeahead input is visible on organization entry.
+   * Expected behavior: Typeahead input element is present in the DOM.
+   */
+  test('Typeahead input is visible on organization entry', async () => {
     const setting = testData.settings[0];
 
     // Open an organization entry
@@ -268,7 +314,11 @@ describe.serial('Typeahead Component Tests', () => {
     expect(input).not.toBeNull();
   });
 
-  test('Clear type selection', async () => {
+  /**
+   * What it tests: Clearing the type selection.
+   * Expected behavior: Type is cleared or set to '(none)'.
+   */
+  test('Typeahead clears type selection', async () => {
     const page = sharedContext.page!;
 
     // Make sure entry is open with a type
@@ -291,6 +341,10 @@ describe.serial('Typeahead Component Tests', () => {
     expect(typeValue.length === 0 || typeValue.includes('(none)')).toBe(true);
   });
 
+  /**
+   * What it tests: Typeahead dropdown closes after selecting an option.
+   * Expected behavior: Dropdown is no longer visible after selection.
+   */
   test('Typeahead dropdown closes on selection', async () => {
     const page = sharedContext.page!;
 
@@ -320,4 +374,4 @@ describe.serial('Typeahead Component Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)

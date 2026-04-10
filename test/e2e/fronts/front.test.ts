@@ -1,6 +1,7 @@
 /**
- * Front management tests.
- * Tests front creation, editing, danger tabs, and navigation.
+ * Front E2E tests.
+ * Tests front operations: opening, editing name, description,
+ * danger/impulse tabs,grim portents, and tab navigation.
  */
 
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
@@ -140,7 +141,7 @@ const getCampaignUuidViaAPI = async (campaignName: string, settingName: string):
   );
 };
 
-describe.serial('Front Management Tests', () => {
+describe.serial('Front Tests', () => {
   let createdFrontUuid: string | null = null;
   let campaignUuid: string | null = null;
   const testFrontName = 'Test Front E2E';
@@ -172,7 +173,11 @@ describe.serial('Front Management Tests', () => {
     expect(createdFrontUuid).not.toBeNull();
   });
 
-  test('Open created front and verify name', async () => {
+  /**
+   * What it tests: Opening an existing front from the campaign directory tree.
+   * Expected behavior: Front opens and displays the correct name in the header.
+   */
+  test('Open existing front', async () => {
     if (!createdFrontUuid) {
       return;
     }
@@ -180,16 +185,16 @@ describe.serial('Front Management Tests', () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
 
-    // Refresh directory
-    await switchToSetting(testData.settings[1].name);
-    await switchToSetting(setting.name);
-
     await openFront(firstCampaign.name, testFrontName);
 
     const nameValue = await getFrontNameValue();
     expect(nameValue).toBe(testFrontName);
   });
 
+  /**
+   * What it tests: Editing a front's name with debounced auto-save.
+   * Expected behavior: Name change persists after debounce period.
+   */
   test('Edit front name with debounce', async () => {
     if (!createdFrontUuid) {
       return;
@@ -208,7 +213,11 @@ describe.serial('Front Management Tests', () => {
   });
 
   // Tab Navigation Tests
-  test('Navigate to description tab', async () => {
+  /**
+   * What it tests: Switching to the description tab showing front notes.
+   * Expected behavior: Description tab becomes visible with editor.
+   */
+  test('Switch to description tab', async () => {
     if (!createdFrontUuid) {
       return;
     }
@@ -224,6 +233,10 @@ describe.serial('Front Management Tests', () => {
     expect(descTab).not.toBeNull();
   });
 
+  /**
+   * What it tests: Front tags are visible.
+   * Expected behavior: Tags component is visible.
+   */
   test('Front tags are visible', async () => {
     if (!createdFrontUuid) {
       return;
@@ -239,6 +252,10 @@ describe.serial('Front Management Tests', () => {
     expect(tagsComponent).not.toBeNull();
   });
 
+  /**
+   * What it tests: Front has add danger button.
+   * Expected behavior: Add danger button is visible.
+   */
   test('Front has add danger button', async () => {
     if (!createdFrontUuid) {
       return;
@@ -272,4 +289,4 @@ describe.serial('Front Management Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)

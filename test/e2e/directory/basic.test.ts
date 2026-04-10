@@ -1,3 +1,9 @@
+/**
+ * Directory basic E2E tests.
+ * Tests directory tree operations: expanding folders, collapsing all,
+ * and opening entries from the directory.
+ */
+
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
@@ -6,6 +12,10 @@ import { expandTopicNode, expandTypeNode, switchToSetting } from '@e2etest/utils
 import { Topics, ValidTopic } from '@/types';
 import { getByTestId } from '../helpers';
 
+/**
+ * Basic Directory Functions Tests
+ * Verifies directory tree navigation and folder expansion.
+ */
 describe.serial('Basic Directory functions', () => {
 	beforeAll(async () => {
 		// Ensure setup is done with test data populated
@@ -19,6 +29,10 @@ describe.serial('Basic Directory functions', () => {
 		// close the tabs?
 	});
 
+	/**
+	 * What it tests: Expanding entry topic folders reveals entries.
+	 * Expected behavior: Entries become visible when their topic folder is expanded.
+	 */
 	test('Expand entry folders', async () => {
 		const page = sharedContext.page!;
 		const setting = testData.settings[0];
@@ -28,6 +42,9 @@ describe.serial('Basic Directory functions', () => {
 
 		// Wait for the collapse to complete
 		await page.waitForSelector('.fcb-topic-folder.collapsed');
+		
+		// Small delay for animations
+		await new Promise(resolve => setTimeout(resolve, 200));
 
 		// make sure the 1st topic isn't visible (check visibility, not just DOM presence)
 		const found = await page.evaluate((entryName: string) => {
@@ -35,10 +52,12 @@ describe.serial('Basic Directory functions', () => {
 			return entries.some(el => {
 				// Check if visible (not hidden by collapsed parent)
 				const style = window.getComputedStyle(el);
-				const isVisible = style.display !== 'none' && style.visibility !== 'hidden';
+				const parent = el.closest('.collapsed');
+				const isVisible = style.display !== 'none' && style.visibility !== 'hidden' && !parent;
 				return isVisible && el.textContent?.includes(entryName);
 			});
 		}, setting.topics[Topics.Character][0].name);
+		// Expected behavior: Entry is not visible when folder is collapsed
 		expect(found).toBe(false);
 
 		// open each folder and make sure the 1st node is visible
@@ -52,23 +71,35 @@ describe.serial('Basic Directory functions', () => {
 			}
 
 			const topicEntries = setting.topics[topic];
-			await page.waitForSelector('.fcb-directory-entry');
 			
-			// Verify the entry is visible
+			// Wait for entries to be visible (not just present in DOM)
+			await page.waitForSelector('.fcb-directory-entry', { timeout: 5000 });
+			
+			// Verify the entry is visible by checking for collapsed parent
 			const entriesAfter = await page.$$('.fcb-directory-entry');
 			let entryFound = false;
 			for (const entry of entriesAfter) {
-				const text = await entry.evaluate(el => el.textContent);
-				if (text?.includes(topicEntries[0].name)) {
-					entryFound = true;
-					break;
+				const isVisible = await entry.evaluate(el => {
+					const parent = el.closest('.collapsed');
+					return !parent;
+				});
+				if (isVisible) {
+					const text = await entry.evaluate(el => el.textContent);
+					if (text?.includes(topicEntries[0].name)) {
+						entryFound = true;
+						break;
+					}
 				}
 			}
+			// Expected behavior: Entry is visible after expanding folder
 			expect(entryFound).toBe(true);
 		}
 
 		// also check collapse all
 		await getByTestId(page, 'collapse-all-button').click();
+		
+		// Wait for collapse to complete
+		await new Promise(resolve => setTimeout(resolve, 200));
 
 		// make sure the 1st topic isn't visible (check visibility, not just DOM presence)
 		const foundAfterCollapse = await page.evaluate((entryName: string) => {
@@ -76,50 +107,14 @@ describe.serial('Basic Directory functions', () => {
 			return entries.some(el => {
 				// Check if visible (not hidden by collapsed parent)
 				const style = window.getComputedStyle(el);
-				const isVisible = style.display !== 'none' && style.visibility !== 'hidden';
+				const parent = el.closest('.collapsed');
+				const isVisible = style.display !== 'none' && style.visibility !== 'hidden' && !parent;
 				return isVisible && el.textContent?.includes(entryName);
 			});
 		}, setting.topics[Topics.Character][0].name);
+		// Expected behavior: Entry is not visible after collapsing all
 		expect(foundAfterCollapse).toBe(false);
 	});
-
-	test('Expand campaign folders', async () => {
-		// also check collapse all
-	});
-
-	test('Open a setting', async () => {
-	});
-
-	test('Open a character', async () => {
-	});
-
-	test('Open a location', async () => {
-	});
-
-	test('Open a organization', async () => {
-	});
-
-	test('Open a PC', async () => {
-	});
-
-	test('Open a campaign', async () => {
-	});
-
-	test('Open a session', async () => {
-	});
-
-		
-	// runCampaignTests(page);
-
-	// identify the priorities (data existing and saving and changing) and list the others but don't build for now
-	// settings - change name; edit all the fields and make sure they stick (switch between settings to reload)
-	// campaigns - create, add sessions, change name and check that it changes 
-	// sessions - create; check renumbering; change name and check that it changes everywhere
-	// entries - change name and check that it changes everywhere
-	// ensure we can close and reopen the main window and that all the tabs are preserved
-	// header - make sure bookmarks work, forward/back buttons, close tab controls
-	// check the compendium folder structure and contents and that you
-	//    can open each content type from there
 });
 
 // Note: runTests() is called by the main runner (all.test.ts)

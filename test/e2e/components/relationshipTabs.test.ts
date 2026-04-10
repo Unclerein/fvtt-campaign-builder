@@ -3,6 +3,12 @@
  * Tests relationship tab navigation and content display.
  */
 
+/**
+ * Relationship tabs component E2E tests.
+ * Tests relationship tab visibility, accessibility, and content display
+ * across different entry types (characters, locations, organizations, sessions, PCs).
+ */
+
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
@@ -45,7 +51,11 @@ const getAddRelationshipButton = async () => {
   return await page.$('[data-testid="add-relationship"], .add-relationship-button');
 };
 
-describe.serial('Relationship Tabs Tests', () => {
+/**
+ * Relationship Tabs Component Tests
+ * Verifies relationship tab visibility and navigation across entry types.
+ */
+describe.serial('Relationship Tabs Component Tests', () => {
   let createdEntryUuid: string | null = null;
   const testEntryName = 'Test Relationship Entry';
 
@@ -65,6 +75,10 @@ describe.serial('Relationship Tabs Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Characters relationship tab is accessible.
+   * Expected behavior: Characters tab content is visible.
+   */
   test('Characters relationship tab is accessible', async () => {
     const setting = testData.settings[0];
 
@@ -82,6 +96,10 @@ describe.serial('Relationship Tabs Tests', () => {
     expect(tabContent).not.toBeNull();
   });
 
+  /**
+   * What it tests: Locations relationship tab is accessible.
+   * Expected behavior: Locations tab content is visible.
+   */
   test('Locations relationship tab is accessible', async () => {
     const setting = testData.settings[0];
 
@@ -99,6 +117,10 @@ describe.serial('Relationship Tabs Tests', () => {
     expect(tabContent).not.toBeNull();
   });
 
+  /**
+   * What it tests: Organizations relationship tab is accessible.
+   * Expected behavior: Organizations tab content is visible.
+   */
   test('Organizations relationship tab is accessible', async () => {
     const setting = testData.settings[0];
 
@@ -116,6 +138,10 @@ describe.serial('Relationship Tabs Tests', () => {
     expect(tabContent).not.toBeNull();
   });
 
+  /**
+   * What it tests: Sessions tab is accessible.
+   * Expected behavior: Sessions tab content is visible.
+   */
   test('Sessions tab is accessible', async () => {
     const setting = testData.settings[0];
 
@@ -133,6 +159,10 @@ describe.serial('Relationship Tabs Tests', () => {
     expect(tabContent).not.toBeNull();
   });
 
+  /**
+   * What it tests: Location entry shows characters relationship tab.
+   * Expected behavior: Characters tab content is visible.
+   */
   test('Location entry shows characters relationship tab', async () => {
     const setting = testData.settings[0];
 
@@ -150,6 +180,10 @@ describe.serial('Relationship Tabs Tests', () => {
     expect(tabContent).not.toBeNull();
   });
 
+  /**
+   * What it tests: Location entry shows locations relationship tab (hierarchy).
+   * Expected behavior: Locations tab content is visible.
+   */
   test('Location entry shows locations relationship tab (hierarchy)', async () => {
     const setting = testData.settings[0];
 
@@ -167,6 +201,10 @@ describe.serial('Relationship Tabs Tests', () => {
     expect(tabContent).not.toBeNull();
   });
 
+  /**
+   * What it tests: Organization entry shows characters relationship tab.
+   * Expected behavior: Characters tab content is visible.
+   */
   test('Organization entry shows characters relationship tab', async () => {
     const setting = testData.settings[0];
 
@@ -184,6 +222,10 @@ describe.serial('Relationship Tabs Tests', () => {
     expect(tabContent).not.toBeNull();
   });
 
+  /**
+   * What it tests: Organization entry shows organizations relationship tab.
+   * Expected behavior: Organizations tab content is visible.
+   */
   test('Organization entry shows organizations relationship tab', async () => {
     const setting = testData.settings[0];
 
@@ -201,6 +243,10 @@ describe.serial('Relationship Tabs Tests', () => {
     expect(tabContent).not.toBeNull();
   });
 
+  /**
+   * What it tests: PC entry shows characters relationship tab.
+   * Expected behavior: Characters tab content is visible.
+   */
   test('PC entry shows characters relationship tab', async () => {
     const setting = testData.settings[0];
 
@@ -218,6 +264,10 @@ describe.serial('Relationship Tabs Tests', () => {
     expect(tabContent).not.toBeNull();
   });
 
+  /**
+   * What it tests: PC entry shows sessions tab.
+   * Expected behavior: Sessions tab content is visible.
+   */
   test('PC entry shows sessions tab', async () => {
     const setting = testData.settings[0];
 
@@ -235,7 +285,11 @@ describe.serial('Relationship Tabs Tests', () => {
     expect(tabContent).not.toBeNull();
   });
 
-  test('Relationship tab shows empty state when no relationships', async () => {
+  /**
+   * What it tests: Empty state message appears when no relationships exist.
+   * Expected behavior: Empty state placeholder is visible.
+   */
+  test('Empty state shows when no relationships', async () => {
     const setting = testData.settings[0];
 
     // Create a new entry with no relationships
@@ -255,7 +309,11 @@ describe.serial('Relationship Tabs Tests', () => {
     expect(rows.length).toBeGreaterThan(-1);
   });
 
-  test('Relationship tab header is correct', async () => {
+  /**
+   * What it tests: Relationship tabs are visible when opening a character entry.
+   * Expected behavior: Relationship tab headers are present in the DOM.
+   */
+  test('Relationship tabs are visible on character entry', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -274,4 +332,4 @@ describe.serial('Relationship Tabs Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)

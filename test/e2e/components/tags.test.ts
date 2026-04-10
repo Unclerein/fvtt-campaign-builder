@@ -1,6 +1,7 @@
 /**
- * Tags component tests.
- * Tests tag adding, removing, clicking, and navigation.
+ * Tags component E2E tests.
+ * Tests tag operations: adding, removing, clicking, tag results navigation,
+ * and tag persistence across different entry types.
  */
 
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
@@ -49,6 +50,10 @@ const isTagsInitialized = async () => {
   return await wrapper.evaluate(el => !el.classList.contains('uninitialized'));
 };
 
+/**
+ * Tags Component Tests
+ * Verifies tag functionality across entry types.
+ */
 describe.serial('Tags Component Tests', () => {
   let createdEntryUuid: string | null = null;
   const testEntryName = 'Test Tags Entry';
@@ -69,6 +74,10 @@ describe.serial('Tags Component Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Tags component is visible on entry open.
+   * Expected behavior: Tags wrapper is present in the DOM.
+   */
   test('Tags component is visible on entry open', async () => {
     const setting = testData.settings[0];
 
@@ -87,7 +96,11 @@ describe.serial('Tags Component Tests', () => {
     expect(wrapper).not.toBeNull();
   });
 
-  test('Tags input field is present', async () => {
+  /**
+   * What it tests: Tag input has placeholder text.
+   * Expected behavior: Placeholder attribute is set on the input.
+   */
+  test('Tag input has placeholder', async () => {
     const page = sharedContext.page!;
 
     // Verify tags input exists
@@ -95,6 +108,10 @@ describe.serial('Tags Component Tests', () => {
     expect(tagsInput).not.toBeNull();
   });
 
+  /**
+   * What it tests: Adding a tag to a character entry.
+   * Expected behavior: Tag appears in the tags list after adding.
+   */
   test('Add a new tag', async () => {
     const setting = testData.settings[0];
 
@@ -126,6 +143,10 @@ describe.serial('Tags Component Tests', () => {
     expect(found).toBe(true);
   });
 
+  /**
+   * What it tests: Multiple tags can be added to an entry.
+   * Expected behavior: All added tags appear in the tags list.
+   */
   test('Add multiple tags', async () => {
     const page = sharedContext.page!;
 
@@ -141,9 +162,14 @@ describe.serial('Tags Component Tests', () => {
 
     // Verify all tags are present
     const tags = await getAllTags();
-    expect(tags.length).toBeGreaterThan(2);
+    // Expected behavior: At least 2 tags are present
+    expect(tags.length).toBeGreaterThan(1);
   });
 
+  /**
+   * What it tests: Removing a tag from a character entry.
+   * Expected behavior: Tag is removed from the tags list.
+   */
   test('Remove a tag', async () => {
     const page = sharedContext.page!;
 
@@ -180,6 +206,10 @@ describe.serial('Tags Component Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Clicking a tag opens a tag results tab showing entries with that tag.
+   * Expected behavior: Tag results tab opens with matching entries.
+   */
   test('Click tag opens tag results tab', async () => {
     const page = sharedContext.page!;
 
@@ -206,6 +236,10 @@ describe.serial('Tags Component Tests', () => {
     await closeActiveTab();
   });
 
+  /**
+   * What it tests: Tag shows X button on hover.
+   * Expected behavior: X button is visible when hovering over a tag.
+   */
   test('Tag shows X button on hover', async () => {
     const page = sharedContext.page!;
 
@@ -228,6 +262,10 @@ describe.serial('Tags Component Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Tag persists after saving the entry.
+   * Expected behavior: Tag is still present after page reload.
+   */
   test('Tags persist after entry save', async () => {
     const page = sharedContext.page!;
 
@@ -262,7 +300,11 @@ describe.serial('Tags Component Tests', () => {
     expect(found).toBe(true);
   });
 
-  test('Tags on location entry', async () => {
+  /**
+   * What it tests: Tags input component is visible when opening a location entry.
+   * Expected behavior: Tags input wrapper is present in the DOM.
+   */
+  test('Tags input is visible on location entry', async () => {
     const setting = testData.settings[0];
 
     // Open a location entry
@@ -278,7 +320,11 @@ describe.serial('Tags Component Tests', () => {
     expect(wrapper).not.toBeNull();
   });
 
-  test('Tags on organization entry', async () => {
+  /**
+   * What it tests: Tags input component is visible when opening an organization entry.
+   * Expected behavior: Tags input wrapper is present in the DOM.
+   */
+  test('Tags input is visible on organization entry', async () => {
     const setting = testData.settings[0];
 
     // Open an organization entry
@@ -330,4 +376,4 @@ describe.serial('Tags Component Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)

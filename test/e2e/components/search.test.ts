@@ -309,4 +309,4 @@ describe.serial('Search Component Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)

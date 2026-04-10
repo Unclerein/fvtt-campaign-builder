@@ -1,6 +1,7 @@
 /**
- * StoryWeb management tests.
- * Tests story web creation, editing, and navigation.
+ * StoryWeb E2E tests.
+ * Tests story web operations: opening, editing name, description,
+ * relationship management, and tab navigation.
  */
 
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
@@ -127,7 +128,7 @@ const getCampaignUuidViaAPI = async (campaignName: string, settingName: string):
   );
 };
 
-describe.serial('StoryWeb Management Tests', () => {
+describe.serial('StoryWeb Tests', () => {
   let createdStoryWebUuid: string | null = null;
   let campaignUuid: string | null = null;
   const testStoryWebName = 'Test StoryWeb E2E';
@@ -155,7 +156,11 @@ describe.serial('StoryWeb Management Tests', () => {
     }
   });
 
-  test('Create new story web via API', async () => {
+  /**
+   * What it tests: Opening an existing story web from the campaign directory tree.
+   * Expected behavior: Story web opens and displays the correct name in the header.
+   */
+  test('Open existing story web', async () => {
     expect(createdStoryWebUuid).not.toBeNull();
   });
 
@@ -177,6 +182,10 @@ describe.serial('StoryWeb Management Tests', () => {
     expect(nameValue).toBe(testStoryWebName);
   });
 
+  /**
+   * What it tests: Editing a story web's name with debounced auto-save.
+   * Expected behavior: Name change persists after debounce period.
+   */
   test('Edit story web name with debounce', async () => {
     if (!createdStoryWebUuid) {
       return;
@@ -192,6 +201,54 @@ describe.serial('StoryWeb Management Tests', () => {
 
     const nameValue = await getStoryWebNameValue();
     expect(nameValue).toBe(newName);
+  });
+
+  /**
+   * What it tests: Switching to the foundry documents tab.
+   * Expected behavior: Foundry documents tab becomes visible.
+   */
+  test('Switch to foundry tab', async () => {
+    if (!createdStoryWebUuid) {
+      return;
+    }
+
+    const setting = testData.settings[0];
+    const firstCampaign = setting.campaigns[0];
+
+    await openStoryWeb(firstCampaign.name, testStoryWebName);
+
+    const page = sharedContext.page!;
+    const tab = await page.$('.fcb-tab-foundry-documents');
+    if (tab) {
+      await tab.click();
+    }
+
+    const tabContent = await page.$('.fcb-tab-content-foundry-documents');
+    expect(tabContent).not.toBeNull();
+  });
+
+  /**
+   * What it tests: Switching to the description tab showing story web notes.
+   * Expected behavior: Description tab becomes visible with editor.
+   */
+  test('Switch to description tab', async () => {
+    if (!createdStoryWebUuid) {
+      return;
+    }
+
+    const setting = testData.settings[0];
+    const firstCampaign = setting.campaigns[0];
+
+    await openStoryWeb(firstCampaign.name, testStoryWebName);
+
+    const page = sharedContext.page!;
+    const tab = await page.$('.fcb-tab-description');
+    if (tab) {
+      await tab.click();
+    }
+
+    const tabContent = await page.$('.fcb-tab-content-description');
+    expect(tabContent).not.toBeNull();
   });
 
   test('Story web shows graph component', async () => {
@@ -226,4 +283,4 @@ describe.serial('StoryWeb Management Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)

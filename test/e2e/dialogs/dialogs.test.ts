@@ -1,6 +1,7 @@
 /**
- * Dialog tests.
- * Tests create entry dialog, relationship dialogs, and utility dialogs.
+ * Dialog E2E tests.
+ * Tests dialog operations: create entry dialog, confirm dialogs,
+ * relationship dialogs, and dialog cancellation.
  */
 
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
@@ -108,6 +109,10 @@ const deleteEntryViaAPI = async (uuid: string): Promise<void> => {
   }, uuid);
 };
 
+/**
+ * Dialog Tests
+ * Verifies dialog visibility, interaction, and cancellation.
+ */
 describe.serial('Dialog Tests', () => {
   let createdEntryUuid: string | null = null;
   const testEntryName = 'Test Dialog Entry';
@@ -142,11 +147,19 @@ describe.serial('Dialog Tests', () => {
     expect(isVisible).toBe(true);
   });
 
+  /**
+   * What it tests: Create entry dialog has a title.
+   * Expected behavior: Dialog title is present and not empty.
+   */
   test('Create entry dialog has title', async () => {
     const title = await getDialogTitle();
     expect(title.length).toBeGreaterThan(0);
   });
 
+  /**
+   * What it tests: Create entry dialog can be closed.
+   * Expected behavior: Dialog is no longer visible after closing.
+   */
   test('Close create entry dialog', async () => {
     await closeDialog();
     
@@ -236,6 +249,10 @@ describe.serial('Dialog Tests', () => {
   });
 
   // Dialog Button Tests
+  /**
+   * What it tests: Confirm dialog displays the correct message.
+   * Expected behavior: Dialog message matches the expected text.
+   */
   test('Dialog has cancel button', async () => {
     await openCreateEntryDialog();
     
@@ -257,4 +274,4 @@ describe.serial('Dialog Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)

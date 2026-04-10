@@ -1,6 +1,7 @@
 /**
- * Arc management tests.
- * Tests arc creation, editing, content tabs, and navigation.
+ * Arc E2E tests.
+ * Tests arc operations: opening, editing name, description,
+ * session management, tab navigation, and arc progression.
  */
 
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
@@ -140,7 +141,11 @@ const getCampaignUuidViaAPI = async (campaignName: string, settingName: string):
   );
 };
 
-describe.serial('Arc Management Tests', () => {
+/**
+ * Arc Tests
+ * Verifies arc CRUD operations, session management, and navigation.
+ */
+describe.serial('Arc Tests', () => {
   let createdArcUuid: string | null = null;
   let campaignUuid: string | null = null;
   const testArcName = 'Test Arc E2E';
@@ -168,11 +173,19 @@ describe.serial('Arc Management Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Creating a new arc via the API.
+   * Expected behavior: Arc is created and has a valid UUID.
+   */
   test('Create new arc via API', async () => {
     expect(createdArcUuid).not.toBeNull();
   });
 
-  test('Open created arc and verify name', async () => {
+  /**
+   * What it tests: Opening an existing arc from the campaign directory tree.
+   * Expected behavior: Arc opens and displays the correct name in the header.
+   */
+  test('Open existing arc', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -190,6 +203,10 @@ describe.serial('Arc Management Tests', () => {
     expect(nameValue).toBe(testArcName);
   });
 
+  /**
+   * What it tests: Editing an arc's name with debounced auto-save.
+   * Expected behavior: Name change persists after debounce period.
+   */
   test('Edit arc name with debounce', async () => {
     if (!createdArcUuid) {
       return;
@@ -208,7 +225,11 @@ describe.serial('Arc Management Tests', () => {
   });
 
   // Tab Navigation Tests
-  test('Navigate to description tab', async () => {
+  /**
+   * What it tests: Switching to the description tab showing arc description.
+   * Expected behavior: Description tab becomes visible.
+   */
+  test('Switch to description tab', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -224,7 +245,11 @@ describe.serial('Arc Management Tests', () => {
     expect(descTab).not.toBeNull();
   });
 
-  test('Navigate to lore tab', async () => {
+  /**
+   * What it tests: Switching to the journals tab showing linked journals.
+   * Expected behavior: Journals tab becomes visible.
+   */
+  test('Switch to journals tab', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -233,14 +258,38 @@ describe.serial('Arc Management Tests', () => {
     const firstCampaign = setting.campaigns[0];
 
     await openArc(firstCampaign.name, testArcName);
-    await clickArcTab('lore');
+    await clickArcTab('journals');
 
     const page = sharedContext.page!;
-    const loreTab = await page.$('[data-tab="lore"]');
-    expect(loreTab).not.toBeNull();
+    const journalsTab = await page.$('[data-tab="journals"]');
+    expect(journalsTab).not.toBeNull();
   });
 
-  test('Navigate to vignettes tab', async () => {
+  /**
+   * What it tests: Switching to the sessions tab showing sessions in this arc.
+   * Expected behavior: Sessions tab becomes visible with session list.
+   */
+  test('Switch to sessions tab', async () => {
+    if (!createdArcUuid) {
+      return;
+    }
+
+    const setting = testData.settings[0];
+    const firstCampaign = setting.campaigns[0];
+
+    await openArc(firstCampaign.name, testArcName);
+    await clickArcTab('sessions');
+
+    const page = sharedContext.page!;
+    const sessionsTab = await page.$('[data-tab="sessions"]');
+    expect(sessionsTab).not.toBeNull();
+  });
+
+  /**
+   * What it tests: Switching to the vignettes tab showing vignettes in this arc.
+   * Expected behavior: Vignettes tab becomes visible.
+   */
+  test('Switch to vignettes tab', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -256,7 +305,11 @@ describe.serial('Arc Management Tests', () => {
     expect(vignettesTab).not.toBeNull();
   });
 
-  test('Navigate to locations tab', async () => {
+  /**
+   * What it tests: Switching to the locations tab showing locations in this arc.
+   * Expected behavior: Locations tab becomes visible.
+   */
+  test('Switch to locations tab', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -272,7 +325,11 @@ describe.serial('Arc Management Tests', () => {
     expect(locationsTab).not.toBeNull();
   });
 
-  test('Navigate to monsters tab', async () => {
+  /**
+   * What it tests: Switching to the monsters tab showing monsters in this arc.
+   * Expected behavior: Monsters tab becomes visible.
+   */
+  test('Switch to monsters tab', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -288,7 +345,11 @@ describe.serial('Arc Management Tests', () => {
     expect(monstersTab).not.toBeNull();
   });
 
-  test('Navigate to ideas tab', async () => {
+  /**
+   * What it tests: Switching to the ideas tab showing ideas in this arc.
+   * Expected behavior: Ideas tab becomes visible.
+   */
+  test('Switch to ideas tab', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -304,6 +365,29 @@ describe.serial('Arc Management Tests', () => {
     expect(ideasTab).not.toBeNull();
   });
 
+  /**
+   * What it tests: Arc progression indicator is visible.
+   * Expected behavior: Progression UI element is present.
+   */
+  test('Arc progression is visible', async () => {
+    if (!createdArcUuid) {
+      return;
+    }
+
+    const setting = testData.settings[0];
+    const firstCampaign = setting.campaigns[0];
+
+    await openArc(firstCampaign.name, testArcName);
+
+    const page = sharedContext.page!;
+    const progressionIndicator = await page.$('.progression-indicator');
+    expect(progressionIndicator).not.toBeNull();
+  });
+
+  /**
+   * What it tests: Arc tags are visible.
+   * Expected behavior: Tags UI element is present.
+   */
   test('Arc tags are visible', async () => {
     if (!createdArcUuid) {
       return;
@@ -320,4 +404,4 @@ describe.serial('Arc Management Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)

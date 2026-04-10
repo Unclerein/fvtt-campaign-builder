@@ -1,6 +1,7 @@
 /**
- * Header navigation tests.
- * Tests tab switching, bookmarks, and tab management.
+ * Header navigation E2E tests.
+ * Tests tab operations: switching, closing, bookmarks,
+ * and tab management in the application header.
  */
 
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
@@ -110,6 +111,10 @@ const getBackButton = async () => {
   return await page.$('[data-testid="nav-back-button"], .nav-back-button');
 };
 
+/**
+ * Header Navigation Tests
+ * Verifies tab switching, closing, and bookmark functionality.
+ */
 describe.serial('Header Navigation Tests', () => {
   beforeAll(async () => {
     await ensureSetup(false);
@@ -154,7 +159,11 @@ describe.serial('Header Navigation Tests', () => {
     expect(activeText?.includes(secondChar.name)).toBe(true);
   });
 
-  test('Click tab to switch between entries', async () => {
+  /**
+   * What it tests: Switching between open tabs in the header.
+   * Expected behavior: Active tab changes when clicking a different tab.
+   */
+  test('Switch between open tabs', async () => {
     const setting = testData.settings[0];
     const firstChar = setting.topics[Topics.Character][0];
 
@@ -167,6 +176,10 @@ describe.serial('Header Navigation Tests', () => {
     expect(activeText?.includes(firstChar.name)).toBe(true);
   });
 
+  /**
+   * What it tests: Closing a tab removes it from the header.
+   * Expected behavior: Tab is removed from the header after closing.
+   */
   test('Close tab removes it from header', async () => {
     const setting = testData.settings[0];
     const secondChar = setting.topics[Topics.Character][1];
@@ -183,6 +196,10 @@ describe.serial('Header Navigation Tests', () => {
     expect(tabsAfter.length).toBe(countBefore - 1);
   });
 
+  /**
+   * What it tests: Opening a location entry creates a new tab.
+   * Expected behavior: New tab is visible in the header.
+   */
   test('Open location entry creates new tab', async () => {
     const setting = testData.settings[0];
 
@@ -197,6 +214,10 @@ describe.serial('Header Navigation Tests', () => {
     expect(tabs.length).toBeGreaterThan(0);
   });
 
+  /**
+   * What it tests: Tab close button is visible.
+   * Expected behavior: Close button is visible on the active tab.
+   */
   test('Tab close button is visible', async () => {
     const setting = testData.settings[0];
     const firstLoc = setting.topics[Topics.Location][0];
@@ -211,7 +232,11 @@ describe.serial('Header Navigation Tests', () => {
     expect(closeBtn).not.toBeNull();
   });
 
-  test('Multiple tabs can be open simultaneously', async () => {
+  /**
+   * What it tests: Multiple tabs can be open simultaneously.
+   * Expected behavior: Opening multiple entries creates multiple tabs.
+   */
+  test('Multiple tabs can be open', async () => {
     const setting = testData.settings[0];
 
     // Open multiple entries
@@ -267,4 +292,4 @@ describe.serial('Header Navigation Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)

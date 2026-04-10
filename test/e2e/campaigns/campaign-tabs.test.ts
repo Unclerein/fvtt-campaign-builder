@@ -278,4 +278,4 @@ describe.serial('Campaign Content Tabs Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)

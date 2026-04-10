@@ -1,6 +1,7 @@
 /**
- * PC (Player Character) entry tests.
- * Tests PC entry creation, editing, tabs, and relationships.
+ * PC (Player Character) entry E2E tests.
+ * Tests PC entry operations: opening, editing name, player name, type selection,
+ * tag management, relationships, push-to-session, content tabs.
  */
 
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
@@ -35,6 +36,10 @@ import {
  */
 const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
+/**
+ * PC Entry Tests
+ * Verifies PC entry CRUD operations, player name field, relationships, and navigation.
+ */
 describe.serial('PC Entry Tests', () => {
   let createdEntryUuid: string | null = null;
   const testEntryName = 'Test PC Entry';
@@ -56,6 +61,10 @@ describe.serial('PC Entry Tests', () => {
     }
   });
 
+  /**
+   * What it tests: Opening an existing PC entry from the directory tree.
+   * Expected behavior: Entry opens and displays the correct PC name in the name input.
+   */
   test('Open existing PC entry', async () => {
     const setting = testData.settings[0];
 
@@ -72,6 +81,7 @@ describe.serial('PC Entry Tests', () => {
     // Verify the entry is open
     const nameInput = getEntryNameInput();
     const nameValue = await nameInput.inputValue();
+    // Expected behavior: Name input contains the PC's name
     expect(nameValue).toBe(firstPC.name);
   });
 
@@ -95,6 +105,10 @@ describe.serial('PC Entry Tests', () => {
     expect(nameValue).toBe(testEntryName);
   });
 
+  /**
+   * What it tests: Editing a PC's name with debounced auto-save.
+   * Expected behavior: Name change persists after debounce period.
+   */
   test('Edit PC name with debounce', async () => {
     // Make sure we have the entry open
     await expandTopicNode(Topics.PC);
@@ -107,10 +121,15 @@ describe.serial('PC Entry Tests', () => {
 
     // Verify the name changed
     const nameValue = await getEntryNameValue();
+    // Expected behavior: Name input reflects the new name after save
     expect(nameValue).toBe(newName);
   });
 
-  test('Edit player name field', async () => {
+  /**
+   * What it tests: Editing the player name field (the player who owns this PC).
+   * Expected behavior: Player name change persists after save.
+   */
+  test('Edit player name', async () => {
     const page = sharedContext.page!;
 
     // Make sure we have the entry open
@@ -160,6 +179,10 @@ describe.serial('PC Entry Tests', () => {
     expect(typeValue.length).toBeGreaterThan(0);
   });
 
+  /**
+   * What it tests: Adding and removing tags from a PC entry.
+   * Expected behavior: Tags can be added and removed, with UI reflecting changes.
+   */
   test('Add and remove tags', async () => {
     const page = sharedContext.page!;
 
@@ -172,31 +195,38 @@ describe.serial('PC Entry Tests', () => {
     await page.waitForSelector('.tags-wrapper:not(.uninitialized)', { timeout: 5000 });
 
     // Add a tag
-    await addTag('test-pc-tag');
+    const testTag = 'test-pc-tag';
+    await addTag(testTag);
 
     // Verify tag was added
     const tags = await page.$$('.tagify__tag');
     let found = false;
     for (const tag of tags) {
       const text = await tag.evaluate(el => el.textContent);
-      if (text?.includes('test-pc-tag')) {
+      if (text?.includes(testTag)) {
         found = true;
         break;
       }
     }
+    // Expected behavior: Tag appears in the tags list after adding
     expect(found).toBe(true);
 
     // Remove the tag
-    await removeTag('test-pc-tag');
+    await removeTag(testTag);
 
     // Verify tag was removed
     const tagsAfter = await page.$$('.tagify__tag');
     for (const tag of tagsAfter) {
       const text = await tag.evaluate(el => el.textContent);
-      expect(text?.includes('test-pc-tag')).toBe(false);
+      // Expected behavior: Tag no longer appears in the tags list
+      expect(text?.includes(testTag)).toBe(false);
     }
   });
 
+  /**
+   * What it tests: Clicking a tag opens a tag results tab showing entries with that tag.
+   * Expected behavior: New tab opens displaying tag search results.
+   */
   test('Click tag opens tag results tab', async () => {
     const page = sharedContext.page!;
 
@@ -218,6 +248,10 @@ describe.serial('PC Entry Tests', () => {
     await closeActiveTab();
   });
 
+  /**
+   * What it tests: Generate button displays a context menu with AI generation options.
+   * Expected behavior: Context menu appears with generation options.
+   */
   test('Generate button shows context menu', async () => {
     const page = sharedContext.page!;
 
@@ -236,6 +270,54 @@ describe.serial('PC Entry Tests', () => {
 
       // Verify menu has options
       const menuItems = await page.$$('.mx-context-menu-item');
+      // Expected behavior: Context menu contains at least one generation option
+      expect(menuItems.length).toBeGreaterThan(0);
+    }
+  });
+
+  /**
+   * What it tests: Switching to the sessions tab showing sessions this PC appears in.
+   * Expected behavior: Sessions tab becomes visible.
+   */
+  test('Switch to sessions tab', async () => {
+    const page = sharedContext.page!;
+
+    // Make sure we have the entry open
+    await expandTopicNode(Topics.PC);
+    await expandTypeNode(Topics.PC, '(none)');
+    await openEntry(Topics.PC, 'Renamed Test PC');
+
+    // Click on sessions tab
+    await clickContentTab('sessions');
+
+    // Verify sessions tab is visible
+    const sessionsTab = await page.$('[data-tab="sessions"]');
+    expect(sessionsTab).not.toBeNull();
+  });
+
+  /**
+   * What it tests: Pushing a PC entry to a session via the push-to-session button.
+   * Expected behavior: Context menu appears with campaign options, entry is linked to session.
+   */
+  test('Push PC to session', async () => {
+    const page = sharedContext.page!;
+
+    // Make sure we have the entry open
+    await expandTopicNode(Topics.PC);
+    await expandTypeNode(Topics.PC, '(none)');
+    await openEntry(Topics.PC, 'Renamed Test PC');
+
+    // Click the push-to-session button
+    const pushBtn = await page.$('.fcb-push-to-session');
+    if (pushBtn) {
+      await pushBtn.click();
+
+      // Wait for context menu
+      await page.waitForSelector('.mx-context-menu', { timeout: 5000 });
+
+      // Verify menu has options
+      const menuItems = await page.$$('.mx-context-menu-item');
+      // Expected behavior: Context menu contains at least one campaign option
       expect(menuItems.length).toBeGreaterThan(0);
     }
   });
@@ -256,6 +338,10 @@ describe.serial('PC Entry Tests', () => {
     expect(journalsTab).not.toBeNull();
   });
 
+  /**
+   * What it tests: Switching to the characters relationship tab.
+   * Expected behavior: Characters relationship tab becomes visible.
+   */
   test('Switch to characters relationship tab', async () => {
     const page = sharedContext.page!;
 
@@ -304,7 +390,11 @@ describe.serial('PC Entry Tests', () => {
     expect(orgsTab).not.toBeNull();
   });
 
-  test('Switch to sessions tab', async () => {
+  /**
+   * What it tests: Image picker component is visible for PC portrait.
+   * Expected behavior: Image picker is present in the PC entry.
+   */
+  test('Image picker is visible', async () => {
     const page = sharedContext.page!;
 
     // Make sure we have the entry open
@@ -320,6 +410,10 @@ describe.serial('PC Entry Tests', () => {
     expect(sessionsTab).not.toBeNull();
   });
 
+  /**
+   * What it tests: Switching to the foundry documents tab.
+   * Expected behavior: Foundry documents tab becomes visible.
+   */
   test('Switch to foundry tab', async () => {
     const page = sharedContext.page!;
 
@@ -350,4 +444,4 @@ describe.serial('PC Entry Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)

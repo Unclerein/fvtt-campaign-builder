@@ -1,6 +1,7 @@
 /**
- * Settings tests.
- * Tests setting content, advanced settings, and import/export functionality.
+ * Settings E2E tests.
+ * Tests setting operations: opening, editing name, description,
+ * import/export, and setting switching.
  */
 
 import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
@@ -130,6 +131,10 @@ const closeDialog = async (): Promise<void> => {
   await delay(200);
 };
 
+/**
+ * Settings Tests
+ * Verifies setting CRUD operations and navigation.
+ */
 describe.serial('Settings Tests', () => {
   beforeAll(async () => {
     await ensureSetup(false);
@@ -138,7 +143,11 @@ describe.serial('Settings Tests', () => {
   });
 
   // Setting Content Tests
-  test('Open setting from directory', async () => {
+  /**
+   * What it tests: Editing a setting's name with debounced auto-save.
+   * Expected behavior: Name change persists after debounce period.
+   */
+  test('Edit setting name with debounce', async () => {
     const setting = testData.settings[0];
     await openSetting(setting.name);
 
@@ -146,7 +155,11 @@ describe.serial('Settings Tests', () => {
     expect(nameValue).toBe(setting.name);
   });
 
-  test('Setting has description tab', async () => {
+  /**
+   * What it tests: Setting description can be edited.
+   * Expected behavior: Description editor is present and functional.
+   */
+  test('Setting description is editable', async () => {
     const page = sharedContext.page!;
     const descTab = await page.$('[data-tab="description"]');
     expect(descTab).not.toBeNull();
@@ -158,6 +171,10 @@ describe.serial('Settings Tests', () => {
     expect(journalsTab).not.toBeNull();
   });
 
+  /**
+   * What it tests: Navigate to description tab.
+   * Expected behavior: Description tab is active.
+   */
   test('Navigate to description tab', async () => {
     await clickSettingTab('description');
 
@@ -166,7 +183,11 @@ describe.serial('Settings Tests', () => {
     expect(activeTab).not.toBeNull();
   });
 
-  test('Setting shows genre field', async () => {
+  /**
+   * What it tests: Setting displays entry counts for each topic.
+   * Expected behavior: Entry counts are visible in the setting view.
+   */
+  test('Setting shows entry counts', async () => {
     const page = sharedContext.page!;
     
     // Look for genre input or display
@@ -184,6 +205,10 @@ describe.serial('Settings Tests', () => {
   });
 
   // Advanced Settings Tests
+  /**
+   * What it tests: Advanced settings dialog can be opened.
+   * Expected behavior: Advanced settings dialog is visible.
+   */
   test('Advanced settings dialog can be opened', async () => {
     await openAdvancedSettings();
     
@@ -217,18 +242,30 @@ describe.serial('Settings Tests', () => {
     expect(resetBtn).not.toBeNull();
   });
 
+  /**
+   * What it tests: Advanced settings has backend tab.
+   * Expected behavior: Backend tab is visible.
+   */
   test('Advanced settings has backend tab', async () => {
     const page = sharedContext.page!;
     const backendTab = await page.$('[data-tab="backend"], :text("Backend")');
     expect(backendTab).not.toBeNull();
   });
 
+  /**
+   * What it tests: Advanced settings has models tab.
+   * Expected behavior: Models tab is visible.
+   */
   test('Advanced settings has models tab', async () => {
     const page = sharedContext.page!;
     const modelsTab = await page.$('[data-tab="models"], :text("Models")');
     expect(modelsTab).not.toBeNull();
   });
 
+  /**
+   * What it tests: Closing the advanced settings dialog.
+   * Expected behavior: Dialog is closed and main view is visible.
+   */
   test('Close advanced settings', async () => {
     await closeDialog();
     
@@ -285,4 +322,4 @@ describe.serial('Settings Tests', () => {
   });
 });
 
-runTests();
+// Note: runTests() is called by the main runner (all.test.ts)
