@@ -5,6 +5,26 @@ import { Locator, getByTestId } from '../helpers';
 export const switchToSetting = async (settingName: string) => {
   const page = sharedContext.page!;
 
+  // Debug: Check what's in the DOM
+  const settingSelectExists = await page.$('[data-testid="setting-select"]');
+  console.log(`[switchToSetting] Setting select exists: ${!!settingSelectExists}`);
+
+  if (!settingSelectExists) {
+    // If no setting select, there might be only one setting - check for setting folder directly
+    console.log(`[switchToSetting] No setting select, checking for setting folder: ${settingName}`);
+    const folderExists = await page.$(`[data-testid="setting-folder-${settingName}"]`);
+    console.log(`[switchToSetting] Setting folder exists: ${!!folderExists}`);
+    if (folderExists) {
+      // Already on the right setting
+      return;
+    }
+    // Wait a bit and try again
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+
+  // Wait for setting select to be visible (it only appears when there are multiple settings)
+  await page.waitForSelector('[data-testid="setting-select"]', { timeout: 10000 });
+
   // Click the setting select dropdown
   await getByTestId(page, 'setting-select').click();
   
@@ -93,9 +113,22 @@ export const expandTypeNode = async (topic: ValidTopic, typeName: string) => {
   // Small delay for DOM to update after topic expansion
   await new Promise(resolve => setTimeout(resolve, 100));
 
+  // Find type nodes within the topic folder
+  const topicFolder = await page.$(`.fcb-topic-folder[data-topic="${topic}"]`);
+  if (!topicFolder) {
+    console.log(`[expandTypeNode] Topic folder not found for topic: ${topic}`);
+    return;
+  }
+
   // Find the type node with the type name (uses .fcb-directory-type class)
   // Structure is: <div class="summary top"><div class="fcb-directory-expand-button">+/-</div><div class="fcb-directory-type">name</div></div>
-  const typeNodes = await page.$$('.fcb-directory-type');
+  const typeNodes = await topicFolder.$$('.fcb-directory-type');
+  console.log(`[expandTypeNode] Found ${typeNodes.length} type nodes in topic ${topic}`);
+  
+  // Log all type node texts first
+  const typeTexts = await Promise.all(typeNodes.map(n => n.evaluate(el => el.textContent)));
+  console.log(`[expandTypeNode] All type nodes: ${typeTexts.join(', ')}`);
+  
   for (const typeNode of typeNodes) {
     const text = await typeNode.evaluate(el => el.textContent);
     if (text?.includes(typeName)) {
@@ -103,6 +136,7 @@ export const expandTypeNode = async (topic: ValidTopic, typeName: string) => {
       const expandButton = await typeNode.evaluateHandle(el => el.previousElementSibling);
       if (expandButton) {
         const btnText = await (expandButton as import('puppeteer').ElementHandle<Element>).evaluate(el => el.textContent);
+        console.log(`[expandTypeNode] Expand button text: ${btnText}`);
         // Only click if it shows '+' (collapsed)
         if (btnText?.includes('+')) {
           await (expandButton as import('puppeteer').ElementHandle<Element>).click();
@@ -110,6 +144,8 @@ export const expandTypeNode = async (topic: ValidTopic, typeName: string) => {
           await page.waitForSelector('.fcb-directory-entry', { timeout: 5000 });
         }
       }
+      // Wait for all entries to load (Vue reactivity)
+      await new Promise(resolve => setTimeout(resolve, 300));
       break;
     }
   }

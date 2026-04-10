@@ -59,7 +59,8 @@ export async function openCampaignBuilder(page?: Page): Promise<void> {
   await p.waitForFunction(() => {
     const win = document.querySelector('.fcb-main-window');
     if (!win) return false;
-    const tabs = win.querySelectorAll('.fcb-content-tab');
+    // Check for tabs in the tab panel
+    const tabs = win.querySelectorAll('.fcb-tab');
     // Also check for home page (no settings case)
     const homePage = win.querySelector('.fcb-home-page');
     return tabs.length > 0 || homePage != null;

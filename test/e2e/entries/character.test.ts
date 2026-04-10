@@ -4,34 +4,28 @@
  * species selection, tag management, push-to-session, content tabs.
  */
 
-import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
+import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
 import { switchToSetting, expandTopicNode, expandTypeNode } from '@e2etest/utils';
 import { Topics } from '@/types';
-import { getByTestId } from '../helpers';
 import {
   openEntry,
   getEntryNameInput,
   setEntryName,
   getEntryNameValue,
-  selectType,
   addNewType,
   getTypeValue,
-  clearType,
   getTypeSelectInput,
-  selectSpecies,
   getSpeciesValue,
   addTag,
   removeTag,
   clickTag,
   clickContentTab,
   clickPushToSession,
-  clickContextMenuItem,
   createEntryViaAPI,
   deleteEntryViaAPI,
-  waitForNotification,
   getGenerateButton,
   getFoundryDocButton,
   closeActiveTab,
@@ -53,6 +47,9 @@ describe.serial('Character Entry Tests', () => {
 
     // pick the right setting
     await switchToSetting(setting.name);
+    
+    // Wait for directory to fully load
+    await new Promise(resolve => setTimeout(resolve, 500));
   });
 
   afterAll(async () => {
@@ -84,7 +81,13 @@ describe.serial('Character Entry Tests', () => {
     const firstChar = setting.topics[Topics.Character][0];
     await openEntry(Topics.Character, firstChar.name);
 
-    // Verify the entry is open
+    // Verify the entry is open - wait for name input to have a value
+    await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 5000 });
+    // Wait for the value to be populated (Vue reactivity)
+    await page.waitForFunction(() => {
+      const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
+      return input && input.value.length > 0;
+    }, { timeout: 5000 });
     const nameInput = getEntryNameInput();
     const nameValue = await nameInput.inputValue();
     // Expected behavior: Name input contains the character's name
@@ -101,6 +104,9 @@ describe.serial('Character Entry Tests', () => {
 
     // Create a new entry for this test
     createdEntryUuid = await createEntryViaAPI(Topics.Character, testEntryName, setting.name);
+
+    // Wait for directory to update with new entry
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Expand and open the entry
     await expandTopicNode(Topics.Character);
@@ -126,6 +132,17 @@ describe.serial('Character Entry Tests', () => {
    */
   test('Select existing type for character', async () => {
     const page = sharedContext.page!;
+    const setting = testData.settings[0];
+
+    // Create a new entry for this test (don't modify base data)
+    const testTypeName = 'Type Test ' + Date.now();
+    const typeTestUuid = await createEntryViaAPI(Topics.Character, testTypeName, setting.name);
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Expand and open the entry
+    await expandTopicNode(Topics.Character);
+    await expandTypeNode(Topics.Character, '(none)');
+    await openEntry(Topics.Character, testTypeName);
 
     // Make sure we're on the description tab
     await clickContentTab('description');
@@ -155,11 +172,11 @@ describe.serial('Character Entry Tests', () => {
         const typeValue = await getTypeValue();
         // Expected behavior: Type value matches the selected option
         expect(typeValue).toBe(firstOptionText.trim());
-
-        // Clear the type so the entry appears in (none) folder in future runs
-        await clearType();
       }
     }
+
+    // Clean up
+    await deleteEntryViaAPI(typeTestUuid);
   });
 
   /**
@@ -168,6 +185,17 @@ describe.serial('Character Entry Tests', () => {
    */
   test('Add new type for character', async () => {
     const page = sharedContext.page!;
+    const setting = testData.settings[0];
+
+    // Create a new entry for this test (don't modify base data)
+    const newTypeTestName = 'New Type Test ' + Date.now();
+    const newTypeTestUuid = await createEntryViaAPI(Topics.Character, newTypeTestName, setting.name);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Expand and open the entry
+    await expandTopicNode(Topics.Character);
+    await expandTypeNode(Topics.Character, '(none)');
+    await openEntry(Topics.Character, newTypeTestName);
 
     // Make sure we're on the description tab
     await clickContentTab('description');
@@ -183,8 +211,8 @@ describe.serial('Character Entry Tests', () => {
     // Expected behavior: Type value reflects the newly created type
     expect(typeValue).toBe(newType);
 
-    // Clear the type so the entry appears in (none) folder in future runs
-    await clearType();
+    // Clean up
+    await deleteEntryViaAPI(newTypeTestUuid);
   });
 
   /**
@@ -193,6 +221,17 @@ describe.serial('Character Entry Tests', () => {
    */
   test('Select species for character', async () => {
     const page = sharedContext.page!;
+    const setting = testData.settings[0];
+
+    // Create a new entry for this test (don't modify base data)
+    const speciesTestName = 'Species Test ' + Date.now();
+    const speciesTestUuid = await createEntryViaAPI(Topics.Character, speciesTestName, setting.name);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Expand and open the entry
+    await expandTopicNode(Topics.Character);
+    await expandTypeNode(Topics.Character, '(none)');
+    await openEntry(Topics.Character, speciesTestName);
 
     // Click on species input (it's the second typeahead)
     const inputs = await page.$$('.fcb-typeahead input');
@@ -219,6 +258,9 @@ describe.serial('Character Entry Tests', () => {
         }
       }
     }
+
+    // Clean up
+    await deleteEntryViaAPI(speciesTestUuid);
   });
 
   /**
@@ -227,6 +269,17 @@ describe.serial('Character Entry Tests', () => {
    */
   test('Add and remove tags', async () => {
     const page = sharedContext.page!;
+    const setting = testData.settings[0];
+
+    // Create a new entry for this test (don't modify base data)
+    const tagTestName = 'Tag Test ' + Date.now();
+    const tagTestUuid = await createEntryViaAPI(Topics.Character, tagTestName, setting.name);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Expand and open the entry
+    await expandTopicNode(Topics.Character);
+    await expandTypeNode(Topics.Character, '(none)');
+    await openEntry(Topics.Character, tagTestName);
 
     // Add a tag
     const testTag = 'test-tag-' + Date.now();
@@ -255,6 +308,9 @@ describe.serial('Character Entry Tests', () => {
       // Expected behavior: Tag no longer appears in the tags list
       expect(text?.includes(testTag)).toBe(false);
     }
+
+    // Clean up
+    await deleteEntryViaAPI(tagTestUuid);
   });
 
   /**
@@ -263,6 +319,17 @@ describe.serial('Character Entry Tests', () => {
    */
   test('Click tag opens tag results tab', async () => {
     const page = sharedContext.page!;
+    const setting = testData.settings[0];
+
+    // Create a new entry for this test (don't modify base data)
+    const clickTagTestName = 'Click Tag Test ' + Date.now();
+    const clickTagTestUuid = await createEntryViaAPI(Topics.Character, clickTagTestName, setting.name);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Expand and open the entry
+    await expandTopicNode(Topics.Character);
+    await expandTypeNode(Topics.Character, '(none)');
+    await openEntry(Topics.Character, clickTagTestName);
 
     // First add a tag we can click
     const clickTag1 = 'clickable-tag-' + Date.now();
@@ -282,6 +349,9 @@ describe.serial('Character Entry Tests', () => {
 
     // Close the tag results tab to return to the entry
     await closeActiveTab();
+
+    // Clean up
+    await deleteEntryViaAPI(clickTagTestUuid);
   });
 
   /**
@@ -361,6 +431,15 @@ describe.serial('Character Entry Tests', () => {
     const generateBtn = await getGenerateButton();
     if (!generateBtn) {
       // Button not available - skip test
+      return;
+    }
+
+    // Check if button is disabled (backend not available)
+    const isDisabled = await generateBtn.evaluate((el: Element) => {
+      return (el as HTMLButtonElement).disabled;
+    });
+    if (isDisabled) {
+      // Backend not configured - skip test
       return;
     }
 
@@ -523,5 +602,3 @@ describe.serial('Character Entry Tests', () => {
     // This is more of a sanity check
   });
 });
-
-// Note: runTests() is called by the main runner (all.test.ts)

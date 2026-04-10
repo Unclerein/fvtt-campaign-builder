@@ -4,7 +4,7 @@
  * and opening entries from the directory.
  */
 
-import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
+import { describe, test, beforeAll, expect, } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
@@ -116,5 +116,3 @@ describe.serial('Basic Directory functions', () => {
 		expect(foundAfterCollapse).toBe(false);
 	});
 });
-
-// Note: runTests() is called by the main runner (all.test.ts)

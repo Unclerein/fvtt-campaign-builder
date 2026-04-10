@@ -9,7 +9,7 @@
  * new value creation, placeholder text, and clearing selections.
  */
 
-import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
+import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
@@ -373,5 +373,3 @@ describe.serial('Typeahead Component Tests', () => {
     }
   });
 });
-
-// Note: runTests() is called by the main runner (all.test.ts)

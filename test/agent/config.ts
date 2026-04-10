@@ -42,8 +42,33 @@ function getWindowsHostIP(): string {
   }
 }
 
+/**
+ * Detect available browser executable.
+ * Checks for common browser paths in order of preference.
+ */
+function detectBrowserPath(): string {
+  const candidates = [
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+  ];
+  
+  for (const path of candidates) {
+    try {
+      execSync(`test -x ${path}`, { stdio: 'ignore' });
+      return path;
+    } catch {
+      // Not found, try next
+    }
+  }
+  
+  // Fallback - let Puppeteer use its bundled Chromium
+  return '';
+}
+
 /** Browser mode - controls how Puppeteer connects to the browser */
-export type BrowserMode = 'headless' | 'headed' | 'attach';
+export type BrowserMode = 'headed' | 'attach';
 
 /** Foundry states that can be detected */
 export type FoundryState = 'game' | 'login' | 'worldSelection' | 'setup' | 'unknown';
@@ -58,7 +83,7 @@ export interface AgentConfig {
   worldId: string;
   /** Admin password for setup page */
   adminPassword: string;
-  /** Browser mode: headless, headed, or attach */
+  /** Browser mode: headed (default, uses swiftshader) or attach (connect to Windows browser) */
   browserMode: BrowserMode;
   /** Port for remote debugging (used in attach mode) */
   debuggingPort: number;
@@ -86,10 +111,10 @@ export const config: AgentConfig = {
   user: process.env.FVTT_GM_USER || 'Gamemaster',
   worldId: process.env.FVTT_WORLDID || 'campaignbuildertest',
   adminPassword: process.env.FVTT_ADMIN_PASSWORD || '',
-  browserMode: (process.env.BROWSER_MODE as BrowserMode) || 'attach',
+  browserMode: (process.env.BROWSER_MODE as BrowserMode) || 'headed',
   debuggingPort: 9222,
   browserHost: process.env.FVTT_BROWSER_HOST || getWindowsHostIP(),
   viewportWidth: 1920,
   viewportHeight: 1080,
-  executablePath: process.env.FVTT_BROWSER_PATH || '/usr/bin/google-chrome',
+  executablePath: process.env.FVTT_BROWSER_PATH || detectBrowserPath(),
 };

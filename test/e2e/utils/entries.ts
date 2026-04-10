@@ -21,15 +21,24 @@ const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(r
 /**
  * Opens an entry from the directory tree.
  * Assumes the topic folder is already expanded.
+ * Retries if entry not found (for newly created entries).
  */
-export const openEntry = async (topic: ValidTopic, entryName: string): Promise<void> => {
+export const openEntry = async (topic: ValidTopic, entryName: string, retries = 3): Promise<void> => {
   const page = sharedContext.page!;
 
-  // Wait for entries to be visible
-  await page.waitForSelector('.fcb-directory-entry', { timeout: 5000 });
+  // Find the topic folder and search within it
+  const topicFolder = await page.$(`.fcb-topic-folder[data-topic="${topic}"]`);
+  if (!topicFolder) {
+    throw new Error(`Topic folder not found for topic: ${topic}`);
+  }
 
-  // Find the entry node with the name
-  const entries = await page.$$('.fcb-directory-entry');
+  // Wait for entries to be visible within this topic folder
+  await topicFolder.waitForSelector('.fcb-directory-entry', { timeout: 5000 });
+
+  // Find the entry node with the name within this topic folder
+  const entries = await topicFolder.$$('.fcb-directory-entry');
+  console.log(`[openEntry] Found ${entries.length} entries in topic ${topic}, looking for: ${entryName}`);
+  
   let found = false;
   for (const entry of entries) {
     const text = await entry.evaluate(el => el.textContent);
@@ -41,6 +50,15 @@ export const openEntry = async (topic: ValidTopic, entryName: string): Promise<v
   }
 
   if (!found) {
+    // Debug: log all entry names
+    const allNames = await Promise.all(entries.map(e => e.evaluate(el => el.textContent)));
+    console.log(`[openEntry] Available entries in topic: ${allNames.join(', ')}`);
+    
+    if (retries > 0) {
+      console.log(`[openEntry] Retrying in 500ms... (${retries} retries left)`);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return openEntry(topic, entryName, retries - 1);
+    }
     throw new Error(`Entry not found: ${entryName}`);
   }
 

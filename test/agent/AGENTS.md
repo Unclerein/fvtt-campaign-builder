@@ -4,20 +4,14 @@ Browser automation for testing the Campaign Builder module in Foundry VTT.
 
 ## Setup (One-Time)
 
-### 1. Run Windows Portproxy Setup
+### 1. Install Google Chrome
 
-From an elevated PowerShell (run as Administrator):
-
-```powershell
-# From the repo root
-.\scripts\setup-debug-proxy.ps1
+```bash
+# Ubuntu/Debian
+wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+sudo apt-get update && sudo apt-get install google-chrome-stable
 ```
-
-This creates:
-- Portproxy rule to forward `0.0.0.0:9222` to `127.0.0.1:9222`
-- Firewall rule to allow inbound connections on port 9222
-
-Both rules persist across reboots.
 
 ### 2. Create .env File
 
@@ -29,42 +23,41 @@ FVTT_ADMIN_PASSWORD=your-admin-password
 
 ## Usage
 
-### Launch Edge with Remote Debugging
+### Run Tests (Headed Mode - Default)
 
-From Windows PowerShell:
+```bash
+npm test
+```
+
+This launches a visible Chrome window using swiftshader for WebGL compatibility. Foundry will show a warning about no hardware acceleration - this is expected and doesn't affect testing.
+
+### Attach Mode (Optional)
+
+For full hardware acceleration, connect to a Windows browser:
+
+1. **Start Edge with remote debugging** (from Windows PowerShell):
 
 ```powershell
-& "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --remote-debugging-port=9222 --user-data-dir="C:\temp\foundry-edge"
+& "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --user-data-dir="C:\temp\foundry-edge"
 ```
 
-Then:
-1. Navigate to Foundry (`http://localhost:30000`)
-2. Log in and select your world (optional--the test can do it too)
-3. Keep this browser window open
+2. **Run tests with attach mode:**
 
-### Run Puppeteer Agent
-
-From WSL2:
-
-```typescript
-import { launchBrowser, navigateToGame, openCampaignBuilder } from './test/agent';
-
-const { page, browser } = await launchBrowser({ refresh: true });
-await navigateToGame(page);
-await openCampaignBuilder(page);
-// ... interact with module
-await browser.disconnect(); // keeps browser running
+```bash
+BROWSER_MODE=attach npm test
 ```
 
-## Why Attach Mode?
+## Browser Modes
 
-WSL2 has limitations that make headless/headed modes problematic:
+### Headed Mode (Default)
 
-- **WebGL/PIXI issues**: WSL2's software WebGL (swiftshader) has poor performance with PIXI.js, causing GPU stalls and graphical errors
-- **Network isolation**: Windows localhost isn't directly accessible from WSL2
-- **Hardware acceleration**: Foundry VTT requires hardware acceleration for proper rendering
+Uses ANGLE + swiftshader for software WebGL rendering. Works on both WSL2 and native Linux. No hardware acceleration, but sufficient for testing.
 
-Attach mode connects to a Windows browser that has full hardware acceleration and proper WebGL support.
+### Attach Mode (Optional)
+
+Connects to a Windows browser via remote debugging. Provides full hardware acceleration. Requires:
+- Windows portproxy setup (run `.\scripts\setup-debug-proxy.ps1` as Administrator)
+- Edge running with `--remote-debugging-port=9222`
 
 ## Configuration
 
@@ -72,11 +65,12 @@ Config is in `test/agent/config.ts`. Key settings:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `browserMode` | `attach` | Browser connection mode |
+| `browserMode` | `headed` | Browser connection mode (`headed` or `attach`) |
 | `browserHost` | auto-detected | Windows host IP (WSL2 gateway) |
 | `debuggingPort` | `9222` | Remote debugging port |
 | `viewportWidth` | `1920` | Viewport width |
 | `viewportHeight` | `1080` | Viewport height |
+| `executablePath` | auto-detected | Path to Chrome/Chromium |
 
 Environment variables (in `.env`):
 
@@ -86,8 +80,9 @@ Environment variables (in `.env`):
 | `FVTT_URL` | Foundry URL (default: `http://localhost:30000`) |
 | `FVTT_GM_USER` | GM username (default: `Gamemaster`) |
 | `FVTT_WORLDID` | World ID to select |
-| `BROWSER_MODE` | Override browser mode |
+| `BROWSER_MODE` | Override browser mode (`headed` or `attach`) |
 | `FVTT_BROWSER_HOST` | Override Windows host IP |
+| `FVTT_BROWSER_PATH` | Override browser executable path |
 
 ## Timeout Guidelines
 
@@ -104,32 +99,26 @@ Environment variables (in `.env`):
 
 ## Troubleshooting
 
-### Connection Refused
+### WebGL Errors (PIXI.js)
+
+If you see `Cannot read properties of undefined (reading 'getExtension')`, WebGL isn't initializing. Headed mode uses swiftshader which should handle this. If using attach mode, ensure the Windows browser has hardware acceleration available.
+
+### Connection Refused (Attach Mode)
 
 1. Verify Edge is running with `--remote-debugging-port=9222`
 2. Verify portproxy rule exists: `netsh interface portproxy show all`
 3. Verify firewall rule exists: `Get-NetFirewallRule -DisplayName "Edge Remote Debug"`
 4. Re-run `scripts/setup-debug-proxy.ps1` as Administrator
 
-
 ### Module Not Loading
 
 Check browser console for errors. The module may have failed to initialize due to migration issues or missing dependencies.
 
-### Viewport Resets to 800x600 After Reload
+### Viewport Resets to 800x600 After Reload (Attach Mode)
 
-**Problem**: In attach mode, page reloads (via `page.reload()`, `page.goto()`, or navigation) reset the viewport to Puppeteer's default 800x600, even if you previously set it to 1920x1080.
+**Problem**: In attach mode, page reloads reset the viewport to Puppeteer's default 800x600.
 
-**Root Cause**: When connected to an existing browser, Puppeteer doesn't control the browser's default viewport. After any navigation, Puppeteer resets to its internal default.
-
-**Solution**: The `launchBrowser()` helper now includes a `framenavigated` listener that automatically re-applies the viewport after navigation. Using `launchBrowser()` should keep the viewport at the configured size.
-
-For direct connection (bypassing the helper), manually re-apply after navigation:
-
-```typescript
-await page.reload({ waitUntil: 'networkidle2' });
-await page.setViewport({ width: 1920, height: 1080 });
-```
+**Solution**: The `launchBrowser()` helper includes a `framenavigated` listener that automatically re-applies the viewport after navigation.
 
 ### Extracting Text from Elements with Icons
 
@@ -146,9 +135,9 @@ const text = await page.evaluate(() => {
 });
 ```
 
-## Quick Connection Pattern
+## Quick Connection Pattern (Attach Mode)
 
-For quick scripts when already in-game (avoids viewport issues):
+For quick scripts when already in-game:
 
 ```typescript
 import puppeteer from 'puppeteer';
@@ -167,5 +156,5 @@ if (!(await page.$('.fcb-main-window'))) {
 
 // ... interact with UI ...
 
-await browser.disconnect(); // Keeps browser running
+await browser.close(); 
 ```

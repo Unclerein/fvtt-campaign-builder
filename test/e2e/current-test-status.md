@@ -356,7 +356,7 @@ For each test file:
 ### Test File Template
 
 ```typescript
-import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
+import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
@@ -494,15 +494,6 @@ This section tracks each test file with detailed descriptions of what is being t
 | Switch to foundry tab | Foundry docs tab | Foundry documents tab becomes visible |
 | Foundry doc button opens scene when scenes attached | Scene activation | Button activates first linked scene in Foundry |
 | Related entries from editor links | Editor link detection | Editor is present (full link testing requires complex interaction) |
-
----
-
-### New Tests (To Be Documented)
-
-*As each test file is created, add documentation here with:*
-- Test file name
-- Status (In Progress / Complete)
-- Table of tests with What It Tests and Expected Behavior columns
 
 ---
 
@@ -726,13 +717,48 @@ This section tracks each test file with detailed descriptions of what is being t
 
 ---
 
+### New Tests (To Be Documented)
+
+*As each test file is created, add documentation here with:*
+- Test file name
+- Status (In Progress / Complete)
+- Table of tests with What It Tests and Expected Behavior columns
+
+---
+
+
 ## Test Execution Status
 
 ### Files Tested
 
-| File | Status | Tests Pass | Coverage Met | Notes |
-|------|--------|------------|--------------|-------|
-| (To be filled during execution) | | | | |
+| File | Status | Pass | Fail |
+|------|--------|------|------|
+| directory/basic.test.ts | FAILED | 0 | 1 |
+| directory/tree.test.ts | FAILED | 12 | 2 |
+| entries/character.test.ts | FAILED | 12 | 6 |
+| entries/location.test.ts | FAILED | 17 | 18 |
+| entries/organization.test.ts | FAILED | 1 | 14 |
+| entries/pc.test.ts | FAILED | 0 | 17 |
+| campaigns/campaign.test.ts | FAILED | 8 | 4 |
+| campaigns/campaign-tabs.test.ts | FAILED | 6 | 8 |
+| sessions/session.test.ts | FAILED | 6 | 11 |
+| sessions/session-tabs.test.ts | FAILED | 2 | 24 |
+| navigation/header.test.ts | FAILED | 2 | 8 |
+| components/editor.test.ts | FAILED | 0 | 12 |
+| components/tags.test.ts | FAILED | 0 | 11 |
+| components/typeahead.test.ts | FAILED | 0 | 11 |
+| components/imagePicker.test.ts | FAILED | 0 | 10 |
+| components/relationshipTabs.test.ts | FAILED | 0 | 12 |
+| components/playmode.test.ts | FAILED | 4 | 10 |
+| components/search.test.ts | FAILED | 9 | 2 |
+| dialogs/dialogs.test.ts | FAILED | 4 | 12 |
+| features/features.test.ts | FAILED | 8 | 14 |
+| arcs/arc.test.ts | FAILED | 11 | 1 |
+| fronts/front.test.ts | FAILED | 6 | 1 |
+| storywebs/storyweb.test.ts | FAILED | 6 | 1 |
+| settings/settings.test.ts | FAILED | 6 | 19 |
+
+**Summary:** 24 test files, 108 tests passed, 228 tests failed
 
 ---
 
@@ -742,10 +768,12 @@ This section tracks each test file with detailed descriptions of what is being t
 
 | File | Coverage % | Target | Status |
 |------|------------|--------|--------|
-| (To be filled during execution) | | | |
+| N/A | | | Coverage not collected (requires instrumented build) |
 
 ### Files Not Meeting Coverage
 
 | File | Coverage % | Target | Gap | Notes |
 |------|------------|--------|-----|-------|
-| (To be filled during execution) | | | | |
+| All files | N/A | 98% | N/A | Run `npm run debug:test` then `npm run test:coverage` to collect coverage |
+
+---

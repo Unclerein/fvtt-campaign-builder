@@ -2,11 +2,17 @@
 
 Puppeteer-based end-to-end tests for the Campaign Builder module.
 
-## Important: WSL Browser Limitations
+## Browser Modes
 
-**Do NOT use headed or headless browser modes in WSL.** The WSL browser has critical issues.  Must have user start a browser from Windows with this command first and then use attached mode:
+### Headed Mode (Default)
 
-From Windows PowerShell:
+Tests run in a visible Chrome window using swiftshader for WebGL compatibility. This works on both WSL2 and native Linux.
+
+### Attach Mode (Optional)
+
+For full hardware acceleration, connect to a Windows browser via remote debugging. This requires manual setup:
+
+1. **Start Edge with remote debugging** (from Windows PowerShell):
 
 ```powershell
 & "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --user-data-dir="C:\temp\foundry-edge"
@@ -15,7 +21,8 @@ From Windows PowerShell:
 ## Running Tests
 
 ```bash
-npm test                                        # Run all tests
+npm test                                        # Run all tests (headed mode)
+BROWSER_MODE=attach npm test                    # Run all tests (attach mode)
 npm test -- --file directory/basic               # Run only directory/basic.test
 npm test -- --file entries/character --file entries/location  # Run multiple files
 npm test -- --grep "character"                   # Run suites/tests matching "character"
@@ -116,13 +123,11 @@ const allTestFiles: Record<string, () => Promise<void>> = {
 
 2. **Use agent infrastructure**: The `test/agent/` module handles browser connection, login, navigation, and module interaction. Import from `../agent`.
 
-3. **Disconnect, don't close**: In `afterAll`, use `browser.disconnect()` not `browser.close()` to keep the Windows browser running.
+3. **Test data isolation**: Tests that modify or delete data must create their own objects and clean them up. Never edit data on an object that was created as part of the basic structure during setup (settings, campaigns, sessions, entries, etc.).
 
-4. **Test data isolation**: Tests that modify or delete data must create their own objects and clean them up. Never edit data on an object that was created as part of the basic structure during setup (settings, campaigns, sessions, entries, etc.).
+4. **User experience**: Unless a test is designed to specifically test the module API, it should simulate a real user's actions. This means using the UI elements and interactions that a user would use, rather than directly calling the API.  Tests that need to create their own data for testing purposes should navigate through the app UI to create it as part of the test, as if they were a user, rather than using the API directly.  They should then clean up behind themselves.  Alternately, they can create a new entry, session, campaign, etc. and give it a unique name.  In that case, it shouldn't interfere with the existing test data and could be left behind.
 
-5. **User experience**: Unless a test is designed to specifically test the module API, it should simulate a real user's actions. This means using the UI elements and interactions that a user would use, rather than directly calling the API.  Tests that need to create their own data for testing purposes should navigate through the app UI to create it as part of the test, as if they were a user, rather than using the API directly.  They should then clean up behind themselves.  Alternately, they can create a new entry, session, campaign, etc. and give it a unique name.  In that case, it shouldn't interfere with the existing test data and could be left behind.
-
-6. **Serial execution**: Tests run in the same UI so can never run in parallel.  Also, each test file should assume it could be run in any order or combination with other files.  This means it should never assume a starting point for the UI - it should confirm the module is open and navigate to the starting point it needs.
+5. **Serial execution**: Tests run in the same UI so can never run in parallel.  Also, each test file should assume it could be run in any order or combination with other files.  This means it should never assume a starting point for the UI - it should confirm the module is open and navigate to the starting point it needs.
 
 ## Test Data Guidelines
 

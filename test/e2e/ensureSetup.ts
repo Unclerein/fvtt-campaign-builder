@@ -77,28 +77,22 @@ export async function ensureSetup(rebuild = false) {
       });
       await new Promise(resolve => setTimeout(resolve, 1000));
       console.log('[ensureSetup] Stabilization wait complete');
-    }
-    
-    // Open the Campaign Builder window
-    console.log('[ensureSetup] Opening Campaign Builder...');
-    await openCampaignBuilder(page);
-    console.log('[ensureSetup] Campaign Builder opened');
-    
-    // Populate test data only if needed
-    if (needsData) {
+
+      // Populate test data BEFORE opening Campaign Builder window
+      // This prevents the "create setting" dialog from appearing when no settings exist
       console.log(`[ensureSetup] Populating ${testData.settings.length} settings...`);
       for (let i = 0; i < testData.settings.length; i++) {
         console.log(`[ensureSetup] Populating setting ${i + 1}: ${testData.settings[i].name}`);
         await populateSetting(testData.settings[i]);
       }
-      // Close and reopen to refresh the UI with new data
-      console.log('Closing Campaign Builder...');
-      await closeCampaignBuilder(page);
-      console.log('Reopening Campaign Builder...');
-      await openCampaignBuilder(page);
-      console.log('Campaign Builder reopened');
+      console.log('[ensureSetup] Test data populated');
       dataPopulated = true;
     }
+    
+    // Open the Campaign Builder window (after data is populated so settings exist)
+    console.log('[ensureSetup] Opening Campaign Builder...');
+    await openCampaignBuilder(page);
+    console.log('[ensureSetup] Campaign Builder opened');
     
     setupComplete = true;
     console.log('Setup complete!');

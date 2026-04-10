@@ -67,39 +67,19 @@ export async function launchBrowser(options: LaunchOptions = {}): Promise<Browse
         });
       }
     });
-  } else if (config.browserMode === 'headed') {
-    // Launch headed browser (visible) with WebGL support via swiftshader
+  } else {
+    // Headed mode (default) - uses swiftshader for WebGL compatibility
     browser = await puppeteer.launch({
       headless: false,
       executablePath: config.executablePath,
       args: [
         '--no-sandbox',
         '--disable-dev-shm-usage',
-        '--enable-webgl',
-        '--use-gl=swiftshader',
-        '--enable-unsafe-swiftshader',
-        '--enable-unsafe-webgl',
+        '--use-gl=angle',
+        '--use-angle=swiftshader',
+        '--enable-gpu-rasterization',
         '--ignore-gpu-blocklist',
-      ],
-      defaultViewport: {
-        width: config.viewportWidth,
-        height: config.viewportHeight,
-      },
-    });
-    page = await browser.newPage();
-  } else {
-    // Headless mode (default) with WebGL support via swiftshader
-    browser = await puppeteer.launch({
-      headless: true,
-      executablePath: config.executablePath,
-      args: [
-        '--no-sandbox',
-        '--disable-dev-shm-usage',
-        '--enable-webgl',
-        '--use-gl=swiftshader',
-        '--enable-unsafe-swiftshader',
         '--enable-unsafe-webgl',
-        '--ignore-gpu-blocklist',
       ],
       defaultViewport: {
         width: config.viewportWidth,

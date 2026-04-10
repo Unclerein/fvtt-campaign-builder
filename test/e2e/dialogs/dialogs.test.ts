@@ -4,7 +4,7 @@
  * relationship dialogs, and dialog cancellation.
  */
 
-import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
+import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
@@ -273,5 +273,3 @@ describe.serial('Dialog Tests', () => {
     await closeDialog();
   });
 });
-
-// Note: runTests() is called by the main runner (all.test.ts)

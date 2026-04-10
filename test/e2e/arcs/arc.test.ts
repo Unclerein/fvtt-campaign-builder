@@ -4,7 +4,7 @@
  * session management, tab navigation, and arc progression.
  */
 
-import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
+import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
@@ -403,5 +403,3 @@ describe.serial('Arc Tests', () => {
     expect(tagsComponent).not.toBeNull();
   });
 });
-
-// Note: runTests() is called by the main runner (all.test.ts)

@@ -345,21 +345,28 @@ export async function runTests(): Promise<boolean> {
   }
 
   let allPassed = true;
-  
+
   for (const suite of suitesToRun) {
     console.log(`\n\x1b[36m${suite.name}\x1b[0m`);
-    
+
     // Run beforeAll hooks
+    let beforeAllFailed = false;
     for (const hook of suite.beforeAll) {
       try {
         await hook();
       } catch (error) {
         console.error(`  \x1b[31mbeforeAll failed: ${error}\x1b[0m`);
         allPassed = false;
-        continue;
+        beforeAllFailed = true;
+        break;
       }
     }
-    
+
+    // Skip tests if beforeAll failed
+    if (beforeAllFailed) {
+      continue;
+    }
+
     // Run tests
     for (const test of suite.tests) {
       if (test.skip) {
@@ -410,6 +417,3 @@ export async function runTests(): Promise<boolean> {
   console.log(allPassed ? '\n\x1b[32mAll tests passed!\x1b[0m' : '\n\x1b[31mSome tests failed.\x1b[0m');
   return allPassed;
 }
-
-// Tests must explicitly call runTests() at the end of the file
-// This ensures async setup completes before tests run

@@ -42,13 +42,23 @@ const allTestFiles: Record<string, () => Promise<void>> = {
   'entries/organization': () => import('./entries/organization.test').then(() => {}),
   'entries/pc': () => import('./entries/pc.test').then(() => {}),
   'campaigns/campaign': () => import('./campaigns/campaign.test').then(() => {}),
+  'campaigns/campaign-tabs': () => import('./campaigns/campaign-tabs.test').then(() => {}),
   'sessions/session': () => import('./sessions/session.test').then(() => {}),
+  'sessions/session-tabs': () => import('./sessions/session-tabs.test').then(() => {}),
   'navigation/header': () => import('./navigation/header.test').then(() => {}),
   'components/editor': () => import('./components/editor.test').then(() => {}),
   'components/tags': () => import('./components/tags.test').then(() => {}),
   'components/typeahead': () => import('./components/typeahead.test').then(() => {}),
   'components/imagePicker': () => import('./components/imagePicker.test').then(() => {}),
   'components/relationshipTabs': () => import('./components/relationshipTabs.test').then(() => {}),
+  'components/playmode': () => import('./components/playmode.test').then(() => {}),
+  'components/search': () => import('./components/search.test').then(() => {}),
+  'dialogs/dialogs': () => import('./dialogs/dialogs.test').then(() => {}),
+  'features/features': () => import('./features/features.test').then(() => {}),
+  'arcs/arc': () => import('./arcs/arc.test').then(() => {}),
+  'fronts/front': () => import('./fronts/front.test').then(() => {}),
+  'storywebs/storyweb': () => import('./storywebs/storyweb.test').then(() => {}),
+  'settings/settings': () => import('./settings/settings.test').then(() => {}),
 };
 
 // Determine which files to load
@@ -82,7 +92,7 @@ async function main() {
   // Final cleanup - disconnect browser
   if (sharedContext.context) {
     try {
-      sharedContext.context.disconnect();
+      await sharedContext.context.close();
     } catch {
       // Ignore disconnect errors
     }

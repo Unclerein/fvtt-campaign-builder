@@ -4,7 +4,7 @@
  * session navigation, and generator bar visibility.
  */
 
-import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
+import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
@@ -361,5 +361,3 @@ describe.serial('Play Mode Tests', () => {
     expect(nowActive).toBe(false);
   });
 });
-
-// Note: runTests() is called by the main runner (all.test.ts)

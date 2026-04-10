@@ -4,14 +4,13 @@
  * and tab management in the application header.
  */
 
-import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
+import { describe, test, beforeAll, expect, } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
 import { switchToSetting, expandTopicNode, expandTypeNode } from '@e2etest/utils';
 import { Topics } from '@/types';
-import { getByTestId, Locator } from '../helpers';
-import { openEntry, closeActiveTab } from '@e2etest/utils';
+import { openEntry,  } from '@e2etest/utils';
 
 /**
  * Helper delay function.
@@ -291,5 +290,3 @@ describe.serial('Header Navigation Tests', () => {
     expect(nameValue).toBe(firstChar.name);
   });
 });
-
-// Note: runTests() is called by the main runner (all.test.ts)

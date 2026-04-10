@@ -4,7 +4,7 @@
  * tag management, parent hierarchy, journals, scenes, push-to-session.
  */
 
-import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
+import { describe, test, beforeAll, afterAll, expect } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
@@ -16,18 +16,15 @@ import {
   getEntryNameInput,
   setEntryName,
   getEntryNameValue,
-  selectType,
   addNewType,
   getTypeValue,
   addTag,
   removeTag,
   clickTag,
   clickContentTab,
-  clickPushToSession,
-  clickContextMenuItem,
+  clickPushToSession,  
   createEntryViaAPI,
   deleteEntryViaAPI,
-  waitForNotification,
   getGenerateButton,
   getFoundryDocButton,
   // Editor utilities
@@ -36,12 +33,8 @@ import {
   saveDescriptionEditor,
   // Journal utilities
   clickAddJournalButton,
-  addJournalViaPicker,
-  removeJournal,
-  clickJournalRow,
   getJournalCount,
   // Drag-drop utilities
-  simulateDragDrop,
   dropJournalOnJournalsTab,
   // Hierarchy utilities
   selectParent,
@@ -861,5 +854,3 @@ describe.serial('Location Entry Tests', () => {
     console.log("Didn't test onRelatedEntriesChanged fully - requires complex editor interaction");
   });
 });
-
-// Note: runTests() is called by the main runner (all.test.ts)

@@ -4,20 +4,17 @@
  * tag management, relationships, push-to-session, content tabs.
  */
 
-import { describe, test, beforeAll, afterAll, expect, runTests } from '../testRunner';
+import { describe, test, beforeAll, afterAll, expect,  } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
 import { switchToSetting, expandTopicNode, expandTypeNode } from '@e2etest/utils';
 import { Topics } from '@/types';
-import { getByTestId, Locator } from '../helpers';
 import {
   openEntry,
   getEntryNameInput,
   setEntryName,
   getEntryNameValue,
-  selectType,
-  addNewType,
   getTypeValue,
   addTag,
   removeTag,
@@ -27,8 +24,6 @@ import {
   deleteEntryViaAPI,
   getGenerateButton,
   closeActiveTab,
-  getPlayerNameValue,
-  setPlayerName,
 } from '@e2etest/utils';
 
 /**
@@ -443,5 +438,3 @@ describe.serial('PC Entry Tests', () => {
     expect(imagePicker).not.toBeNull();
   });
 });
-
-// Note: runTests() is called by the main runner (all.test.ts)

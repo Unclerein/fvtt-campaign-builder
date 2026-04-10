@@ -36,8 +36,8 @@ async function main() {
 
   console.log('[rebuild] Done!');
 
-  // Disconnect
-  await browser.disconnect();
+  // Close the browser so the process can exit
+  await browser.close();
 }
 
 main().catch(console.error);
