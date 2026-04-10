@@ -4,7 +4,7 @@
  * species selection, tag management, push-to-session, content tabs.
  */
 
-import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
+import { describe, test, beforeAll, afterAll, afterEach, expect, } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
@@ -24,7 +24,7 @@ import {
   clickTag,
   clickContentTab,
   clickPushToSession,
-  createEntryViaAPI,
+  createEntryViaUI,
   deleteEntryViaAPI,
   getGenerateButton,
   getFoundryDocButton,
@@ -50,6 +50,18 @@ describe.serial('Character Entry Tests', () => {
     
     // Wait for directory to fully load
     await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Close any leftover tabs from previous runs
+    const page = sharedContext.page!;
+    const closeButtons = await page.$$('[data-testid="tab-close-button"]');
+    for (const btn of closeButtons) {
+      try {
+        await btn.click();
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch {
+        // Ignore close errors
+      }
+    }
   });
 
   afterAll(async () => {
@@ -59,6 +71,20 @@ describe.serial('Character Entry Tests', () => {
         await deleteEntryViaAPI(createdEntryUuid);
       } catch {
         // Ignore cleanup errors
+      }
+    }
+  });
+
+  afterEach(async () => {
+    // Close all tabs after each test for isolation
+    const page = sharedContext.page!;
+    const closeButtons = await page.$$('[data-testid="tab-close-button"]');
+    for (const btn of closeButtons) {
+      try {
+        await btn.click();
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch {
+        // Ignore close errors
       }
     }
   });
@@ -102,16 +128,11 @@ describe.serial('Character Entry Tests', () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
-    // Create a new entry for this test
-    createdEntryUuid = await createEntryViaAPI(Topics.Character, testEntryName, setting.name);
-
-    // Wait for directory to update with new entry
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Expand and open the entry
+    // Create a new entry via UI (simulates real user behavior)
     await expandTopicNode(Topics.Character);
-    await expandTypeNode(Topics.Character, '(none)');
-    await openEntry(Topics.Character, testEntryName);
+    createdEntryUuid = await createEntryViaUI(Topics.Character, testEntryName);
+
+    // Entry is already open after creation, no need to open again
 
     // Change the name
     const newName = 'Renamed Test Character';
@@ -134,15 +155,12 @@ describe.serial('Character Entry Tests', () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
-    // Create a new entry for this test (don't modify base data)
+    // Create a new entry via UI (don't modify base data)
     const testTypeName = 'Type Test ' + Date.now();
-    const typeTestUuid = await createEntryViaAPI(Topics.Character, testTypeName, setting.name);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Expand and open the entry
     await expandTopicNode(Topics.Character);
-    await expandTypeNode(Topics.Character, '(none)');
-    await openEntry(Topics.Character, testTypeName);
+    const typeTestUuid = await createEntryViaUI(Topics.Character, testTypeName);
+
+    // Entry is already open after creation
 
     // Make sure we're on the description tab
     await clickContentTab('description');
@@ -187,15 +205,12 @@ describe.serial('Character Entry Tests', () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
-    // Create a new entry for this test (don't modify base data)
+    // Create a new entry via UI (don't modify base data)
     const newTypeTestName = 'New Type Test ' + Date.now();
-    const newTypeTestUuid = await createEntryViaAPI(Topics.Character, newTypeTestName, setting.name);
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // Expand and open the entry
     await expandTopicNode(Topics.Character);
-    await expandTypeNode(Topics.Character, '(none)');
-    await openEntry(Topics.Character, newTypeTestName);
+    const newTypeTestUuid = await createEntryViaUI(Topics.Character, newTypeTestName);
+
+    // Entry is already open after creation
 
     // Make sure we're on the description tab
     await clickContentTab('description');
@@ -223,15 +238,12 @@ describe.serial('Character Entry Tests', () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
-    // Create a new entry for this test (don't modify base data)
+    // Create a new entry via UI (don't modify base data)
     const speciesTestName = 'Species Test ' + Date.now();
-    const speciesTestUuid = await createEntryViaAPI(Topics.Character, speciesTestName, setting.name);
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // Expand and open the entry
     await expandTopicNode(Topics.Character);
-    await expandTypeNode(Topics.Character, '(none)');
-    await openEntry(Topics.Character, speciesTestName);
+    const speciesTestUuid = await createEntryViaUI(Topics.Character, speciesTestName);
+
+    // Entry is already open after creation
 
     // Click on species input (it's the second typeahead)
     const inputs = await page.$$('.fcb-typeahead input');
@@ -271,15 +283,12 @@ describe.serial('Character Entry Tests', () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
-    // Create a new entry for this test (don't modify base data)
+    // Create a new entry via UI (don't modify base data)
     const tagTestName = 'Tag Test ' + Date.now();
-    const tagTestUuid = await createEntryViaAPI(Topics.Character, tagTestName, setting.name);
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // Expand and open the entry
     await expandTopicNode(Topics.Character);
-    await expandTypeNode(Topics.Character, '(none)');
-    await openEntry(Topics.Character, tagTestName);
+    const tagTestUuid = await createEntryViaUI(Topics.Character, tagTestName);
+
+    // Entry is already open after creation
 
     // Add a tag
     const testTag = 'test-tag-' + Date.now();
@@ -321,15 +330,12 @@ describe.serial('Character Entry Tests', () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
-    // Create a new entry for this test (don't modify base data)
+    // Create a new entry via UI (don't modify base data)
     const clickTagTestName = 'Click Tag Test ' + Date.now();
-    const clickTagTestUuid = await createEntryViaAPI(Topics.Character, clickTagTestName, setting.name);
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // Expand and open the entry
     await expandTopicNode(Topics.Character);
-    await expandTypeNode(Topics.Character, '(none)');
-    await openEntry(Topics.Character, clickTagTestName);
+    const clickTagTestUuid = await createEntryViaUI(Topics.Character, clickTagTestName);
+
+    // Entry is already open after creation
 
     // First add a tag we can click
     const clickTag1 = 'clickable-tag-' + Date.now();
@@ -365,35 +371,17 @@ describe.serial('Character Entry Tests', () => {
     // Make sure there's a campaign with a current session
     const campaign = setting.campaigns[0];
     if (campaign && campaign.sessions.length > 0) {
-      // Create a new entry for this test (avoids issues with shared test data being modified)
+      // Create a new entry via UI (avoids issues with shared test data being modified)
       const testEntryName = 'Push Test Character ' + Date.now();
-      const entryUuid = await createEntryViaAPI(Topics.Character, testEntryName, setting.name);
+      await expandTopicNode(Topics.Character);
+      const entryUuid = await createEntryViaUI(Topics.Character, testEntryName);
 
       if (!entryUuid) {
         // Failed to create entry - skip test
         return;
       }
 
-      // Wait for directory to update with new entry
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Expand the character topic folder
-      await expandTopicNode(Topics.Character);
-
-      // Expand the (none) type folder (new entries have no type)
-      await expandTypeNode(Topics.Character, '(none)');
-
-      // Wait for entries to appear
-      await page.waitForSelector('.fcb-directory-entry', { timeout: 5000 });
-
-      // Open the entry
-      try {
-        await openEntry(Topics.Character, testEntryName);
-      } catch (error) {
-        // Entry not found - clean up and skip
-        await deleteEntryViaAPI(entryUuid);
-        return;
-      }
+      // Entry is already open after creation
 
       // Click the push to session button
       const clicked = await clickPushToSession();

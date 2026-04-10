@@ -155,7 +155,125 @@ export const clickContentTab = async (tabId: string): Promise<void> => {
 };
 
 /**
- * Creates a new entry via the API (for test setup).
+ * Creates a new entry via the UI (context menu -> create dialog).
+ * This simulates real user behavior and ensures the UI updates properly.
+ * 
+ * @param topic The topic for the entry
+ * @param name The name for the new entry
+ * @returns The UUID of the created entry
+ */
+export const createEntryViaUI = async (topic: ValidTopic, name: string): Promise<string> => {
+  const page = sharedContext.page!;
+
+  // Find the topic folder header
+  const topicFolder = await page.$(`.fcb-topic-folder[data-topic="${topic}"]`);
+  if (!topicFolder) {
+    throw new Error(`Topic folder not found for topic: ${topic}`);
+  }
+
+  // Right-click on the inner div with the contextmenu handler
+  // Structure: <header class="folder-header"><div @contextmenu="...">...</div></header>
+  const headerInner = await topicFolder.$('.folder-header > div');
+  if (!headerInner) {
+    throw new Error(`Topic folder header inner div not found for topic: ${topic}`);
+  }
+  
+  await headerInner.evaluate((el) => {
+    el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
+  });
+
+  // Wait for context menu
+  await page.waitForSelector('.mx-context-menu', { timeout: 5000 });
+
+  // Find and click the "Create new X" menu item
+  // Localized labels: "Create new character", "Create new location", etc.
+  const createLabels: Record<ValidTopic, string> = {
+    [Topics.Character]: 'Create new character',
+    [Topics.Location]: 'Create new location',
+    [Topics.Organization]: 'Create new organization',
+    [Topics.PC]: 'Create new PC',
+  };
+  const createLabel = createLabels[topic];
+  const items = await page.$$('.mx-context-menu-item');
+  for (const item of items) {
+    const text = await item.evaluate(el => el.textContent);
+    if (text?.includes(createLabel)) {
+      await item.click();
+      break;
+    }
+  }
+
+  // Wait for dialog to appear
+  await page.waitForSelector('.fcb-dialog', { timeout: 5000 });
+
+  // Find the name input and type the entry name
+  const nameInput = await page.$('.fcb-dialog input[type="text"]');
+  if (!nameInput) {
+    throw new Error('Name input not found in create entry dialog');
+  }
+  
+  // Clear any existing value and type new name
+  await nameInput.click({ clickCount: 3 });
+  await nameInput.type(name);
+
+  // Click the "Use" button to create the entry
+  // Find button by text content since :has-text is not valid CSS
+  const buttons = await page.$$('.fcb-dialog-button');
+  let clickedUse = false;
+  for (const btn of buttons) {
+    const text = await btn.evaluate(el => el.textContent);
+    if (text?.includes('Use')) {
+      await btn.click();
+      clickedUse = true;
+      break;
+    }
+  }
+  
+  if (!clickedUse) {
+    // Fallback: click the primary/default button
+    const primaryBtn = await page.$('.fcb-dialog-button.primary');
+    if (primaryBtn) {
+      await primaryBtn.click();
+    }
+  }
+
+  // Wait for dialog to close
+  await page.waitForSelector('.fcb-dialog', { hidden: true, timeout: 5000 });
+
+  // Wait for the entry name input to appear (entry is open)
+  await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 10000 });
+
+  // Get the UUID from the currently open entry tab
+  // The entry opens automatically after creation via the dialog callback
+  const uuid = await page.evaluate(() => {
+    // Get from the open tab
+    const activeTab = document.querySelector('.fcb-tab.active');
+    if (activeTab) {
+      return activeTab.getAttribute('data-uuid');
+    }
+    return null;
+  });
+
+  if (!uuid) {
+    // Fallback: look up by name in the topic folder
+    const fallbackUuid = await page.evaluate(async (entryName: string) => {
+      const api = (game as any).modules.get('campaign-builder')!.api;
+      const list = api.getEntries(1); // Topics.Character
+      const entry = list.find((e: { name: string }) => e.name === entryName);
+      return entry?.uuid;
+    }, name);
+    
+    if (!fallbackUuid) {
+      throw new Error(`Could not find UUID for created entry: ${name}`);
+    }
+    return fallbackUuid;
+  }
+
+  return uuid;
+};
+
+/**
+ * Creates a new entry via the API (for test setup only - prefer createEntryViaUI for tests).
  */
 export const createEntryViaAPI = async (
   topic: ValidTopic,
