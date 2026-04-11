@@ -20,9 +20,14 @@ const fileFilters: string[] = [];
 /** Collect --grep value */
 let grepPattern: string | undefined;
 
+// handle both s--file=xyz and --file xyz
 for (let i = 0; i < args.length; i++) {
-  if (args[i] === '--file' && args[i + 1]) {
+  if (args[i].startsWith('--file=')) {
+    fileFilters.push(args[i].slice('--file='.length));
+  } else if (args[i] === '--file' && args[i + 1]) {
     fileFilters.push(args[++i]);
+  } else if (args[i].startsWith('--grep=')) {
+    grepPattern = args[i].slice('--grep='.length);
   } else if (args[i] === '--grep' && args[i + 1]) {
     grepPattern = args[++i];
   }

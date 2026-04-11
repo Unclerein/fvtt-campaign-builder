@@ -4,7 +4,7 @@
  * species selection, tag management, push-to-session, content tabs.
  */
 
-import { describe, test, beforeAll, afterAll, afterEach, expect, } from '../testRunner';
+import { describe, test, beforeAll, afterAll, afterEach, expect } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
@@ -72,8 +72,18 @@ describe.serial('Character Entry Tests', () => {
     }
   });
 
-  // Note: No afterEach tab closing - each test is independent and creates its own entry
-  // Tests clean up their own entries via deleteEntryViaAPI
+  afterEach(async () => {
+    const page = sharedContext.page!;
+    const closeButtons = await page.$$('[data-testid="tab-close-button"]');
+    for (const btn of closeButtons) {
+      try {
+        await btn.click();
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch {
+        // Ignore close errors
+      }
+    }
+  });
 
   /**
    * What it tests: Opening an existing character entry from the directory tree.

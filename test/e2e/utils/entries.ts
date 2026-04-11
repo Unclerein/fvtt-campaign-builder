@@ -239,14 +239,11 @@ export const createEntryViaUI = async (topic: ValidTopic, name: string): Promise
   // Wait for dialog to close
   await page.waitForSelector('.fcb-dialog', { hidden: true, timeout: 5000 });
 
-  // Wait for the entry name input to appear (entry is open)
-  await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 10000 });
-
-  // Wait for the name input to have a value (Vue reactivity)
-  await page.waitForFunction(() => {
+  // Wait for the newly created entry to be active (name input shows the created entry's name)
+  await page.waitForFunction((entryName: string) => {
     const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
-    return input && input.value.length > 0;
-  }, { timeout: 5000 });
+    return input && input.value === entryName;
+  }, { timeout: 5000 }, name);
 
   // Small delay for Vue reactivity to settle
   await delay(200);
