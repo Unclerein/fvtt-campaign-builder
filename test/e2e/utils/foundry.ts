@@ -4,7 +4,7 @@
 
 import { Page } from 'puppeteer';
 import * as readline from 'readline';
-import { config, FoundryState } from '../config';
+import { config, FoundryState } from './config';
 import { getPage } from './browser';
 
 /** Cached admin password (prompted once per session) */

@@ -3,7 +3,7 @@
  */
 
 import puppeteer, { Browser, Page, BrowserContext } from 'puppeteer';
-import { config } from '../config';
+import { config } from './config';
 
 /** Result of launching browser */
 export interface BrowserResult {

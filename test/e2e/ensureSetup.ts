@@ -1,5 +1,5 @@
 import { sharedContext } from './sharedContext';
-import { launchBrowser, navigateToGame, resetWorld, openCampaignBuilder, closeCampaignBuilder } from '../agent';
+import { launchBrowser, navigateToGame, resetWorld, openCampaignBuilder, closeCampaignBuilder } from './utils';
 import { testData } from './data';
 import { populateSetting } from './setup';
 

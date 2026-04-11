@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load .env file from project root
-dotenvConfig({ path: path.resolve(__dirname, '../../.env') });
+dotenvConfig({ path: path.resolve(__dirname, '../../../.env') });
 
 /**
  * Get the Windows host IP from WSL2.

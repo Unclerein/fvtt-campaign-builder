@@ -1,7 +1,7 @@
 // resets the world and then repopulates with the setup test data
 
 import { sharedContext } from './sharedContext';
-import { launchBrowser, navigateToGame, resetWorld, openCampaignBuilder, closeCampaignBuilder } from '../agent';
+import { launchBrowser, navigateToGame, resetWorld, openCampaignBuilder, closeCampaignBuilder } from './utils';
 import { testData } from './data';
 import { populateSetting } from './setup';
 import { ensureSetup } from './ensureSetup';

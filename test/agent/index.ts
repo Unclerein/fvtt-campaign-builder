@@ -14,15 +14,15 @@
  */
 
 // Configuration
-export { config } from './config';
-export type { AgentConfig, BrowserMode, FoundryState } from './config';
+export { config } from '../e2e/utils/config';
+export type { AgentConfig, BrowserMode, FoundryState } from '../e2e/utils/config';
 
 // Browser management
-export { launchBrowser, closeBrowser, getPage, screenshot } from './utils/browser';
-export type { BrowserResult, LaunchOptions } from './utils/browser';
+export { launchBrowser, closeBrowser, getPage, screenshot } from '../e2e/utils/browser';
+export type { BrowserResult, LaunchOptions } from '../e2e/utils/browser';
 
 // Foundry navigation
-export { detectFoundryState, navigateToGame, resetWorld, evaluate } from './utils/foundry';
+export { detectFoundryState, navigateToGame, resetWorld, evaluate } from '../e2e/utils/foundry';
 
 // Module interaction
 export {
@@ -32,7 +32,7 @@ export {
   getActiveTab,
   waitForCampaignBuilder,
   isCampaignBuilderOpen,
-} from './utils/module';
+} from '../e2e/utils/campaignBuilder';
 
 // UI helpers
 export {

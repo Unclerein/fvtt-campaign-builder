@@ -3,7 +3,7 @@
  */
 
 import { Page, ElementHandle } from 'puppeteer';
-import { getPage } from './browser';
+import { getPage } from '../../e2e/utils/browser';
 
 /**
  * Clicks an element and waits for it to be actionable.
