@@ -24,7 +24,6 @@ import {
   clickPushToSession,
   createEntryViaUI,
   deleteEntryViaAPI,
-  getGenerateButtonSelector,
   getFoundryDocButtonSelector,
   // Editor utilities
   getDescriptionEditorContent,
