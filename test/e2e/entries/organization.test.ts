@@ -4,7 +4,7 @@
  * tag management, relationships, push-to-session, content tabs.
  */
 
-import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
+import { describe, test, beforeAll, afterAll, afterEach, expect, } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
@@ -22,7 +22,7 @@ import {
   clickContentTab,
   clickPushToSession,
   clickContextMenuItem,
-  createEntryViaAPI,
+  createEntryViaUI,
   deleteEntryViaAPI,
   getGenerateButton,
   closeActiveTab,
@@ -39,12 +39,25 @@ const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(r
  */
 describe.serial('Organization Entry Tests', () => {
   let createdEntryUuid: string | null = null;
-  const testEntryName = 'Test Organization Entry';
+  // Track the current entry name - changes as tests rename it
+  let currentEntryName = 'Test Organization Entry';
 
   beforeAll(async () => {
     await ensureSetup(false);
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
+
+    // Close any leftover tabs from previous runs
+    const page = sharedContext.page!;
+    const closeButtons = await page.$$('[data-testid="tab-close-button"]');
+    for (const btn of closeButtons) {
+      try {
+        await btn.click();
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch {
+        // Ignore close errors
+      }
+    }
   });
 
   afterAll(async () => {
@@ -57,6 +70,9 @@ describe.serial('Organization Entry Tests', () => {
       }
     }
   });
+
+  // Note: No afterEach tab closing - serial tests depend on state from previous tests
+  // The entry created in early tests is reused across subsequent tests
 
   /**
    * What it tests: Opening an existing organization entry from the directory tree.
@@ -75,31 +91,29 @@ describe.serial('Organization Entry Tests', () => {
     const firstOrg = setting.topics[Topics.Organization][0];
     await openEntry(Topics.Organization, firstOrg.name);
 
-    // Verify the entry is open
+    // Verify the entry is open - wait for name input to have a value
+    const page = sharedContext.page!;
+    await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 5000 });
+    await page.waitForFunction(() => {
+      const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
+      return input && input.value.length > 0;
+    }, { timeout: 5000 });
     const nameInput = getEntryNameInput();
     const nameValue = await nameInput.inputValue();
     // Expected behavior: Name input contains the organization's name
     expect(nameValue).toBe(firstOrg.name);
   });
 
-  test('Create new organization entry via API', async () => {
-    const setting = testData.settings[0];
-
-    // Create a new entry for this test
-    createdEntryUuid = await createEntryViaAPI(Topics.Organization, testEntryName, setting.name);
-
-    // Refresh the directory
-    await switchToSetting(testData.settings[1].name);
-    await switchToSetting(setting.name);
-
-    // Expand and open the entry
+  test('Create new organization entry via UI', async () => {
+    // Create a new entry via UI (simulates real user behavior)
     await expandTopicNode(Topics.Organization);
-    await expandTypeNode(Topics.Organization, '(none)');
-    await openEntry(Topics.Organization, testEntryName);
+    createdEntryUuid = await createEntryViaUI(Topics.Organization, currentEntryName);
+
+    // Entry is already open after creation
 
     // Verify the entry is open
     const nameValue = await getEntryNameValue();
-    expect(nameValue).toBe(testEntryName);
+    expect(nameValue).toBe(currentEntryName);
   });
 
   /**
@@ -107,14 +121,11 @@ describe.serial('Organization Entry Tests', () => {
    * Expected behavior: Name change persists after debounce period.
    */
   test('Edit organization name with debounce', async () => {
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.Organization);
-    await expandTypeNode(Topics.Organization, '(none)');
-    await openEntry(Topics.Organization, testEntryName);
-
+    // Entry should already be open from previous test
     // Change the name
     const newName = 'Renamed Test Organization';
     await setEntryName(newName);
+    currentEntryName = newName;
 
     // Verify the name changed
     const nameValue = await getEntryNameValue();
@@ -125,11 +136,7 @@ describe.serial('Organization Entry Tests', () => {
   test('Select existing type for organization', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.Organization);
-    await expandTypeNode(Topics.Organization, '(none)');
-    await openEntry(Topics.Organization, 'Renamed Test Organization');
-
+    // Entry should already be open from previous test
     // Click on the type input to open dropdown
     const typeInput = await page.$('.fcb-typeahead input[data-testid="typeahead-input"]');
     if (typeInput) {
@@ -158,23 +165,21 @@ describe.serial('Organization Entry Tests', () => {
   test('Add and remove tags', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.Organization);
-    await expandTypeNode(Topics.Organization, '(none)');
-    await openEntry(Topics.Organization, 'Renamed Test Organization');
-
+    // Entry should already be open from previous test
     // Wait for tags component to be initialized
     await page.waitForSelector('.tags-wrapper:not(.uninitialized)', { timeout: 5000 });
 
     // Add a tag
-    await addTag('test-org-tag');
+    const testTag = 'test-org-tag-' + Date.now();
+    await addTag(testTag);
 
-    // Verify tag was added
+    // Verify tag was added - wait a moment for tagify to update
+    await delay(300);
     const tags = await page.$$('.tagify__tag');
     let found = false;
     for (const tag of tags) {
       const text = await tag.evaluate(el => el.textContent);
-      if (text?.includes('test-org-tag')) {
+      if (text?.includes(testTag)) {
         found = true;
         break;
       }
@@ -183,14 +188,14 @@ describe.serial('Organization Entry Tests', () => {
     expect(found).toBe(true);
 
     // Remove the tag
-    await removeTag('test-org-tag');
+    await removeTag(testTag);
 
     // Verify tag was removed
     const tagsAfter = await page.$$('.tagify__tag');
     for (const tag of tagsAfter) {
       const text = await tag.evaluate(el => el.textContent);
       // Expected behavior: Tag no longer appears in the tags list
-      expect(text?.includes('test-org-tag')).toBe(false);
+      expect(text?.includes(testTag)).toBe(false);
     }
   });
 
@@ -201,12 +206,14 @@ describe.serial('Organization Entry Tests', () => {
   test('Click tag opens tag results tab', async () => {
     const page = sharedContext.page!;
 
+    // Entry should already be open from previous test
     // Add a tag first
-    await addTag('org-nav-tag');
+    const clickTag1 = 'org-nav-tag-' + Date.now();
+    await addTag(clickTag1);
     await delay(300);
 
     // Click the tag
-    await clickTag('org-nav-tag');
+    await clickTag(clickTag1);
 
     // Wait for new tab to open
     await delay(200);
@@ -217,7 +224,7 @@ describe.serial('Organization Entry Tests', () => {
     const tabs = await page.$$('.fcb-tab');
     expect(tabs.length).toBeGreaterThan(1);
 
-    // Close the tag results tab
+    // Close the tag results tab to return to the entry
     await closeActiveTab();
   });
 
@@ -228,11 +235,7 @@ describe.serial('Organization Entry Tests', () => {
   test('Push organization to session', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.Organization);
-    await expandTypeNode(Topics.Organization, '(none)');
-    await openEntry(Topics.Organization, 'Renamed Test Organization');
-
+    // Entry should already be open from previous test
     // Click the push to session button
     const pushed = await clickPushToSession();
     expect(pushed).toBe(true);
@@ -255,11 +258,7 @@ describe.serial('Organization Entry Tests', () => {
   test('Generate button shows context menu', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.Organization);
-    await expandTypeNode(Topics.Organization, '(none)');
-    await openEntry(Topics.Organization, 'Renamed Test Organization');
-
+    // Entry should already be open from previous test
     // Click the generate button
     const genBtn = await getGenerateButton();
     if (genBtn) {
@@ -278,11 +277,7 @@ describe.serial('Organization Entry Tests', () => {
   test('Switch to journals tab', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.Organization);
-    await expandTypeNode(Topics.Organization, '(none)');
-    await openEntry(Topics.Organization, 'Renamed Test Organization');
-
+    // Entry should already be open from previous test
     // Click on journals tab
     await clickContentTab('journals');
 
@@ -298,11 +293,7 @@ describe.serial('Organization Entry Tests', () => {
   test('Switch to characters relationship tab', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.Organization);
-    await expandTypeNode(Topics.Organization, '(none)');
-    await openEntry(Topics.Organization, 'Renamed Test Organization');
-
+    // Entry should already be open from previous test
     // Click on characters tab
     await clickContentTab('characters');
 
@@ -318,11 +309,7 @@ describe.serial('Organization Entry Tests', () => {
   test('Switch to locations relationship tab', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.Organization);
-    await expandTypeNode(Topics.Organization, '(none)');
-    await openEntry(Topics.Organization, 'Renamed Test Organization');
-
+    // Entry should already be open from previous test
     // Click on locations tab
     await clickContentTab('locations');
 
@@ -338,11 +325,7 @@ describe.serial('Organization Entry Tests', () => {
   test('Switch to organizations relationship tab', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.Organization);
-    await expandTypeNode(Topics.Organization, '(none)');
-    await openEntry(Topics.Organization, 'Renamed Test Organization');
-
+    // Entry should already be open from previous test
     // Click on organizations tab
     await clickContentTab('organizations');
 
@@ -358,11 +341,7 @@ describe.serial('Organization Entry Tests', () => {
   test('Switch to sessions tab', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.Organization);
-    await expandTypeNode(Topics.Organization, '(none)');
-    await openEntry(Topics.Organization, 'Renamed Test Organization');
-
+    // Entry should already be open from previous test
     // Click on sessions tab
     await clickContentTab('sessions');
 
@@ -378,11 +357,7 @@ describe.serial('Organization Entry Tests', () => {
   test('Switch to foundry tab', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.Organization);
-    await expandTypeNode(Topics.Organization, '(none)');
-    await openEntry(Topics.Organization, 'Renamed Test Organization');
-
+    // Entry should already be open from previous test
     // Click on foundry tab
     await clickContentTab('foundry');
 

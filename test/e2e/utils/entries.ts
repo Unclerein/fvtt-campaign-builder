@@ -216,20 +216,21 @@ export const createEntryViaUI = async (topic: ValidTopic, name: string): Promise
   await nameInput.click({ clickCount: 3 });
   await nameInput.type(name);
 
-  // Click the "Use" button to create the entry
+  // Click the button to create the entry
+  // PC uses "OK", other entry types use "Use"
   // Find button by text content since :has-text is not valid CSS
   const buttons = await page.$$('.fcb-dialog-button');
-  let clickedUse = false;
+  let clickedButton = false;
   for (const btn of buttons) {
     const text = await btn.evaluate(el => el.textContent);
-    if (text?.includes('Use')) {
+    if (text?.includes('Use') || text?.includes('OK')) {
       await btn.click();
-      clickedUse = true;
+      clickedButton = true;
       break;
     }
   }
   
-  if (!clickedUse) {
+  if (!clickedButton) {
     // Fallback: click the primary/default button
     const primaryBtn = await page.$('.fcb-dialog-button.primary');
     if (primaryBtn) {
@@ -256,12 +257,12 @@ export const createEntryViaUI = async (topic: ValidTopic, name: string): Promise
 
   if (!uuid) {
     // Fallback: look up by name in the topic folder
-    const fallbackUuid = await page.evaluate(async (entryName: string) => {
+    const fallbackUuid = await page.evaluate(async (entryName: string, topicId: number) => {
       const api = (game as any).modules.get('campaign-builder')!.api;
-      const list = api.getEntries(1); // Topics.Character
+      const list = api.getEntries(topicId);
       const entry = list.find((e: { name: string }) => e.name === entryName);
       return entry?.uuid;
-    }, name);
+    }, name, topic);
     
     if (!fallbackUuid) {
       throw new Error(`Could not find UUID for created entry: ${name}`);

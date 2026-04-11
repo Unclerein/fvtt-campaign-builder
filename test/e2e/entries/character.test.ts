@@ -75,19 +75,8 @@ describe.serial('Character Entry Tests', () => {
     }
   });
 
-  afterEach(async () => {
-    // Close all tabs after each test for isolation
-    const page = sharedContext.page!;
-    const closeButtons = await page.$$('[data-testid="tab-close-button"]');
-    for (const btn of closeButtons) {
-      try {
-        await btn.click();
-        await new Promise(resolve => setTimeout(resolve, 100));
-      } catch {
-        // Ignore close errors
-      }
-    }
-  });
+  // Note: No afterEach tab closing - each test is independent and creates its own entry
+  // Tests clean up their own entries via deleteEntryViaAPI
 
   /**
    * What it tests: Opening an existing character entry from the directory tree.
@@ -290,11 +279,15 @@ describe.serial('Character Entry Tests', () => {
 
     // Entry is already open after creation
 
+    // Wait for tags component to be initialized
+    await page.waitForSelector('.tags-wrapper:not(.uninitialized)', { timeout: 5000 });
+
     // Add a tag
     const testTag = 'test-tag-' + Date.now();
     await addTag(testTag);
 
-    // Verify tag was added
+    // Verify tag was added - wait a moment for tagify to update
+    await new Promise(resolve => setTimeout(resolve, 300));
     const tags = await page.$$('.tagify__tag');
     let found = false;
     for (const tag of tags) {
@@ -478,6 +471,13 @@ describe.serial('Character Entry Tests', () => {
   test('Switch to journals tab', async () => {
     const page = sharedContext.page!;
 
+    // Create a new entry for this test
+    const journalTestName = 'Journal Tab Test ' + Date.now();
+    await expandTopicNode(Topics.Character);
+    const journalTestUuid = await createEntryViaUI(Topics.Character, journalTestName);
+
+    // Entry is already open after creation
+
     // Click on journals tab
     await clickContentTab('journals');
 
@@ -494,6 +494,9 @@ describe.serial('Character Entry Tests', () => {
     });
     // Expected behavior: Journals tab is visible
     expect(isVisible).toBe(true);
+
+    // Clean up
+    await deleteEntryViaAPI(journalTestUuid);
   });
 
   /**

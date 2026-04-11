@@ -99,6 +99,9 @@ export const expandTopicNode = async (topic: ValidTopic) => {
       break;
     }
   }
+
+  // Wait for entries to be visible within the topic folder
+  await page.waitForSelector(`.fcb-topic-folder[data-topic="${topic}"] .fcb-directory-entry`, { timeout: 5000 });
 }
 
 /** assumes the topic is expanded */

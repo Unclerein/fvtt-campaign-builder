@@ -4,7 +4,7 @@
  * tag management, parent hierarchy, journals, scenes, push-to-session.
  */
 
-import { describe, test, beforeAll, afterAll, expect } from '../testRunner';
+import { describe, test, beforeAll, afterAll, afterEach, expect } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
@@ -23,7 +23,7 @@ import {
   clickTag,
   clickContentTab,
   clickPushToSession,  
-  createEntryViaAPI,
+  createEntryViaUI,
   deleteEntryViaAPI,
   getGenerateButton,
   getFoundryDocButton,
@@ -77,6 +77,18 @@ describe.serial('Location Entry Tests', () => {
 
     // pick the right setting
     await switchToSetting(setting.name);
+
+    // Close any leftover tabs from previous runs
+    const page = sharedContext.page!;
+    const closeButtons = await page.$$('[data-testid="tab-close-button"]');
+    for (const btn of closeButtons) {
+      try {
+        await btn.click();
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch {
+        // Ignore close errors
+      }
+    }
   });
 
   afterAll(async () => {
@@ -99,6 +111,9 @@ describe.serial('Location Entry Tests', () => {
     }
   });
 
+  // Note: No afterEach tab closing - serial tests depend on state from previous tests
+  // The entry created in early tests is reused across subsequent tests
+
   /**
    * What it tests: Opening an existing location entry from the directory tree.
    * Expected behavior: Entry opens and displays the correct location name in the name input.
@@ -117,7 +132,12 @@ describe.serial('Location Entry Tests', () => {
     const firstLocation = setting.topics[Topics.Location][0];
     await openEntry(Topics.Location, firstLocation.name);
 
-    // Verify the entry is open
+    // Verify the entry is open - wait for name input to have a value
+    await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 5000 });
+    await page.waitForFunction(() => {
+      const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
+      return input && input.value.length > 0;
+    }, { timeout: 5000 });
     const nameInput = getEntryNameInput();
     const nameValue = await nameInput.inputValue();
     // Expected behavior: Name input contains the location's name
@@ -132,13 +152,11 @@ describe.serial('Location Entry Tests', () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
-    // Create a new entry for this test
-    createdEntryUuid = await createEntryViaAPI(Topics.Location, testEntryName, setting.name);
-
-    // Expand and open the entry
+    // Create a new entry via UI (simulates real user behavior)
     await expandTopicNode(Topics.Location);
-    await expandTypeNode(Topics.Location, '(none)');
-    await openEntry(Topics.Location, testEntryName);
+    createdEntryUuid = await createEntryViaUI(Topics.Location, testEntryName);
+
+    // Entry is already open after creation
 
     // Change the name
     const newName = 'Renamed Test Location';
@@ -208,11 +226,15 @@ describe.serial('Location Entry Tests', () => {
   test('Add and remove tags', async () => {
     const page = sharedContext.page!;
 
+    // Wait for tags component to be initialized
+    await page.waitForSelector('.tags-wrapper:not(.uninitialized)', { timeout: 5000 });
+
     // Add a tag
     const testTag = 'location-tag-' + Date.now();
     await addTag(testTag);
 
-    // Verify tag was added
+    // Verify tag was added - wait a moment for tagify to update
+    await new Promise(resolve => setTimeout(resolve, 300));
     const tags = await page.$$('.tagify__tag');
     let found = false;
     for (const tag of tags) {

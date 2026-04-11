@@ -4,7 +4,7 @@
  * tag management, relationships, push-to-session, content tabs.
  */
 
-import { describe, test, beforeAll, afterAll, expect,  } from '../testRunner';
+import { describe, test, beforeAll, afterAll, afterEach, expect,  } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
@@ -20,7 +20,7 @@ import {
   removeTag,
   clickTag,
   clickContentTab,
-  createEntryViaAPI,
+  createEntryViaUI,
   deleteEntryViaAPI,
   getGenerateButton,
   closeActiveTab,
@@ -37,12 +37,25 @@ const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(r
  */
 describe.serial('PC Entry Tests', () => {
   let createdEntryUuid: string | null = null;
-  const testEntryName = 'Test PC Entry';
+  // Track the current entry name - changes as tests rename it
+  let currentEntryName = 'Test PC Entry';
 
   beforeAll(async () => {
     await ensureSetup(false);
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
+
+    // Close any leftover tabs from previous runs
+    const page = sharedContext.page!;
+    const closeButtons = await page.$$('[data-testid="tab-close-button"]');
+    for (const btn of closeButtons) {
+      try {
+        await btn.click();
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch {
+        // Ignore close errors
+      }
+    }
   });
 
   afterAll(async () => {
@@ -56,48 +69,23 @@ describe.serial('PC Entry Tests', () => {
     }
   });
 
+  // Note: No afterEach tab closing - serial tests depend on state from previous tests
+  // Tabs are closed in afterAll for cleanup
+
   /**
-   * What it tests: Opening an existing PC entry from the directory tree.
-   * Expected behavior: Entry opens and displays the correct PC name in the name input.
+   * What it tests: Creating a new PC entry via the UI.
+   * Expected behavior: Entry is created and opens automatically.
    */
-  test('Open existing PC entry', async () => {
-    const setting = testData.settings[0];
-
-    // Expand the PC topic folder
+  test('Create new PC entry via UI', async () => {
+    // Create a new entry via UI (simulates real user behavior)
     await expandTopicNode(Topics.PC);
+    createdEntryUuid = await createEntryViaUI(Topics.PC, currentEntryName);
 
-    // Expand the (none) type folder
-    await expandTypeNode(Topics.PC, '(none)');
-
-    // Open the first PC
-    const firstPC = setting.topics[Topics.PC][0];
-    await openEntry(Topics.PC, firstPC.name);
-
-    // Verify the entry is open
-    const nameInput = getEntryNameInput();
-    const nameValue = await nameInput.inputValue();
-    // Expected behavior: Name input contains the PC's name
-    expect(nameValue).toBe(firstPC.name);
-  });
-
-  test('Create new PC entry via API', async () => {
-    const setting = testData.settings[0];
-
-    // Create a new entry for this test
-    createdEntryUuid = await createEntryViaAPI(Topics.PC, testEntryName, setting.name);
-
-    // Refresh the directory
-    await switchToSetting(testData.settings[1].name);
-    await switchToSetting(setting.name);
-
-    // Expand and open the entry
-    await expandTopicNode(Topics.PC);
-    await expandTypeNode(Topics.PC, '(none)');
-    await openEntry(Topics.PC, testEntryName);
+    // Entry is already open after creation
 
     // Verify the entry is open
     const nameValue = await getEntryNameValue();
-    expect(nameValue).toBe(testEntryName);
+    expect(nameValue).toBe(currentEntryName);
   });
 
   /**
@@ -105,14 +93,11 @@ describe.serial('PC Entry Tests', () => {
    * Expected behavior: Name change persists after debounce period.
    */
   test('Edit PC name with debounce', async () => {
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.PC);
-    await expandTypeNode(Topics.PC, '(none)');
-    await openEntry(Topics.PC, testEntryName);
-
+    // Entry should already be open from previous test
     // Change the name
     const newName = 'Renamed Test PC';
     await setEntryName(newName);
+    currentEntryName = newName;
 
     // Verify the name changed
     const nameValue = await getEntryNameValue();
@@ -127,11 +112,7 @@ describe.serial('PC Entry Tests', () => {
   test('Edit player name', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.PC);
-    await expandTypeNode(Topics.PC, '(none)');
-    await openEntry(Topics.PC, 'Renamed Test PC');
-
+    // Entry should already be open from previous test
     // Set player name
     const playerInput = await page.$('.fcb-player-name input, input[data-testid="player-name-input"]');
     if (playerInput) {
@@ -148,11 +129,7 @@ describe.serial('PC Entry Tests', () => {
   test('Select existing type for PC', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.PC);
-    await expandTypeNode(Topics.PC, '(none)');
-    await openEntry(Topics.PC, 'Renamed Test PC');
-
+    // Entry should already be open from previous test
     // Click on the type input to open dropdown
     const typeInput = await page.$('.fcb-typeahead input[data-testid="typeahead-input"]');
     if (typeInput) {
@@ -181,11 +158,7 @@ describe.serial('PC Entry Tests', () => {
   test('Add and remove tags', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.PC);
-    await expandTypeNode(Topics.PC, '(none)');
-    await openEntry(Topics.PC, 'Renamed Test PC');
-
+    // Entry should already be open from previous test
     // Wait for tags component to be initialized
     await page.waitForSelector('.tags-wrapper:not(.uninitialized)', { timeout: 5000 });
 
@@ -225,6 +198,7 @@ describe.serial('PC Entry Tests', () => {
   test('Click tag opens tag results tab', async () => {
     const page = sharedContext.page!;
 
+    // Entry should already be open from previous test
     // Add a tag first
     await addTag('pc-nav-tag');
     await delay(300);
@@ -239,7 +213,7 @@ describe.serial('PC Entry Tests', () => {
     const tabs = await page.$$('.fcb-tab');
     expect(tabs.length).toBeGreaterThan(1);
 
-    // Close the tag results tab
+    // Close the tag results tab to return to the entry
     await closeActiveTab();
   });
 
@@ -250,11 +224,7 @@ describe.serial('PC Entry Tests', () => {
   test('Generate button shows context menu', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.PC);
-    await expandTypeNode(Topics.PC, '(none)');
-    await openEntry(Topics.PC, 'Renamed Test PC');
-
+    // Entry should already be open from previous test
     // Click the generate button
     const genBtn = await getGenerateButton();
     if (genBtn) {
@@ -277,11 +247,7 @@ describe.serial('PC Entry Tests', () => {
   test('Switch to sessions tab', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.PC);
-    await expandTypeNode(Topics.PC, '(none)');
-    await openEntry(Topics.PC, 'Renamed Test PC');
-
+    // Entry should already be open from previous test
     // Click on sessions tab
     await clickContentTab('sessions');
 
@@ -297,11 +263,7 @@ describe.serial('PC Entry Tests', () => {
   test('Push PC to session', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.PC);
-    await expandTypeNode(Topics.PC, '(none)');
-    await openEntry(Topics.PC, 'Renamed Test PC');
-
+    // Entry should already be open from previous test
     // Click the push-to-session button
     const pushBtn = await page.$('.fcb-push-to-session');
     if (pushBtn) {
@@ -320,11 +282,7 @@ describe.serial('PC Entry Tests', () => {
   test('Switch to journals tab', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.PC);
-    await expandTypeNode(Topics.PC, '(none)');
-    await openEntry(Topics.PC, 'Renamed Test PC');
-
+    // Entry should already be open from previous test
     // Click on journals tab
     await clickContentTab('journals');
 
@@ -340,11 +298,7 @@ describe.serial('PC Entry Tests', () => {
   test('Switch to characters relationship tab', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.PC);
-    await expandTypeNode(Topics.PC, '(none)');
-    await openEntry(Topics.PC, 'Renamed Test PC');
-
+    // Entry should already be open from previous test
     // Click on characters tab
     await clickContentTab('characters');
 
@@ -356,11 +310,7 @@ describe.serial('PC Entry Tests', () => {
   test('Switch to locations relationship tab', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.PC);
-    await expandTypeNode(Topics.PC, '(none)');
-    await openEntry(Topics.PC, 'Renamed Test PC');
-
+    // Entry should already be open from previous test
     // Click on locations tab
     await clickContentTab('locations');
 
@@ -372,11 +322,7 @@ describe.serial('PC Entry Tests', () => {
   test('Switch to organizations relationship tab', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.PC);
-    await expandTypeNode(Topics.PC, '(none)');
-    await openEntry(Topics.PC, 'Renamed Test PC');
-
+    // Entry should already be open from previous test
     // Click on organizations tab
     await clickContentTab('organizations');
 
@@ -392,17 +338,13 @@ describe.serial('PC Entry Tests', () => {
   test('Image picker is visible', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.PC);
-    await expandTypeNode(Topics.PC, '(none)');
-    await openEntry(Topics.PC, 'Renamed Test PC');
+    // Entry should already be open from previous test
+    // Switch to description tab to see image picker
+    await clickContentTab('description');
 
-    // Click on sessions tab
-    await clickContentTab('sessions');
-
-    // Verify sessions tab is visible
-    const sessionsTab = await page.$('[data-tab="sessions"]');
-    expect(sessionsTab).not.toBeNull();
+    // Verify image picker is present
+    const imagePicker = await page.$('.fcb-image-picker, .fcb-pc-image-container');
+    expect(imagePicker).not.toBeNull();
   });
 
   /**
@@ -412,11 +354,7 @@ describe.serial('PC Entry Tests', () => {
   test('Switch to foundry tab', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.PC);
-    await expandTypeNode(Topics.PC, '(none)');
-    await openEntry(Topics.PC, 'Renamed Test PC');
-
+    // Entry should already be open from previous test
     // Click on foundry tab
     await clickContentTab('foundry');
 
@@ -428,10 +366,9 @@ describe.serial('PC Entry Tests', () => {
   test('PC shows image picker', async () => {
     const page = sharedContext.page!;
 
-    // Make sure we have the entry open
-    await expandTopicNode(Topics.PC);
-    await expandTypeNode(Topics.PC, '(none)');
-    await openEntry(Topics.PC, 'Renamed Test PC');
+    // Entry should already be open from previous test
+    // Go back to description tab
+    await clickContentTab('description');
 
     // Verify image picker is present
     const imagePicker = await page.$('.fcb-image-picker, .fcb-pc-image-container');

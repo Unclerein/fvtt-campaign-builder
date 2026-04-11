@@ -100,11 +100,7 @@ describe.serial('My Test Suite', () => {
     // Test logic...
   });
 });
-
-// Note: runTests() is called by the main runner (all.test.ts)
 ```
-
-**Important:** Do NOT call `runTests()` in individual test files. This causes duplicate execution because suites accumulate in the global `suites` array.
 
 ### Adding to the Test Runner
 
@@ -136,4 +132,67 @@ The `ensureSetup(true)` call creates a standard set of test data:
 - This data persists across test runs (check with `testDataExists()`)
 - **Read-only**: Use this data for navigation, display, and read-only tests
 - **Write tests**: Create your own objects within the test and delete them afterward
+
+## Entry Creation Patterns
+
+### UI-Based Entry Creation
+
+Use `createEntryViaUI()` from `@e2etest/utils` to create entries via the UI (simulates real user behavior).  Note that the entry will be open after creation, which is often convenient for next steps.
+
+### Topic-Specific Behaviors
+
+- **Character, Location, Organization**: Use grouped tree with type folders. Dialog button is "Use".
+- **PC**: Uses nested tree (no type folders). Dialog button is "OK".
+
+### Directory Tree Structure
+
+- **Grouped tree** (Character, Location, Organization): Entries are grouped under type folders like `(none)`, `Town`, etc.
+- **Nested tree** (PC): Entries are listed directly under the topic folder without type grouping.
+
+### Test Isolation
+
+Each test file should:
+1. Close leftover tabs in `beforeAll` (from previous test runs)
+2. Close all tabs in `afterEach` (between tests in the same suite)
+3. Clean up created entries in `afterAll`
+
+```typescript
+beforeAll(async () => {
+  await ensureSetup(false);
+  await switchToSetting(setting.name);
+  
+  // Close leftover tabs
+  const page = sharedContext.page!;
+  const closeButtons = await page.$$('[data-testid="tab-close-button"]');
+  for (const btn of closeButtons) {
+    try {
+      await btn.click();
+      await new Promise(resolve => setTimeout(resolve, 100));
+    } catch { /* ignore */ }
+  }
+});
+
+afterEach(async () => {
+  const page = sharedContext.page!;
+  const closeButtons = await page.$$('[data-testid="tab-close-button"]');
+  for (const btn of closeButtons) {
+    try {
+      await btn.click();
+      await new Promise(resolve => setTimeout(resolve, 100));
+    } catch { /* ignore */ }
+  }
+});
+```
+
+### Waiting for Entry Content
+
+After opening an entry, wait for the name input to have a value (Vue reactivity timing):
+
+```typescript
+await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 5000 });
+await page.waitForFunction(() => {
+  const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
+  return input && input.value.length > 0;
+}, { timeout: 5000 });
+```
 
