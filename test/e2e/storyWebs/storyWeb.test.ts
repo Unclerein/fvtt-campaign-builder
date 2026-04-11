@@ -47,11 +47,11 @@ const openStoryWeb = async (campaignName: string, storyWebName: string): Promise
   await expandCampaignFolder(campaignName);
 
   // Find the story web node
-  const storyWebNodes = await page.$$('.fcb-storyweb-node');
+  const storyWebNodes = await page.$$('.fcb-storyWeb-node');
   for (const node of storyWebNodes) {
     const text = await node.evaluate(el => el.textContent);
     if (text?.includes(storyWebName)) {
-      const nameEl = await node.$('[data-testid="storyweb-name"], .node-name');
+      const nameEl = await node.$('[data-testid="storyWeb-name"], .node-name');
       if (nameEl) {
         await nameEl.click();
         break;

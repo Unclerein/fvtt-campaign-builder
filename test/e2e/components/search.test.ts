@@ -8,7 +8,7 @@ import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
 import { switchToSetting } from '@e2etest/utils';
-import { getByTestId, Locator } from '../helpers';
+import { getByTestId } from '../helpers';
 
 /**
  * Helper delay function.

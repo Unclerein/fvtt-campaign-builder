@@ -12,6 +12,7 @@ import { expandTopicNode, expandTypeNode, switchToSetting } from '@e2etest/utils
 import { Topics, ValidTopic } from '@/types';
 import { getByTestId } from '../helpers';
 
+
 /**
  * Basic Directory Functions Tests
  * Verifies directory tree navigation and folder expansion.
@@ -38,7 +39,7 @@ describe.serial('Basic Directory functions', () => {
 		const setting = testData.settings[0];
 
 		// make sure everything closed to start, just in case
-		await getByTestId(page, 'collapse-all-button').click();
+		await page.click(getByTestId('collapse-all-button'));
 
 		// Wait for the collapse to complete
 		await page.waitForSelector('.fcb-topic-folder.collapsed');
@@ -96,7 +97,7 @@ describe.serial('Basic Directory functions', () => {
 		}
 
 		// also check collapse all
-		await getByTestId(page, 'collapse-all-button').click();
+		await page.click(getByTestId('collapse-all-button'));
 		
 		// Wait for collapse to complete
 		await new Promise(resolve => setTimeout(resolve, 200));

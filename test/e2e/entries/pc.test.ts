@@ -4,15 +4,13 @@
  * tag management, relationships, push-to-session, content tabs.
  */
 
-import { describe, test, beforeAll, afterAll, afterEach, expect,  } from '../testRunner';
+import { describe, test, beforeAll, afterAll, expect,  } from '../testRunner';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
-import { switchToSetting, expandTopicNode, expandTypeNode } from '@e2etest/utils';
+import { switchToSetting, expandTopicNode, getGenerateButtonSelector } from '@e2etest/utils';
 import { Topics } from '@/types';
 import {
-  openEntry,
-  getEntryNameInput,
   setEntryName,
   getEntryNameValue,
   getTypeValue,
@@ -22,7 +20,6 @@ import {
   clickContentTab,
   createEntryViaUI,
   deleteEntryViaAPI,
-  getGenerateButton,
   closeActiveTab,
 } from '@e2etest/utils';
 
@@ -226,9 +223,9 @@ describe.serial('PC Entry Tests', () => {
 
     // Entry should already be open from previous test
     // Click the generate button
-    const genBtn = await getGenerateButton();
-    if (genBtn) {
-      await genBtn.click();
+    const genSelector = await getGenerateButtonSelector();
+    if (genSelector) {
+      await sharedContext.page!.click(genSelector);
 
       // Wait for context menu
       await page.waitForSelector('.mx-context-menu', { timeout: 5000 });

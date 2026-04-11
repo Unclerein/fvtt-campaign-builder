@@ -8,11 +8,10 @@ import { describe, test, beforeAll, afterAll, afterEach, expect, } from '../test
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
-import { switchToSetting, expandTopicNode, expandTypeNode } from '@e2etest/utils';
+import { switchToSetting, expandTopicNode, expandTypeNode, getGenerateButtonSelector } from '@e2etest/utils';
 import { Topics } from '@/types';
 import {
   openEntry,
-  getEntryNameInput,
   setEntryName,
   getEntryNameValue,
   getTypeValue,
@@ -21,10 +20,8 @@ import {
   clickTag,
   clickContentTab,
   clickPushToSession,
-  clickContextMenuItem,
   createEntryViaUI,
   deleteEntryViaAPI,
-  getGenerateButton,
   closeActiveTab,
 } from '@e2etest/utils';
 
@@ -98,8 +95,7 @@ describe.serial('Organization Entry Tests', () => {
       const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
       return input && input.value.length > 0;
     }, { timeout: 5000 });
-    const nameInput = getEntryNameInput();
-    const nameValue = await nameInput.inputValue();
+    const nameValue = await getEntryNameValue();
     // Expected behavior: Name input contains the organization's name
     expect(nameValue).toBe(firstOrg.name);
   });
@@ -260,9 +256,9 @@ describe.serial('Organization Entry Tests', () => {
 
     // Entry should already be open from previous test
     // Click the generate button
-    const genBtn = await getGenerateButton();
-    if (genBtn) {
-      await genBtn.click();
+    const genSelector = await getGenerateButtonSelector();
+    if (genSelector) {
+      await sharedContext.page!.click(genSelector);
 
       // Wait for context menu
       await page.waitForSelector('.mx-context-menu', { timeout: 5000 });

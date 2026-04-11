@@ -9,19 +9,12 @@ import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
 import { switchToSetting } from '@e2etest/utils';
-import { getByTestId, Locator } from '../helpers';
+import { getByTestId } from '../helpers';
 
 /**
  * Helper delay function.
  */
 const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
-
-/**
- * Gets the session name input locator.
- */
-const getSessionNameInput = (): Locator => {
-  return getByTestId(sharedContext.page!, 'session-name-input');
-};
 
 /**
  * Gets the session name value.

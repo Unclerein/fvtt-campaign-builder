@@ -105,7 +105,7 @@ Tests:
 **Files:**
 - `test/e2e/arcs/arc.test.ts` 
 - `test/e2e/fronts/front.test.ts` 
-- `test/e2e/storywebs/storyweb.test.ts` 
+- `test/e2e/storyWebs/storyWeb.test.ts` 
 
 Tests:
 - Arc: Create, add locations, session range
@@ -138,7 +138,7 @@ Tests:
 - `navigationStore.ts` 
 
 ### 3.2 Play Mode Navigation Tests
-**File:** `test/e2e/navigation/playmode.test.ts` 
+**File:** `test/e2e/navigation/playMode.test.ts` 
 
 Tests:
 - Campaign selector dropdown
@@ -749,13 +749,13 @@ This section tracks each test file with detailed descriptions of what is being t
 | components/typeahead.test.ts | FAILED | 0 | 11 |
 | components/imagePicker.test.ts | FAILED | 0 | 10 |
 | components/relationshipTabs.test.ts | FAILED | 0 | 12 |
-| components/playmode.test.ts | FAILED | 4 | 10 |
+| components/playMode.test.ts | FAILED | 4 | 10 |
 | components/search.test.ts | FAILED | 9 | 2 |
 | dialogs/dialogs.test.ts | FAILED | 4 | 12 |
 | features/features.test.ts | FAILED | 8 | 14 |
 | arcs/arc.test.ts | FAILED | 11 | 1 |
 | fronts/front.test.ts | FAILED | 6 | 1 |
-| storywebs/storyweb.test.ts | FAILED | 6 | 1 |
+| storyWebs/storyWeb.test.ts | FAILED | 6 | 1 |
 | settings/settings.test.ts | FAILED | 6 | 19 |
 
 **Summary:** 24 test files, 108 tests passed, 228 tests failed

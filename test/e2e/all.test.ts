@@ -51,13 +51,13 @@ const allTestFiles: Record<string, () => Promise<void>> = {
   'components/typeahead': () => import('./components/typeahead.test').then(() => {}),
   'components/imagePicker': () => import('./components/imagePicker.test').then(() => {}),
   'components/relationshipTabs': () => import('./components/relationshipTabs.test').then(() => {}),
-  'components/playmode': () => import('./components/playmode.test').then(() => {}),
+  'components/playMode': () => import('./components/playMode.test').then(() => {}),
   'components/search': () => import('./components/search.test').then(() => {}),
   'dialogs/dialogs': () => import('./dialogs/dialogs.test').then(() => {}),
   'features/features': () => import('./features/features.test').then(() => {}),
   'arcs/arc': () => import('./arcs/arc.test').then(() => {}),
   'fronts/front': () => import('./fronts/front.test').then(() => {}),
-  'storywebs/storyweb': () => import('./storywebs/storyweb.test').then(() => {}),
+  'storyWebs/storyWeb': () => import('./storyWebs/storyWeb.test').then(() => {}),
   'settings/settings': () => import('./settings/settings.test').then(() => {}),
 };
 

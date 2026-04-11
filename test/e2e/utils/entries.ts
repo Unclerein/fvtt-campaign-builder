@@ -4,7 +4,7 @@
 
 import { sharedContext } from '../sharedContext';
 import { Topics, ValidTopic } from '@/types';
-import { Locator, getByTestId } from '../helpers';
+import { getByTestId } from '../helpers';
 
 const topicText: Record<ValidTopic, string> = {
   [Topics.Character]: 'Characters',
@@ -22,41 +22,56 @@ const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(r
  * Opens an entry from the directory tree.
  * Assumes the topic folder is already expanded.
  * Retries if entry not found (for newly created entries).
+ * Uses page.evaluate to avoid stale element handle issues.
  */
 export const openEntry = async (topic: ValidTopic, entryName: string, retries = 3): Promise<void> => {
   const page = sharedContext.page!;
 
-  // Find the topic folder and search within it
-  const topicFolder = await page.$(`.fcb-topic-folder[data-topic="${topic}"]`);
-  if (!topicFolder) {
-    throw new Error(`Topic folder not found for topic: ${topic}`);
-  }
-
   // Wait for entries to be visible within this topic folder
-  await topicFolder.waitForSelector('.fcb-directory-entry', { timeout: 5000 });
+  // Entries can have different class names depending on state
+  await page.waitForFunction((topicId: number) => {
+    const topicFolder = document.querySelector(`.fcb-topic-folder[data-topic="${topicId}"]`);
+    if (!topicFolder) return false;
+    return topicFolder.querySelector('.fcb-directory-entry, .fcb-current-directory-entry, .fcb-current-directory-branch') !== null;
+  }, { timeout: 5000 }, topic);
 
-  // Find the entry node with the name within this topic folder
-  const entries = await topicFolder.$$('.fcb-directory-entry');
-  
-  let found = false;
-  for (const entry of entries) {
-    const text = await entry.evaluate(el => el.textContent);
-    if (text?.includes(entryName)) {
-      await entry.click();
-      found = true;
-      break;
+  // Use page.evaluate to find and click the entry directly
+  // Search all entry class variants
+  const clicked = await page.evaluate((topicId: number, name: string) => {
+    const topicFolder = document.querySelector(`.fcb-topic-folder[data-topic="${topicId}"]`);
+    if (!topicFolder) return false;
+
+    const entries = Array.from(topicFolder.querySelectorAll('.fcb-directory-entry, .fcb-current-directory-entry, .fcb-current-directory-branch'));
+    for (const entry of entries) {
+      if (entry.textContent?.includes(name)) {
+        (entry as HTMLElement).click();
+        return true;
+      }
     }
-  }
+    return false;
+  }, topic, entryName);
 
-  if (!found) {
-    // Debug: log all entry names
-    const allNames = await Promise.all(entries.map(e => e.evaluate(el => el.textContent)));
-    
+  if (!clicked) {
     if (retries > 0) {
       await new Promise(resolve => setTimeout(resolve, 500));
       return openEntry(topic, entryName, retries - 1);
     }
-    throw new Error(`Entry not found: ${entryName}`);
+    // Debug: log all visible entry names in the topic folder
+    const debugInfo = await page.evaluate((topicId: number) => {
+      const topicFolder = document.querySelector(`.fcb-topic-folder[data-topic="${topicId}"]`);
+      if (!topicFolder) return 'Topic folder not found';
+      const entries = topicFolder.querySelectorAll('.fcb-directory-entry, .fcb-current-directory-entry, .fcb-current-directory-branch');
+      const typeNodes = topicFolder.querySelectorAll('.fcb-directory-type');
+      return {
+        entryCount: entries.length,
+        entryTexts: Array.from(entries).map(e => e.textContent?.trim()),
+        typeCount: typeNodes.length,
+        typeTexts: Array.from(typeNodes).map(t => t.textContent?.trim()),
+        isCollapsed: topicFolder.classList.contains('collapsed'),
+        html: topicFolder.innerHTML.substring(0, 500),
+      };
+    }, topic);
+    throw new Error(`Entry not found: ${entryName}. Debug: ${JSON.stringify(debugInfo)}`);
   }
 
   // Wait for the content to load
@@ -64,94 +79,95 @@ export const openEntry = async (topic: ValidTopic, entryName: string, retries = 
 };
 
 /**
- * Gets the entry name input locator.
+ * Selector for the entry name input.
  */
-export const getEntryNameInput = (): Locator => {
-  return getByTestId(sharedContext.page!, 'entry-name-input');
+export const getEntryNameInputSelector = (): string => {
+  return getByTestId('entry-name-input');
 };
 
 /**
- * Gets the type select input locator (first typeahead on description tab).
+ * Selector for the type select input (first typeahead on description tab).
  * Note: Uses a more specific selector to find the type input within the TypeSelect component.
  */
-export const getTypeSelectInput = (): Locator => {
-  const page = sharedContext.page!;
+export const getTypeSelectInputSelector = (): string => {
   // Type is the first typeahead in the description tab
-  // Use a function to find it since :first-of-type doesn't work with class selectors
-  return new Locator(page, '.fcb-description-content .fcb-typeahead input[data-testid="typeahead-input"]');
+  return '.fcb-description-content .fcb-typeahead input[data-testid="typeahead-input"]';
 };
 
 /**
- * Gets the species select input locator (second typeahead on description tab, for characters).
+ * Selector for the species select input (second typeahead on description tab, for characters).
  * Note: Species input is within the SpeciesSelect component wrapper.
  */
-export const getSpeciesSelectInput = (): Locator => {
-  const page = sharedContext.page!;
+export const getSpeciesSelectInputSelector = (): string => {
   // Species is the second typeahead in the description tab (after type)
-  // Find all typeaheads and return the second one
-  return new Locator(page, '.fcb-description-content .fcb-typeahead:nth-child(2) input[data-testid="typeahead-input"]');
+  return '.fcb-description-content .fcb-typeahead:nth-child(2) input[data-testid="typeahead-input"]';
 };
 
 /**
- * Gets the tags input locator.
+ * Selector for the tags input.
  */
-export const getTagsInput = (): Locator => {
-  return getByTestId(sharedContext.page!, 'tags-input');
+export const getTagsInputSelector = (): string => {
+  return getByTestId('tags-input');
 };
 
 /**
- * Gets the push to session button locator.
+ * Selector for the push to session button.
  * Returns null if button doesn't exist.
  */
-export const getPushToSessionButton = async (): Promise<Locator | null> => {
+export const getPushToSessionButtonSelector = async (): Promise<string | null> => {
   const page = sharedContext.page!;
   const btn = await page.$('[data-testid="entry-push-to-session-button"]');
   if (!btn) return null;
-  return getByTestId(page, 'entry-push-to-session-button');
+  return getByTestId('entry-push-to-session-button');
 };
 
 /**
- * Gets the generate button locator.
+ * Selector for the generate button.
  * Returns null if button doesn't exist.
  */
-export const getGenerateButton = async (): Promise<Locator | null> => {
+export const getGenerateButtonSelector = async (): Promise<string | null> => {
   const page = sharedContext.page!;
   const btn = await page.$('[data-testid="entry-generate-button"]');
   if (!btn) return null;
-  return getByTestId(page, 'entry-generate-button');
+  return getByTestId('entry-generate-button');
 };
 
 /**
- * Gets the foundry doc button locator.
+ * Selector for the foundry doc button.
  * Returns null if button doesn't exist.
  */
-export const getFoundryDocButton = async (): Promise<Locator | null> => {
+export const getFoundryDocButtonSelector = async (): Promise<string | null> => {
   const page = sharedContext.page!;
   const btn = await page.$('[data-testid="entry-foundry-doc-button"]');
   if (!btn) return null;
-  return getByTestId(page, 'entry-foundry-doc-button');
+  return getByTestId('entry-foundry-doc-button');
 };
 
 /**
- * Gets the voice button locator.
+ * Selector for the voice button.
  */
-export const getVoiceButton = (): Locator => {
-  return getByTestId(sharedContext.page!, 'entry-voice-button');
+export const getVoiceButtonSelector = (): string => {
+  return getByTestId('entry-voice-button');
 };
 
 /**
  * Clicks on a tab in the content tab strip.
+ * Uses page.evaluate to avoid stale element handle issues.
  */
 export const clickContentTab = async (tabId: string): Promise<void> => {
   const page = sharedContext.page!;
 
-  // Find the tab with the data-tab attribute
-  const tab = await page.$(`[data-tab="${tabId}"]`);
-  if (tab) {
-    await tab.click();
-    // Wait a bit for the tab to switch
-    await delay(100);
-  }
+  // Use page.evaluate to click the tab directly in the browser context
+  // This avoids stale element handle issues after DOM updates
+  await page.evaluate((id: string) => {
+    const tab = document.querySelector(`[data-tab="${id}"]`);
+    if (tab && tab instanceof HTMLElement) {
+      tab.click();
+    }
+  }, tabId);
+
+  // Wait for tab content to be visible
+  await page.waitForSelector(`.tab[data-tab="${tabId}"]`, { visible: true, timeout: 5000 }).catch(() => {});
 };
 
 /**
@@ -165,28 +181,19 @@ export const clickContentTab = async (tabId: string): Promise<void> => {
 export const createEntryViaUI = async (topic: ValidTopic, name: string): Promise<string> => {
   const page = sharedContext.page!;
 
-  // Find the topic folder header
-  const topicFolder = await page.$(`.fcb-topic-folder[data-topic="${topic}"]`);
-  if (!topicFolder) {
-    throw new Error(`Topic folder not found for topic: ${topic}`);
-  }
-
-  // Right-click on the inner div with the contextmenu handler
-  // Structure: <header class="folder-header"><div @contextmenu="...">...</div></header>
-  const headerInner = await topicFolder.$('.folder-header > div');
-  if (!headerInner) {
-    throw new Error(`Topic folder header inner div not found for topic: ${topic}`);
-  }
-  
-  await headerInner.evaluate((el) => {
-    el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
-  });
+  // Right-click on the topic folder header to trigger context menu
+  await page.evaluate((topicId: number) => {
+    const topicFolder = document.querySelector(`.fcb-topic-folder[data-topic="${topicId}"]`);
+    if (!topicFolder) throw new Error(`Topic folder not found for topic: ${topicId}`);
+    const headerInner = topicFolder.querySelector('.folder-header > div');
+    if (!headerInner) throw new Error(`Topic folder header inner div not found for topic: ${topicId}`);
+    headerInner.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
+  }, topic);
 
   // Wait for context menu
   await page.waitForSelector('.mx-context-menu', { timeout: 5000 });
 
   // Find and click the "Create new X" menu item
-  // Localized labels: "Create new character", "Create new location", etc.
   const createLabels: Record<ValidTopic, string> = {
     [Topics.Character]: 'Create new character',
     [Topics.Location]: 'Create new location',
@@ -194,49 +201,40 @@ export const createEntryViaUI = async (topic: ValidTopic, name: string): Promise
     [Topics.PC]: 'Create new PC',
   };
   const createLabel = createLabels[topic];
-  const items = await page.$$('.mx-context-menu-item');
-  for (const item of items) {
-    const text = await item.evaluate(el => el.textContent);
-    if (text?.includes(createLabel)) {
-      await item.click();
-      break;
+  await page.evaluate((label: string) => {
+    const items = Array.from(document.querySelectorAll('.mx-context-menu-item'));
+    for (const item of items) {
+      if (item.textContent?.includes(label)) {
+        (item as HTMLElement).click();
+        return;
+      }
     }
-  }
+  }, createLabel);
 
   // Wait for dialog to appear
   await page.waitForSelector('.fcb-dialog', { timeout: 5000 });
 
-  // Find the name input and type the entry name
+  // Type the entry name into the dialog input
   const nameInput = await page.$('.fcb-dialog input[type="text"]');
   if (!nameInput) {
     throw new Error('Name input not found in create entry dialog');
   }
-  
-  // Clear any existing value and type new name
   await nameInput.click({ clickCount: 3 });
   await nameInput.type(name);
 
-  // Click the button to create the entry
-  // PC uses "OK", other entry types use "Use"
-  // Find button by text content since :has-text is not valid CSS
-  const buttons = await page.$$('.fcb-dialog-button');
-  let clickedButton = false;
-  for (const btn of buttons) {
-    const text = await btn.evaluate(el => el.textContent);
-    if (text?.includes('Use') || text?.includes('OK')) {
-      await btn.click();
-      clickedButton = true;
-      break;
+  // Click the Use/OK button to create the entry
+  await page.evaluate(() => {
+    const buttons = Array.from(document.querySelectorAll('.fcb-dialog-button'));
+    for (const btn of buttons) {
+      if (btn.textContent?.includes('Use') || btn.textContent?.includes('OK')) {
+        (btn as HTMLElement).click();
+        return;
+      }
     }
-  }
-  
-  if (!clickedButton) {
-    // Fallback: click the primary/default button
-    const primaryBtn = await page.$('.fcb-dialog-button.primary');
-    if (primaryBtn) {
-      await primaryBtn.click();
-    }
-  }
+    // Fallback: click primary button
+    const primaryBtn = document.querySelector('.fcb-dialog-button.primary') as HTMLElement;
+    if (primaryBtn) primaryBtn.click();
+  });
 
   // Wait for dialog to close
   await page.waitForSelector('.fcb-dialog', { hidden: true, timeout: 5000 });
@@ -244,8 +242,18 @@ export const createEntryViaUI = async (topic: ValidTopic, name: string): Promise
   // Wait for the entry name input to appear (entry is open)
   await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 10000 });
 
+  // Wait for the name input to have a value (Vue reactivity)
+  await page.waitForFunction(() => {
+    const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
+    return input && input.value.length > 0;
+  }, { timeout: 5000 });
+
+  // Small delay for Vue reactivity to settle
+  await delay(200);
+
   // Get the UUID from the currently open entry tab
   // The entry opens automatically after creation via the dialog callback
+  // Use page.evaluate to get a fresh reference to avoid stale element issues
   const uuid = await page.evaluate(() => {
     // Get from the open tab
     const activeTab = document.querySelector('.fcb-tab.active');
@@ -255,8 +263,12 @@ export const createEntryViaUI = async (topic: ValidTopic, name: string): Promise
     return null;
   });
 
-  if (!uuid) {
-    // Fallback: look up by name in the topic folder
+  if (uuid) {
+    return uuid;
+  }
+
+  // Fallback: look up by name via API (with retry for timing)
+  for (let retry = 0; retry < 3; retry++) {
     const fallbackUuid = await page.evaluate(async (entryName: string, topicId: number) => {
       const api = (game as any).modules.get('campaign-builder')!.api;
       const list = api.getEntries(topicId);
@@ -264,13 +276,15 @@ export const createEntryViaUI = async (topic: ValidTopic, name: string): Promise
       return entry?.uuid;
     }, name, topic);
     
-    if (!fallbackUuid) {
-      throw new Error(`Could not find UUID for created entry: ${name}`);
+    if (fallbackUuid) {
+      return fallbackUuid;
     }
-    return fallbackUuid;
+    
+    // Wait a bit before retrying
+    await delay(300);
   }
 
-  return uuid;
+  throw new Error(`Could not find UUID for created entry: ${name}`);
 };
 
 /**
@@ -310,16 +324,20 @@ export const deleteEntryViaAPI = async (uuid: string): Promise<void> => {
  * Gets the current entry name value.
  */
 export const getEntryNameValue = async (): Promise<string> => {
-  const input = getEntryNameInput();
-  return await input.inputValue();
+  const page = sharedContext.page!;
+  const selector = getEntryNameInputSelector();
+  return await page.$eval(selector, (el) => (el as HTMLInputElement).value);
 };
 
 /**
  * Sets the entry name (types into the input).
  */
 export const setEntryName = async (name: string): Promise<void> => {
-  const input = getEntryNameInput();
-  await input.fill(name);
+  const page = sharedContext.page!;
+  const selector = getEntryNameInputSelector();
+  // Clear and type
+  await page.$eval(selector, (el) => { (el as HTMLInputElement).value = ''; });
+  await page.type(selector, name);
   // Wait for debounce (500ms) plus a buffer
   await delay(700);
 };
@@ -328,10 +346,12 @@ export const setEntryName = async (name: string): Promise<void> => {
  * Clears the type selection.
  */
 export const clearType = async (): Promise<void> => {
-  const input = getTypeSelectInput();
-  await input.click();
-  await input.fill('');
-  await delay(200);
+  const page = sharedContext.page!;
+  const selector = getTypeSelectInputSelector();
+  await page.click(selector);
+  await page.$eval(selector, (el) => { (el as HTMLInputElement).value = ''; });
+  // Wait for dropdown to close
+  await page.waitForSelector('.fcb-ta-dropdown', { hidden: true, timeout: 2000 }).catch(() => {});
 };
 
 /**
@@ -352,8 +372,7 @@ export const selectType = async (typeName: string): Promise<void> => {
   const page = sharedContext.page!;
 
   // Click on the type input to open dropdown
-  const input = getTypeSelectInput();
-  await input.click();
+  await page.click(getTypeSelectInputSelector());
 
   // Wait for dropdown to appear
   await page.waitForSelector('.fcb-ta-dropdown');
@@ -368,8 +387,8 @@ export const selectType = async (typeName: string): Promise<void> => {
     }
   }
 
-  // Wait for save
-  await delay(200);
+  // Wait for dropdown to close (indicates selection was processed)
+  await page.waitForSelector('.fcb-ta-dropdown', { hidden: true, timeout: 2000 }).catch(() => {});
 };
 
 /**
@@ -379,10 +398,10 @@ export const addNewType = async (typeName: string): Promise<void> => {
   const page = sharedContext.page!;
 
   // Click on the type input and clear any existing value
-  const input = getTypeSelectInput();
-  await input.click();
-  await input.fill('');  // Clear existing value
-  await input.type(typeName);
+  const selector = getTypeSelectInputSelector();
+  await page.click(selector);
+  await page.$eval(selector, (el) => { (el as HTMLInputElement).value = ''; });
+  await page.type(selector, typeName);
 
   // Wait for dropdown to appear
   await page.waitForSelector('.fcb-ta-dropdown');
@@ -393,8 +412,8 @@ export const addNewType = async (typeName: string): Promise<void> => {
     await addOption.click();
   }
 
-  // Wait for save
-  await delay(200);
+  // Wait for dropdown to close (indicates selection was processed)
+  await page.waitForSelector('.fcb-ta-dropdown', { hidden: true, timeout: 2000 }).catch(() => {});
 };
 
 /**
@@ -415,8 +434,7 @@ export const selectSpecies = async (speciesName: string): Promise<void> => {
   const page = sharedContext.page!;
 
   // Click on the species input to open dropdown
-  const input = getSpeciesSelectInput();
-  await input.click();
+  await page.click(getSpeciesSelectInputSelector());
 
   // Wait for dropdown to appear
   await page.waitForSelector('.fcb-ta-dropdown');
@@ -431,69 +449,81 @@ export const selectSpecies = async (speciesName: string): Promise<void> => {
     }
   }
 
-  // Wait for save
-  await delay(200);
+  // Wait for dropdown to close (indicates selection was processed)
+  await page.waitForSelector('.fcb-ta-dropdown', { hidden: true, timeout: 2000 }).catch(() => {});
 };
 
 /**
  * Adds a tag to the entry.
- * Note: Tags component uses Tagify library which has a specific input structure.
+ * Uses page.evaluate to avoid stale element handle issues.
  */
 export const addTag = async (tagName: string): Promise<void> => {
   const page = sharedContext.page!;
 
   // Wait for tags component to be initialized (class is removed when ready)
-  // Use a more robust check that waits for the tagify instance to be ready
   await page.waitForFunction(() => {
     const wrapper = document.querySelector('.tags-wrapper');
     return wrapper && !wrapper.classList.contains('uninitialized');
   }, { timeout: 5000 });
 
-  // Small delay for Tagify to be fully interactive
-  await delay(100);
+  // Use page.evaluate to interact with tagify directly in browser context
+  await page.evaluate((name: string) => {
+    const tagsInput = document.querySelector('.tagify__input') as HTMLElement;
+    if (tagsInput) {
+      tagsInput.focus();
+      // Tagify uses contentEditable or input
+      if (tagsInput.isContentEditable) {
+        tagsInput.textContent = name;
+        tagsInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      } else if ('value' in tagsInput) {
+        (tagsInput as HTMLInputElement).value = name;
+        tagsInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      }
+    }
+  }, tagName);
 
-  // Find the tagify input area and type the tag
-  // Tagify creates a contenteditable element or input with class tagify__input
-  const tagsInput = await page.$('.tagify__input');
-  if (tagsInput) {
-    await tagsInput.focus();
-    await tagsInput.type(tagName);
-    await tagsInput.press('Enter');
-    // Wait for save
-    await delay(500);
-  }
+  // Wait for the tag to appear in the DOM
+  await page.waitForFunction((name: string) => {
+    const tags = document.querySelectorAll('.tagify__tag');
+    return Array.from(tags).some(tag => tag.textContent?.includes(name));
+  }, { timeout: 3000 }, tagName);
 };
 
 /**
  * Removes a tag from the entry.
+ * Uses page.evaluate to avoid stale element handle issues.
  */
 export const removeTag = async (tagName: string): Promise<void> => {
   const page = sharedContext.page!;
 
-  // Find the tag with the name and click its remove button (x)
-  const tags = await page.$$('.tagify__tag');
-  for (const tag of tags) {
-    const text = await tag.evaluate(el => el.textContent);
-    if (text?.includes(tagName)) {
-      // Tagify uses an 'x' button inside the tag
-      const removeBtn = await tag.$('tag-remove, .tagify__tag__removeBtn');
-      if (removeBtn) {
-        await removeBtn.click();
-      } else {
-        // Alternative: click the tag itself to trigger removal
-        await tag.click();
+  // Use page.evaluate to find and click the remove button directly
+  await page.evaluate((name: string) => {
+    const tags = Array.from(document.querySelectorAll('.tagify__tag'));
+    for (const tag of tags) {
+      if (tag.textContent?.includes(name)) {
+        // Tagify uses an 'x' button inside the tag
+        const removeBtn = tag.querySelector('tag-remove, .tagify__tag__removeBtn') as HTMLElement;
+        if (removeBtn) {
+          removeBtn.click();
+        } else {
+          // Alternative: click the tag itself to trigger removal
+          (tag as HTMLElement).click();
+        }
+        break;
       }
-      break;
     }
-  }
+  }, tagName);
 
-  // Wait for save
-  await delay(500);
+  // Wait for the tag to be removed from the DOM
+  await page.waitForFunction((name: string) => {
+    const tags = document.querySelectorAll('.tagify__tag');
+    return !Array.from(tags).some(tag => tag.textContent?.includes(name));
+  }, { timeout: 3000 }, tagName);
 };
 
 /**
  * Clicks a tag to open tag results.
- * Note: Waits for tags to be initialized before attempting to click.
+ * Uses page.evaluate to avoid stale element handle issues.
  */
 export const clickTag = async (tagName: string): Promise<void> => {
   const page = sharedContext.page!;
@@ -504,18 +534,19 @@ export const clickTag = async (tagName: string): Promise<void> => {
     return wrapper && !wrapper.classList.contains('uninitialized');
   }, { timeout: 5000 });
 
-  // Find the tag with the name and click it
-  const tags = await page.$$('.tagify__tag');
-  for (const tag of tags) {
-    const text = await tag.evaluate(el => el.textContent);
-    if (text?.includes(tagName)) {
-      await tag.click();
-      break;
+  // Use page.evaluate to find and click the tag directly
+  await page.evaluate((name: string) => {
+    const tags = Array.from(document.querySelectorAll('.tagify__tag'));
+    for (const tag of tags) {
+      if (tag.textContent?.includes(name)) {
+        (tag as HTMLElement).click();
+        break;
+      }
     }
-  }
+  }, tagName);
 
-  // Wait for new tab to open
-  await delay(200);
+  // Wait for a new tab to appear (tag results tab)
+  await page.waitForSelector('.fcb-tab.active', { timeout: 5000 }).catch(() => {});
 };
 
 /**
@@ -524,11 +555,19 @@ export const clickTag = async (tagName: string): Promise<void> => {
 export const closeActiveTab = async (): Promise<void> => {
   const page = sharedContext.page!;
 
-  // Find the active tab's close button
-  const activeTab = await page.$('.fcb-tab.active [data-testid="tab-close-button"]');
-  if (activeTab) {
-    await activeTab.click();
-    await delay(200);
+  // Get tab count and click close button in a single evaluate
+  const tabCount = await page.evaluate(() => {
+    const closeBtn = document.querySelector('.fcb-tab.active [data-testid="tab-close-button"]') as HTMLElement;
+    const count = document.querySelectorAll('.fcb-tab').length;
+    if (closeBtn) closeBtn.click();
+    return count;
+  });
+
+  if (tabCount > 0) {
+    // Wait for tab count to decrease
+    await page.waitForFunction((count: number) => {
+      return document.querySelectorAll('.fcb-tab').length < count;
+    }, { timeout: 3000 }, tabCount).catch(() => {});
   }
 };
 
@@ -538,26 +577,30 @@ export const closeActiveTab = async (): Promise<void> => {
 export const closeTabByName = async (tabName: string): Promise<void> => {
   const page = sharedContext.page!;
 
-  // Find the tab with the name and click its close button
-  const tabs = await page.$$('.fcb-tab');
-  for (const tab of tabs) {
-    const text = await tab.evaluate(el => el.textContent);
-    if (text?.includes(tabName)) {
-      const closeBtn = await tab.$('[data-testid="tab-close-button"]');
-      if (closeBtn) {
-        await closeBtn.click();
-        await delay(200);
+  // Find and close the tab in browser context to avoid stale handles
+  await page.evaluate((name: string) => {
+    const tabs = Array.from(document.querySelectorAll('.fcb-tab'));
+    for (const tab of tabs) {
+      if (tab.textContent?.includes(name)) {
+        const closeBtn = tab.querySelector('[data-testid="tab-close-button"]') as HTMLElement;
+        if (closeBtn) closeBtn.click();
+        break;
       }
-      break;
     }
-  }
+  }, tabName);
+
+  // Wait for tab to be removed
+  await page.waitForFunction((name: string) => {
+    const allTabs = document.querySelectorAll('.fcb-tab');
+    return !Array.from(allTabs).some(t => t.textContent?.includes(name));
+  }, { timeout: 3000 }, tabName).catch(() => {});
 };
 
 /**
- * Gets the parent typeahead input.
+ * Selector for the parent typeahead input.
  */
-export const getParentInput = (): Locator => {
-  return getByTestId(sharedContext.page!, 'typeahead-input');
+export const getParentInputSelector = (): string => {
+  return getByTestId('typeahead-input');
 };
 
 /**
@@ -586,10 +629,10 @@ export const selectParent = async (parentName: string): Promise<void> => {
         break;
       }
     }
-  }
 
-  // Wait for save
-  await delay(200);
+    // Wait for dropdown to close
+    await page.waitForSelector('.fcb-ta-dropdown', { hidden: true, timeout: 2000 }).catch(() => {});
+  }
 };
 
 /**
@@ -597,13 +640,14 @@ export const selectParent = async (parentName: string): Promise<void> => {
  * Returns true if successful, false if button not found or disabled.
  */
 export const clickPushToSession = async (): Promise<boolean> => {
-  const btn = await getPushToSessionButton();
-  if (!btn) return false;
-  
-  const isDisabled = await btn.evaluate(el => (el as HTMLButtonElement).disabled);
+  const page = sharedContext.page!;
+  const selector = await getPushToSessionButtonSelector();
+  if (!selector) return false;
+
+  const isDisabled = await page.$eval(selector, (el) => (el as HTMLButtonElement).disabled);
   if (isDisabled) return false;
-  
-  await btn.click();
+
+  await page.click(selector);
   return true;
 };
 
@@ -616,26 +660,26 @@ export const clickContextMenuItem = async (label: string): Promise<void> => {
   // Wait for context menu to appear
   await page.waitForSelector('.mx-context-menu');
 
-  // Find and click the menu item
-  const items = await page.$$('.mx-context-menu-item');
-  for (const item of items) {
-    const text = await item.evaluate(el => el.textContent);
-    if (text?.includes(label)) {
-      await item.click();
-      break;
+  // Use page.evaluate to find and click the menu item
+  await page.evaluate((menuLabel: string) => {
+    const items = Array.from(document.querySelectorAll('.mx-context-menu-item'));
+    for (const item of items) {
+      if (item.textContent?.includes(menuLabel)) {
+        (item as HTMLElement).click();
+        break;
+      }
     }
-  }
+  }, label);
 
-  // Wait for action to complete
-  await delay(200);
+  // Wait for context menu to close
+  await page.waitForSelector('.mx-context-menu', { hidden: true, timeout: 2000 }).catch(() => {});
 };
 
 /**
- * Gets the player name input (for PCs).
+ * Selector for the player name input (for PCs).
  */
-export const getPlayerNameInput = (): Locator => {
-  // This is the input for player name in PCContent
-  return new Locator(sharedContext.page!, '.fcb-input-name');
+export const getPlayerNameInputSelector = (): string => {
+  return '.fcb-input-name';
 };
 
 /**
@@ -687,8 +731,8 @@ export const hasNotification = async (text: string): Promise<boolean> => {
   const page = sharedContext.page!;
 
   const notifications = await page.$$('#notifications .notification');
-  for (const notif of notifications) {
-    const content = await notif.evaluate(el => el.textContent);
+  for (const notification of notifications) {
+    const content = await notification.evaluate(el => el.textContent);
     if (content?.includes(text)) {
       return true;
     }
@@ -741,8 +785,6 @@ export const setDescriptionEditorContent = async (content: string): Promise<void
       editorEl.innerHTML = html;
     }
   }, content);
-
-  await delay(200);
 };
 
 /**
@@ -791,7 +833,8 @@ export const clickAddJournalButton = async (): Promise<void> => {
   const addBtn = await page.$('.fcb-base-table-add-button');
   if (addBtn) {
     await addBtn.click();
-    await delay(200);
+    // Wait for dialog to appear
+    await page.waitForSelector('.related-documents-dialog', { timeout: 5000 }).catch(() => {});
   }
 };
 
@@ -818,8 +861,8 @@ export const addJournalViaPicker = async (journalName: string): Promise<void> =>
     }
   }
 
-  // Wait for add
-  await delay(300);
+  // Wait for dialog to close
+  await page.waitForSelector('.related-documents-dialog', { hidden: true, timeout: 3000 }).catch(() => {});
 };
 
 /**
@@ -844,9 +887,9 @@ export const removeJournal = async (journalName: string): Promise<void> => {
         const confirmBtn = await page.$('.fcb-confirm-dialog .confirm-button');
         if (confirmBtn) {
           await confirmBtn.click();
+          // Wait for confirm dialog to close
+          await page.waitForSelector('.fcb-confirm-dialog', { hidden: true, timeout: 3000 }).catch(() => {});
         }
-
-        await delay(300);
       }
       break;
     }
@@ -873,7 +916,8 @@ export const clickJournalRow = async (journalName: string): Promise<void> => {
     }
   }
 
-  await delay(200);
+  // Wait for journal sheet to open
+  await page.waitForSelector('.journal-sheet, .sheet', { timeout: 5000 }).catch(() => {});
 };
 
 /**
@@ -937,8 +981,6 @@ export const simulateDragDrop = async (
     },
     { sourceUuid, sourceType, targetSelector }
   );
-
-  await delay(300);
 };
 
 /**
@@ -967,11 +1009,8 @@ export const dropActorOnPC = async (actorUuid: string): Promise<void> => {
  * @param tabId The relationship tab (characters, locations, organizations, pcs)
  */
 export const dropEntryOnRelationshipTab = async (entryUuid: string, tabId: string): Promise<void> => {
-  const page = sharedContext.page!;
-
   // Switch to the relationship tab first
   await clickContentTab(tabId);
-  await delay(100);
 
   await simulateDragDrop(entryUuid, 'JournalEntryPage', '.fcb-related-entry-table');
 };
@@ -1006,9 +1045,9 @@ export const removeRelatedEntry = async (entryName: string): Promise<void> => {
         const confirmBtn = await page.$('.fcb-confirm-dialog .confirm-button');
         if (confirmBtn) {
           await confirmBtn.click();
+          // Wait for confirm dialog to close
+          await page.waitForSelector('.fcb-confirm-dialog', { hidden: true, timeout: 3000 }).catch(() => {});
         }
-
-        await delay(300);
       }
       break;
     }
@@ -1049,7 +1088,8 @@ export const clickDocumentRow = async (docName: string): Promise<void> => {
     }
   }
 
-  await delay(200);
+  // Wait for document sheet to open
+  await page.waitForSelector('.sheet', { timeout: 5000 }).catch(() => {});
 };
 
 ////////////////////
@@ -1086,7 +1126,8 @@ export const clickSessionRow = async (sessionName: string): Promise<void> => {
     }
   }
 
-  await delay(200);
+  // Wait for session tab to open
+  await page.waitForSelector('[data-testid="session-name-input"]', { timeout: 5000 }).catch(() => {});
 };
 
 ////////////////////
@@ -1163,7 +1204,7 @@ export const clickImagePicker = async (): Promise<void> => {
   const imagePicker = await page.$('.fcb-image-picker img, .fcb-image-picker .fcb-image-placeholder');
   if (imagePicker) {
     await imagePicker.click();
-    await delay(200);
+    // Wait for file input to be triggered (no visible change to wait for)
   }
 };
 
@@ -1192,7 +1233,6 @@ export const getSceneCount = async (): Promise<number> => {
 
   // Switch to scenes tab first
   await clickContentTab('scenes');
-  await delay(100);
 
   const rows = await page.$$('.tab[data-tab="scenes"] tbody tr');
   return rows.length;
@@ -1219,7 +1259,8 @@ export const clickFoundryDocButton = async (): Promise<void> => {
   const btn = await page.$('[data-testid="entry-foundry-doc-button"]');
   if (btn) {
     await btn.click();
-    await delay(300);
+    // Wait for scene sheet to open (if applicable)
+    await page.waitForSelector('.scene-sheet, .sheet', { timeout: 5000 }).catch(() => {});
   }
 };
 

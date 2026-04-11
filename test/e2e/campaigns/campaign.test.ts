@@ -9,19 +9,12 @@ import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
 import { switchToSetting } from '@e2etest/utils';
-import { getByTestId, Locator } from '../helpers';
+import { getByTestId } from '../helpers';
 
 /**
  * Helper delay function.
  */
 const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
-
-/**
- * Gets the campaign name input locator.
- */
-const getCampaignNameInput = (): Locator => {
-  return getByTestId(sharedContext.page!, 'campaign-name-input');
-};
 
 /**
  * Gets the campaign name value.

@@ -109,7 +109,7 @@ After creating a new test file, add it to `allTestFiles` in `all.test.ts`:
 ```typescript
 const allTestFiles: Record<string, () => Promise<void>> = {
   // ... existing entries ...
-  'myFeature/mytest': () => import('./myFeature/mytest.test').then(() => {}),
+  'myFeature/myTest': () => import('./myFeature/myTest.test').then(() => {}),
 };
 ```
 
@@ -124,6 +124,8 @@ const allTestFiles: Record<string, () => Promise<void>> = {
 4. **User experience**: Unless a test is designed to specifically test the module API, it should simulate a real user's actions. This means using the UI elements and interactions that a user would use, rather than directly calling the API.  Tests that need to create their own data for testing purposes should navigate through the app UI to create it as part of the test, as if they were a user, rather than using the API directly.  They should then clean up behind themselves.  Alternately, they can create a new entry, session, campaign, etc. and give it a unique name.  In that case, it shouldn't interfere with the existing test data and could be left behind.
 
 5. **Serial execution**: Tests run in the same UI so can never run in parallel.  Also, each test file should assume it could be run in any order or combination with other files.  This means it should never assume a starting point for the UI - it should confirm the module is open and navigate to the starting point it needs.
+
+6. **Delays**: Only use delay() or setTimeout() or equivalent when needed (for example, to trigger a debounce).  Otherwise, instead wait for specific dom elements to be ready.
 
 ## Test Data Guidelines
 

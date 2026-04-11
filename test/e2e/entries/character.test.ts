@@ -8,17 +8,16 @@ import { describe, test, beforeAll, afterAll, afterEach, expect, } from '../test
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
-import { switchToSetting, expandTopicNode, expandTypeNode } from '@e2etest/utils';
+import { switchToSetting, expandTopicNode, expandTypeNode, getGenerateButtonSelector, getFoundryDocButtonSelector } from '@e2etest/utils';
 import { Topics } from '@/types';
 import {
   openEntry,
-  getEntryNameInput,
   setEntryName,
   getEntryNameValue,
   addNewType,
   getTypeValue,
-  getTypeSelectInput,
   getSpeciesValue,
+  getTypeSelectInputSelector,
   addTag,
   removeTag,
   clickTag,
@@ -26,8 +25,6 @@ import {
   clickPushToSession,
   createEntryViaUI,
   deleteEntryViaAPI,
-  getGenerateButton,
-  getFoundryDocButton,
   closeActiveTab,
 } from '@e2etest/utils';
 
@@ -103,8 +100,7 @@ describe.serial('Character Entry Tests', () => {
       const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
       return input && input.value.length > 0;
     }, { timeout: 5000 });
-    const nameInput = getEntryNameInput();
-    const nameValue = await nameInput.inputValue();
+    const nameValue = await getEntryNameValue();
     // Expected behavior: Name input contains the character's name
     expect(nameValue).toBe(firstChar.name);
   });
@@ -159,8 +155,7 @@ describe.serial('Character Entry Tests', () => {
 
     // Select a type (assuming there's a type available)
     // Use the utility function which targets the correct typeahead
-    const typeInput = getTypeSelectInput();
-    await typeInput.click();
+    await page.click(getTypeSelectInputSelector());
 
     // Wait for dropdown to appear
     await page.waitForSelector('.fcb-ta-dropdown', { timeout: 5000 });
@@ -409,22 +404,13 @@ describe.serial('Character Entry Tests', () => {
     const page = sharedContext.page!;
 
     // Click the generate button
-    const generateBtn = await getGenerateButton();
-    if (!generateBtn) {
+    const genSelector = await getGenerateButtonSelector();
+    if (!genSelector) {
       // Button not available - skip test
       return;
     }
 
-    // Check if button is disabled (backend not available)
-    const isDisabled = await generateBtn.evaluate((el: Element) => {
-      return (el as HTMLButtonElement).disabled;
-    });
-    if (isDisabled) {
-      // Backend not configured - skip test
-      return;
-    }
-
-    await generateBtn.click();
+    await page.click(genSelector);
 
     // Wait for context menu
     await page.waitForSelector('.mx-context-menu');
@@ -448,15 +434,13 @@ describe.serial('Character Entry Tests', () => {
     const page = sharedContext.page!;
 
     // For a character with no actors, the button should be disabled
-    const foundryBtn = await getFoundryDocButton();
-    if (!foundryBtn) {
+    const foundrySelector = await getFoundryDocButtonSelector();
+    if (!foundrySelector) {
       // Button not available - skip test
       return;
     }
 
-    const isDisabled = await foundryBtn.evaluate((el: Element) => {
-      return (el as HTMLButtonElement).disabled;
-    });
+    const isDisabled = await page.$eval(foundrySelector, (el) => (el as HTMLButtonElement).disabled);
 
     // Expected behavior: Button has a defined disabled state
     // If the character has no actors, button should be disabled
@@ -481,19 +465,17 @@ describe.serial('Character Entry Tests', () => {
     // Click on journals tab
     await clickContentTab('journals');
 
-    // Wait for journals tab content to be visible
-    // The tab content div has data-tab="journals"
-    await page.waitForSelector('.tab[data-tab="journals"]', { timeout: 5000 });
+    // Wait for journals tab content to have the 'active' class
+    // Foundry's tabs system uses CSS classes, not inline styles
+    await page.waitForSelector('.tab[data-tab="journals"].active', { timeout: 5000 });
 
-    // Verify we're on journals tab by checking it's not hidden
-    const isVisible = await page.evaluate(() => {
+    // Verify we're on journals tab by checking for the 'active' class
+    const isActive = await page.evaluate(() => {
       const tab = document.querySelector('.tab[data-tab="journals"]');
-      if (!tab) return false;
-      const style = window.getComputedStyle(tab);
-      return style.display !== 'none' && style.visibility !== 'hidden';
+      return tab?.classList.contains('active') ?? false;
     });
-    // Expected behavior: Journals tab is visible
-    expect(isVisible).toBe(true);
+    // Expected behavior: Journals tab is active
+    expect(isActive).toBe(true);
 
     // Clean up
     await deleteEntryViaAPI(journalTestUuid);

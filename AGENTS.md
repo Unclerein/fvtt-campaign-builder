@@ -6,13 +6,19 @@ Foundry VTT module for world-building and campaign management. GMs create interc
 
 **Stack:** Vue 3 (Composition API, `<script setup lang="ts">`), Pinia, PrimeVue 4, TypeScript, Vite 6, SCSS. Target: Foundry VTT v13+.
 
+## Overall approach **Important**
+
+1. If you have specific questions that you cannot immediately answer, ask the user rather than making assumptions or digging through multiple files.  If the user does not know, then proceed as you otherwise would to find the answer.
+
+2. Keep it simple. Do not over-complicate code.  Do not add extensive readmes or large template comments unless explicitly asked.
+
 ## Commands
 
 - **`npm run debug`** — Preferred build command (dev mode, non-minified). Reload Foundry to see changes.
 - `npm run build` — Production build (minified). Only use if explicitly asked.
 - `npm run lint` — ESLint for .ts and .vue files
 - `npm run tscvue` — TypeScript + Vue type checking
-- `npm test` — Playwright E2E tests (headless)
+- `npm test` — Puppeteer E2E tests
 
 ## Architecture
 

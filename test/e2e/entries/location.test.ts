@@ -8,12 +8,11 @@ import { describe, test, beforeAll, afterAll, afterEach, expect } from '../testR
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
-import { switchToSetting, expandTopicNode, expandTypeNode } from '@e2etest/utils';
+import { switchToSetting, expandTopicNode, expandTypeNode, getGenerateButtonSelector } from '@e2etest/utils';
 import { Topics } from '@/types';
 import { getByTestId } from '../helpers';
 import {
   openEntry,
-  getEntryNameInput,
   setEntryName,
   getEntryNameValue,
   addNewType,
@@ -22,11 +21,11 @@ import {
   removeTag,
   clickTag,
   clickContentTab,
-  clickPushToSession,  
+  clickPushToSession,
   createEntryViaUI,
   deleteEntryViaAPI,
-  getGenerateButton,
-  getFoundryDocButton,
+  getGenerateButtonSelector,
+  getFoundryDocButtonSelector,
   // Editor utilities
   getDescriptionEditorContent,
   setDescriptionEditorContent,
@@ -138,8 +137,7 @@ describe.serial('Location Entry Tests', () => {
       const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
       return input && input.value.length > 0;
     }, { timeout: 5000 });
-    const nameInput = getEntryNameInput();
-    const nameValue = await nameInput.inputValue();
+    const nameValue = await getEntryNameValue();
     // Expected behavior: Name input contains the location's name
     expect(nameValue).toBe(firstLocation.name);
   });
@@ -179,8 +177,7 @@ describe.serial('Location Entry Tests', () => {
     await clickContentTab('description');
 
     // Click on the type input to open dropdown
-    const typeInput = getByTestId(page, 'typeahead-input');
-    await typeInput.click();
+    await page.click(getByTestId('typeahead-input'));
 
     // Wait for dropdown
     await page.waitForSelector('.fcb-ta-dropdown');
@@ -368,13 +365,13 @@ describe.serial('Location Entry Tests', () => {
     const page = sharedContext.page!;
 
     // Click the generate button
-    const generateBtn = await getGenerateButton();
-    if (!generateBtn) {
+    const genSelector = await getGenerateButtonSelector();
+    if (!genSelector) {
       // Button not available - skip test
       return;
     }
 
-    await generateBtn.click();
+    await page.click(genSelector);
 
     // Wait for context menu
     await page.waitForSelector('.mx-context-menu');
@@ -399,13 +396,13 @@ describe.serial('Location Entry Tests', () => {
     const page = sharedContext.page!;
 
     // Click the generate button
-    const generateBtn = await getGenerateButton();
-    if (!generateBtn) {
+    const genSelector = await getGenerateButtonSelector();
+    if (!genSelector) {
       // Button not available - skip test
       return;
     }
 
-    await generateBtn.click();
+    await page.click(genSelector);
 
     // Wait for context menu
     await page.waitForSelector('.mx-context-menu');
@@ -439,15 +436,13 @@ describe.serial('Location Entry Tests', () => {
     const page = sharedContext.page!;
 
     // For a location with no scenes, the button should be disabled
-    const foundryBtn = await getFoundryDocButton();
-    if (!foundryBtn) {
+    const foundrySelector = await getFoundryDocButtonSelector();
+    if (!foundrySelector) {
       // Button not available - skip test
       return;
     }
 
-    const isDisabled = await foundryBtn.evaluate((el: Element) => {
-      return (el as HTMLButtonElement).disabled;
-    });
+    const isDisabled = await page.$eval(foundrySelector, (el) => (el as HTMLButtonElement).disabled);
 
     // Expected behavior: Button has a defined disabled state
     // If the location has no scenes, button should be disabled

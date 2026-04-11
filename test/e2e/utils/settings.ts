@@ -1,6 +1,6 @@
 import { sharedContext } from '../sharedContext';
 import { Topics, ValidTopic } from '@/types';
-import { Locator, getByTestId } from '../helpers';
+import { getByTestId } from '../helpers';
 
 export const switchToSetting = async (settingName: string) => {
   const page = sharedContext.page!;
@@ -23,7 +23,10 @@ export const switchToSetting = async (settingName: string) => {
   await page.waitForSelector('[data-testid="setting-select"]', { timeout: 10000 });
 
   // Click the setting select dropdown
-  await getByTestId(page, 'setting-select').click();
+  await page.evaluate(() => {
+    const el = document.querySelector('[data-testid="setting-select"]') as HTMLElement;
+    if (el) el.click();
+  });
   
   // Wait for PrimeVue dropdown portal to render (it's attached to body, not the component)
   await page.waitForSelector('.p-select-list-container', { timeout: 5000 });
@@ -31,15 +34,16 @@ export const switchToSetting = async (settingName: string) => {
   // Small delay for options to populate
   await new Promise(resolve => setTimeout(resolve, 100));
   
-  // Click the option with the setting name
-  const options = await page.$$('.p-select-option-label');
-  for (const option of options) {
-    const text = await option.evaluate(el => el.textContent);
-    if (text?.includes(settingName)) {
-      await option.click();
-      break;
+  // Click the option with the setting name using page.evaluate
+  await page.evaluate((name: string) => {
+    const options = document.querySelectorAll('.p-select-option-label');
+    for (const option of options) {
+      if (option.textContent?.includes(name)) {
+        (option as HTMLElement).click();
+        break;
+      }
     }
-  }
+  }, settingName);
 
   // Wait for the setting folder header to be visible
   await page.waitForSelector(`[data-testid="setting-folder-${settingName}"]`, { timeout: 5000 });
@@ -48,26 +52,32 @@ export const switchToSetting = async (settingName: string) => {
   await page.waitForSelector('.fcb-topic-folder', { timeout: 5000 });
 }
 
-export const confirmSettingInList = async (settingName: string): Promise<Locator> => {
+export const confirmSettingInList = async (settingName: string): Promise<void> => {
   const page = sharedContext.page!;
 
-  await getByTestId(page, 'setting-select').click();
-  
+  // Open the dropdown
+  await page.evaluate(() => {
+    const el = document.querySelector('[data-testid="setting-select"]') as HTMLElement;
+    if (el) el.click();
+  });
+
+  // Wait for dropdown to render
+  await page.waitForSelector('.p-select-list-container', { timeout: 5000 });
+  await new Promise(resolve => setTimeout(resolve, 100));
+
   // Click the option with the setting name
-  const options = await page.$$('.p-select-option-label');
-  for (const option of options) {
-    const text = await option.evaluate(el => el.textContent);
-    if (text?.includes(settingName)) {
-      await option.click();
-      break;
+  await page.evaluate((name: string) => {
+    const options = document.querySelectorAll('.p-select-option-label');
+    for (const option of options) {
+      if (option.textContent?.includes(name)) {
+        (option as HTMLElement).click();
+        break;
+      }
     }
-  }
+  }, settingName);
 
-  // return the locator for the folder header
-  const folderHeader = getByTestId(page, `setting-folder-${settingName}`);
-  await folderHeader.waitFor();
-
-  return folderHeader;
+  // Wait for the folder header to be visible
+  await page.waitForSelector(getByTestId(`setting-folder-${settingName}`), { timeout: 5000 });
 }
 
 const topicText = {
@@ -81,27 +91,41 @@ const topicText = {
 export const expandTopicNode = async (topic: ValidTopic) => {
   const page = sharedContext.page!;
 
-  // see if it's collapsed
-  const collapsedFolders = await page.$$(`.fcb-topic-folder.collapsed`);
-  
-  for (const folder of collapsedFolders) {
-    const text = await folder.evaluate(el => el.textContent);
-    if (text?.includes(topicText[topic])) {
-      // Click the inner div which has the actual click handler
-      await getByTestId(page, `topic-folder-${topic}`).click();
-
-      // Wait for it to no longer be collapsed
-      const topicTextValue = topicText[topic];
-      await page.waitForFunction((topicTextValue: string) => {
-        const folders = Array.from(document.querySelectorAll('.fcb-topic-folder'));
-        return folders.some(f => f.textContent?.includes(topicTextValue) && !f.classList.contains('collapsed'));
-      }, {}, topicTextValue);
-      break;
+  // Use page.evaluate to check and expand the topic node
+  const isCollapsed = await page.evaluate((topicId: number, topicLabel: string) => {
+    const folders = document.querySelectorAll('.fcb-topic-folder.collapsed');
+    for (const folder of folders) {
+      if (folder.textContent?.includes(topicLabel)) {
+        return true;
+      }
     }
+    return false;
+  }, topic, topicText[topic]);
+
+  if (isCollapsed) {
+    // Click the topic folder to expand it
+    await page.evaluate((topicId: number) => {
+      const el = document.querySelector(`[data-testid="topic-folder-${topicId}"]`) as HTMLElement;
+      if (el) el.click();
+    }, topic);
+
+    // Wait for it to no longer be collapsed
+    await page.waitForFunction((topicLabel: string) => {
+      const folders = Array.from(document.querySelectorAll('.fcb-topic-folder'));
+      return folders.some(f => f.textContent?.includes(topicLabel) && !f.classList.contains('collapsed'));
+    }, {}, topicText[topic]);
   }
 
-  // Wait for entries to be visible within the topic folder
-  await page.waitForSelector(`.fcb-topic-folder[data-topic="${topic}"] .fcb-directory-entry`, { timeout: 5000 });
+  // Wait for content to load within the topic folder
+  // For grouped trees, entries are inside type nodes; for nested trees, entries are direct children
+  // Wait for either type nodes or direct entries to appear
+  await page.waitForFunction((topicId: number) => {
+    const topicFolder = document.querySelector(`.fcb-topic-folder[data-topic="${topicId}"]`);
+    if (!topicFolder) return false;
+    // Check for type nodes (grouped tree) or direct entries (nested tree)
+    return topicFolder.querySelector('.fcb-directory-type') !== null ||
+      topicFolder.querySelector('.fcb-directory-entry') !== null;
+  }, { timeout: 5000 }, topic);
 }
 
 /** assumes the topic is expanded */
@@ -113,36 +137,34 @@ export const expandTypeNode = async (topic: ValidTopic, typeName: string) => {
   // Small delay for DOM to update after topic expansion
   await new Promise(resolve => setTimeout(resolve, 100));
 
-  // Find type nodes within the topic folder
-  const topicFolder = await page.$(`.fcb-topic-folder[data-topic="${topic}"]`);
-  if (!topicFolder) {
-    return;
-  }
+  // Use page.evaluate to find and click the type node expand button directly
+  // This avoids stale element handle issues
+  const clicked = await page.evaluate((topicId: number, type: string) => {
+    const topicFolder = document.querySelector(`.fcb-topic-folder[data-topic="${topicId}"]`);
+    if (!topicFolder) return false;
 
-  // Find the type node with the type name (uses .fcb-directory-type class)
-  // Structure is: <div class="summary top"><div class="fcb-directory-expand-button">+/-</div><div class="fcb-directory-type">name</div></div>
-  const typeNodes = await topicFolder.$$('.fcb-directory-type');
-  
-  // Log all type node texts first
-  const typeTexts = await Promise.all(typeNodes.map(n => n.evaluate(el => el.textContent)));
-  
-  for (const typeNode of typeNodes) {
-    const text = await typeNode.evaluate(el => el.textContent);
-    if (text?.includes(typeName)) {
-      // The expand button is a previous sibling within the same parent
-      const expandButton = await typeNode.evaluateHandle(el => el.previousElementSibling);
-      if (expandButton) {
-        const btnText = await (expandButton as import('puppeteer').ElementHandle<Element>).evaluate(el => el.textContent);
-        // Only click if it shows '+' (collapsed)
-        if (btnText?.includes('+')) {
-          await (expandButton as import('puppeteer').ElementHandle<Element>).click();
-          // Wait for entries to appear
-          await page.waitForSelector('.fcb-directory-entry', { timeout: 5000 });
+    // Find the type node with the type name
+    const typeNodes = topicFolder.querySelectorAll('.fcb-directory-type');
+    
+    for (const typeNode of typeNodes) {
+      if (typeNode.textContent?.includes(type)) {
+        // The expand button is a previous sibling within the same parent
+        const expandButton = typeNode.previousElementSibling as HTMLElement;
+        if (expandButton && expandButton.textContent?.includes('+')) {
+          expandButton.click();
+          return true;
         }
+        // Already expanded
+        return true;
       }
-      // Wait for all entries to load (Vue reactivity)
-      await new Promise(resolve => setTimeout(resolve, 300));
-      break;
     }
+    return false;
+  }, topic, typeName);
+
+  if (clicked) {
+    // Wait for entries to appear within the topic folder
+    await page.waitForSelector(`.fcb-topic-folder[data-topic="${topic}"] .fcb-directory-entry`, { timeout: 5000 });
+    // Wait for Vue reactivity to settle
+    await new Promise(resolve => setTimeout(resolve, 200));
   }
 };
