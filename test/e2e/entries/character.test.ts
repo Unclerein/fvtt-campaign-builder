@@ -49,6 +49,7 @@ import {
   clickAddJournalButton,
   getGenerateButtonSelector,
   getFoundryDocButtonSelector,
+  addDocumentViaDragDrop,
 } from '@e2etest/utils';
 
 /**
@@ -827,34 +828,21 @@ describe.serial('Character Entry Tests', () => {
     const actorTestName = 'Actor Drag Test ' + Date.now();
     const entryUuid = await createEntryViaUI(Topics.Character, actorTestName);
 
-    // Switch to actors tab
-    await clickContentTab('actors');
-    await page.waitForSelector('.tab[data-tab="actors"].active', { timeout: 5000 });
-
-    // Create an actor via the API
-    const actorUuid = await page.evaluate(async () => {
-      const actor = await Actor.create({ name: 'Test Actor ' + Date.now(), type: 'base' });
-      return actor?.uuid || '';
+    // Create actor with a static name for reliable verification
+    const actorName = 'Test Actor ' + Date.now();
+    const actorUuid = await addDocumentViaDragDrop({
+      tabId: 'actors',
+      documentType: 'Actor',
+      dropSelector: '[data-testid="actors-table"] .fcb-table-new-drop-box',
+      documentName: actorName,
+      createDocumentFn: async () => {
+        return await page.evaluate(async (name: string) => {
+          const actor = await Actor.create({ name, type: 'base' });
+          return actor?.uuid || '';
+        }, actorName);
+      },
+      verifyByText: true,
     });
-
-    if (actorUuid) {
-      // Simulate dropping the actor onto the actors table's drop zone
-      await simulateDragDrop(actorUuid, 'Actor', '[data-testid="actors-table"] .fcb-table-new-drop-box');
-
-      // Wait for Vue to process the drop and update the table
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Wait for the actor to appear in the table by checking for the actor name
-      await page.waitForFunction((actorName: string) => {
-        const cells = document.querySelectorAll('[data-testid="actors-table"] tbody td');
-        for (const cell of cells) {
-          if (cell.textContent && cell.textContent.includes(actorName)) {
-            return true;
-          }
-        }
-        return false;
-      }, { timeout: 10000 }, 'Test Actor');
-    }
 
     // Clean up
     if (entryUuid) {
@@ -1438,31 +1426,17 @@ describe.serial('Character Entry Tests', () => {
     const journalTestName = 'Journal Drag Test ' + Date.now();
     const entryUuid = await createEntryViaUI(Topics.Character, journalTestName);
 
-    // Switch to journals tab
-    await clickContentTab('journals');
-    await page.waitForSelector('.tab[data-tab="journals"].active', { timeout: 5000 });
-
-    // Create a journal via the API
-    const journalUuid = await createJournalViaAPI('Test Journal ' + Date.now());
-
-    if (journalUuid) {
-      // Simulate dropping the journal onto the journals table's drop zone
-      await simulateDragDrop(journalUuid, 'JournalEntry', '[data-testid="journals-table"] .fcb-table-new-drop-box');
-
-      // Wait for Vue to process the drop and update the table
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Wait for the journal to appear in the table by checking for the journal name
-      await page.waitForFunction((journalName: string) => {
-        const cells = document.querySelectorAll('[data-testid="journals-table"] tbody td');
-        for (const cell of cells) {
-          if (cell.textContent && cell.textContent.includes(journalName)) {
-            return true;
-          }
-        }
-        return false;
-      }, { timeout: 10000 }, 'Test Journal');
-    }
+    // Use the standardized helper to add journal via drag-drop
+    const journalUuid = await addDocumentViaDragDrop({
+      tabId: 'journals',
+      documentType: 'JournalEntry',
+      dropSelector: '[data-testid="journals-table"] .fcb-table-new-drop-box',
+      documentName: 'Test Journal',
+      createDocumentFn: async () => {
+        return await createJournalViaAPI('Test Journal ' + Date.now());
+      },
+      verifyByText: true,
+    });
 
     // Clean up
     await deleteEntryViaAPI(entryUuid);
@@ -1566,10 +1540,6 @@ describe.serial('Character Entry Tests', () => {
     const relTestName = 'Rel Drag Test ' + Date.now();
     const entryUuid = await createEntryViaUI(Topics.Character, relTestName);
 
-    // Switch to characters relationship tab
-    await clickContentTab('characters');
-    await page.waitForSelector('.tab[data-tab="characters"].active', { timeout: 5000 });
-
     // Get another character's UUID to drag
     const secondChar = setting.topics[Topics.Character][1];
     const secondCharUuid = await page.evaluate(async (name: string) => {
@@ -1582,19 +1552,14 @@ describe.serial('Character Entry Tests', () => {
     if (secondCharUuid) {
       const initialCount = await getRelatedEntryCount('characters');
 
-      // Simulate dropping the entry onto the characters table
-      await simulateDragDrop(secondCharUuid, 'JournalEntryPage', '[data-testid="characters-table"]');
-
-      // Wait for the table to update
-      await page.waitForFunction((expectedCount: number) => {
-        return document.querySelectorAll('[data-testid="characters-table"] tbody tr').length >= expectedCount;
-      }, { timeout: 5000 }, initialCount + 1).catch(() => {
-        // May not increase if already related
+      // Use the standardized helper to add relationship via drag-drop
+      await addDocumentViaDragDrop({
+        tabId: 'characters',
+        documentType: 'JournalEntryPage',
+        dropSelector: '[data-testid="characters-table"]',
+        documentUuid: secondCharUuid,
+        verifyByText: false,
       });
-
-      const newCount = await getRelatedEntryCount('characters');
-      // Expected behavior: Related character count increases after drag-drop
-      expect(newCount).toBeGreaterThan(initialCount);
     }
 
     // Clean up
@@ -1613,30 +1578,17 @@ describe.serial('Character Entry Tests', () => {
     const foundryTestName = 'Foundry Add Test ' + Date.now();
     const entryUuid = await createEntryViaUI(Topics.Character, foundryTestName);
 
-    // Switch to foundry tab
-    await clickContentTab('foundry');
-    await page.waitForSelector('.tab[data-tab="foundry"].active', { timeout: 5000 });
-
-    // Get initial count
-    const initialCount = await getRelatedDocumentCount();
-
-    // Create a journal entry to use as a Foundry document and drop it
-    const docUuid = await createJournalViaAPI('Foundry Doc ' + Date.now());
-    if (docUuid) {
-      await simulateDragDrop(docUuid, 'JournalEntry', '[data-testid="foundry-table"]');
-
-      // Wait for the table to update
-      await page.waitForFunction((expectedCount: number) => {
-        const rows = document.querySelectorAll('[data-testid="foundry-table"] tbody tr');
-        return rows.length >= expectedCount;
-      }, { timeout: 5000 }, initialCount + 1).catch(() => {
-        // Table may not update if drop failed
-      });
-
-      const newCount = await getRelatedDocumentCount();
-      // Expected behavior: Foundry document count increases after adding
-      expect(newCount).toBeGreaterThan(initialCount);
-    }
+    // Use the standardized helper to add Foundry document via drag-drop
+    const docUuid = await addDocumentViaDragDrop({
+      tabId: 'foundry',
+      documentType: 'JournalEntry',
+      dropSelector: '[data-testid="foundry-table"]',
+      documentName: 'Foundry Doc',
+      createDocumentFn: async () => {
+        return await createJournalViaAPI('Foundry Doc ' + Date.now());
+      },
+      verifyByText: false,
+    });
 
     // Clean up
     await deleteEntryViaAPI(entryUuid);

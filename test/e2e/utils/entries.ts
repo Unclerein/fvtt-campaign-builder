@@ -956,6 +956,76 @@ export const simulateDragDrop = async (
 };
 
 /**
+ * Standardized helper for testing drag-drop addition of documents to tabs.
+ * Creates a document (if needed), drops it on a tab, and verifies it appears in the table.
+ *
+ * @param options Configuration options for the drag-drop test
+ * @param options.tabId The tab to switch to (e.g., 'actors', 'journals', 'characters', 'foundry')
+ * @param options.documentType The Foundry document type (e.g., 'Actor', 'JournalEntry', 'JournalEntryPage')
+ * @param options.dropSelector CSS selector for the drop target
+ * @param options.documentName Optional name to use when creating a new document
+ * @param options.documentUuid Optional existing UUID to drop (if not creating a new document)
+ * @param options.createDocumentFn Optional function to create a document via API (returns UUID)
+ * @param options.verifyByText Whether to verify by text content (true) or row count (false). Default: true
+ * @returns The UUID of the document that was dropped
+ */
+export const addDocumentViaDragDrop = async (options: {
+  tabId: string;
+  documentType: string;
+  dropSelector: string;
+  documentName?: string;
+  documentUuid?: string;
+  createDocumentFn?: () => Promise<string>;
+  verifyByText?: boolean;
+}): Promise<string> => {
+  const page = sharedContext.page!;
+  const {
+    tabId,
+    documentType,
+    dropSelector,
+    documentName,
+    documentUuid,
+    createDocumentFn,
+    verifyByText = true,
+  } = options;
+
+  // Switch to the target tab
+  await clickContentTab(tabId);
+  await page.waitForSelector(`.tab[data-tab="${tabId}"].active`, { timeout: 5000 });
+
+  // Get the UUID to drop (either provided or create new)
+  let uuidToDrop = documentUuid;
+  if (!uuidToDrop && createDocumentFn) {
+    uuidToDrop = await createDocumentFn();
+  }
+
+  if (!uuidToDrop) {
+    throw new Error('Either documentUuid or createDocumentFn must be provided');
+  }
+
+  // Simulate dropping the document
+  await simulateDragDrop(uuidToDrop, documentType, dropSelector);
+
+  // Wait for Vue to process the drop
+  await delay(1000);
+
+  // Verify the document appears in the table
+  if (verifyByText && documentName) {
+    await page.waitForFunction((docName: string, selector: string) => {
+      const cells = document.querySelectorAll(`${selector} tbody td`);
+      for (const cell of cells) {
+        if (cell.textContent && cell.textContent.includes(docName)) {
+          return true;
+        }
+      }
+      return false;
+    }, { timeout: 10000 }, documentName, dropSelector);
+  }
+
+  return uuidToDrop;
+};
+
+/**
  * Simulates dropping a journal onto the journals tab.
  * @param journalUuid The UUID of the journal to drop
  */
