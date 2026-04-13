@@ -827,7 +827,7 @@ export const isEditorDirty = async (): Promise<boolean> => {
 export const clickAddJournalButton = async (): Promise<void> => {
   const page = sharedContext.page!;
 
-  const addBtn = await page.$('.fcb-base-table-add-button');
+  const addBtn = await page.$('[data-testid="journals-table"] .fcb-table-add-button');
   if (addBtn) {
     await addBtn.click();
     // Wait for dialog to appear
@@ -870,7 +870,7 @@ export const removeJournal = async (journalName: string): Promise<void> => {
   const page = sharedContext.page!;
 
   // Find the row with the journal name
-  const rows = await page.$$('.fcb-base-table tbody tr');
+  const rows = await page.$$('[data-testid="journals-table"] tbody tr');
   for (const row of rows) {
     const text = await row.evaluate(el => el.textContent);
     if (text?.includes(journalName)) {
@@ -900,7 +900,7 @@ export const removeJournal = async (journalName: string): Promise<void> => {
 export const clickJournalRow = async (journalName: string): Promise<void> => {
   const page = sharedContext.page!;
 
-  const rows = await page.$$('.fcb-base-table tbody tr');
+  const rows = await page.$$('[data-testid="journals-table"] tbody tr');
   for (const row of rows) {
     const text = await row.evaluate(el => el.textContent);
     if (text?.includes(journalName)) {
@@ -923,7 +923,7 @@ export const clickJournalRow = async (journalName: string): Promise<void> => {
 export const getJournalCount = async (): Promise<number> => {
   const page = sharedContext.page!;
 
-  const rows = await page.$$('.fcb-base-table tbody tr');
+  const rows = await page.$$('[data-testid="journals-table"] tbody tr');
   return rows.length;
 };
 
@@ -985,7 +985,7 @@ export const simulateDragDrop = async (
  * @param journalUuid The UUID of the journal to drop
  */
 export const dropJournalOnJournalsTab = async (journalUuid: string): Promise<void> => {
-  await simulateDragDrop(journalUuid, 'JournalEntry', '.fcb-base-table');
+  await simulateDragDrop(journalUuid, 'JournalEntry', '[data-testid="journals-table"]');
 };
 
 /**
@@ -1009,16 +1009,20 @@ export const dropEntryOnRelationshipTab = async (entryUuid: string, tabId: strin
   // Switch to the relationship tab first
   await clickContentTab(tabId);
 
-  await simulateDragDrop(entryUuid, 'JournalEntryPage', '.fcb-related-entry-table');
+  await simulateDragDrop(entryUuid, 'JournalEntryPage', `[data-testid="${tabId}-table"]`);
 };
 
 /**
  * Gets the count of related entries in a relationship tab.
  */
-export const getRelatedEntryCount = async (): Promise<number> => {
+export const getRelatedEntryCount = async (tabName?: string): Promise<number> => {
   const page = sharedContext.page!;
 
-  const rows = await page.$$('.fcb-related-entry-table tbody tr');
+  // If a tab name is provided, scope to that specific table; otherwise use the active relationship tab
+  const selector = tabName
+    ? `[data-testid="${tabName}-table"] tbody tr`
+    : '.tab.active [data-testid$="-table"] tbody tr';
+  const rows = await page.$$(selector);
   return rows.length;
 };
 
@@ -1029,7 +1033,7 @@ export const getRelatedEntryCount = async (): Promise<number> => {
 export const removeRelatedEntry = async (entryName: string): Promise<void> => {
   const page = sharedContext.page!;
 
-  const rows = await page.$$('.fcb-related-entry-table tbody tr');
+  const rows = await page.$$('[data-testid$="-table"] tbody tr');
   for (const row of rows) {
     const text = await row.evaluate(el => el.textContent);
     if (text?.includes(entryName)) {
@@ -1061,7 +1065,7 @@ export const removeRelatedEntry = async (entryName: string): Promise<void> => {
 export const getRelatedDocumentCount = async (): Promise<number> => {
   const page = sharedContext.page!;
 
-  const rows = await page.$$('.fcb-related-document-table tbody tr, .fcb-base-table tbody tr');
+  const rows = await page.$$('[data-testid="foundry-table"] tbody tr, [data-testid="scenes-table"] tbody tr, [data-testid="actors-table"] tbody tr');
   return rows.length;
 };
 
@@ -1072,7 +1076,7 @@ export const getRelatedDocumentCount = async (): Promise<number> => {
 export const clickDocumentRow = async (docName: string): Promise<void> => {
   const page = sharedContext.page!;
 
-  const rows = await page.$$('.fcb-base-table tbody tr');
+  const rows = await page.$$('[data-testid="foundry-table"] tbody tr, [data-testid="scenes-table"] tbody tr, [data-testid="actors-table"] tbody tr');
   for (const row of rows) {
     const text = await row.evaluate(el => el.textContent);
     if (text?.includes(docName)) {
@@ -1099,7 +1103,7 @@ export const clickDocumentRow = async (docName: string): Promise<void> => {
 export const getSessionCount = async (): Promise<number> => {
   const page = sharedContext.page!;
 
-  const rows = await page.$$('.tab[data-tab="sessions"] tbody tr');
+  const rows = await page.$$('[data-testid="sessions-table"] tbody tr');
   return rows.length;
 };
 

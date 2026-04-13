@@ -26,6 +26,10 @@ import {
   createEntryViaUI,
   deleteEntryViaAPI,
   closeActiveTab,
+  getJournalCount,
+  getRelatedEntryCount,
+  getSessionCount,
+  getRelatedDocumentCount,
 } from '@e2etest/utils';
 
 /**
@@ -460,26 +464,37 @@ describe.serial('Character Entry Tests', () => {
 
   /**
    * What it tests: Switching to the journals content tab.
-   * Expected behavior: Journals tab becomes visible after clicking.
+   * Expected behavior: Journals tab becomes visible and shows linked journals.
    */
   test('Switch to journals tab', async () => {
     const page = sharedContext.page!;
+    const setting = testData.settings[0];
 
-    // Create a new entry for this test
-    const journalTestName = 'Journal Tab Test ' + Date.now();
+    // Open the first character (has journal linked from setup)
     await expandTopicNode(Topics.Character);
-    const journalTestUuid = await createEntryViaUI(Topics.Character, journalTestName);
+    await expandTypeNode(Topics.Character, '(none)');
+    const firstChar = setting.topics[Topics.Character][0];
+    await openEntry(Topics.Character, firstChar.name);
 
-    // Entry is already open after creation
+    // Wait for entry to load
+    await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 5000 });
+    await page.waitForFunction(() => {
+      const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
+      return input && input.value.length > 0;
+    }, { timeout: 5000 });
 
     // Click on journals tab
     await clickContentTab('journals');
 
-    // Wait for journals tab content to have the 'active' class
-    // Foundry's tabs system uses CSS classes, not inline styles
+    // Wait for journals tab to become active
     await page.waitForSelector('.tab[data-tab="journals"].active', { timeout: 5000 });
 
-    // Verify we're on journals tab by checking for the 'active' class
+    // Wait for journal table rows to appear (async updateTableRows + Vue reactivity)
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('[data-testid="journals-table"] tbody tr').length > 0;
+    }, { timeout: 5000 });
+
+    // Verify tab is active
     const isActive = await page.evaluate(() => {
       const tab = document.querySelector('.tab[data-tab="journals"]');
       return tab?.classList.contains('active') ?? false;
@@ -487,88 +502,225 @@ describe.serial('Character Entry Tests', () => {
     // Expected behavior: Journals tab is active
     expect(isActive).toBe(true);
 
-    // Clean up
-    await deleteEntryViaAPI(journalTestUuid);
+    // Verify journal data is present
+    const journalCount = await getJournalCount();
+    // Expected behavior: At least one journal is linked to the character
+    expect(journalCount).toBeGreaterThan(0);
   });
 
   /**
    * What it tests: Switching to the characters relationship tab.
-   * Expected behavior: Characters relationship tab becomes visible.
+   * Expected behavior: Characters relationship tab becomes visible and shows related characters.
    */
   test('Switch to characters relationship tab', async () => {
     const page = sharedContext.page!;
+    const setting = testData.settings[0];
+
+    // Open the first character (has character relationships from setup)
+    await expandTopicNode(Topics.Character);
+    await expandTypeNode(Topics.Character, '(none)');
+    const firstChar = setting.topics[Topics.Character][0];
+    await openEntry(Topics.Character, firstChar.name);
+
+    // Wait for entry to load
+    await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 5000 });
+    await page.waitForFunction(() => {
+      const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
+      return input && input.value.length > 0;
+    }, { timeout: 5000 });
 
     // Click on characters tab
     await clickContentTab('characters');
 
-    // Wait for relationship table
-    await page.waitForSelector('.tab[data-tab="characters"]', { timeout: 5000 }).catch(() => {
-      // Tab might already be visible
+    // Wait for tab to become active
+    await page.waitForSelector('.tab[data-tab="characters"].active', { timeout: 5000 });
+
+    // Verify tab is visible
+    const tab = await page.$('[data-tab="characters"]');
+    const isVisible = await tab?.evaluate(el => {
+      const style = window.getComputedStyle(el);
+      return style.display !== 'none';
     });
+    // Expected behavior: Characters tab is visible
+    expect(isVisible).toBe(true);
+
+    // Verify relationship data is present
+    const relatedCount = await getRelatedEntryCount('characters');
+    // Expected behavior: At least one character relationship exists
+    expect(relatedCount).toBeGreaterThan(0);
   });
 
   /**
    * What it tests: Switching to the locations relationship tab.
-   * Expected behavior: Locations relationship tab becomes visible.
+   * Expected behavior: Locations relationship tab becomes visible and shows related locations.
    */
   test('Switch to locations relationship tab', async () => {
     const page = sharedContext.page!;
+    const setting = testData.settings[0];
+
+    // Open the first character (has location relationships from setup)
+    await expandTopicNode(Topics.Character);
+    await expandTypeNode(Topics.Character, '(none)');
+    const firstChar = setting.topics[Topics.Character][0];
+    await openEntry(Topics.Character, firstChar.name);
+
+    // Wait for entry to load
+    await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 5000 });
+    await page.waitForFunction(() => {
+      const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
+      return input && input.value.length > 0;
+    }, { timeout: 5000 });
 
     // Click on locations tab
     await clickContentTab('locations');
 
-    // Wait for relationship table
-    await page.waitForSelector('.tab[data-tab="locations"]', { timeout: 5000 }).catch(() => {
-      // Tab might already be visible
+    // Wait for tab to become active
+    await page.waitForSelector('.tab[data-tab="locations"].active', { timeout: 5000 });
+
+    // Verify tab is visible
+    const tab = await page.$('[data-tab="locations"]');
+    const isVisible = await tab?.evaluate(el => {
+      const style = window.getComputedStyle(el);
+      return style.display !== 'none';
     });
+    // Expected behavior: Locations tab is visible
+    expect(isVisible).toBe(true);
+
+    // Verify relationship data is present
+    const relatedCount = await getRelatedEntryCount('locations');
+    // Expected behavior: At least one location relationship exists
+    expect(relatedCount).toBeGreaterThan(0);
   });
 
   /**
    * What it tests: Switching to the organizations relationship tab.
-   * Expected behavior: Organizations relationship tab becomes visible.
+   * Expected behavior: Organizations relationship tab becomes visible and shows related organizations.
    */
   test('Switch to organizations relationship tab', async () => {
     const page = sharedContext.page!;
+    const setting = testData.settings[0];
+
+    // Open the first character (has organization relationships from setup)
+    await expandTopicNode(Topics.Character);
+    await expandTypeNode(Topics.Character, '(none)');
+    const firstChar = setting.topics[Topics.Character][0];
+    await openEntry(Topics.Character, firstChar.name);
+
+    // Wait for entry to load
+    await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 5000 });
+    await page.waitForFunction(() => {
+      const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
+      return input && input.value.length > 0;
+    }, { timeout: 5000 });
 
     // Click on organizations tab
     await clickContentTab('organizations');
 
-    // Wait for relationship table
-    await page.waitForSelector('.tab[data-tab="organizations"]', { timeout: 5000 }).catch(() => {
-      // Tab might already be visible
+    // Wait for tab to become active
+    await page.waitForSelector('.tab[data-tab="organizations"].active', { timeout: 5000 });
+
+    // Verify tab is visible
+    const tab = await page.$('[data-tab="organizations"]');
+    const isVisible = await tab?.evaluate(el => {
+      const style = window.getComputedStyle(el);
+      return style.display !== 'none';
     });
+    // Expected behavior: Organizations tab is visible
+    expect(isVisible).toBe(true);
+
+    // Verify relationship data is present
+    const relatedCount = await getRelatedEntryCount('organizations');
+    // Expected behavior: At least one organization relationship exists
+    expect(relatedCount).toBeGreaterThan(0);
   });
 
   /**
    * What it tests: Switching to the sessions tab.
-   * Expected behavior: Sessions tab becomes visible.
+   * Expected behavior: Sessions tab becomes visible and shows sessions the character appears in.
    */
   test('Switch to sessions tab', async () => {
     const page = sharedContext.page!;
+    const setting = testData.settings[0];
+
+    // Open the first character (added to session NPC list during setup)
+    await expandTopicNode(Topics.Character);
+    await expandTypeNode(Topics.Character, '(none)');
+    const firstChar = setting.topics[Topics.Character][0];
+    await openEntry(Topics.Character, firstChar.name);
+
+    // Wait for entry to load
+    await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 5000 });
+    await page.waitForFunction(() => {
+      const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
+      return input && input.value.length > 0;
+    }, { timeout: 5000 });
 
     // Click on sessions tab
     await clickContentTab('sessions');
 
-    // Wait for sessions table
-    await page.waitForSelector('.tab[data-tab="sessions"]', { timeout: 5000 }).catch(() => {
-      // Tab might already be visible
+    // Wait for tab to become active
+    await page.waitForSelector('.tab[data-tab="sessions"].active', { timeout: 5000 });
+
+    // Wait for session table rows to appear (async _refreshSessionReferences + Vue reactivity)
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('[data-testid="sessions-table"] tbody tr').length > 0;
+    }, { timeout: 5000 });
+
+    // Verify tab is visible
+    const tab = await page.$('[data-tab="sessions"]');
+    const isVisible = await tab?.evaluate(el => {
+      const style = window.getComputedStyle(el);
+      return style.display !== 'none';
     });
+    // Expected behavior: Sessions tab is visible
+    expect(isVisible).toBe(true);
+
+    // Verify session data is present
+    const sessionCount = await getSessionCount();
+    // Expected behavior: At least one session shows the character
+    expect(sessionCount).toBeGreaterThan(0);
   });
 
   /**
    * What it tests: Switching to the foundry documents tab.
-   * Expected behavior: Foundry documents tab becomes visible.
+   * Expected behavior: Foundry documents tab becomes visible and shows linked documents.
    */
   test('Switch to foundry tab', async () => {
     const page = sharedContext.page!;
+    const setting = testData.settings[0];
+
+    // Open the first character (has foundry documents from setup)
+    await expandTopicNode(Topics.Character);
+    await expandTypeNode(Topics.Character, '(none)');
+    const firstChar = setting.topics[Topics.Character][0];
+    await openEntry(Topics.Character, firstChar.name);
+
+    // Wait for entry to load
+    await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 5000 });
+    await page.waitForFunction(() => {
+      const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
+      return input && input.value.length > 0;
+    }, { timeout: 5000 });
 
     // Click on foundry tab
     await clickContentTab('foundry');
 
-    // Wait for foundry documents table
-    await page.waitForSelector('.tab[data-tab="foundry"]', { timeout: 5000 }).catch(() => {
-      // Tab might already be visible
+    // Wait for tab to become active
+    await page.waitForSelector('.tab[data-tab="foundry"].active', { timeout: 5000 });
+
+    // Verify tab is visible
+    const tab = await page.$('[data-tab="foundry"]');
+    const isVisible = await tab?.evaluate(el => {
+      const style = window.getComputedStyle(el);
+      return style.display !== 'none';
     });
+    // Expected behavior: Foundry tab is visible
+    expect(isVisible).toBe(true);
+
+    // Verify foundry document data is present
+    const docCount = await getRelatedDocumentCount();
+    // Expected behavior: At least one foundry document is linked
+    expect(docCount).toBeGreaterThan(0);
   });
 
   /**

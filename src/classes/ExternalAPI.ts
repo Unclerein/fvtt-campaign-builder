@@ -4,6 +4,7 @@
 import { useCampaignDirectoryStore, useMainStore, } from '@/applications/stores';
 import { ModuleSettings, SettingKey } from '@/settings';
 import { Topics, ValidTopic } from '@/types';
+import type { RelatedJournal } from '@/types';
 import { log } from '@/utils/log';
 import { Campaign } from '@/classes/Documents/Campaign';
 import { FCBDialog } from '@/dialogs';
@@ -212,6 +213,108 @@ class TestAPI {
     if (entry) {
       await entry.delete();
     }
+  }
+
+  /**
+   * Gets an entry by UUID.
+   * @param uuid The UUID of the entry
+   * @returns The Entry instance or null
+   */
+  public async getEntry(uuid: string): Promise<Entry | null> {
+    return await Entry.fromUuid(uuid);
+  }
+
+  /**
+   * Adds a bidirectional relationship between two entries.
+   * @param entry1Uuid UUID of the first entry
+   * @param entry2Uuid UUID of the second entry
+   * @param extraFields Extra fields to save with the relationship (e.g., { relationship: 'Friend' })
+   */
+  public async linkEntries(entry1Uuid: string, entry2Uuid: string, extraFields: Record<string, string>): Promise<void> {
+    const entry1 = await Entry.fromUuid(entry1Uuid);
+    const entry2 = await Entry.fromUuid(entry2Uuid);
+    if (!entry1 || !entry2) {
+      throw new Error('Invalid entry in TestAPI.linkEntries()');
+    }
+
+    const entry1Topic = entry1.topic;
+    const entry2Topic = entry2.topic;
+
+    // Add relationship to entry1
+    const entry1Rels = foundry.utils.deepClone(entry1.relationships);
+    if (!entry1Rels[entry2Topic]) {
+      entry1Rels[entry2Topic] = {};
+    }
+    entry1Rels[entry2Topic][entry2.uuid] = {
+      uuid: entry2.uuid,
+      name: entry2.name,
+      topic: entry2.topic,
+      type: entry2.type || '',
+      extraFields: extraFields,
+    };
+    entry1.relationships = entry1Rels;
+    await entry1.save();
+
+    // Add relationship to entry2
+    const entry2Rels = foundry.utils.deepClone(entry2.relationships);
+    if (!entry2Rels[entry1Topic]) {
+      entry2Rels[entry1Topic] = {};
+    }
+    entry2Rels[entry1Topic][entry1.uuid] = {
+      uuid: entry1.uuid,
+      name: entry1.name,
+      topic: entry1.topic,
+      type: entry1.type || '',
+      extraFields: extraFields,
+    };
+    entry2.relationships = entry2Rels;
+    await entry2.save();
+  }
+
+  /**
+   * Adds an NPC to a session.
+   * @param sessionUuid The UUID of the session
+   * @param npcUuid The UUID of the NPC entry
+   * @param delivered Whether the NPC is marked as delivered (shows on sessions tab)
+   */
+  public async addNPCToSession(sessionUuid: string, npcUuid: string, delivered: boolean = false): Promise<void> {
+    const session = await Session.fromUuid(sessionUuid);
+    if (!session) {
+      throw new Error('Failed to load session in TestAPI.addNPCToSession()');
+    }
+    await session.addNPC(npcUuid, delivered);
+  }
+
+  /**
+   * Adds a journal to an entry.
+   * @param entryUuid The UUID of the entry
+   * @param journalUuid The UUID of the JournalEntry to link
+   */
+  public async addJournalToEntry(entryUuid: string, journalUuid: string): Promise<void> {
+    const entry = await Entry.fromUuid(entryUuid);
+    if (!entry) {
+      throw new Error('Failed to load entry in TestAPI.addJournalToEntry()');
+    }
+
+    const compositeUuid = `${journalUuid}||`;
+
+    // prevent duplicates
+    if (entry.journals.some(j => j.uuid === compositeUuid)) {
+      return;
+    }
+
+    const newJournalLink: RelatedJournal = {
+      uuid: compositeUuid,
+      journalUuid: journalUuid,
+      anchor: null,
+      pageUuid: null,
+      packId: null,
+      packName: null,
+      groupId: null,
+    };
+
+    entry.journals = [...entry.journals, newJournalLink];
+    await entry.save();
   }
 
   /**

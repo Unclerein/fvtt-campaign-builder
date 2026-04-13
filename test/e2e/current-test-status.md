@@ -1,357 +1,15 @@
-# E2E Test Coverage Expansion Plan
+# E2E Test Coverage 
 
-## Existing Tests
 
-- `directory/basic.test.ts` - Directory expansion (incomplete stubs)
-- `entries/character.test.ts` - Character entry operations
-- `entries/location.test.ts` - Location entry operations
-- `settings/*.ts` - Setting CRUD (partial implementations)
-- `campaigns/*.ts` - Campaign tests (empty stubs)
 
----
-
-## Phase 1: Core User Flows (Critical)
-
-### 1.1 Campaign Management Tests
-**File:** `test/e2e/campaigns/campaign.test.ts` 
-
-Tests:
-- Create new campaign in setting
-- Rename campaign (verify updates in directory)
-- Delete campaign (with confirmation)
-- Add session to campaign
-- Reorder sessions (change session numbers)
-- Switch between campaigns in different settings
-- Campaign completion toggle
-
-**Coverage targets:**
-- `CampaignContent.vue` 
-- `CampaignDirectoryCampaignNode.vue` 
-- `campaignStore.ts` 
-
-### 1.2 Session Management Tests
-**File:** `test/e2e/sessions/session.test.ts` 
-
-Tests:
-- Create new session
-- Rename session (verify updates everywhere)
-- Delete session
-- Session date picker
-- Session number auto-increment
-- Session display modes (number/date/name)
-- Session notes editor
-- Play mode session navigation
-
-**Coverage targets:**
-- `SessionContent.vue` 
-- `SessionItemTab.vue`, `SessionLocationTab.vue`, etc.
-- `sessionStore.ts` 
-- `playingStore.ts` 
-
-### 1.3 Entry Type Completion Tests
-**Files:**
-- `test/e2e/entries/organization.test.ts` 
-- `test/e2e/entries/pc.test.ts` 
-
-Tests (for each type):
-- Create entry
-- Edit name with debounce
-- Type selection (existing and new)
-- Tags add/remove/click
-- Hierarchy (locations only)
-- Push to session
-- Content tabs (description, journals, relationships)
-- Delete entry
-
-**Coverage targets:**
-- `EntryContent.vue` 
-- `TypeSelect.vue`, `SpeciesSelect.vue` 
-- Stores: `settingDirectoryStore.ts`, `relationshipStore.ts` 
-
----
-
-## Phase 2: Content Tabs (High Priority)
-
-### 2.1 Campaign Content Tabs
-**File:** `test/e2e/campaigns/campaign-tabs.test.ts` 
-
-Tests:
-- Ideas tab: Add/edit/delete ideas
-- Lore tab: Add/edit/delete lore entries
-- PCs tab: Link/unlink PCs to campaign
-- ToDo tab: Add/complete/delete todos
-
-**Coverage targets:**
-- `CampaignIdeasTab.vue` 
-- `CampaignLoreTab.vue` 
-- `CampaignPCsTab.vue` 
-- `CampaignToDoTab.vue` 
-
-### 2.2 Session Content Tabs
-**File:** `test/e2e/sessions/session-tabs.test.ts` 
-
-Tests:
-- Items tab: Add/remove items
-- Locations tab: Add/remove locations
-- Lore tab: Add/remove lore
-- Monsters tab: Add/remove monsters
-- NPCs tab: Add/remove NPCs
-- Vignettes tab: Add/remove vignettes
-
-**Coverage targets:**
-- All `Session*Tab.vue` components
-
-### 2.3 Specialized Content Tests
-**Files:**
-- `test/e2e/arcs/arc.test.ts` 
-- `test/e2e/fronts/front.test.ts` 
-- `test/e2e/storyWebs/storyWeb.test.ts` 
-
-Tests:
-- Arc: Create, add locations, session range
-- Front: Create, add dangers/grim portents
-- StoryWeb: Create, add nodes/edges, graph interaction
-
-**Coverage targets:**
-- `ArcContent.vue`, `FrontContent.vue`, `StoryWebContent.vue` 
-- `arcStore.ts`, `frontStore.ts`, `storyWebStore.ts` 
-
----
-
-## Phase 3: Navigation & Header (High Priority)
-
-### 3.1 Header Navigation Tests
-**File:** `test/e2e/navigation/header.test.ts` 
-
-Tests:
-- Tab switching (forward/back)
-- Tab close button
-- Tab middle-click close
-- Bookmark add/remove
-- Bookmark click navigation
-- Tab persistence after window close/reopen
-
-**Coverage targets:**
-- `FCBHeader.vue` 
-- `FCBHeaderTab.vue` 
-- `FCBBookmark.vue` 
-- `navigationStore.ts` 
-
-### 3.2 Play Mode Navigation Tests
-**File:** `test/e2e/navigation/playMode.test.ts` 
-
-Tests:
-- Campaign selector dropdown
-- Session buttons (previous/next)
-- Generator bar interactions
-
-**Coverage targets:**
-- `PlayModeNavigation.vue` 
-- `CampaignSelector.vue` 
-- `SessionButtonsBar.vue` 
-- `GeneratorBar.vue` 
-
----
-
-## Phase 4: Dialogs (Medium Priority)
-
-### 4.1 Entry Creation Dialog Tests
-**File:** `test/e2e/dialogs/create-entry.test.ts` 
-
-Tests:
-- Open dialog from directory
-- Select entry type
-- Enter name
-- Create and verify
-- Cancel dialog
-
-**Coverage targets:**
-- `CreateEntryDialog.vue` 
-
-### 4.2 Relationship Dialog Tests
-**File:** `test/e2e/dialogs/relationships.test.ts` 
-
-Tests:
-- RelatedDocumentsDialog: Add/remove journals
-- RelatedEntriesManagementDialog: Manage relationships
-- RelatedEntryDialog: Add related entry
-- RelatedItemDialog: Add related item
-
-**Coverage targets:**
-- All `*Dialog.vue` in `dialogs/` 
-
-### 4.3 Utility Dialog Tests
-**File:** `test/e2e/dialogs/utility.test.ts` 
-
-Tests:
-- ConfirmDialog: Confirm/cancel
-- SaveChangesDialog: Save/discard/cancel on tab switch
-- SelectOptionDialog: Select option
-- InputDialog: Enter text
-
-**Coverage targets:**
-- `ConfirmDialog.vue`, `SaveChangesDialog.vue`, etc.
-
----
-
-## Phase 5: Core Components (Medium Priority)
-
-### 5.1 Editor Tests
-**File:** `test/e2e/components/editor.test.ts` 
-
-Tests:
-- Type content
-- Format text (bold, italic, etc.)
-- Create links to entries
-- Save content
-- Dirty state detection
-- Unsaved changes prompt
-
-**Coverage targets:**
-- `Editor.vue` 
-- `editorChangeDetection.ts` 
-
-### 5.2 Image Picker Tests
-**File:** `test/e2e/components/image-picker.test.ts` 
-
-Tests:
-- Open image picker
-- Select image from file picker
-- Clear image
-- Image URL input
-
-**Coverage targets:**
-- `ImagePicker.vue` 
-
-### 5.3 Search Tests
-**File:** `test/e2e/components/search.test.ts` 
-
-Tests:
-- Open search
-- Search by name
-- Filter by type
-- Click result to open
-- Clear search
-
-**Coverage targets:**
-- `Search.vue` 
-- `search.ts` 
-
-### 5.4 TypeAhead Tests
-**File:** `test/e2e/components/typeahead.test.ts` 
-
-Tests:
-- Type to filter
-- Select existing option
-- Create new option
-- Clear selection
-- Keyboard navigation
-
-**Coverage targets:**
-- `TypeAhead.vue` 
-
----
-
-## Phase 6: Settings & Configuration (Lower Priority)
-
-### 6.1 Setting Content Tests
-**File:** `test/e2e/settings/setting-content.test.ts` 
-
-Tests:
-- Edit setting name
-- Edit genre
-- Edit description
-- Edit setting feeling
-- Custom fields
-- Image settings
-
-**Coverage targets:**
-- `SettingContent.vue` 
-
-### 6.2 Advanced Settings Tests
-**File:** `test/e2e/settings/advanced-settings.test.ts` 
-
-Tests:
-- Open advanced settings
-- Tab visibility settings
-- Table grouping settings
-- Species list management
-- Roll table settings
-
-**Coverage targets:**
-- `AdvancedSettings.vue` 
-- `TabVisibilitySettingsDialog.vue` 
-- `TableGroupingSettingsDialog.vue` 
-- `SpeciesList.vue` 
-- `RollTableSettings.vue` 
-
-### 6.3 Import/Export Tests
-**File:** `test/e2e/settings/import-export.test.ts` 
-
-Tests:
-- Export setting
-- Import setting
-- Export campaign
-- Import campaign
-
-**Coverage targets:**
-- `ImportExportDialog.vue` 
-- `export.ts`, `import.ts` 
-
----
-
-## Phase 7: Specialized Features (Lower Priority)
-
-### 7.1 Timeline Tests
-**File:** `test/e2e/timeline/timeline.test.ts` 
-
-Tests:
-- View timeline
-- Filter by session
-- Filter by tags
-- Click event to open
-
-**Coverage targets:**
-- `TimelineTab.vue` 
-- `TimelineFilterPanel.vue` 
-
-### 7.2 Tag Results Tests
-**File:** `test/e2e/tags/tag-results.test.ts` 
-
-Tests:
-- Click tag to open results
-- View all entries with tag
-- Click entry to open
-
-**Coverage targets:**
-- `TagResultsTab.vue` 
-
-### 7.3 Custom Fields Tests
-**File:** `test/e2e/settings/custom-fields.test.ts` 
-
-Tests:
-- Add custom field
-- Edit custom field
-- Delete custom field
-- Reorder fields
-- Field types (text, number, select, etc.)
-
-**Coverage targets:**
-- `CustomFieldsDialog.vue` 
-- `CustomFieldsBlocks.vue` 
-- `customFields.ts` 
-
----
 
 ## Implementation Approach
 
 For each test file:
 
-1. **Create test file** following existing patterns from `character.test.ts` and `location.test.ts` 
-2. **Run single file:** `npm test -- --file <path>` 
-3. **Verify all tests pass**
-4. **Check coverage:** `npm run test:coverage` then `npx nyc report` 
-5. **Confirm coverage targets met**
+1. **Run single file:** `npm test -- --file <path>` 
+2. **Verify all tests pass**
+3. **Modify test file** following existing patterns from e2e/entries/`character.test.ts`  
 
 ### Test File Template
 
@@ -383,24 +41,9 @@ describe.serial('Feature Name Tests', () => {
 
 ## Potential Application Bugs
 
-*To be populated during test development - list any issues found that require application code changes*
+*To be populated during test development - list any issues found that require application code changes.  Do not change any code during test development (with the exception of adding data-testid peops to DOM elements) - just list issues here*
 
 1. [None identified yet]
-
----
-
-## Estimated Test Count by Phase
-
-| Phase | Test Files | Est. Tests |
-|-------|-----------|------------|
-| Phase 1 | 4 | 40-50 |
-| Phase 2 | 6 | 50-60 |
-| Phase 3 | 2 | 20-25 |
-| Phase 4 | 3 | 25-30 |
-| Phase 5 | 4 | 30-35 |
-| Phase 6 | 3 | 20-25 |
-| Phase 7 | 3 | 15-20 |
-| **Total** | **25** | **200-245** |
 
 ---
 
@@ -426,39 +69,39 @@ This section tracks each test file with detailed descriptions of what is being t
 | Test | What It Tests | Expected Behavior |
 |------|---------------|-------------------|
 | Expand entry folders | Directory tree expansion | Clicking topic folders expands to show entries; collapse-all hides all |
-| Expand campaign folders | Campaign tree expansion | *(stub - not implemented)* |
-| Open a setting | Setting content opening | *(stub - not implemented)* |
-| Open a character | Character entry opening | *(stub - not implemented)* |
-| Open a location | Location entry opening | *(stub - not implemented)* |
-| Open a organization | Organization entry opening | *(stub - not implemented)* |
-| Open a PC | PC entry opening | *(stub - not implemented)* |
-| Open a campaign | Campaign content opening | *(stub - not implemented)* |
-| Open a session | Session content opening | *(stub - not implemented)* |
+| Expand campaign folders | Campaign tree expansion | Needs to be implemented |
+| Open a setting | Setting content opening | Needs to be implemented |
+| Open a character | Character entry opening | Needs to be implemented |
+| Open a location | Location entry opening | Needs to be implemented |
+| Open a organization | Organization entry opening | Needs to be implemented |
+| Open a PC | PC entry opening | Needs to be implemented |
+| Open a campaign | Campaign content opening | Needs to be implemented |
+| Open a session | Session content opening | Needs to be implemented |
 
 ---
 
 #### `entries/character.test.ts` 
 **Status:** Complete (18 tests)
 
-| Test | What It Tests | Expected Behavior |
-|------|---------------|-------------------|
-| Open existing character entry | Directory navigation to entry | Entry opens, name input shows correct name |
-| Edit character name with debounce | Name editing with auto-save | Name changes, persists after debounce (300ms) |
-| Select existing type for character | Type dropdown selection | Type dropdown opens, selecting option updates type field |
-| Add new type for character | Creating new type via typeahead | New type is added to options and selected |
-| Select species for character | Species dropdown selection | Species dropdown opens, selecting option updates species field |
-| Add and remove tags | Tag management | Tags can be added via input, removed via X button |
-| Click tag opens tag results tab | Tag click navigation | Clicking a tag opens TagResultsTab showing entries with that tag |
-| Push character to session | Push-to-session feature | Context menu shows campaigns, selecting adds character to session |
-| Generate button shows context menu | AI generation menu | Generate button opens context menu with generation options |
-| Foundry doc button disabled when no actors | Actor linking state | Button is disabled when no actors attached to character |
-| Switch to journals tab | Content tab navigation | Journals tab becomes visible and active |
-| Switch to characters relationship tab | Relationship tab navigation | Characters relationship tab becomes visible |
-| Switch to locations relationship tab | Relationship tab navigation | Locations relationship tab becomes visible |
-| Switch to organizations relationship tab | Relationship tab navigation | Organizations relationship tab becomes visible |
-| Switch to sessions tab | Sessions tab navigation | Sessions tab becomes visible |
-| Switch to foundry tab | Foundry docs tab navigation | Foundry documents tab becomes visible |
-| Voice button not visible for non-characters | Voice feature visibility | Voice button presence depends on settings |
+| Test | What It Tests | Expected Behavior | Built | Passes |
+|------|---------------|-------------------|-------|--------|
+| Open existing character entry | Directory navigation to entry | Entry opens, name input shows correct name | Yes | Yes |
+| Edit character name with debounce | Name editing with auto-save | Name changes, persists after debounce (300ms) | Yes | Yes |
+| Select existing type for character | Type dropdown selection | Type dropdown opens, selecting option updates type field | Yes | Yes |
+| Add new type for character | Creating new type via typeahead | New type is added to options and selected | Yes | Yes |
+| Select species for character | Species dropdown selection | Species dropdown opens, selecting option updates species field | Yes | Yes |
+| Add and remove tags | Tag management | Tags can be added via input, removed via X button | Yes | Yes |
+| Click tag opens tag results tab | Tag click navigation | Clicking a tag opens TagResultsTab showing entries with that tag | Yes | Yes |
+| Push character to session | Push-to-session feature | Context menu shows campaigns, selecting adds character to session | Yes | Yes |
+| Generate button shows context menu | AI generation menu | Generate button opens context menu with generation options | Yes | Yes |
+| Foundry doc button disabled when no actors | Actor linking state | Button is disabled when no actors attached to character | Yes | Yes |
+| Switch to journals tab | Content tab navigation | Journals tab becomes visible and a related journal with all the details shows | Incomplete | Yes |
+| Switch to characters relationship tab | Relationship tab navigation | Characters relationship tab becomes visible and a related character with all the details shows | Incomplete | Yes |
+| Switch to locations relationship tab | Relationship tab navigation | Locations relationship tab becomes visible and a related location with all the details shows | Incomplete | Yes |
+| Switch to organizations relationship tab | Relationship tab navigation | Organizations relationship tab becomes visible and a related organization with all the details shows | Incomplete | Yes |
+| Switch to sessions tab | Sessions tab navigation | Sessions tab becomes visible and a related session with all the details shows | Incomplete | Yes |
+| Switch to foundry tab | Foundry docs tab navigation | Foundry documents tab becomes visible and a related document with all the details shows | Incomplete | Yes |
+| Voice button not visible for non-characters | Voice feature visibility | Voice button presence depends on settings | Yes | Yes |
 
 ---
 
