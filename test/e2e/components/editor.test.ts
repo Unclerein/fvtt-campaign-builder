@@ -337,7 +337,7 @@ describe.serial('Editor Component Tests', () => {
     }
 
     // Wait for campaign content
-    await page.waitForSelector('.fcb-name-header', { timeout: 10000 });
+    await page.waitForSelector('.fcb-name-header', { timeout: 5000 });
 
     // Click on description tab if needed
     const descTab = await page.$('[data-tab="description"]');

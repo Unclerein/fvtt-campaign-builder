@@ -33,7 +33,7 @@ const openCampaign = async (campaignName: string): Promise<void> => {
     }
   }
 
-  await page.waitForSelector('.fcb-name-header', { timeout: 10000 });
+  await page.waitForSelector('.fcb-name-header', { timeout: 5000 });
 };
 
 /**

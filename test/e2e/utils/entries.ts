@@ -75,7 +75,7 @@ export const openEntry = async (topic: ValidTopic, entryName: string, retries = 
   }
 
   // Wait for the content to load
-  await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 10000 });
+  await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 5000 });
 };
 
 /**
@@ -157,10 +157,10 @@ export const getVoiceButtonSelector = (): string => {
 export const clickContentTab = async (tabId: string): Promise<void> => {
   const page = sharedContext.page!;
 
-  // Use page.evaluate to click the tab directly in the browser context
-  // This avoids stale element handle issues after DOM updates
+  // Use page.evaluate to click the tab button directly in the browser context
+  // Target the tab button (class "item") specifically, not the tab content (class "tab")
   await page.evaluate((id: string) => {
-    const tab = document.querySelector(`[data-tab="${id}"]`);
+    const tab = document.querySelector(`.item[data-tab="${id}"]`);
     if (tab && tab instanceof HTMLElement) {
       tab.click();
     }
@@ -709,33 +709,7 @@ export const getPlayerNameValue = async (): Promise<string> => {
   return '';
 };
 
-/**
- * Waits for a notification to appear.
- */
-export const waitForNotification = async (text: string): Promise<void> => {
-  const page = sharedContext.page!;
 
-  await page.waitForFunction((text: string) => {
-    const notifications = document.querySelectorAll('#notifications .notification');
-    return Array.from(notifications).some(n => n.textContent?.includes(text));
-  }, {}, text);
-};
-
-/**
- * Checks if a notification appeared.
- */
-export const hasNotification = async (text: string): Promise<boolean> => {
-  const page = sharedContext.page!;
-
-  const notifications = await page.$$('#notifications .notification');
-  for (const notification of notifications) {
-    const content = await notification.evaluate(el => el.textContent);
-    if (content?.includes(text)) {
-      return true;
-    }
-  }
-  return false;
-};
 
 ////////////////////
 // Editor utilities
@@ -924,6 +898,7 @@ export const getJournalCount = async (): Promise<number> => {
   const page = sharedContext.page!;
 
   const rows = await page.$$('[data-testid="journals-table"] tbody tr');
+  console.log(rows);
   return rows.length;
 };
 
@@ -949,30 +924,30 @@ export const simulateDragDrop = async (
       const target = document.querySelector(targetSelector);
       if (!target) return;
 
-      // Create a mock data transfer object
-      const dataTransfer = {
-        data: {} as Record<string, string>,
-        setData(format: string, data: string) {
-          this.data[format] = data;
-        },
-        getData(format: string) {
-          return this.data[format] || '';
-        },
-      };
-
-      // Set the drag data
       const dragData = JSON.stringify({
         type: sourceType,
         uuid: sourceUuid,
       });
-      dataTransfer.setData('text/plain', dragData);
 
-      // Create and dispatch the drop event
-      const dropEvent = new DragEvent('drop', {
-        bubbles: true,
-        cancelable: true,
-        dataTransfer: dataTransfer as unknown as DataTransfer,
-      });
+      // Build a mock dataTransfer - Chrome restricts getData() on synthetic DragEvents,
+      // so we use a plain object that the drop handler can read directly.
+      const mockDataTransfer = {
+        types: ['text/plain'],
+        getData(format: string) {
+          return format === 'text/plain' ? dragData : '';
+        },
+        setData() {},
+        dropEffect: 'none' as const,
+        effectAllowed: 'all' as const,
+        files: {} as FileList,
+        items: {} as DataTransferItemList,
+        clearData() {},
+      };
+
+      // Dispatch as a CustomEvent but with dataTransfer attached directly,
+      // since the handler only reads event.dataTransfer (not instanceof DragEvent).
+      const dropEvent = new CustomEvent('drop', { bubbles: true, cancelable: true }) as unknown as DragEvent;
+      (dropEvent as any).dataTransfer = mockDataTransfer;
 
       target.dispatchEvent(dropEvent);
     },
@@ -1114,21 +1089,30 @@ export const getSessionCount = async (): Promise<number> => {
 export const clickSessionRow = async (sessionName: string): Promise<void> => {
   const page = sharedContext.page!;
 
-  const rows = await page.$$('.tab[data-tab="sessions"] tbody tr');
+  // Find and click the clickable name cell within the session row
+  // The name column uses col.onClick rendered as .fcb-table-body-text.clickable inside the td
+  const rows = await page.$$('[data-testid="sessions-table"] tbody tr');
   for (const row of rows) {
     const text = await row.evaluate(el => el.textContent);
     if (text?.includes(sessionName)) {
-      // Click the name cell
-      const cells = await row.$$('td');
-      if (cells.length >= 3) {
-        await cells[2].click(); // Name is typically 3rd column
+      // Click the inner clickable div rather than the td to trigger col.onClick
+      const clickable = await row.$('.fcb-table-body-text.clickable');
+      if (clickable) {
+        await clickable.click();
+      } else {
+        // Fallback: click the td containing the session name text
+        const cells = await row.$$('td');
+        for (const cell of cells) {
+          const cellText = await cell.evaluate(el => el.textContent?.trim());
+          if (cellText === sessionName) {
+            await cell.click();
+            break;
+          }
+        }
       }
       break;
     }
   }
-
-  // Wait for session tab to open
-  await page.waitForSelector('[data-testid="session-name-input"]', { timeout: 5000 }).catch(() => {});
 };
 
 ////////////////////
@@ -1193,7 +1177,7 @@ export const getParentOptions = async (): Promise<string[]> => {
  */
 export const getImagePicker = async (): Promise<import('puppeteer').ElementHandle<Element> | null> => {
   const page = sharedContext.page!;
-  return await page.$('.fcb-image-picker');
+  return await page.$('[data-testid="image-picker"]');
 };
 
 /**
@@ -1202,7 +1186,7 @@ export const getImagePicker = async (): Promise<import('puppeteer').ElementHandl
 export const clickImagePicker = async (): Promise<void> => {
   const page = sharedContext.page!;
 
-  const imagePicker = await page.$('.fcb-image-picker img, .fcb-image-picker .fcb-image-placeholder');
+  const imagePicker = await page.$('[data-testid="image-picker"] img, [data-testid="image-picker"]');
   if (imagePicker) {
     await imagePicker.click();
     // Wait for file input to be triggered (no visible change to wait for)
@@ -1215,7 +1199,7 @@ export const clickImagePicker = async (): Promise<void> => {
 export const getImageUrl = async (): Promise<string> => {
   const page = sharedContext.page!;
 
-  const img = await page.$('.fcb-image-picker img');
+  const img = await page.$('[data-testid="image-picker"] img');
   if (img) {
     return await img.evaluate(el => (el as HTMLImageElement).src);
   }
@@ -1260,8 +1244,8 @@ export const clickFoundryDocButton = async (): Promise<void> => {
   const btn = await page.$('[data-testid="entry-foundry-doc-button"]');
   if (btn) {
     await btn.click();
-    // Wait for scene sheet to open (if applicable)
-    await page.waitForSelector('.scene-sheet, .sheet', { timeout: 5000 }).catch(() => {});
+    // Wait for sheet to open (Foundry v13 uses .app.window-app structure)
+    await page.waitForSelector('.app.window-app', { timeout: 5000 }).catch(() => {});
   }
 };
 
@@ -1306,36 +1290,6 @@ export const deleteJournalViaAPI = async (uuid: string): Promise<void> => {
   }, uuid);
 };
 
-/**
- * Adds a journal to an entry via the API.
- * @param entryUuid The entry UUID
- * @param journalUuid The journal UUID
- */
-export const addJournalToEntryViaAPI = async (entryUuid: string, journalUuid: string): Promise<void> => {
-  const page = sharedContext.page!;
-
-  await page.evaluate(
-    async ({ entryUuid, journalUuid }: { entryUuid: string; journalUuid: string }) => {
-      const api = (game as any).modules.get('campaign-builder')!.api!.testAPI;
-      // Get the entry and add the journal
-      const entry = await api.getEntry(entryUuid);
-      if (entry) {
-        entry.journals = entry.journals || [];
-        entry.journals.push({
-          uuid: `${journalUuid}||`,
-          journalUuid,
-          pageUuid: null,
-          anchor: null,
-          packId: null,
-          packName: null,
-          groupId: null,
-        });
-        await entry.save();
-      }
-    },
-    { entryUuid, journalUuid }
-  );
-};
 
 /**
  * Gets an entry by UUID via the API.

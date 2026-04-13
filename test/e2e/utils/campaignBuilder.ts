@@ -39,7 +39,7 @@ export async function openCampaignBuilder(page?: Page): Promise<void> {
 
   // Wait for the launch button to appear
   console.log('Waiting for launch button...');
-  await p.waitForSelector('#fcb-launch', { timeout: 10000 });
+  await p.waitForSelector('#fcb-launch', { timeout: 5000 });
   console.log('Launch button found');
 
   // Click the launch button using evaluate for reliability
@@ -52,7 +52,7 @@ export async function openCampaignBuilder(page?: Page): Promise<void> {
   console.log('Launch button clicked');
 
   // Wait for the main window to appear
-  await p.waitForSelector('.fcb-main-window', { visible: true, timeout: 10000 });
+  await p.waitForSelector('.fcb-main-window', { visible: true, timeout: 5000 });
   console.log('Main window appeared');
 
   // Wait for Vue app to be ready
@@ -64,7 +64,7 @@ export async function openCampaignBuilder(page?: Page): Promise<void> {
     // Also check for home page (no settings case)
     const homePage = win.querySelector('.fcb-home-page');
     return tabs.length > 0 || homePage != null;
-  }, { timeout: 10000 });
+  }, { timeout: 5000 });
   console.log('Vue app ready');
 }
 

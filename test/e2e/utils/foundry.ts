@@ -156,12 +156,12 @@ async function handleSetupAuthentication(page: Page): Promise<void> {
   const submitButton = await page.$('button[type="submit"]');
   if (submitButton) {
     await Promise.all([
-      page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 10000 }),
+      page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 5000 }),
       submitButton.click(),
     ]);
   } else {
     await Promise.all([
-      page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 10000 }),
+      page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 5000 }),
       page.keyboard.press('Enter'),
     ]);
   }
@@ -270,7 +270,7 @@ async function selectWorld(page: Page): Promise<void> {
 
   await page.waitForFunction(() => {
     return window.location.href.includes('/join') || window.location.href.includes('/game');
-  }, { timeout: 10000 });
+  }, { timeout: 5000 });
 
   // Wait a bit for the page to settle
   await new Promise(resolve => setTimeout(resolve, 1000));

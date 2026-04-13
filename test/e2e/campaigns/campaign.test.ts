@@ -60,7 +60,7 @@ const openCampaign = async (campaignName: string): Promise<void> => {
   }
 
   // Wait for campaign content to load
-  await page.waitForSelector('.fcb-campaign-content, .fcb-name-header', { timeout: 10000 });
+  await page.waitForSelector('.fcb-campaign-content, .fcb-name-header', { timeout: 5000 });
 };
 
 /**
@@ -183,7 +183,7 @@ const openSession = async (sessionName: string): Promise<void> => {
   }
 
   // Wait for session content to load
-  await page.waitForSelector('.fcb-session-content, .fcb-name-header', { timeout: 10000 });
+  await page.waitForSelector('.fcb-session-content, .fcb-name-header', { timeout: 5000 });
 };
 
 /**

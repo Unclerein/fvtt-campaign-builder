@@ -20,7 +20,7 @@ export const switchToSetting = async (settingName: string) => {
   }
 
   // Wait for setting select to be visible (it only appears when there are multiple settings)
-  await page.waitForSelector('[data-testid="setting-select"]', { timeout: 10000 });
+  await page.waitForSelector('[data-testid="setting-select"]', { timeout: 5000 });
 
   // Click the setting select dropdown
   await page.evaluate(() => {

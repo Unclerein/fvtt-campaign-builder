@@ -251,7 +251,7 @@ describe.serial('Image Picker Component Tests', () => {
     }
 
     // Wait for campaign content
-    await page.waitForSelector('.fcb-name-header', { timeout: 10000 });
+    await page.waitForSelector('.fcb-name-header', { timeout: 5000 });
 
     // Verify image picker is present in description tab
     const imagePicker = await getImagePicker();
@@ -285,7 +285,7 @@ describe.serial('Image Picker Component Tests', () => {
     }
 
     // Wait for session content
-    await page.waitForSelector('.fcb-name-header', { timeout: 10000 });
+    await page.waitForSelector('.fcb-name-header', { timeout: 5000 });
 
     // Verify image picker is present
     const imagePicker = await getImagePicker();

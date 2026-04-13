@@ -57,7 +57,7 @@ const openSession = async (campaignName: string, sessionName: string): Promise<v
     }
   }
 
-  await page.waitForSelector('.fcb-name-header', { timeout: 10000 });
+  await page.waitForSelector('.fcb-name-header', { timeout: 5000 });
 };
 
 /**

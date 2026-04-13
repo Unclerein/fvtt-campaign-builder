@@ -367,7 +367,7 @@ describe.serial('Tags Component Tests', () => {
     }
 
     // Wait for session content
-    await page.waitForSelector('.fcb-name-header', { timeout: 10000 });
+    await page.waitForSelector('.fcb-name-header', { timeout: 5000 });
 
     // Verify tags wrapper is present
     await page.waitForSelector('.tags-wrapper:not(.uninitialized)', { timeout: 5000 });

@@ -59,7 +59,7 @@ const openStoryWeb = async (campaignName: string, storyWebName: string): Promise
     }
   }
 
-  await page.waitForSelector('.fcb-name-header', { timeout: 10000 });
+  await page.waitForSelector('.fcb-name-header', { timeout: 5000 });
 };
 
 /**

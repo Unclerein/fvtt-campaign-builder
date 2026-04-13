@@ -35,7 +35,7 @@ const openCampaign = async (campaignName: string): Promise<void> => {
   }
 
   // Wait for campaign content to load
-  await page.waitForSelector('.fcb-campaign-content, .fcb-name-header', { timeout: 10000 });
+  await page.waitForSelector('.fcb-campaign-content, .fcb-name-header', { timeout: 5000 });
 };
 
 /**

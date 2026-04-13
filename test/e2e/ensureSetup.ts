@@ -72,7 +72,7 @@ export async function ensureSetup(rebuild = false) {
       console.log('[ensureSetup] World reset complete, waiting for stabilization...');
 
       // Wait for page to stabilize after reset (may trigger Foundry reload)
-      await page.waitForSelector('#game', { timeout: 10000 }).catch(() => {
+      await page.waitForSelector('#game', { timeout: 5000 }).catch(() => {
         console.log('[ensureSetup] waitForSelector #game timed out (expected if page reloaded)');
       });
       await new Promise(resolve => setTimeout(resolve, 1000));
