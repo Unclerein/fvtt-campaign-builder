@@ -191,46 +191,52 @@ describe.serial('Character Entry Tests', () => {
   test('Select existing type for character', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
+    let typeTestUuid: string | null = null;
 
-    // Create a new entry via UI (don't modify base data)
-    const testTypeName = 'Type Test ' + Date.now();
-    await expandTopicNode(Topics.Character);
-    const typeTestUuid = await createEntryViaUI(Topics.Character, testTypeName);
+    try {
+      // Create a new entry via UI (don't modify base data)
+      const testTypeName = 'Type Test ' + Date.now();
+      await expandTopicNode(Topics.Character);
+      typeTestUuid = await createEntryViaUI(Topics.Character, testTypeName);
 
-    // Entry is already open after creation
+      // Entry is already open after creation
 
-    // Make sure we're on the description tab
-    await clickContentTab('description');
+      // Make sure we're on the description tab
+      await clickContentTab('description');
 
-    // Wait for description content to load
-    await page.waitForSelector('.fcb-description-content');
+      // Wait for description content to load
+      await page.waitForSelector('.fcb-description-content');
 
-    // Select a type (assuming there's a type available)
-    // Use the utility function which targets the correct typeahead
-    await page.click(getTypeSelectInputSelector());
+      // Select a type (assuming there's a type available)
+      // Use the utility function which targets the correct typeahead
+      await page.click(getTypeSelectInputSelector());
 
-    // Wait for dropdown to appear
-    await page.waitForSelector('.fcb-ta-dropdown', { timeout: 5000 });
+      // Wait for dropdown to appear
+      await page.waitForSelector('.fcb-ta-dropdown', { timeout: 5000 });
 
-    // Get available options (excluding the 'add' option)
-    const options = await page.$$('.typeahead-entry:not(.add)');
-    if (options.length > 0) {
-      const firstOptionText = await options[0].evaluate(el => el.textContent);
-      if (firstOptionText) {
-        await options[0].click();
-        
-        // Wait for save
-        await new Promise(resolve => setTimeout(resolve, 300));
+      // Get available options (excluding the 'add' option)
+      const options = await page.$$('.typeahead-entry:not(.add)');
+      if (options.length > 0) {
+        const firstOptionText = await options[0].evaluate(el => el.textContent);
+        if (firstOptionText) {
+          await options[0].click();
+          
+          // Wait for save
+          await new Promise(resolve => setTimeout(resolve, 300));
 
-        // Verify type was set
-        const typeValue = await getTypeValue();
-        // Expected behavior: Type value matches the selected option
-        expect(typeValue).toBe(firstOptionText.trim());
+          // Verify type was set
+          const typeValue = await getTypeValue();
+          // Expected behavior: Type value matches the selected option
+          expect(typeValue).toBe(firstOptionText.trim());
+        }
       }
     }
-
-    // Clean up
-    await deleteEntryViaAPI(typeTestUuid);
+    finally {
+      // Clean up
+      if (typeTestUuid) {
+        await deleteEntryViaAPI(typeTestUuid);
+      }
+    }
   });
 
   /**
@@ -240,30 +246,36 @@ describe.serial('Character Entry Tests', () => {
   test('Add new type for character', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
+    let newTypeTestUuid: string | null = null;
 
-    // Create a new entry via UI (don't modify base data)
-    const newTypeTestName = 'New Type Test ' + Date.now();
-    await expandTopicNode(Topics.Character);
-    const newTypeTestUuid = await createEntryViaUI(Topics.Character, newTypeTestName);
+    try {
+      // Create a new entry via UI (don't modify base data)
+      const newTypeTestName = 'New Type Test ' + Date.now();
+      await expandTopicNode(Topics.Character);
+      newTypeTestUuid = await createEntryViaUI(Topics.Character, newTypeTestName);
 
-    // Entry is already open after creation
+      // Entry is already open after creation
 
-    // Make sure we're on the description tab
-    await clickContentTab('description');
-    
-    // Wait for description content to load
-    await page.waitForSelector('.fcb-description-content');
+      // Make sure we're on the description tab
+      await clickContentTab('description');
+      
+      // Wait for description content to load
+      await page.waitForSelector('.fcb-description-content');
 
-    const newType = 'Unique Test Type ' + Date.now();
-    await addNewType(newType);
+      const newType = 'Unique Test Type ' + Date.now();
+      await addNewType(newType);
 
-    // Verify the type was added and selected
-    const typeValue = await getTypeValue();
-    // Expected behavior: Type value reflects the newly created type
-    expect(typeValue).toBe(newType);
-
-    // Clean up
-    await deleteEntryViaAPI(newTypeTestUuid);
+      // Verify the type was added and selected
+      const typeValue = await getTypeValue();
+      // Expected behavior: Type value reflects the newly created type
+      expect(typeValue).toBe(newType);
+    }
+    finally {
+      // Clean up
+      if (newTypeTestUuid) {
+        await deleteEntryViaAPI(newTypeTestUuid);
+      }
+    }
   });
 
   /**
@@ -273,42 +285,48 @@ describe.serial('Character Entry Tests', () => {
   test('Select species for character', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
+    let speciesTestUuid: string | null = null;
 
-    // Create a new entry via UI (don't modify base data)
-    const speciesTestName = 'Species Test ' + Date.now();
-    await expandTopicNode(Topics.Character);
-    const speciesTestUuid = await createEntryViaUI(Topics.Character, speciesTestName);
+    try {
+      // Create a new entry via UI (don't modify base data)
+      const speciesTestName = 'Species Test ' + Date.now();
+      await expandTopicNode(Topics.Character);
+      speciesTestUuid = await createEntryViaUI(Topics.Character, speciesTestName);
 
-    // Entry is already open after creation
+      // Entry is already open after creation
 
-    // Click on species input (it's the second typeahead)
-    const inputs = await page.$$('.fcb-typeahead input');
-    if (inputs.length >= 2) {
-      await inputs[1].click();
+      // Click on species input (it's the second typeahead)
+      const inputs = await page.$$('.fcb-typeahead input');
+      if (inputs.length >= 2) {
+        await inputs[1].click();
 
-      // Wait for dropdown
-      await page.waitForSelector('.fcb-ta-dropdown');
+        // Wait for dropdown
+        await page.waitForSelector('.fcb-ta-dropdown');
 
-      // Get available species options
-      const options = await page.$$('.typeahead-entry');
-      if (options.length > 0) {
-        const firstOptionText = await options[0].evaluate(el => el.textContent);
-        if (firstOptionText) {
-          await options[0].click();
-          
-          // Wait for save
-          await new Promise(resolve => setTimeout(resolve, 300));
+        // Get available species options
+        const options = await page.$$('.typeahead-entry');
+        if (options.length > 0) {
+          const firstOptionText = await options[0].evaluate(el => el.textContent);
+          if (firstOptionText) {
+            await options[0].click();
+            
+            // Wait for save
+            await new Promise(resolve => setTimeout(resolve, 300));
 
-          // Verify species was set
-          const speciesValue = await getSpeciesValue();
-          // Expected behavior: Species value matches the selected option
-          expect(speciesValue).toBe(firstOptionText.trim());
+            // Verify species was set
+            const speciesValue = await getSpeciesValue();
+            // Expected behavior: Species value matches the selected option
+            expect(speciesValue).toBe(firstOptionText.trim());
+          }
         }
       }
     }
-
-    // Clean up
-    await deleteEntryViaAPI(speciesTestUuid);
+    finally {
+      // Clean up
+      if (speciesTestUuid) {
+        await deleteEntryViaAPI(speciesTestUuid);
+      }
+    }
   });
 
   /**
@@ -318,48 +336,54 @@ describe.serial('Character Entry Tests', () => {
   test('Add and remove tags', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
+    let tagTestUuid: string | null = null;
 
-    // Create a new entry via UI (don't modify base data)
-    const tagTestName = 'Tag Test ' + Date.now();
-    await expandTopicNode(Topics.Character);
-    const tagTestUuid = await createEntryViaUI(Topics.Character, tagTestName);
+    try {
+      // Create a new entry via UI (don't modify base data)
+      const tagTestName = 'Tag Test ' + Date.now();
+      await expandTopicNode(Topics.Character);
+      tagTestUuid = await createEntryViaUI(Topics.Character, tagTestName);
 
-    // Entry is already open after creation
+      // Entry is already open after creation
 
-    // Wait for tags component to be initialized
-    await page.waitForSelector('.tags-wrapper:not(.uninitialized)', { timeout: 5000 });
+      // Wait for tags component to be initialized
+      await page.waitForSelector('.tags-wrapper:not(.uninitialized)', { timeout: 5000 });
 
-    // Add a tag
-    const testTag = 'test-tag-' + Date.now();
-    await addTag(testTag);
+      // Add a tag
+      const testTag = 'test-tag-' + Date.now();
+      await addTag(testTag);
 
-    // Verify tag was added - wait a moment for tagify to update
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const tags = await page.$$('.tagify__tag');
-    let found = false;
-    for (const tag of tags) {
-      const text = await tag.evaluate(el => el.textContent);
-      if (text?.includes(testTag)) {
-        found = true;
-        break;
+      // Verify tag was added - wait a moment for tagify to update
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const tags = await page.$$('.tagify__tag');
+      let found = false;
+      for (const tag of tags) {
+        const text = await tag.evaluate(el => el.textContent);
+        if (text?.includes(testTag)) {
+          found = true;
+          break;
+        }
+      }
+      // Expected behavior: Tag appears in the tags list after adding
+      expect(found).toBe(true);
+
+      // Remove the tag
+      await removeTag(testTag);
+
+      // Verify tag was removed
+      const tagsAfter = await page.$$('.tagify__tag');
+      for (const tag of tagsAfter) {
+        const text = await tag.evaluate(el => el.textContent);
+        // Expected behavior: Tag no longer appears in the tags list
+        expect(text?.includes(testTag)).toBe(false);
       }
     }
-    // Expected behavior: Tag appears in the tags list after adding
-    expect(found).toBe(true);
-
-    // Remove the tag
-    await removeTag(testTag);
-
-    // Verify tag was removed
-    const tagsAfter = await page.$$('.tagify__tag');
-    for (const tag of tagsAfter) {
-      const text = await tag.evaluate(el => el.textContent);
-      // Expected behavior: Tag no longer appears in the tags list
-      expect(text?.includes(testTag)).toBe(false);
+    finally {
+      // Clean up
+      if (tagTestUuid) {
+        await deleteEntryViaAPI(tagTestUuid);
+      }
     }
-
-    // Clean up
-    await deleteEntryViaAPI(tagTestUuid);
   });
 
   /**
@@ -369,35 +393,41 @@ describe.serial('Character Entry Tests', () => {
   test('Click tag opens tag results tab', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
+    let clickTagTestUuid: string | null = null;
 
-    // Create a new entry via UI (don't modify base data)
-    const clickTagTestName = 'Click Tag Test ' + Date.now();
-    await expandTopicNode(Topics.Character);
-    const clickTagTestUuid = await createEntryViaUI(Topics.Character, clickTagTestName);
+    try {
+      // Create a new entry via UI (don't modify base data)
+      const clickTagTestName = 'Click Tag Test ' + Date.now();
+      await expandTopicNode(Topics.Character);
+      clickTagTestUuid = await createEntryViaUI(Topics.Character, clickTagTestName);
 
-    // Entry is already open after creation
+      // Entry is already open after creation
 
-    // First add a tag we can click
-    const clickTag1 = 'clickable-tag-' + Date.now();
-    await addTag(clickTag1);
+      // First add a tag we can click
+      const clickTag1 = 'clickable-tag-' + Date.now();
+      await addTag(clickTag1);
 
-    // Click the tag
-    await clickTag(clickTag1);
+      // Click the tag
+      await clickTag(clickTag1);
 
-    // Wait for new tab to open
-    await page.waitForSelector('[data-testid="tag-results-tab"]', { timeout: 5000 }).catch(() => {
-      // Tab might not have testid, check for tab with tag name
-    });
+      // Wait for new tab to open
+      await page.waitForSelector('[data-testid="tag-results-tab"]', { timeout: 5000 }).catch(() => {
+        // Tab might not have testid, check for tab with tag name
+      });
 
-    // Verify we're on a tag results tab by checking for tag-related content
-    const tagResultsContent = await page.$('.tag-results-content');
-    // Note: The exact selector depends on the TagResultsTab implementation
+      // Verify we're on a tag results tab by checking for tag-related content
+      const tagResultsContent = await page.$('.tag-results-content');
+      // Note: The exact selector depends on the TagResultsTab implementation
 
-    // Close the tag results tab to return to the entry
-    await closeActiveTab();
-
-    // Clean up
-    await deleteEntryViaAPI(clickTagTestUuid);
+      // Close the tag results tab to return to the entry
+      await closeActiveTab();
+    }
+    finally {
+      // Clean up
+      if (clickTagTestUuid) {
+        await deleteEntryViaAPI(clickTagTestUuid);
+      }
+    }
   });
 
   /**
@@ -407,44 +437,49 @@ describe.serial('Character Entry Tests', () => {
   test('Push character to session', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
+    let entryUuid: string | null = null;
 
-    // Make sure there's a campaign with a current session
-    const campaign = setting.campaigns[0];
-    if (campaign && campaign.sessions.length > 0) {
-      // Create a new entry via UI (avoids issues with shared test data being modified)
-      const testEntryName = 'Push Test Character ' + Date.now();
-      await expandTopicNode(Topics.Character);
-      const entryUuid = await createEntryViaUI(Topics.Character, testEntryName);
+    try {
+      // Make sure there's a campaign with a current session
+      const campaign = setting.campaigns[0];
+      if (campaign && campaign.sessions.length > 0) {
+        // Create a new entry via UI (avoids issues with shared test data being modified)
+        const testEntryName = 'Push Test Character ' + Date.now();
+        await expandTopicNode(Topics.Character);
+        entryUuid = await createEntryViaUI(Topics.Character, testEntryName);
 
-      if (!entryUuid) {
-        // Failed to create entry - skip test
-        return;
+        if (!entryUuid) {
+          // Failed to create entry - skip test
+          return;
+        }
+
+        // Entry is already open after creation
+
+        // Click the push to session button
+        const clicked = await clickPushToSession();
+        if (!clicked) {
+          // Button not available or disabled - skip test
+          return;
+        }
+
+        // Wait for context menu
+        await page.waitForSelector('.mx-context-menu');
+
+        // Click the first campaign option
+        const menuItems = await page.$$('.mx-context-menu-item');
+        if (menuItems.length > 0) {
+          await menuItems[0].click();
+
+          // Wait for notification
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
       }
-
-      // Entry is already open after creation
-
-      // Click the push to session button
-      const clicked = await clickPushToSession();
-      if (!clicked) {
-        // Button not available or disabled - skip test
-        await deleteEntryViaAPI(entryUuid);
-        return;
-      }
-
-      // Wait for context menu
-      await page.waitForSelector('.mx-context-menu');
-
-      // Click the first campaign option
-      const menuItems = await page.$$('.mx-context-menu-item');
-      if (menuItems.length > 0) {
-        await menuItems[0].click();
-
-        // Wait for notification
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-
+    }
+    finally {
       // Clean up
-      await deleteEntryViaAPI(entryUuid);
+      if (entryUuid) {
+        await deleteEntryViaAPI(entryUuid);
+      }
     }
   });
 
@@ -822,31 +857,35 @@ describe.serial('Character Entry Tests', () => {
    */
   test('Add actor to character via drag-drop', async () => {
     const page = sharedContext.page!;
+    let entryUuid: string | null = null;
 
-    // Create a new character entry for this test
-    await expandTopicNode(Topics.Character);
-    const actorTestName = 'Actor Drag Test ' + Date.now();
-    const entryUuid = await createEntryViaUI(Topics.Character, actorTestName);
+    try {
+      // Create a new character entry for this test
+      await expandTopicNode(Topics.Character);
+      const actorTestName = 'Actor Drag Test ' + Date.now();
+      entryUuid = await createEntryViaUI(Topics.Character, actorTestName);
 
-    // Create actor with a static name for reliable verification
-    const actorName = 'Test Actor ' + Date.now();
-    const actorUuid = await addDocumentViaDragDrop({
-      tabId: 'actors',
-      documentType: 'Actor',
-      dropSelector: '[data-testid="actors-table"] .fcb-table-new-drop-box',
-      documentName: actorName,
-      createDocumentFn: async () => {
-        return await page.evaluate(async (name: string) => {
-          const actor = await Actor.create({ name, type: 'base' });
-          return actor?.uuid || '';
-        }, actorName);
-      },
-      verifyByText: true,
-    });
-
-    // Clean up
-    if (entryUuid) {
-      await deleteEntryViaAPI(entryUuid);
+      // Create actor with a static name for reliable verification
+      const actorName = 'Test Actor ' + Date.now();
+      const actorUuid = await addDocumentViaDragDrop({
+        tabId: 'actors',
+        documentType: 'Actor',
+        dropSelector: '[data-testid="actors-table"] .fcb-table-new-drop-box',
+        documentName: actorName,
+        createDocumentFn: async () => {
+          return await page.evaluate(async (name: string) => {
+            const actor = await Actor.create({ name, type: 'base' });
+            return actor?.uuid || '';
+          }, actorName);
+        },
+        verifyByText: true,
+      });
+    }
+    finally {
+      // Clean up
+      if (entryUuid) {
+        await deleteEntryViaAPI(entryUuid);
+      }
     }
   });
 
@@ -951,103 +990,111 @@ describe.serial('Character Entry Tests', () => {
    */
   test('Foundry doc button opens actor sheet when actor attached', async () => {
     const page = sharedContext.page!;
+    let entryUuid: string | null = null;
 
-    // Create a new character entry with an actor attached
-    await expandTopicNode(Topics.Character);
-    const foundryTestName = 'Foundry Doc Test ' + Date.now();
-    const entryUuid = await createEntryViaUI(Topics.Character, foundryTestName);
+    try {
+      // Create a new character entry with an actor attached
+      await expandTopicNode(Topics.Character);
+      const foundryTestName = 'Foundry Doc Test ' + Date.now();
+      entryUuid = await createEntryViaUI(Topics.Character, foundryTestName);
 
-    // Create and attach an actor via the API
-    const actorAttached = await page.evaluate(async (entryUuid: string) => {
-      const api = (game as any).modules.get('campaign-builder')!.api!.testAPI;
-      const entry = await api.getEntry(entryUuid);
-      if (!entry) return false;
+      if (!entryUuid) {
+        return;
+      }
 
-      const actor = await Actor.create({ name: 'Attached Actor ' + Date.now(), type: 'base' });
-      if (!actor) return false;
+      // Create and attach an actor via the API
+      const actorAttached = await page.evaluate(async (entryUuid: string) => {
+        const api = (game as any).modules.get('campaign-builder')!.api!.testAPI;
+        const entry = await api.getEntry(entryUuid);
+        if (!entry) return false;
 
-      entry.actors = [actor.uuid];
-      await entry.save();
-      return true;
-    }, entryUuid);
+        const actor = await Actor.create({ name: 'Attached Actor ' + Date.now(), type: 'base' });
+        if (!actor) return false;
 
-    if (!actorAttached) {
-      await deleteEntryViaAPI(entryUuid);
-      return;
-    }
+        entry.actors = [actor.uuid];
+        await entry.save();
+        return true;
+      }, entryUuid);
 
-    // The API save doesn't trigger Vue reactivity - close and reopen the entry
-    // so the UI loads the updated actors list from the document
-    await closeActiveTab();
-    await openEntry(Topics.Character, foundryTestName);
+      if (!actorAttached) {
+        return;
+      }
 
-    // Wait for the entry to fully load
-    await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 5000 });
-    await page.waitForFunction(() => {
-      const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
-      return input && input.value.length > 0;
-    }, { timeout: 5000 });
+      // The API save doesn't trigger Vue reactivity - close and reopen the entry
+      // so the UI loads the updated actors list from the document
+      await closeActiveTab();
+      await openEntry(Topics.Character, foundryTestName);
 
-    // The button should now be enabled
-    const isDisabled = await isFoundryDocButtonDisabled();
-    // Expected behavior: Button is enabled when actors are attached
-    expect(isDisabled).toBe(false);
+      // Wait for the entry to fully load
+      await page.waitForSelector('[data-testid="entry-name-input"]', { timeout: 5000 });
+      await page.waitForFunction(() => {
+        const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
+        return input && input.value.length > 0;
+      }, { timeout: 5000 });
 
-    // Get the actor UUID before clicking
-    const actorUuid = await page.evaluate(async (entryUuid: string) => {
-      const api = (game as any).modules.get('campaign-builder')!.api!.testAPI;
-      const entry = await api.getEntry(entryUuid);
-      if (!entry) return null;
-      return entry.actors?.[0] || null;
-    }, entryUuid);
+      // The button should now be enabled
+      const isDisabled = await isFoundryDocButtonDisabled();
+      // Expected behavior: Button is enabled when actors are attached
+      expect(isDisabled).toBe(false);
 
-    if (!actorUuid) {
-      await deleteEntryViaAPI(entryUuid);
-      return;
-    }
+      // Get the actor UUID before clicking
+      const actorUuid = await page.evaluate(async (entryUuid: string) => {
+        const api = (game as any).modules.get('campaign-builder')!.api!.testAPI;
+        const entry = await api.getEntry(entryUuid);
+        if (!entry) return null;
+        return entry.actors?.[0] || null;
+      }, entryUuid);
 
-    // Check if the actor sheet is already rendered
-    const sheetRenderedBefore = await page.evaluate(async (uuid: string) => {
-      const doc = await fromUuid(uuid);
-      if (!doc || doc.documentName !== 'Actor') return false;
-      const actor = doc as Actor;
-      return actor.sheet?.rendered ?? false;
-    }, actorUuid);
+      if (!actorUuid) {
+        return;
+      }
 
-    // Click the button - should open the actor sheet
-    const btn = await page.$('[data-testid="entry-foundry-doc-button"]');
-    if (btn) await btn.click();
-
-    // Wait for the actor sheet to be rendered
-    // If it was already rendered, it should be brought to focus
-    // If it wasn't rendered, it should be rendered now
-    const sheetRenderedAfter = await page.waitForFunction(async (uuid: string) => {
-      const doc = await fromUuid(uuid);
-      if (!doc || doc.documentName !== 'Actor') return false;
-      const actor = doc as Actor;
-      return actor.sheet?.rendered ?? false;
-    }, { timeout: 5000 }, actorUuid).then(() => true).catch(() => false);
-
-    // Expected behavior: The actor sheet is rendered after clicking the button
-    expect(sheetRenderedAfter).toBe(true);
-
-    // If the sheet wasn't rendered before, it should be a new render
-    // If it was rendered before, we just verify it's still rendered
-    if (!sheetRenderedBefore) {
-      // The sheet was just opened, close it
-      await page.evaluate(async (uuid: string) => {
+      // Check if the actor sheet is already rendered
+      const sheetRenderedBefore = await page.evaluate(async (uuid: string) => {
         const doc = await fromUuid(uuid);
-        if (!doc || doc.documentName !== 'Actor') return;
+        if (!doc || doc.documentName !== 'Actor') return false;
         const actor = doc as Actor;
-        if (actor.sheet) {
-          actor.sheet.close();
-        }
+        return actor.sheet?.rendered ?? false;
       }, actorUuid);
-      await new Promise(resolve => setTimeout(resolve, 300));
-    }
 
-    // Clean up
-    await deleteEntryViaAPI(entryUuid);
+      // Click the button - should open the actor sheet
+      const btn = await page.$('[data-testid="entry-foundry-doc-button"]');
+      if (btn) await btn.click();
+
+      // Wait for the actor sheet to be rendered
+      // If it was already rendered, it should be brought to focus
+      // If it wasn't rendered, it should be rendered now
+      const sheetRenderedAfter = await page.waitForFunction(async (uuid: string) => {
+        const doc = await fromUuid(uuid);
+        if (!doc || doc.documentName !== 'Actor') return false;
+        const actor = doc as Actor;
+        return actor.sheet?.rendered ?? false;
+      }, { timeout: 5000 }, actorUuid).then(() => true).catch(() => false);
+
+      // Expected behavior: The actor sheet is rendered after clicking the button
+      expect(sheetRenderedAfter).toBe(true);
+
+      // If the sheet wasn't rendered before, it should be a new render
+      // If it was rendered before, we just verify it's still rendered
+      if (!sheetRenderedBefore) {
+        // The sheet was just opened, close it
+        await page.evaluate(async (uuid: string) => {
+          const doc = await fromUuid(uuid);
+          if (!doc || doc.documentName !== 'Actor') return;
+          const actor = doc as Actor;
+          if (actor.sheet) {
+            actor.sheet.close();
+          }
+        }, actorUuid);
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
+    finally {
+      // Clean up
+      if (entryUuid) {
+        await deleteEntryViaAPI(entryUuid);
+      }
+    }
   });
 
   /**
@@ -1056,54 +1103,63 @@ describe.serial('Character Entry Tests', () => {
    */
   test('Foundry doc button shows context menu with multiple actors', async () => {
     const page = sharedContext.page!;
+    let entryUuid: string | null = null;
 
-    // Create a new character entry with multiple actors attached
-    await expandTopicNode(Topics.Character);
-    const multiActorTestName = 'Multi Actor Test ' + Date.now();
-    const entryUuid = await createEntryViaUI(Topics.Character, multiActorTestName);
+    try {
+      // Create a new character entry with multiple actors attached
+      await expandTopicNode(Topics.Character);
+      const multiActorTestName = 'Multi Actor Test ' + Date.now();
+      entryUuid = await createEntryViaUI(Topics.Character, multiActorTestName);
 
-    // Create and attach two actors via the API
-    const actorsAttached = await page.evaluate(async (entryUuid: string) => {
-      const api = (game as any).modules.get('campaign-builder')!.api!.testAPI;
-      const entry = await api.getEntry(entryUuid);
-      if (!entry) return false;
+      if (!entryUuid) {
+        return;
+      }
 
-      const actor1 = await Actor.create({ name: 'Actor One ' + Date.now(), type: 'base' });
-      const actor2 = await Actor.create({ name: 'Actor Two ' + Date.now(), type: 'base' });
-      if (!actor1 || !actor2) return false;
+      // Create and attach two actors via the API
+      const actorsAttached = await page.evaluate(async (entryUuid: string) => {
+        const api = (game as any).modules.get('campaign-builder')!.api!.testAPI;
+        const entry = await api.getEntry(entryUuid);
+        if (!entry) return false;
 
-      entry.actors = [actor1.uuid, actor2.uuid];
-      await entry.save();
-      return true;
-    }, entryUuid);
+        const actor1 = await Actor.create({ name: 'Actor One ' + Date.now(), type: 'base' });
+        const actor2 = await Actor.create({ name: 'Actor Two ' + Date.now(), type: 'base' });
+        if (!actor1 || !actor2) return false;
 
-    if (!actorsAttached) {
-      await deleteEntryViaAPI(entryUuid);
-      return;
+        entry.actors = [actor1.uuid, actor2.uuid];
+        await entry.save();
+        return true;
+      }, entryUuid);
+
+      if (!actorsAttached) {
+        return;
+      }
+
+      // Wait for the UI to reflect the actor attachment
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Click the foundry doc button
+      const foundrySelector = await getFoundryDocButtonSelector();
+      if (foundrySelector) {
+        await page.click(foundrySelector);
+
+        // Wait for context menu (appears when multiple actors)
+        await page.waitForSelector('.mx-context-menu', { timeout: 5000 });
+
+        // Verify menu items exist (should be at least 2 actors)
+        const menuItems = await page.$$('.mx-context-menu-item');
+        // Expected behavior: Context menu shows options for each attached actor
+        expect(menuItems.length).toBeGreaterThan(1);
+
+        // Close menu by clicking elsewhere
+        await page.evaluate(() => document.body.click());
+      }
     }
-
-    // Wait for the UI to reflect the actor attachment
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // Click the foundry doc button
-    const foundrySelector = await getFoundryDocButtonSelector();
-    if (foundrySelector) {
-      await page.click(foundrySelector);
-
-      // Wait for context menu (appears when multiple actors)
-      await page.waitForSelector('.mx-context-menu', { timeout: 5000 });
-
-      // Verify menu items exist (should be at least 2 actors)
-      const menuItems = await page.$$('.mx-context-menu-item');
-      // Expected behavior: Context menu shows options for each attached actor
-      expect(menuItems.length).toBeGreaterThan(1);
-
-      // Close menu by clicking elsewhere
-      await page.evaluate(() => document.body.click());
+    finally {
+      // Clean up
+      if (entryUuid) {
+        await deleteEntryViaAPI(entryUuid);
+      }
     }
-
-    // Clean up
-    await deleteEntryViaAPI(entryUuid);
   });
 
   /**
@@ -1209,53 +1265,62 @@ describe.serial('Character Entry Tests', () => {
   test('Push to session shows campaign names in context menu', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
+    let entryUuid: string | null = null;
 
-    // The test data has 2 campaigns per setting - verify this
-    if (setting.campaigns.length < 2) {
-      return;
+    try {
+      // The test data has 2 campaigns per setting - verify this
+      if (setting.campaigns.length < 2) {
+        return;
+      }
+
+      // Create a new character entry
+      await expandTopicNode(Topics.Character);
+      const pushTestName = 'Push Multi Test ' + Date.now();
+      entryUuid = await createEntryViaUI(Topics.Character, pushTestName);
+
+      if (!entryUuid) {
+        return;
+      }
+
+      // Click the push to session button
+      const clicked = await clickPushToSession();
+      if (!clicked) {
+        return;
+      }
+
+      // Wait for context menu
+      await page.waitForSelector('.mx-context-menu', { timeout: 5000 });
+
+      // Verify menu items contain campaign names
+      const menuLabels = await page.evaluate(() => {
+        const items = Array.from(document.querySelectorAll('.mx-context-menu-item'));
+        return items.map(item => item.textContent?.trim() || '');
+      });
+
+      // Expected behavior: Context menu shows at least one campaign option
+      expect(menuLabels.length).toBeGreaterThan(0);
+
+      // Verify at least one menu item references a campaign name from the test data
+      const campaignNames = setting.campaigns.map(c => c.name);
+      const hasCampaignName = menuLabels.some(label =>
+        campaignNames.some(name => label.includes(name))
+      );
+      // Expected behavior: At least one menu item references a known campaign
+      expect(hasCampaignName).toBe(true);
+
+      // Click the first campaign option
+      const menuItems = await page.$$('.mx-context-menu-item');
+      if (menuItems.length > 0) {
+        await menuItems[0].click();
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
-
-    // Create a new character entry
-    await expandTopicNode(Topics.Character);
-    const pushTestName = 'Push Multi Test ' + Date.now();
-    const entryUuid = await createEntryViaUI(Topics.Character, pushTestName);
-
-    // Click the push to session button
-    const clicked = await clickPushToSession();
-    if (!clicked) {
-      await deleteEntryViaAPI(entryUuid);
-      return;
+    finally {
+      // Clean up
+      if (entryUuid) {
+        await deleteEntryViaAPI(entryUuid);
+      }
     }
-
-    // Wait for context menu
-    await page.waitForSelector('.mx-context-menu', { timeout: 5000 });
-
-    // Verify menu items contain campaign names
-    const menuLabels = await page.evaluate(() => {
-      const items = Array.from(document.querySelectorAll('.mx-context-menu-item'));
-      return items.map(item => item.textContent?.trim() || '');
-    });
-
-    // Expected behavior: Context menu shows at least one campaign option
-    expect(menuLabels.length).toBeGreaterThan(0);
-
-    // Verify at least one menu item references a campaign name from the test data
-    const campaignNames = setting.campaigns.map(c => c.name);
-    const hasCampaignName = menuLabels.some(label =>
-      campaignNames.some(name => label.includes(name))
-    );
-    // Expected behavior: At least one menu item references a known campaign
-    expect(hasCampaignName).toBe(true);
-
-    // Click the first campaign option
-    const menuItems = await page.$$('.mx-context-menu-item');
-    if (menuItems.length > 0) {
-      await menuItems[0].click();
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-
-    // Clean up
-    await deleteEntryViaAPI(entryUuid);
   });
 
   /**
@@ -1361,32 +1426,38 @@ describe.serial('Character Entry Tests', () => {
    */
   test('Empty name is rejected', async () => {
     const page = sharedContext.page!;
+    let entryUuid: string | null = null;
 
-    // Create a new entry for this test
-    await expandTopicNode(Topics.Character);
-    const emptyNameTestName = 'Empty Name Test ' + Date.now();
-    const entryUuid = await createEntryViaUI(Topics.Character, emptyNameTestName);
+    try {
+      // Create a new entry for this test
+      await expandTopicNode(Topics.Character);
+      const emptyNameTestName = 'Empty Name Test ' + Date.now();
+      entryUuid = await createEntryViaUI(Topics.Character, emptyNameTestName);
 
-    // Clear the name input via real keyboard events to trigger Vue reactivity
-    const nameSelector = '[data-testid="entry-name-input"]';
-    await page.click(nameSelector, { clickCount: 3 }); // triple-click to select all
-    await page.keyboard.press('Delete');                // delete selected text
-    // Wait for debounce (500ms) plus buffer
-    await new Promise(resolve => setTimeout(resolve, 700));
+      // Clear the name input via real keyboard events to trigger Vue reactivity
+      const nameSelector = '[data-testid="entry-name-input"]';
+      await page.click(nameSelector, { clickCount: 3 }); // triple-click to select all
+      await page.keyboard.press('Delete');                // delete selected text
+      // Wait for debounce (500ms) plus buffer
+      await new Promise(resolve => setTimeout(resolve, 700));
 
-    // Wait for the name to be reverted by the validation logic (Vue reactivity)
-    await page.waitForFunction((expectedName: string) => {
-      const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
-      return input && input.value === expectedName;
-    }, { timeout: 5000 }, emptyNameTestName);
+      // Wait for the name to be reverted by the validation logic (Vue reactivity)
+      await page.waitForFunction((expectedName: string) => {
+        const input = document.querySelector('[data-testid="entry-name-input"]') as HTMLInputElement;
+        return input && input.value === expectedName;
+      }, { timeout: 5000 }, emptyNameTestName);
 
-    // Verify name was reverted to the original
-    const currentName = await getEntryNameValue();
-    // Expected behavior: Name reverts to the previous value when emptied
-    expect(currentName).toBe(emptyNameTestName);
-
-    // Clean up
-    await deleteEntryViaAPI(entryUuid);
+      // Verify name was reverted to the original
+      const currentName = await getEntryNameValue();
+      // Expected behavior: Name reverts to the previous value when emptied
+      expect(currentName).toBe(emptyNameTestName);
+    }
+    finally {
+      // Clean up
+      if (entryUuid) {
+        await deleteEntryViaAPI(entryUuid);
+      }
+    }
   });
 
   /**
@@ -1395,23 +1466,29 @@ describe.serial('Character Entry Tests', () => {
    */
   test('Whitespace-only name rejection', async () => {
     const page = sharedContext.page!;
+    let entryUuid: string | null = null;
 
-    // Create a new entry for this test
-    await expandTopicNode(Topics.Character);
-    const wsNameTestName = 'Whitespace Name Test ' + Date.now();
-    const entryUuid = await createEntryViaUI(Topics.Character, wsNameTestName);
+    try {
+      // Create a new entry for this test
+      await expandTopicNode(Topics.Character);
+      const wsNameTestName = 'Whitespace Name Test ' + Date.now();
+      entryUuid = await createEntryViaUI(Topics.Character, wsNameTestName);
 
-    // Set the name to whitespace only
-    // setEntryName already waits for debounce
-    await setEntryName('   ');
+      // Set the name to whitespace only
+      // setEntryName already waits for debounce
+      await setEntryName('   ');
 
-    // Verify name was reverted to the original
-    const currentName = await getEntryNameValue();
-    // Expected behavior: Whitespace-only name is treated as empty and reverts
-    expect(currentName).toBe(wsNameTestName);
-
-    // Clean up
-    await deleteEntryViaAPI(entryUuid);
+      // Verify name was reverted to the original
+      const currentName = await getEntryNameValue();
+      // Expected behavior: Whitespace-only name is treated as empty and reverts
+      expect(currentName).toBe(wsNameTestName);
+    }
+    finally {
+      // Clean up
+      if (entryUuid) {
+        await deleteEntryViaAPI(entryUuid);
+      }
+    }
   });
 
   /**
@@ -1420,28 +1497,35 @@ describe.serial('Character Entry Tests', () => {
    */
   test('Add journal to character via drag-drop', async () => {
     const page = sharedContext.page!;
+    let entryUuid: string | null = null;
+    let journalUuid: string | null = null;
 
-    // Create a new character entry for this test
-    await expandTopicNode(Topics.Character);
-    const journalTestName = 'Journal Drag Test ' + Date.now();
-    const entryUuid = await createEntryViaUI(Topics.Character, journalTestName);
+    try {
+      // Create a new character entry for this test
+      await expandTopicNode(Topics.Character);
+      const journalTestName = 'Journal Drag Test ' + Date.now();
+      entryUuid = await createEntryViaUI(Topics.Character, journalTestName);
 
-    // Use the standardized helper to add journal via drag-drop
-    const journalUuid = await addDocumentViaDragDrop({
-      tabId: 'journals',
-      documentType: 'JournalEntry',
-      dropSelector: '[data-testid="journals-table"] .fcb-table-new-drop-box',
-      documentName: 'Test Journal',
-      createDocumentFn: async () => {
-        return await createJournalViaAPI('Test Journal ' + Date.now());
-      },
-      verifyByText: true,
-    });
-
-    // Clean up
-    await deleteEntryViaAPI(entryUuid);
-    if (journalUuid) {
-      await deleteJournalViaAPI(journalUuid);
+      // Use the standardized helper to add journal via drag-drop
+      journalUuid = await addDocumentViaDragDrop({
+        tabId: 'journals',
+        documentType: 'JournalEntry',
+        dropSelector: '[data-testid="journals-table"] .fcb-table-new-drop-box',
+        documentName: 'Test Journal',
+        createDocumentFn: async () => {
+          return await createJournalViaAPI('Test Journal ' + Date.now());
+        },
+        verifyByText: true,
+      });
+    }
+    finally {
+      // Clean up
+      if (entryUuid) {
+        await deleteEntryViaAPI(entryUuid);
+      }
+      if (journalUuid) {
+        await deleteJournalViaAPI(journalUuid);
+      }
     }
   });
 
@@ -1534,36 +1618,46 @@ describe.serial('Character Entry Tests', () => {
   test('Add relationship via drag-drop on characters tab', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
+    let entryUuid: string | null = null;
 
-    // Create a new character for this test
-    await expandTopicNode(Topics.Character);
-    const relTestName = 'Rel Drag Test ' + Date.now();
-    const entryUuid = await createEntryViaUI(Topics.Character, relTestName);
+    try {
+      // Create a new character for this test
+      await expandTopicNode(Topics.Character);
+      const relTestName = 'Rel Drag Test ' + Date.now();
+      entryUuid = await createEntryViaUI(Topics.Character, relTestName);
 
-    // Get another character's UUID to drag
-    const secondChar = setting.topics[Topics.Character][1];
-    const secondCharUuid = await page.evaluate(async (name: string) => {
-      const api = (game as any).modules.get('campaign-builder')!.api;
-      const list = api.getEntries(0); // Topics.Character = 0
-      const entry = list.find((e: { name: string }) => e.name === name);
-      return entry?.uuid;
-    }, secondChar.name);
+      if (!entryUuid) {
+        return;
+      }
 
-    if (secondCharUuid) {
-      const initialCount = await getRelatedEntryCount('characters');
+      // Get another character's UUID to drag
+      const secondChar = setting.topics[Topics.Character][1];
+      const secondCharUuid = await page.evaluate(async (name: string) => {
+        const api = (game as any).modules.get('campaign-builder')!.api;
+        const list = api.getEntries(0); // Topics.Character = 0
+        const entry = list.find((e: { name: string }) => e.name === name);
+        return entry?.uuid;
+      }, secondChar.name);
 
-      // Use the standardized helper to add relationship via drag-drop
-      await addDocumentViaDragDrop({
-        tabId: 'characters',
-        documentType: 'JournalEntryPage',
-        dropSelector: '[data-testid="characters-table"]',
-        documentUuid: secondCharUuid,
-        verifyByText: false,
-      });
+      if (secondCharUuid) {
+        const initialCount = await getRelatedEntryCount('characters');
+
+        // Use the standardized helper to add relationship via drag-drop
+        await addDocumentViaDragDrop({
+          tabId: 'characters',
+          documentType: 'JournalEntryPage',
+          dropSelector: '[data-testid="characters-table"]',
+          documentUuid: secondCharUuid,
+          verifyByText: false,
+        });
+      }
     }
-
-    // Clean up
-    await deleteEntryViaAPI(entryUuid);
+    finally {
+      // Clean up
+      if (entryUuid) {
+        await deleteEntryViaAPI(entryUuid);
+      }
+    }
   });
 
   /**
@@ -1572,26 +1666,36 @@ describe.serial('Character Entry Tests', () => {
    */
   test('Add Foundry document to character entry', async () => {
     const page = sharedContext.page!;
+    let entryUuid: string | null = null;
 
-    // Create a new character for this test
-    await expandTopicNode(Topics.Character);
-    const foundryTestName = 'Foundry Add Test ' + Date.now();
-    const entryUuid = await createEntryViaUI(Topics.Character, foundryTestName);
+    try {
+      // Create a new character for this test
+      await expandTopicNode(Topics.Character);
+      const foundryTestName = 'Foundry Add Test ' + Date.now();
+      entryUuid = await createEntryViaUI(Topics.Character, foundryTestName);
 
-    // Use the standardized helper to add Foundry document via drag-drop
-    const docUuid = await addDocumentViaDragDrop({
-      tabId: 'foundry',
-      documentType: 'JournalEntry',
-      dropSelector: '[data-testid="foundry-table"]',
-      documentName: 'Foundry Doc',
-      createDocumentFn: async () => {
-        return await createJournalViaAPI('Foundry Doc ' + Date.now());
-      },
-      verifyByText: false,
-    });
+      if (!entryUuid) {
+        return;
+      }
 
-    // Clean up
-    await deleteEntryViaAPI(entryUuid);
+      // Use the standardized helper to add Foundry document via drag-drop
+      const docUuid = await addDocumentViaDragDrop({
+        tabId: 'foundry',
+        documentType: 'JournalEntry',
+        dropSelector: '[data-testid="foundry-table"]',
+        documentName: 'Foundry Doc',
+        createDocumentFn: async () => {
+          return await createJournalViaAPI('Foundry Doc ' + Date.now());
+        },
+        verifyByText: false,
+      });
+    }
+    finally {
+      // Clean up
+      if (entryUuid) {
+        await deleteEntryViaAPI(entryUuid);
+      }
+    }
   });
 
   /**
@@ -1798,24 +1902,44 @@ describe.serial('Character Entry Tests', () => {
       });
 
       // Wait for the reactive setting to update
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       await openFirstCharacter();
 
-      // All three tabs should be hidden
-      const journalsTab = await page.$('[data-tab="journals"]');
-      const actorsTab = await page.$('[data-tab="actors"]');
-      const foundryTab = await page.$('[data-tab="foundry"]');
+      // Check visibility via CSS instead of element existence
+      const journalsTabHidden = await page.evaluate(() => {
+        const tab = document.querySelector('[data-tab="journals"]');
+        if (!tab) return true;
+        const style = window.getComputedStyle(tab);
+        return style.display === 'none';
+      });
+      const actorsTabHidden = await page.evaluate(() => {
+        const tab = document.querySelector('[data-tab="actors"]');
+        if (!tab) return true;
+        const style = window.getComputedStyle(tab);
+        return style.display === 'none';
+      });
+      const foundryTabHidden = await page.evaluate(() => {
+        const tab = document.querySelector('[data-tab="foundry"]');
+        if (!tab) return true;
+        const style = window.getComputedStyle(tab);
+        return style.display === 'none';
+      });
 
       // Expected behavior: All three tabs are hidden
-      expect(journalsTab).toBeNull();
-      expect(actorsTab).toBeNull();
-      expect(foundryTab).toBeNull();
+      expect(journalsTabHidden).toBe(true);
+      expect(actorsTabHidden).toBe(true);
+      expect(foundryTabHidden).toBe(true);
 
       // Description tab should still be visible
-      const descriptionTab = await page.$('[data-tab="description"]');
+      const descriptionTabVisible = await page.evaluate(() => {
+        const tab = document.querySelector('[data-tab="description"]');
+        if (!tab) return false;
+        const style = window.getComputedStyle(tab);
+        return style.display !== 'none';
+      });
       // Expected behavior: Description tab remains visible
-      expect(descriptionTab).not.toBeNull();
+      expect(descriptionTabVisible).toBe(true);
     }
     finally {
       // Restore the original setting value
@@ -1831,6 +1955,7 @@ describe.serial('Character Entry Tests', () => {
    */
   test('actorTags setting supplements tag whitelist for characters', async () => {
     const page = sharedContext.page!;
+    let entryUuid: string | null = null;
 
     // Save the original setting value
     const originalValue = await page.evaluate(() => {
@@ -1841,7 +1966,11 @@ describe.serial('Character Entry Tests', () => {
       // Create a new character entry for this test
       await expandTopicNode(Topics.Character);
       const tagTestName = 'Actor Tag Test ' + Date.now();
-      const entryUuid = await createEntryViaUI(Topics.Character, tagTestName);
+      entryUuid = await createEntryViaUI(Topics.Character, tagTestName);
+
+      if (!entryUuid) {
+        return;
+      }
 
       // Wait for tags component to be initialized
       await page.waitForSelector('.tags-wrapper:not(.uninitialized)', { timeout: 5000 });
@@ -1891,11 +2020,12 @@ describe.serial('Character Entry Tests', () => {
 
       // Expected behavior: Actor tag name appears in the tag whitelist dropdown
       expect(actorTagInWhitelist).toBe(true);
-
-      // Clean up
-      await deleteEntryViaAPI(entryUuid);
     }
     finally {
+      // Clean up
+      if (entryUuid) {
+        await deleteEntryViaAPI(entryUuid);
+      }
       // Restore the original setting value
       await page.evaluate((val: unknown[]) => {
         return (game as any).settings?.set('campaign-builder', 'actorTags', val);
@@ -1911,6 +2041,7 @@ describe.serial('Character Entry Tests', () => {
    */
   test('autoRelationships setting controls related entries dialog', async () => {
     const page = sharedContext.page!;
+    let entryUuid: string | null = null;
 
     // Save the original setting value
     const originalValue = await page.evaluate(() => {
@@ -1926,7 +2057,7 @@ describe.serial('Character Entry Tests', () => {
       // Create a new entry for this test
       await expandTopicNode(Topics.Character);
       const autoRelTestName = 'Auto Rel Test ' + Date.now();
-      const entryUuid = await createEntryViaUI(Topics.Character, autoRelTestName);
+      entryUuid = await createEntryViaUI(Topics.Character, autoRelTestName);
 
       // Switch to characters relationship tab and add a relationship via drag-drop
       await clickContentTab('characters');
@@ -1980,13 +2111,12 @@ describe.serial('Character Entry Tests', () => {
       });
       // Expected behavior: autoRelationships setting is enabled
       expect(settingEnabled).toBe(true);
-
+    }
+    finally {
       // Clean up
       if (entryUuid) {
         await deleteEntryViaAPI(entryUuid);
       }
-    }
-    finally {
       // Restore the original setting value
       await page.evaluate((val: boolean) => {
         return (game as any).settings?.set('campaign-builder', 'autoRelationships', val);

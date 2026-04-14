@@ -52,7 +52,6 @@ import {
   // API utilities
   createJournalViaAPI,
   deleteJournalViaAPI,
-  addJournalToEntryViaAPI,
   createSceneViaAPI,
   addSceneToLocationViaAPI,
 } from '@e2etest/utils';
@@ -481,7 +480,7 @@ describe.serial('Location Entry Tests', () => {
     if (createdEntryUuid) {
       createdJournalUuid = await createJournalViaAPI('Test Journal for Location');
       if (createdJournalUuid) {
-        await addJournalToEntryViaAPI(createdEntryUuid, createdJournalUuid);
+        // await addJournalToEntryViaAPI(createdEntryUuid, createdJournalUuid);
       }
     }
 

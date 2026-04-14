@@ -898,7 +898,6 @@ export const getJournalCount = async (): Promise<number> => {
   const page = sharedContext.page!;
 
   const rows = await page.$$('[data-testid="journals-table"] tbody tr');
-  console.log(rows);
   return rows.length;
 };
 
@@ -963,6 +962,7 @@ export const simulateDragDrop = async (
  * @param options.tabId The tab to switch to (e.g., 'actors', 'journals', 'characters', 'foundry')
  * @param options.documentType The Foundry document type (e.g., 'Actor', 'JournalEntry', 'JournalEntryPage')
  * @param options.dropSelector CSS selector for the drop target
+ * @param options.tableSelector CSS selector for the table (used for verification, defaults to dropSelector without drop-box class)
  * @param options.documentName Optional name to use when creating a new document
  * @param options.documentUuid Optional existing UUID to drop (if not creating a new document)
  * @param options.createDocumentFn Optional function to create a document via API (returns UUID)
@@ -973,6 +973,7 @@ export const addDocumentViaDragDrop = async (options: {
   tabId: string;
   documentType: string;
   dropSelector: string;
+  tableSelector?: string;
   documentName?: string;
   documentUuid?: string;
   createDocumentFn?: () => Promise<string>;
@@ -983,6 +984,7 @@ export const addDocumentViaDragDrop = async (options: {
     tabId,
     documentType,
     dropSelector,
+    tableSelector,
     documentName,
     documentUuid,
     createDocumentFn,
@@ -1011,15 +1013,17 @@ export const addDocumentViaDragDrop = async (options: {
 
   // Verify the document appears in the table
   if (verifyByText && documentName) {
-    await page.waitForFunction((docName: string, selector: string) => {
-      const cells = document.querySelectorAll(`${selector} tbody td`);
+    // Use tableSelector if provided, otherwise extract table selector from dropSelector
+    const selector = tableSelector || dropSelector.replace(/ \.fcb-table-new-drop-box$/, '');
+    await page.waitForFunction((docName: string, sel: string) => {
+      const cells = document.querySelectorAll(`${sel} tbody td`);
       for (const cell of cells) {
         if (cell.textContent && cell.textContent.includes(docName)) {
           return true;
         }
       }
       return false;
-    }, { timeout: 10000 }, documentName, dropSelector);
+    }, { timeout: 10000 }, documentName, selector);
   }
 
   return uuidToDrop;
