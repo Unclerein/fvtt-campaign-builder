@@ -10,7 +10,7 @@ import { describe, test, beforeAll, afterAll, afterEach, expect } from '../testR
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
 import { ensureSetup } from '../ensureSetup';
-import { switchToSetting, expandTopicNode, expandTypeNode } from '@e2etest/utils';
+import { switchToSetting, expandTopicNode, expandTypeNode, getSetting, setSetting } from '@e2etest/utils';
 import { Topics } from '@/types';
 import {
   openEntry,
@@ -897,15 +897,11 @@ describe.serial('Character Entry Tests', () => {
     const page = sharedContext.page!;
 
     // Save the original setting value
-    const originalValue = await page.evaluate(() => {
-      return (game as any).settings?.get('campaign-builder', 'enableVoiceRecording') ?? false;
-    });
+    const originalValue = await getSetting(page, 'enableVoiceRecording');
 
     try {
       // Enable voice recording
-      await page.evaluate(() => {
-        return (game as any).settings?.set('campaign-builder', 'enableVoiceRecording', true);
-      });
+      await setSetting(page, 'enableVoiceRecording', true);
 
       await openFirstCharacter();
 
@@ -923,9 +919,7 @@ describe.serial('Character Entry Tests', () => {
       await closeActiveTab();
 
       // Disable voice recording
-      await page.evaluate(() => {
-        return (game as any).settings?.set('campaign-builder', 'enableVoiceRecording', false);
-      });
+      await setSetting(page, 'enableVoiceRecording', false);
 
       // Reopen the same character
       await openFirstCharacter();
@@ -940,9 +934,7 @@ describe.serial('Character Entry Tests', () => {
     }
     finally {
       // Restore the original setting value
-      await page.evaluate((val: boolean) => {
-        return (game as any).settings?.set('campaign-builder', 'enableVoiceRecording', val);
-      }, originalValue);
+      await setSetting(page, 'enableVoiceRecording', originalValue);
     }
   });
 
@@ -1706,9 +1698,7 @@ describe.serial('Character Entry Tests', () => {
     const page = sharedContext.page!;
 
     // Save the original setting value
-    const originalValue = await page.evaluate(() => {
-      return (game as any).settings?.get('campaign-builder', 'useTimeline') ?? false;
-    });
+    const originalValue = await getSetting(page, 'useTimeline');
 
     // Check if Calendaria module is available (required for timeline)
     const calendariaAvailable = await page.evaluate(() => {
@@ -1717,9 +1707,7 @@ describe.serial('Character Entry Tests', () => {
 
     try {
       // Enable timeline
-      await page.evaluate(() => {
-        return (game as any).settings?.set('campaign-builder', 'useTimeline', true);
-      });
+      await setSetting(page, 'useTimeline', true);
 
       await openFirstCharacter();
 
@@ -1734,9 +1722,7 @@ describe.serial('Character Entry Tests', () => {
       await closeActiveTab();
 
       // Disable timeline
-      await page.evaluate(() => {
-        return (game as any).settings?.set('campaign-builder', 'useTimeline', false);
-      });
+      await setSetting(page, 'useTimeline', false);
 
       // Reopen the same character
       await openFirstCharacter();
@@ -1748,9 +1734,7 @@ describe.serial('Character Entry Tests', () => {
     }
     finally {
       // Restore the original setting value
-      await page.evaluate((val: boolean) => {
-        return (game as any).settings?.set('campaign-builder', 'useTimeline', val);
-      }, originalValue);
+      await setSetting(page, 'useTimeline', originalValue);
     }
   });
 
@@ -1766,10 +1750,8 @@ describe.serial('Character Entry Tests', () => {
     const page = sharedContext.page!;
 
     // Save the original setting value
-    const originalValue = await page.evaluate(() => {
-      return (game as any).settings?.get('campaign-builder', 'showImages') ?? { entries: true };
-    });
-
+    const originalValue = (await getSetting(page, 'showImages')) ?? { entries: true };
+    
     try {
       // First verify image picker is visible with entries=true (default)
       await openFirstCharacter();
@@ -1807,9 +1789,7 @@ describe.serial('Character Entry Tests', () => {
     }
     finally {
       // Restore the original setting value
-      await page.evaluate((val: Record<string, boolean>) => {
-        return (game as any).settings?.set('campaign-builder', 'showImages', val);
-      }, originalValue);
+      await setSetting(page, 'showImages', originalValue);
     }
   });
 
@@ -1821,10 +1801,8 @@ describe.serial('Character Entry Tests', () => {
     const page = sharedContext.page!;
 
     // Save the original setting value
-    const originalValue = await page.evaluate(() => {
-      return (game as any).settings?.get('campaign-builder', 'tabVisibilitySettings') ?? {};
-    });
-
+    const originalValue = (await getSetting(page, 'tabVisibilitySettings')) ?? {};
+    
     try {
       // First verify journals tab is visible with default settings
       await openFirstCharacter();
@@ -1870,9 +1848,7 @@ describe.serial('Character Entry Tests', () => {
     }
     finally {
       // Restore the original setting value
-      await page.evaluate((val: Record<string, boolean>) => {
-        return (game as any).settings?.set('campaign-builder', 'tabVisibilitySettings', val);
-      }, originalValue);
+      await setSetting(page, 'tabVisibilitySettings', originalValue);
     }
   });
 
@@ -1884,10 +1860,8 @@ describe.serial('Character Entry Tests', () => {
     const page = sharedContext.page!;
 
     // Save the original setting value
-    const originalValue = await page.evaluate(() => {
-      return (game as any).settings?.get('campaign-builder', 'tabVisibilitySettings') ?? {};
-    });
-
+    const originalValue = await getSetting(page, 'tabVisibilitySettings');
+    
     try {
       // Hide journals, actors, and foundry tabs for character entries
       // Use TabVisibilityItem string values ('entryCharacterJournals' etc.)
@@ -1943,9 +1917,7 @@ describe.serial('Character Entry Tests', () => {
     }
     finally {
       // Restore the original setting value
-      await page.evaluate((val: Record<string, boolean>) => {
-        return (game as any).settings?.set('campaign-builder', 'tabVisibilitySettings', val);
-      }, originalValue);
+      await setSetting(page, 'tabVisibilitySettings', originalValue);
     }
   });
 
@@ -1958,10 +1930,8 @@ describe.serial('Character Entry Tests', () => {
     let entryUuid: string | null = null;
 
     // Save the original setting value
-    const originalValue = await page.evaluate(() => {
-      return (game as any).settings?.get('campaign-builder', 'actorTags') ?? [];
-    });
-
+    const originalValue = (await getSetting(page, 'actorTags')) ?? [];
+    
     try {
       // Create a new character entry for this test
       await expandTopicNode(Topics.Character);
@@ -1977,17 +1947,16 @@ describe.serial('Character Entry Tests', () => {
 
       // Set actorTags with a unique tag name
       const testActorTagName = 'actor-tag-' + Date.now();
-      await page.evaluate((tagName: string) => {
+      await page.evaluate(async (tagName: string) => {
         // Create an actor to associate with the tag
-        return Actor.create({ name: 'Tag Actor ' + Date.now(), type: 'base' }).then((actor: any) => {
-          const tags = [{
-            id: 'test-actor-tag-1',
-            name: tagName,
-            color: '#ff0000',
-            uuid: actor?.uuid || '',
-          }];
-          return (game as any).settings?.set('campaign-builder', 'actorTags', tags);
-        });
+        const actor = await Actor.create({ name: 'Tag Actor ' + Date.now(), type: 'base' });
+        const tags = [{
+          id: 'test-actor-tag-1',
+          name: tagName,
+          color: '#ff0000',
+          uuid: actor?.uuid || '',
+        }];
+        await (game as any).settings?.set('campaign-builder', 'actorTags', tags);
       }, testActorTagName);
 
       // Close and reopen the entry so the tagsWhitelistSupplement computed picks up the new setting
@@ -1997,15 +1966,39 @@ describe.serial('Character Entry Tests', () => {
       // Wait for tags component to be initialized
       await page.waitForSelector('.tags-wrapper:not(.uninitialized)', { timeout: 5000 });
 
-      // Click on the tagify input element (Tagify hides the original input and creates .tagify__input)
-      await page.waitForSelector('.tags-wrapper .tagify__input', { timeout: 5000 });
-      await page.click('.tags-wrapper .tagify__input');
+      // Debug: Check what the tagsWhitelistSupplement computed property returns
+      const whitelistDebug = await page.evaluate(() => {
+        const setting = (game as any).settings?.get('campaign-builder', 'actorTags');
+        return { actorTagsSetting: setting };
+      });
+      console.log('ActorTags setting after reopen:', whitelistDebug);
 
-      // Type a character to trigger the dropdown (Tagify shows whitelist when typing)
-      await page.keyboard.type(testActorTagName.charAt(0));
+      // Use page.evaluate to interact with tagify directly (similar to addTag function)
+      await page.evaluate((char: string) => {
+        const tagsInput = document.querySelector('.tagify__input') as HTMLElement;
+        if (tagsInput) {
+          tagsInput.focus();
+          // Tagify uses contentEditable
+          if (tagsInput.isContentEditable) {
+            tagsInput.textContent = char;
+          } else if ('value' in tagsInput) {
+            (tagsInput as HTMLInputElement).value = char;
+          }
+          // Trigger input event to show dropdown
+          tagsInput.dispatchEvent(new InputEvent('input', { bubbles: true }));
+        }
+      }, testActorTagName.charAt(0));
 
       // Wait for the tagify dropdown to appear (uses custom class fcb-tagify-dropdown)
       await page.waitForSelector('.fcb-tagify-dropdown', { timeout: 5000 });
+
+      // Debug: Log all dropdown items and the tag name we're looking for
+      const debugInfo = await page.evaluate((tagName: string) => {
+        const dropdownItems = document.querySelectorAll('.fcb-tagify-dropdown .tagify__dropdown__item');
+        const itemTexts = Array.from(dropdownItems).map(item => item.textContent);
+        return { itemTexts, tagName };
+      }, testActorTagName);
+      console.log('Dropdown debug:', debugInfo);
 
       // Check if the actor tag name appears in the dropdown whitelist
       const actorTagInWhitelist = await page.evaluate((tagName: string) => {
@@ -2027,9 +2020,7 @@ describe.serial('Character Entry Tests', () => {
         await deleteEntryViaAPI(entryUuid);
       }
       // Restore the original setting value
-      await page.evaluate((val: unknown[]) => {
-        return (game as any).settings?.set('campaign-builder', 'actorTags', val);
-      }, originalValue);
+      await setSetting(page, 'actorTags', originalValue);
     }
   });
 
@@ -2041,39 +2032,38 @@ describe.serial('Character Entry Tests', () => {
    */
   test('autoRelationships setting controls related entries dialog', async () => {
     const page = sharedContext.page!;
-    let entryUuid: string | null = null;
 
     // Save the original setting value
-    const originalValue = await page.evaluate(() => {
-      return (game as any).settings?.get('campaign-builder', 'autoRelationships') ?? false;
-    });
+    const originalValue = (await getSetting(page, 'autoRelationships')) ?? false;
+
+    // Get another character's UUID to drag
+    const setting = testData.settings[0];
+    const secondChar = setting.topics[Topics.Character][0];
+    const secondCharUuid = await page.evaluate(async (name: string) => {
+      const api = (game as any).modules.get('campaign-builder')!.api;
+      const list = api.getEntries(0); // Topics.Character = 0
+      const entry = list.find((e: { name: string }) => e.name === name);
+      return entry?.uuid;
+    }, secondChar.name);
+
+    if (!secondCharUuid) {
+      return;
+    }
 
     try {
-      // First test with autoRelationships disabled
-      await page.evaluate(() => {
-        return (game as any).settings?.set('campaign-builder', 'autoRelationships', false);
-      });
+      // Test both disabled and enabled states
+      for (const autoRelationshipsEnabled of [false, true]) {
+        await setSetting(page, 'autoRelationships', autoRelationshipsEnabled);
 
-      // Create a new entry for this test
-      await expandTopicNode(Topics.Character);
-      const autoRelTestName = 'Auto Rel Test ' + Date.now();
-      entryUuid = await createEntryViaUI(Topics.Character, autoRelTestName);
+        // Create a new entry for this test
+        await expandTopicNode(Topics.Character);
+        const autoRelTestName = 'Auto Rel Test ' + Date.now();
+        const entryUuid = await createEntryViaUI(Topics.Character, autoRelTestName);
 
-      // Switch to characters relationship tab and add a relationship via drag-drop
-      await clickContentTab('characters');
-      await page.waitForSelector('.tab[data-tab="characters"].active', { timeout: 5000 });
+        // Switch to characters relationship tab and add a relationship via drag-drop
+        await clickContentTab('characters');
+        await page.waitForSelector('.tab[data-tab="characters"].active', { timeout: 5000 });
 
-      // Get another character's UUID to drag
-      const setting = testData.settings[0];
-      const secondChar = setting.topics[Topics.Character][0];
-      const secondCharUuid = await page.evaluate(async (name: string) => {
-        const api = (game as any).modules.get('campaign-builder')!.api;
-        const list = api.getEntries(0); // Topics.Character = 0
-        const entry = list.find((e: { name: string }) => e.name === name);
-        return entry?.uuid;
-      }, secondChar.name);
-
-      if (secondCharUuid) {
         // Simulate dropping the entry onto the characters relationship table
         const charactersTabSelector = '.tab[data-tab="characters"] .fcb-table-wrapper';
         await page.waitForSelector(charactersTabSelector, { timeout: 5000 });
@@ -2087,40 +2077,24 @@ describe.serial('Character Entry Tests', () => {
           // May not increase if already related
         });
 
-        // With autoRelationships disabled, the related entries management dialog should NOT appear
-        const dialogVisibleWhenDisabled = await page.evaluate(() => {
+        // Check if the related entries management dialog appears
+        const dialogVisible = await page.evaluate(() => {
           // The dialog is a PrimeVue Dialog with the related-entries-management-content class
           const dialog = document.querySelector('.related-entries-management-content');
           return dialog !== null;
         });
-        // Expected behavior: No related entries dialog when autoRelationships is disabled
-        expect(dialogVisibleWhenDisabled).toBe(false);
-      }
 
-      // Close the entry
-      await closeActiveTab();
+        // Expected behavior: Dialog appears only when autoRelationships is enabled
+        expect(dialogVisible).toBe(autoRelationshipsEnabled);
 
-      // Enable autoRelationships
-      await page.evaluate(() => {
-        return (game as any).settings?.set('campaign-builder', 'autoRelationships', true);
-      });
-
-      // Verify the setting is now enabled
-      const settingEnabled = await page.evaluate(() => {
-        return (game as any).settings?.get('campaign-builder', 'autoRelationships') ?? false;
-      });
-      // Expected behavior: autoRelationships setting is enabled
-      expect(settingEnabled).toBe(true);
-    }
-    finally {
-      // Clean up
-      if (entryUuid) {
+        // Close and delete the entry
+        await closeActiveTab();
         await deleteEntryViaAPI(entryUuid);
       }
+    }
+    finally {
       // Restore the original setting value
-      await page.evaluate((val: boolean) => {
-        return (game as any).settings?.set('campaign-builder', 'autoRelationships', val);
-      }, originalValue);
+      await setSetting(page, 'autoRelationships', originalValue);
     }
   });
 

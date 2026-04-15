@@ -185,38 +185,75 @@ export function afterEach(fn: HookFn): void {
 }
 
 /**
+ * Extract line number from stack trace for the expect call.
+ */
+function getErrorLocation(): string {
+  const stack = new Error().stack;
+  if (!stack) return '';
+
+  // Stack format: "Error\n    at expect.<method> (file:line:col)\n    at testFunction (file:line:col)"
+  // We want the line after the expect method call
+  const lines = stack.split('\n');
+  
+  // Skip the first line (Error message) and find the line after the expect call
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    // Look for lines that are NOT part of the expect function itself
+    if (!line.includes('testRunner.ts') && line.includes('.test.ts')) {
+      // Extract file path and line number from "    at functionName (path/to/file.ts:123:45)"
+      const match = line.match(/\((.+?\.test\.ts):(\d+):\d+\)/);
+      if (match) {
+        const [, file, lineNum] = match;
+        // Show only the filename, not the full path
+        const fileName = file.split('/').pop();
+        return ` (${fileName}:${lineNum})`;
+      }
+      // Also handle format without parens "    at path/to/file.ts:123:45"
+      const match2 = line.match(/at (.+?\.test\.ts):(\d+):\d+/);
+      if (match2) {
+        const [, file, lineNum] = match2;
+        const fileName = file.split('/').pop();
+        return ` (${fileName}:${lineNum})`;
+      }
+    }
+  }
+  
+  return '';
+}
+
+/**
  * Simple expect function with matchers.
  */
 export function expect<T>(actual: T) {
   return {
     toBe(expected: T): void {
       if (actual !== expected) {
-        throw new Error(`Expected ${expected} but got ${actual}`);
+        throw new Error(`Expected ${expected} but got ${actual}${getErrorLocation()}`);
       }
     },
     toEqual(expected: T): void {
       if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-        throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
+        throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}${getErrorLocation()}`);
       }
     },
     toBeTruthy(): void {
       if (!actual) {
-        throw new Error(`Expected truthy value but got ${actual}`);
+        throw new Error(`Expected truthy value but got ${actual}${getErrorLocation()}`);
       }
     },
     toBeFalsy(): void {
       if (actual) {
-        throw new Error(`Expected falsy value but got ${actual}`);
+        throw new Error(`Expected falsy value but got ${actual}${getErrorLocation()}`);
       }
     },
     toContain(expected: T extends any[] ? T[number] : T): void {
       if (Array.isArray(actual)) {
         if (!actual.includes(expected as any)) {
-          throw new Error(`Expected array to contain ${expected}`);
+          throw new Error(`Expected array to contain ${expected}${getErrorLocation()}`);
         }
       } else if (typeof actual === 'string') {
         if (!actual.includes(expected as string)) {
-          throw new Error(`Expected string to contain ${expected}`);
+          throw new Error(`Expected string to contain ${expected}${getErrorLocation()}`);
         }
       } else {
         throw new Error('toContain() requires an array or string');
@@ -224,54 +261,54 @@ export function expect<T>(actual: T) {
     },
     toHaveLength(expected: number): void {
       if ((actual as any).length !== expected) {
-        throw new Error(`Expected length ${expected} but got ${(actual as any).length}`);
+        throw new Error(`Expected length ${expected} but got ${(actual as any).length}${getErrorLocation()}`);
       }
     },
     toBeGreaterThan(expected: number): void {
       if ((actual as number) <= expected) {
-        throw new Error(`Expected ${actual} to be greater than ${expected}`);
+        throw new Error(`Expected ${actual} to be greater than ${expected}${getErrorLocation()}`);
       }
     },
     toBeLessThan(expected: number): void {
       if ((actual as number) >= expected) {
-        throw new Error(`Expected ${actual} to be less than ${expected}`);
+        throw new Error(`Expected ${actual} to be less than ${expected}${getErrorLocation()}`);
       }
     },
     toBeNull(): void {
       if (actual !== null) {
-        throw new Error(`Expected null but got ${actual}`);
+        throw new Error(`Expected null but got ${actual}${getErrorLocation()}`);
       }
     },
     toBeUndefined(): void {
       if (actual !== undefined) {
-        throw new Error(`Expected undefined but got ${actual}`);
+        throw new Error(`Expected undefined but got ${actual}${getErrorLocation()}`);
       }
     },
     not: {
       toBe(expected: T): void {
         if (actual === expected) {
-          throw new Error(`Expected not ${expected}`);
+          throw new Error(`Expected not ${expected}${getErrorLocation()}`);
         }
       },
       toEqual(expected: T): void {
         if (JSON.stringify(actual) === JSON.stringify(expected)) {
-          throw new Error(`Expected not ${JSON.stringify(expected)}`);
+          throw new Error(`Expected not ${JSON.stringify(expected)}${getErrorLocation()}`);
         }
       },
       toContain(expected: T extends any[] ? T[number] : T): void {
         if (Array.isArray(actual)) {
           if (actual.includes(expected as any)) {
-            throw new Error(`Expected array not to contain ${expected}`);
+            throw new Error(`Expected array not to contain ${expected}${getErrorLocation()}`);
           }
         } else if (typeof actual === 'string') {
           if (actual.includes(expected as string)) {
-            throw new Error(`Expected string not to contain ${expected}`);
+            throw new Error(`Expected string not to contain ${expected}${getErrorLocation()}`);
           }
         }
       },
       toBeNull(): void {
         if (actual === null) {
-          throw new Error(`Expected not null`);
+          throw new Error(`Expected not null${getErrorLocation()}`);
         }
       },
     },
