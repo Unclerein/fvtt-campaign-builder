@@ -4,12 +4,11 @@
  * tag management, relationships, push-to-session, content tabs.
  */
 
-import { describe, test, beforeAll, afterAll, afterEach, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting, expandTopicNode, expandTypeNode, getGenerateButtonSelector } from '@e2etest/utils';
-import { Topics } from '@/types';
+import { Topics } from '../types';
 import {
   openEntry,
   setEntryName,
@@ -34,13 +33,12 @@ const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(r
  * Organization Entry Tests
  * Verifies organization entry CRUD operations, relationships, and navigation.
  */
-describe.serial('Organization Entry Tests', () => {
+describe('Organization Entry Tests', () => {
   let createdEntryUuid: string | null = null;
   // Track the current entry name - changes as tests rename it
   let currentEntryName = 'Test Organization Entry';
 
-  beforeAll(async () => {
-    await ensureSetup(false);
+  before(async () => {
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
 
@@ -57,7 +55,7 @@ describe.serial('Organization Entry Tests', () => {
     }
   });
 
-  afterAll(async () => {
+  after(async () => {
     // Clean up created entry
     if (createdEntryUuid) {
       try {
@@ -75,7 +73,7 @@ describe.serial('Organization Entry Tests', () => {
    * What it tests: Opening an existing organization entry from the directory tree.
    * Expected behavior: Entry opens and displays the correct organization name in the name input.
    */
-  test('Open existing organization entry', async () => {
+  it('Open existing organization entry', async () => {
     const setting = testData.settings[0];
 
     // Expand the organization topic folder
@@ -97,10 +95,10 @@ describe.serial('Organization Entry Tests', () => {
     }, { timeout: 5000 });
     const nameValue = await getEntryNameValue();
     // Expected behavior: Name input contains the organization's name
-    expect(nameValue).toBe(firstOrg.name);
+    expect(nameValue).to.equal(firstOrg.name);
   });
 
-  test('Create new organization entry via UI', async () => {
+  it('Create new organization entry via UI', async () => {
     // Create a new entry via UI (simulates real user behavior)
     await expandTopicNode(Topics.Organization);
     createdEntryUuid = await createEntryViaUI(Topics.Organization, currentEntryName);
@@ -109,14 +107,14 @@ describe.serial('Organization Entry Tests', () => {
 
     // Verify the entry is open
     const nameValue = await getEntryNameValue();
-    expect(nameValue).toBe(currentEntryName);
+    expect(nameValue).to.equal(currentEntryName);
   });
 
   /**
    * What it tests: Editing an organization's name with debounced auto-save.
    * Expected behavior: Name change persists after debounce period.
    */
-  test('Edit organization name with debounce', async () => {
+  it('Edit organization name with debounce', async () => {
     // Entry should already be open from previous test
     // Change the name
     const newName = 'Renamed Test Organization';
@@ -126,10 +124,10 @@ describe.serial('Organization Entry Tests', () => {
     // Verify the name changed
     const nameValue = await getEntryNameValue();
     // Expected behavior: Name input reflects the new name after save
-    expect(nameValue).toBe(newName);
+    expect(nameValue).to.equal(newName);
   });
 
-  test('Select existing type for organization', async () => {
+  it('Select existing type for organization', async () => {
     const page = sharedContext.page!;
 
     // Entry should already be open from previous test
@@ -151,14 +149,14 @@ describe.serial('Organization Entry Tests', () => {
 
     // Verify type was selected
     const typeValue = await getTypeValue();
-    expect(typeValue.length).toBeGreaterThan(0);
+    expect(typeValue.length).to.be.greaterThan(0);
   });
 
   /**
    * What it tests: Adding and removing tags from an organization entry.
    * Expected behavior: Tags can be added and removed, with UI reflecting changes.
    */
-  test('Add and remove tags', async () => {
+  it('Add and remove tags', async () => {
     const page = sharedContext.page!;
 
     // Entry should already be open from previous test
@@ -181,7 +179,7 @@ describe.serial('Organization Entry Tests', () => {
       }
     }
     // Expected behavior: Tag appears in the tags list after adding
-    expect(found).toBe(true);
+    expect(found).to.equal(true);
 
     // Remove the tag
     await removeTag(testTag);
@@ -191,7 +189,7 @@ describe.serial('Organization Entry Tests', () => {
     for (const tag of tagsAfter) {
       const text = await tag.evaluate(el => el.textContent);
       // Expected behavior: Tag no longer appears in the tags list
-      expect(text?.includes(testTag)).toBe(false);
+      expect(text?.includes(testTag)).to.equal(false);
     }
   });
 
@@ -199,7 +197,7 @@ describe.serial('Organization Entry Tests', () => {
    * What it tests: Clicking a tag opens a tag results tab showing entries with that tag.
    * Expected behavior: New tab opens displaying tag search results.
    */
-  test('Click tag opens tag results tab', async () => {
+  it('Click tag opens tag results tab', async () => {
     const page = sharedContext.page!;
 
     // Entry should already be open from previous test
@@ -218,7 +216,7 @@ describe.serial('Organization Entry Tests', () => {
     const tagResultsTab = await page.$('[data-testid="tag-results-tab"], .tag-results-tab');
     // Tag results should have opened a new tab
     const tabs = await page.$$('.fcb-tab');
-    expect(tabs.length).toBeGreaterThan(1);
+    expect(tabs.length).to.be.greaterThan(1);
 
     // Close the tag results tab to return to the entry
     await closeActiveTab();
@@ -228,13 +226,13 @@ describe.serial('Organization Entry Tests', () => {
    * What it tests: Pushing an organization entry to a session via the push-to-session button.
    * Expected behavior: Context menu appears with campaign options, entry is linked to session.
    */
-  test('Push organization to session', async () => {
+  it('Push organization to session', async () => {
     const page = sharedContext.page!;
 
     // Entry should already be open from previous test
     // Click the push to session button
     const pushed = await clickPushToSession();
-    expect(pushed).toBe(true);
+    expect(pushed).to.equal(true);
 
     // Context menu should appear - select a campaign
     await page.waitForSelector('.mx-context-menu', { timeout: 5000 });
@@ -251,7 +249,7 @@ describe.serial('Organization Entry Tests', () => {
    * What it tests: Generate button displays a context menu with AI generation options.
    * Expected behavior: Context menu appears with generation options.
    */
-  test('Generate button shows context menu', async () => {
+  it('Generate button shows context menu', async () => {
     const page = sharedContext.page!;
 
     // Entry should already be open from previous test
@@ -266,11 +264,11 @@ describe.serial('Organization Entry Tests', () => {
       // Verify menu has options
       const menuItems = await page.$$('.mx-context-menu-item');
       // Expected behavior: Context menu contains at least one generation option
-    expect(menuItems.length).toBeGreaterThan(0);
+    expect(menuItems.length).to.be.greaterThan(0);
     }
   });
 
-  test('Switch to journals tab', async () => {
+  it('Switch to journals tab', async () => {
     const page = sharedContext.page!;
 
     // Entry should already be open from previous test
@@ -279,14 +277,14 @@ describe.serial('Organization Entry Tests', () => {
 
     // Verify journals tab is visible
     const journalsTab = await page.$('[data-tab="journals"]');
-    expect(journalsTab).not.toBeNull();
+    expect(journalsTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the characters relationship tab.
    * Expected behavior: Characters relationship tab becomes visible.
    */
-  test('Switch to characters relationship tab', async () => {
+  it('Switch to characters relationship tab', async () => {
     const page = sharedContext.page!;
 
     // Entry should already be open from previous test
@@ -295,14 +293,14 @@ describe.serial('Organization Entry Tests', () => {
 
     // Verify characters tab is visible
     const charsTab = await page.$('[data-tab="characters"]');
-    expect(charsTab).not.toBeNull();
+    expect(charsTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the locations relationship tab.
    * Expected behavior: Locations relationship tab becomes visible.
    */
-  test('Switch to locations relationship tab', async () => {
+  it('Switch to locations relationship tab', async () => {
     const page = sharedContext.page!;
 
     // Entry should already be open from previous test
@@ -311,14 +309,14 @@ describe.serial('Organization Entry Tests', () => {
 
     // Verify locations tab is visible
     const locsTab = await page.$('[data-tab="locations"]');
-    expect(locsTab).not.toBeNull();
+    expect(locsTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the organizations relationship tab (parent/child organizations).
    * Expected behavior: Organizations relationship tab becomes visible.
    */
-  test('Switch to organizations relationship tab', async () => {
+  it('Switch to organizations relationship tab', async () => {
     const page = sharedContext.page!;
 
     // Entry should already be open from previous test
@@ -327,14 +325,14 @@ describe.serial('Organization Entry Tests', () => {
 
     // Verify organizations tab is visible
     const orgsTab = await page.$('[data-tab="organizations"]');
-    expect(orgsTab).not.toBeNull();
+    expect(orgsTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the sessions tab showing sessions this organization appears in.
    * Expected behavior: Sessions tab becomes visible.
    */
-  test('Switch to sessions tab', async () => {
+  it('Switch to sessions tab', async () => {
     const page = sharedContext.page!;
 
     // Entry should already be open from previous test
@@ -343,14 +341,14 @@ describe.serial('Organization Entry Tests', () => {
 
     // Verify sessions tab is visible
     const sessionsTab = await page.$('[data-tab="sessions"]');
-    expect(sessionsTab).not.toBeNull();
+    expect(sessionsTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the foundry documents tab.
    * Expected behavior: Foundry documents tab becomes visible.
    */
-  test('Switch to foundry tab', async () => {
+  it('Switch to foundry tab', async () => {
     const page = sharedContext.page!;
 
     // Entry should already be open from previous test
@@ -359,6 +357,6 @@ describe.serial('Organization Entry Tests', () => {
 
     // Verify foundry tab is visible
     const foundryTab = await page.$('[data-tab="foundry"]');
-    expect(foundryTab).not.toBeNull();
+    expect(foundryTab).to.not.be.null;
   });
 });

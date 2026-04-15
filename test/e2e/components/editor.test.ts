@@ -4,12 +4,11 @@
  * and placeholder presence across different entry types.
  */
 
-import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting, expandTopicNode, expandTypeNode } from '@e2etest/utils';
-import { Topics } from '@/types';
+import { Topics } from '../types';
 import {
   openEntry,
   getDescriptionEditorContent,
@@ -29,17 +28,16 @@ const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(r
  * Editor Component Tests
  * Verifies ProseMirror editor functionality across entry types.
  */
-describe.serial('Editor Component Tests', () => {
+describe('Editor Component Tests', () => {
   let createdEntryUuid: string | null = null;
   const testEntryName = 'Test Editor Entry';
 
-  beforeAll(async () => {
-    await ensureSetup(false);
+  before(async () => {
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
   });
 
-  afterAll(async () => {
+  after(async () => {
     if (createdEntryUuid) {
       try {
         await deleteEntryViaAPI(createdEntryUuid);
@@ -53,7 +51,7 @@ describe.serial('Editor Component Tests', () => {
    * What it tests: ProseMirror editor is visible when opening a character entry.
    * Expected behavior: Editor element is present in the DOM.
    */
-  test('Editor is visible on character entry', async () => {
+  it('Editor is visible on character entry', async () => {
     const setting = testData.settings[0];
 
     // Open a character entry
@@ -65,14 +63,14 @@ describe.serial('Editor Component Tests', () => {
     // Verify editor is present
     const page = sharedContext.page!;
     const editor = await page.$('.ProseMirror');
-    expect(editor).not.toBeNull();
+    expect(editor).to.not.be.null;
   });
 
   /**
    * What it tests: Reading content from the ProseMirror editor.
    * Expected behavior: Content can be retrieved as HTML string.
    */
-  test('Read editor content', async () => {
+  it('Read editor content', async () => {
     const setting = testData.settings[0];
 
     // Open a character entry with description content
@@ -84,14 +82,14 @@ describe.serial('Editor Component Tests', () => {
     // Get editor content
     const content = await getDescriptionEditorContent();
     // Content may be empty or have content - just verify we can read it
-    expect(content).not.toBeNull();
+    expect(content).to.not.be.null;
   });
 
   /**
    * What it tests: Setting content in the ProseMirror editor.
    * Expected behavior: Content can be set and retrieved.
    */
-  test('Set editor content', async () => {
+  it('Set editor content', async () => {
     const setting = testData.settings[0];
 
     // Create a new entry for editing
@@ -109,10 +107,10 @@ describe.serial('Editor Component Tests', () => {
     // Verify content was set
     const content = await getDescriptionEditorContent();
     // Expected behavior: Content contains the test text that was set
-    expect(content.includes('Test description content')).toBe(true);
+    expect(content.includes('Test description content')).to.equal(true);
   });
 
-  test('Editor save via Ctrl+S', async () => {
+  it('Editor save via Ctrl+S', async () => {
     const page = sharedContext.page!;
 
     // Make sure we have the entry open
@@ -129,14 +127,14 @@ describe.serial('Editor Component Tests', () => {
 
     // Verify content persisted (read it back)
     const content = await getDescriptionEditorContent();
-    expect(content.includes('Modified content for save test')).toBe(true);
+    expect(content.includes('Modified content for save test')).to.equal(true);
   });
 
   /**
    * What it tests: Editor accepts text input via typing.
    * Expected behavior: Text input is reflected in the editor content.
    */
-  test('Editor accepts text input', async () => {
+  it('Editor accepts text input', async () => {
     const page = sharedContext.page!;
 
     // Open entry
@@ -154,14 +152,14 @@ describe.serial('Editor Component Tests', () => {
 
     // Verify content was added
     const content = await getDescriptionEditorContent();
-    expect(content.includes('Typed content in editor')).toBe(true);
+    expect(content.includes('Typed content in editor')).to.equal(true);
   });
 
   /**
    * What it tests: Editor supports bold text formatting via keyboard shortcut.
    * Expected behavior: Bold formatting can be applied to selected text.
    */
-  test('Editor supports bold formatting', async () => {
+  it('Editor supports bold formatting', async () => {
     const page = sharedContext.page!;
 
     // Open entry
@@ -191,14 +189,14 @@ describe.serial('Editor Component Tests', () => {
 
     // Verify content has strong tag (bold)
     const content = await getDescriptionEditorContent();
-    expect(content.includes('<strong>') || content.includes('Bold text test')).toBe(true);
+    expect(content.includes('<strong>') || content.includes('Bold text test')).to.equal(true);
   });
 
   /**
    * What it tests: Editor supports italic text formatting via keyboard shortcut.
    * Expected behavior: Italic formatting can be applied to selected text.
    */
-  test('Editor supports italic formatting', async () => {
+  it('Editor supports italic formatting', async () => {
     const page = sharedContext.page!;
 
     // Open entry
@@ -228,14 +226,14 @@ describe.serial('Editor Component Tests', () => {
 
     // Verify content has em tag (italic)
     const content = await getDescriptionEditorContent();
-    expect(content.includes('<em>') || content.includes('Italic text test')).toBe(true);
+    expect(content.includes('<em>') || content.includes('Italic text test')).to.equal(true);
   });
 
   /**
    * What it tests: Editor tracks dirty state when content is modified.
    * Expected behavior: isDirty flag reflects editor modification state.
    */
-  test('Editor dirty state tracking', async () => {
+  it('Editor dirty state tracking', async () => {
     const page = sharedContext.page!;
 
     // Open entry
@@ -245,7 +243,7 @@ describe.serial('Editor Component Tests', () => {
 
     // Verify initial dirty state
     const isDirty = await isEditorDirty();
-    expect(isDirty).toBe(false);
+    expect(isDirty).to.equal(false);
 
     // Modify content
     await page.click('.ProseMirror');
@@ -255,14 +253,14 @@ describe.serial('Editor Component Tests', () => {
 
     // Verify dirty state after modification
     const isDirtyAfterModification = await isEditorDirty();
-    expect(isDirtyAfterModification).toBe(true);
+    expect(isDirtyAfterModification).to.equal(true);
   });
 
   /**
    * What it tests: Editor shows placeholder text when empty on a new entry.
    * Expected behavior: Placeholder is visible when editor has no content.
    */
-  test('Editor placeholder on new entry', async () => {
+  it('Editor placeholder on new entry', async () => {
     const page = sharedContext.page!;
 
     // Open entry with potentially empty content
@@ -272,7 +270,7 @@ describe.serial('Editor Component Tests', () => {
 
     // Editor should be visible regardless of content
     const editor = await page.$('.ProseMirror');
-    expect(editor).not.toBeNull();
+    expect(editor).to.not.be.null;
 
     // Check for placeholder or empty content
     const isEmpty = await page.evaluate(() => {
@@ -282,10 +280,10 @@ describe.serial('Editor Component Tests', () => {
     });
 
     // Either has placeholder or is empty - both valid
-    expect(isEmpty !== undefined).toBe(true);
+    expect(isEmpty !== undefined).to.equal(true);
   });
 
-  test('Editor is resizable', async () => {
+  it('Editor is resizable', async () => {
     const page = sharedContext.page!;
 
     // Open entry
@@ -298,10 +296,10 @@ describe.serial('Editor Component Tests', () => {
     // Resize handle may or may not exist depending on implementation
     // Just verify editor container exists
     const editorContainer = await page.$('.editor-container, .ProseMirror');
-    expect(editorContainer).not.toBeNull();
+    expect(editorContainer).to.not.be.null;
   });
 
-  test('Editor on location entry shows description', async () => {
+  it('Editor on location entry shows description', async () => {
     const setting = testData.settings[0];
 
     // Open a location entry
@@ -313,10 +311,10 @@ describe.serial('Editor Component Tests', () => {
     // Verify editor is present
     const page = sharedContext.page!;
     const editor = await page.$('.ProseMirror');
-    expect(editor).not.toBeNull();
+    expect(editor).to.not.be.null;
   });
 
-  test('Editor on campaign shows description', async () => {
+  it('Editor on campaign shows description', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -348,6 +346,6 @@ describe.serial('Editor Component Tests', () => {
 
     // Verify editor is present
     const editor = await page.$('.ProseMirror');
-    expect(editor).not.toBeNull();
+    expect(editor).to.not.be.null;
   });
 });

@@ -4,12 +4,11 @@
  * and tab management in the application header.
  */
 
-import { describe, test, beforeAll, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting, expandTopicNode, expandTypeNode } from '@e2etest/utils';
-import { Topics } from '@/types';
+import { Topics } from '../types';
 import { openEntry,  } from '@e2etest/utils';
 
 /**
@@ -114,14 +113,13 @@ const getBackButton = async () => {
  * Header Navigation Tests
  * Verifies tab switching, closing, and bookmark functionality.
  */
-describe.serial('Header Navigation Tests', () => {
-  beforeAll(async () => {
-    await ensureSetup(false);
+describe('Header Navigation Tests', () => {
+  before(async () => {
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
   });
 
-  test('Open entry creates new tab', async () => {
+  it('Open entry creates new tab', async () => {
     const setting = testData.settings[0];
 
     // Open a character entry
@@ -132,16 +130,16 @@ describe.serial('Header Navigation Tests', () => {
 
     // Verify tab was created
     const tabs = await getAllTabs();
-    expect(tabs.length).toBeGreaterThan(0);
+    expect(tabs.length).to.be.greaterThan(0);
 
     // Verify active tab shows the entry name
     const activeTab = await getActiveTab();
-    expect(activeTab).not.toBeNull();
+    expect(activeTab).to.not.be.null;
     const activeText = await activeTab!.evaluate(el => el.textContent);
-    expect(activeText?.includes(firstChar.name)).toBe(true);
+    expect(activeText?.includes(firstChar.name)).to.equal(true);
   });
 
-  test('Open second entry creates additional tab', async () => {
+  it('Open second entry creates additional tab', async () => {
     const setting = testData.settings[0];
 
     // Open another character entry
@@ -150,19 +148,19 @@ describe.serial('Header Navigation Tests', () => {
 
     // Verify additional tab was created
     const tabs = await getAllTabs();
-    expect(tabs.length).toBeGreaterThan(1);
+    expect(tabs.length).to.be.greaterThan(1);
 
     // Verify active tab shows the new entry
     const activeTab = await getActiveTab();
     const activeText = await activeTab!.evaluate(el => el.textContent);
-    expect(activeText?.includes(secondChar.name)).toBe(true);
+    expect(activeText?.includes(secondChar.name)).to.equal(true);
   });
 
   /**
    * What it tests: Switching between open tabs in the header.
    * Expected behavior: Active tab changes when clicking a different tab.
    */
-  test('Switch between open tabs', async () => {
+  it('Switch between open tabs', async () => {
     const setting = testData.settings[0];
     const firstChar = setting.topics[Topics.Character][0];
 
@@ -172,14 +170,14 @@ describe.serial('Header Navigation Tests', () => {
     // Verify the tab is now active
     const activeTab = await getActiveTab();
     const activeText = await activeTab!.evaluate(el => el.textContent);
-    expect(activeText?.includes(firstChar.name)).toBe(true);
+    expect(activeText?.includes(firstChar.name)).to.equal(true);
   });
 
   /**
    * What it tests: Closing a tab removes it from the header.
    * Expected behavior: Tab is removed from the header after closing.
    */
-  test('Close tab removes it from header', async () => {
+  it('Close tab removes it from header', async () => {
     const setting = testData.settings[0];
     const secondChar = setting.topics[Topics.Character][1];
 
@@ -192,14 +190,14 @@ describe.serial('Header Navigation Tests', () => {
 
     // Verify tab was removed
     const tabsAfter = await getAllTabs();
-    expect(tabsAfter.length).toBe(countBefore - 1);
+    expect(tabsAfter.length).to.equal(countBefore - 1);
   });
 
   /**
    * What it tests: Opening a location entry creates a new tab.
    * Expected behavior: New tab is visible in the header.
    */
-  test('Open location entry creates new tab', async () => {
+  it('Open location entry creates new tab', async () => {
     const setting = testData.settings[0];
 
     // Open a location entry
@@ -210,32 +208,32 @@ describe.serial('Header Navigation Tests', () => {
 
     // Verify tab was created
     const tabs = await getAllTabs();
-    expect(tabs.length).toBeGreaterThan(0);
+    expect(tabs.length).to.be.greaterThan(0);
   });
 
   /**
    * What it tests: Tab close button is visible.
    * Expected behavior: Close button is visible on the active tab.
    */
-  test('Tab close button is visible', async () => {
+  it('Tab close button is visible', async () => {
     const setting = testData.settings[0];
     const firstLoc = setting.topics[Topics.Location][0];
 
     // Make sure we have a tab open
     const tabs = await getAllTabs();
-    expect(tabs.length).toBeGreaterThan(0);
+    expect(tabs.length).to.be.greaterThan(0);
 
     // Verify close button exists on active tab
     const activeTab = await getActiveTab();
     const closeBtn = await activeTab!.$('[data-testid="tab-close-button"], .tab-close-button');
-    expect(closeBtn).not.toBeNull();
+    expect(closeBtn).to.not.be.null;
   });
 
   /**
    * What it tests: Multiple tabs can be open simultaneously.
    * Expected behavior: Opening multiple entries creates multiple tabs.
    */
-  test('Multiple tabs can be open', async () => {
+  it('Multiple tabs can be open', async () => {
     const setting = testData.settings[0];
 
     // Open multiple entries
@@ -246,10 +244,10 @@ describe.serial('Header Navigation Tests', () => {
 
     // Verify we have multiple tabs
     const tabs = await getAllTabs();
-    expect(tabs.length).toBeGreaterThan(1);
+    expect(tabs.length).to.be.greaterThan(1);
   });
 
-  test('Tab shows correct icon for entry type', async () => {
+  it('Tab shows correct icon for entry type', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -262,10 +260,10 @@ describe.serial('Header Navigation Tests', () => {
     // Verify tab has an icon
     const activeTab = await getActiveTab();
     const icon = await activeTab!.$('i.fas, i.far');
-    expect(icon).not.toBeNull();
+    expect(icon).to.not.be.null;
   });
 
-  test('Switch between tabs preserves content', async () => {
+  it('Switch between tabs preserves content', async () => {
     const setting = testData.settings[0];
 
     // Open two entries
@@ -285,8 +283,8 @@ describe.serial('Header Navigation Tests', () => {
     // Verify character content is shown
     const page = sharedContext.page!;
     const nameInput = await page.$('[data-testid="entry-name-input"]');
-    expect(nameInput).not.toBeNull();
+    expect(nameInput).to.not.be.null;
     const nameValue = await nameInput!.evaluate(el => (el as HTMLInputElement).value);
-    expect(nameValue).toBe(firstChar.name);
+    expect(nameValue).to.equal(firstChar.name);
   });
 });

@@ -9,12 +9,11 @@
  * across different entry types (characters, locations, organizations, sessions, PCs).
  */
 
-import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting, expandTopicNode, expandTypeNode } from '@e2etest/utils';
-import { Topics } from '@/types';
+import { Topics } from '../types';
 import {
   openEntry,
   clickContentTab,
@@ -55,17 +54,16 @@ const getAddRelationshipButton = async () => {
  * Relationship Tabs Component Tests
  * Verifies relationship tab visibility and navigation across entry types.
  */
-describe.serial('Relationship Tabs Component Tests', () => {
+describe('Relationship Tabs Component Tests', () => {
   let createdEntryUuid: string | null = null;
   const testEntryName = 'Test Relationship Entry';
 
-  beforeAll(async () => {
-    await ensureSetup(false);
+  before(async () => {
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
   });
 
-  afterAll(async () => {
+  after(async () => {
     if (createdEntryUuid) {
       try {
         await deleteEntryViaAPI(createdEntryUuid);
@@ -79,7 +77,7 @@ describe.serial('Relationship Tabs Component Tests', () => {
    * What it tests: Characters relationship tab is accessible.
    * Expected behavior: Characters tab content is visible.
    */
-  test('Characters relationship tab is accessible', async () => {
+  it('Characters relationship tab is accessible', async () => {
     const setting = testData.settings[0];
 
     // Open a character entry
@@ -93,14 +91,14 @@ describe.serial('Relationship Tabs Component Tests', () => {
 
     // Verify tab content is visible
     const tabContent = await getRelationshipTabContent('characters');
-    expect(tabContent).not.toBeNull();
+    expect(tabContent).to.not.be.null;
   });
 
   /**
    * What it tests: Locations relationship tab is accessible.
    * Expected behavior: Locations tab content is visible.
    */
-  test('Locations relationship tab is accessible', async () => {
+  it('Locations relationship tab is accessible', async () => {
     const setting = testData.settings[0];
 
     // Open a character entry
@@ -114,14 +112,14 @@ describe.serial('Relationship Tabs Component Tests', () => {
 
     // Verify tab content is visible
     const tabContent = await getRelationshipTabContent('locations');
-    expect(tabContent).not.toBeNull();
+    expect(tabContent).to.not.be.null;
   });
 
   /**
    * What it tests: Organizations relationship tab is accessible.
    * Expected behavior: Organizations tab content is visible.
    */
-  test('Organizations relationship tab is accessible', async () => {
+  it('Organizations relationship tab is accessible', async () => {
     const setting = testData.settings[0];
 
     // Open a character entry
@@ -135,14 +133,14 @@ describe.serial('Relationship Tabs Component Tests', () => {
 
     // Verify tab content is visible
     const tabContent = await getRelationshipTabContent('organizations');
-    expect(tabContent).not.toBeNull();
+    expect(tabContent).to.not.be.null;
   });
 
   /**
    * What it tests: Sessions tab is accessible.
    * Expected behavior: Sessions tab content is visible.
    */
-  test('Sessions tab is accessible', async () => {
+  it('Sessions tab is accessible', async () => {
     const setting = testData.settings[0];
 
     // Open a character entry
@@ -156,14 +154,14 @@ describe.serial('Relationship Tabs Component Tests', () => {
 
     // Verify tab content is visible
     const tabContent = await getRelationshipTabContent('sessions');
-    expect(tabContent).not.toBeNull();
+    expect(tabContent).to.not.be.null;
   });
 
   /**
    * What it tests: Location entry shows characters relationship tab.
    * Expected behavior: Characters tab content is visible.
    */
-  test('Location entry shows characters relationship tab', async () => {
+  it('Location entry shows characters relationship tab', async () => {
     const setting = testData.settings[0];
 
     // Open a location entry
@@ -177,14 +175,14 @@ describe.serial('Relationship Tabs Component Tests', () => {
 
     // Verify tab content is visible
     const tabContent = await getRelationshipTabContent('characters');
-    expect(tabContent).not.toBeNull();
+    expect(tabContent).to.not.be.null;
   });
 
   /**
    * What it tests: Location entry shows locations relationship tab (hierarchy).
    * Expected behavior: Locations tab content is visible.
    */
-  test('Location entry shows locations relationship tab (hierarchy)', async () => {
+  it('Location entry shows locations relationship tab (hierarchy)', async () => {
     const setting = testData.settings[0];
 
     // Open a location entry
@@ -198,14 +196,14 @@ describe.serial('Relationship Tabs Component Tests', () => {
 
     // Verify tab content is visible
     const tabContent = await getRelationshipTabContent('locations');
-    expect(tabContent).not.toBeNull();
+    expect(tabContent).to.not.be.null;
   });
 
   /**
    * What it tests: Organization entry shows characters relationship tab.
    * Expected behavior: Characters tab content is visible.
    */
-  test('Organization entry shows characters relationship tab', async () => {
+  it('Organization entry shows characters relationship tab', async () => {
     const setting = testData.settings[0];
 
     // Open an organization entry
@@ -219,14 +217,14 @@ describe.serial('Relationship Tabs Component Tests', () => {
 
     // Verify tab content is visible
     const tabContent = await getRelationshipTabContent('characters');
-    expect(tabContent).not.toBeNull();
+    expect(tabContent).to.not.be.null;
   });
 
   /**
    * What it tests: Organization entry shows organizations relationship tab.
    * Expected behavior: Organizations tab content is visible.
    */
-  test('Organization entry shows organizations relationship tab', async () => {
+  it('Organization entry shows organizations relationship tab', async () => {
     const setting = testData.settings[0];
 
     // Open an organization entry
@@ -240,14 +238,14 @@ describe.serial('Relationship Tabs Component Tests', () => {
 
     // Verify tab content is visible
     const tabContent = await getRelationshipTabContent('organizations');
-    expect(tabContent).not.toBeNull();
+    expect(tabContent).to.not.be.null;
   });
 
   /**
    * What it tests: PC entry shows characters relationship tab.
    * Expected behavior: Characters tab content is visible.
    */
-  test('PC entry shows characters relationship tab', async () => {
+  it('PC entry shows characters relationship tab', async () => {
     const setting = testData.settings[0];
 
     // Open a PC entry
@@ -261,14 +259,14 @@ describe.serial('Relationship Tabs Component Tests', () => {
 
     // Verify tab content is visible
     const tabContent = await getRelationshipTabContent('characters');
-    expect(tabContent).not.toBeNull();
+    expect(tabContent).to.not.be.null;
   });
 
   /**
    * What it tests: PC entry shows sessions tab.
    * Expected behavior: Sessions tab content is visible.
    */
-  test('PC entry shows sessions tab', async () => {
+  it('PC entry shows sessions tab', async () => {
     const setting = testData.settings[0];
 
     // Open a PC entry
@@ -282,14 +280,14 @@ describe.serial('Relationship Tabs Component Tests', () => {
 
     // Verify tab content is visible
     const tabContent = await getRelationshipTabContent('sessions');
-    expect(tabContent).not.toBeNull();
+    expect(tabContent).to.not.be.null;
   });
 
   /**
    * What it tests: Empty state message appears when no relationships exist.
    * Expected behavior: Empty state placeholder is visible.
    */
-  test('Empty state shows when no relationships', async () => {
+  it('Empty state shows when no relationships', async () => {
     const setting = testData.settings[0];
 
     // Create a new entry with no relationships
@@ -306,14 +304,14 @@ describe.serial('Relationship Tabs Component Tests', () => {
     // Tab should show empty state or no items
     const rows = await getRelationshipRows();
     // May be 0 or have empty state message - just verify no error
-    expect(rows.length).toBeGreaterThan(-1);
+    expect(rows.length).to.be.greaterThan(-1);
   });
 
   /**
    * What it tests: Relationship tabs are visible when opening a character entry.
    * Expected behavior: Relationship tab headers are present in the DOM.
    */
-  test('Relationship tabs are visible on character entry', async () => {
+  it('Relationship tabs are visible on character entry', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 

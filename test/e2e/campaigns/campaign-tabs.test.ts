@@ -3,10 +3,9 @@
  * Tests Ideas, Lore, PCs, and ToDo tabs within campaign content.
  */
 
-import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting } from '@e2etest/utils';
 
 /**
@@ -112,19 +111,18 @@ const getToDoRowCount = async (): Promise<number> => {
   return rows.length;
 };
 
-describe.serial('Campaign Content Tabs Tests', () => {
-  beforeAll(async () => {
-    await ensureSetup(false);
+describe('Campaign Content Tabs Tests', () => {
+  before(async () => {
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
   });
 
-  afterAll(async () => {
+  after(async () => {
     // Cleanup handled by test data reset
   });
 
   // Ideas Tab Tests
-  test('Navigate to Ideas tab', async () => {
+  it('Navigate to Ideas tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
 
@@ -133,28 +131,28 @@ describe.serial('Campaign Content Tabs Tests', () => {
 
     const page = sharedContext.page!;
     const ideasTab = await page.$('[data-tab="ideas"]');
-    expect(ideasTab).not.toBeNull();
+    expect(ideasTab).to.not.be.null;
   });
 
-  test('Ideas tab shows table component', async () => {
+  it('Ideas tab shows table component', async () => {
     const page = sharedContext.page!;
     
     // Wait for table to be visible
     await page.waitForSelector('.base-table, .fcb-table', { timeout: 5000 });
     
     const table = await page.$('.base-table, .fcb-table');
-    expect(table).not.toBeNull();
+    expect(table).to.not.be.null;
   });
 
-  test('Ideas tab has add button', async () => {
+  it('Ideas tab has add button', async () => {
     const page = sharedContext.page!;
     
     const addBtn = await page.$('[data-testid="base-table-add-button"], .fcb-table-add-button, button[class*="add"]');
-    expect(addBtn).not.toBeNull();
+    expect(addBtn).to.not.be.null;
   });
 
   // Lore Tab Tests
-  test('Navigate to Lore tab', async () => {
+  it('Navigate to Lore tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
 
@@ -163,28 +161,28 @@ describe.serial('Campaign Content Tabs Tests', () => {
 
     const page = sharedContext.page!;
     const loreTab = await page.$('[data-tab="lore"]');
-    expect(loreTab).not.toBeNull();
+    expect(loreTab).to.not.be.null;
   });
 
-  test('Lore tab shows table component', async () => {
+  it('Lore tab shows table component', async () => {
     const page = sharedContext.page!;
     
     // Wait for table to be visible
     await page.waitForSelector('.base-table, .fcb-table', { timeout: 5000 });
     
     const table = await page.$('.base-table, .fcb-table');
-    expect(table).not.toBeNull();
+    expect(table).to.not.be.null;
   });
 
-  test('Lore tab has add button', async () => {
+  it('Lore tab has add button', async () => {
     const page = sharedContext.page!;
     
     const addBtn = await page.$('[data-testid="base-table-add-button"], .fcb-table-add-button, button[class*="add"]');
-    expect(addBtn).not.toBeNull();
+    expect(addBtn).to.not.be.null;
   });
 
   // PCs Tab Tests
-  test('Navigate to PCs tab', async () => {
+  it('Navigate to PCs tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
 
@@ -193,28 +191,28 @@ describe.serial('Campaign Content Tabs Tests', () => {
 
     const page = sharedContext.page!;
     const pcsTab = await page.$('[data-tab="pcs"]');
-    expect(pcsTab).not.toBeNull();
+    expect(pcsTab).to.not.be.null;
   });
 
-  test('PCs tab shows table component', async () => {
+  it('PCs tab shows table component', async () => {
     const page = sharedContext.page!;
     
     // Wait for table to be visible
     await page.waitForSelector('.base-table, .fcb-table', { timeout: 5000 });
     
     const table = await page.$('.base-table, .fcb-table');
-    expect(table).not.toBeNull();
+    expect(table).to.not.be.null;
   });
 
-  test('PCs tab has add button', async () => {
+  it('PCs tab has add button', async () => {
     const page = sharedContext.page!;
     
     const addBtn = await page.$('[data-testid="base-table-add-button"], .fcb-table-add-button, button[class*="add"]');
-    expect(addBtn).not.toBeNull();
+    expect(addBtn).to.not.be.null;
   });
 
   // ToDo Tab Tests
-  test('Navigate to ToDo tab', async () => {
+  it('Navigate to ToDo tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
 
@@ -223,28 +221,28 @@ describe.serial('Campaign Content Tabs Tests', () => {
 
     const page = sharedContext.page!;
     const toDoTab = await page.$('[data-tab="toDo"]');
-    expect(toDoTab).not.toBeNull();
+    expect(toDoTab).to.not.be.null;
   });
 
-  test('ToDo tab shows table component', async () => {
+  it('ToDo tab shows table component', async () => {
     const page = sharedContext.page!;
     
     // Wait for table to be visible
     await page.waitForSelector('.base-table, .fcb-table', { timeout: 5000 });
     
     const table = await page.$('.base-table, .fcb-table');
-    expect(table).not.toBeNull();
+    expect(table).to.not.be.null;
   });
 
-  test('ToDo tab has add button', async () => {
+  it('ToDo tab has add button', async () => {
     const page = sharedContext.page!;
     
     const addBtn = await page.$('[data-testid="base-table-add-button"], .fcb-table-add-button, button[class*="add"]');
-    expect(addBtn).not.toBeNull();
+    expect(addBtn).to.not.be.null;
   });
 
   // Tab Navigation Tests
-  test('Can switch between multiple campaign tabs', async () => {
+  it('Can switch between multiple campaign tabs', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
 
@@ -261,10 +259,10 @@ describe.serial('Campaign Content Tabs Tests', () => {
     // Verify we're on PCs tab
     const page = sharedContext.page!;
     const pcsTab = await page.$('[data-tab="pcs"]');
-    expect(pcsTab).not.toBeNull();
+    expect(pcsTab).to.not.be.null;
   });
 
-  test('Description tab is always available', async () => {
+  it('Description tab is always available', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
 
@@ -273,6 +271,6 @@ describe.serial('Campaign Content Tabs Tests', () => {
 
     const page = sharedContext.page!;
     const descTab = await page.$('[data-tab="description"]');
-    expect(descTab).not.toBeNull();
+    expect(descTab).to.not.be.null;
   });
 });

@@ -9,12 +9,11 @@
  * across different entry types (characters, locations, organizations, PCs, etc.).
  */
 
-import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting, expandTopicNode, expandTypeNode } from '@e2etest/utils';
-import { Topics } from '@/types';
+import { Topics } from '../types';
 import {
   openEntry,
   createEntryViaAPI,
@@ -72,17 +71,16 @@ const hasImage = async (): Promise<boolean> => {
  * Image Picker Component Tests
  * Verifies image picker functionality across entry types.
  */
-describe.serial('Image Picker Component Tests', () => {
+describe('Image Picker Component Tests', () => {
   let createdEntryUuid: string | null = null;
   const testEntryName = 'Test Image Entry';
 
-  beforeAll(async () => {
-    await ensureSetup(false);
+  before(async () => {
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
   });
 
-  afterAll(async () => {
+  after(async () => {
     if (createdEntryUuid) {
       try {
         await deleteEntryViaAPI(createdEntryUuid);
@@ -96,7 +94,7 @@ describe.serial('Image Picker Component Tests', () => {
    * What it tests: Image picker is visible when opening a character entry.
    * Expected behavior: Image picker element is present in the DOM.
    */
-  test('Image picker is visible on character entry', async () => {
+  it('Image picker is visible on character entry', async () => {
     const setting = testData.settings[0];
 
     // Open a character entry
@@ -107,7 +105,7 @@ describe.serial('Image Picker Component Tests', () => {
 
     // Verify image picker is present
     const imagePicker = await getImagePicker();
-    expect(imagePicker).not.toBeNull();
+    expect(imagePicker).to.not.be.null;
   });
 
   /**
@@ -118,7 +116,7 @@ describe.serial('Image Picker Component Tests', () => {
    * What it tests: Remove button appears when an image is set.
    * Expected behavior: Remove button is visible after selecting an image.
    */
-  test('Image picker shows remove button when image set', async () => {
+  it('Image picker shows remove button when image set', async () => {
     const setting = testData.settings[0];
 
     // Open a location entry
@@ -129,18 +127,18 @@ describe.serial('Image Picker Component Tests', () => {
 
     // Verify image picker is present
     const imagePicker = await getImagePicker();
-    expect(imagePicker).not.toBeNull();
+    expect(imagePicker).to.not.be.null;
 
     // Verify remove button is present
     const removeButton = await getImageRemoveButton();
-    expect(removeButton).not.toBeNull();
+    expect(removeButton).to.not.be.null;
   });
 
   /**
    * What it tests: Image picker is visible when opening an organization entry.
    * Expected behavior: Image picker element is present in the DOM.
    */
-  test('Image picker is visible on organization entry', async () => {
+  it('Image picker is visible on organization entry', async () => {
     const setting = testData.settings[0];
 
     // Open an organization entry
@@ -151,7 +149,7 @@ describe.serial('Image Picker Component Tests', () => {
 
     // Verify image picker is present
     const imagePicker = await getImagePicker();
-    expect(imagePicker).not.toBeNull();
+    expect(imagePicker).to.not.be.null;
   });
 
   /**
@@ -162,7 +160,7 @@ describe.serial('Image Picker Component Tests', () => {
    * What it tests: Image picker is visible when opening a campaign.
    * Expected behavior: Image picker element is present in the DOM.
    */
-  test('Image picker is visible on campaign', async () => {
+  it('Image picker is visible on campaign', async () => {
     const setting = testData.settings[0];
 
     // Open a PC entry
@@ -173,10 +171,10 @@ describe.serial('Image Picker Component Tests', () => {
 
     // Verify image picker is present
     const imagePicker = await getImagePicker();
-    expect(imagePicker).not.toBeNull();
+    expect(imagePicker).to.not.be.null;
   });
 
-  test('Image change button is present', async () => {
+  it('Image change button is present', async () => {
     const setting = testData.settings[0];
 
     // Open a character entry
@@ -187,10 +185,10 @@ describe.serial('Image Picker Component Tests', () => {
 
     // Verify change button exists
     const changeBtn = await getImageChangeButton();
-    expect(changeBtn).not.toBeNull();
+    expect(changeBtn).to.not.be.null;
   });
 
-  test('Click image change button opens file picker', async () => {
+  it('Click image change button opens file picker', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -211,7 +209,7 @@ describe.serial('Image Picker Component Tests', () => {
     }
   });
 
-  test('Image element has correct styling', async () => {
+  it('Image element has correct styling', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -225,7 +223,7 @@ describe.serial('Image Picker Component Tests', () => {
     const imagePicker = await getImagePicker();
     if (imagePicker) {
       const className = await imagePicker.evaluate(el => el.className);
-      expect(className.includes('image') || className.includes('picker')).toBe(true);
+      expect(className.includes('image') || className.includes('picker')).to.equal(true);
     }
   });
 
@@ -233,7 +231,7 @@ describe.serial('Image Picker Component Tests', () => {
    * What it tests: Image picker has a clickable area to select images.
    * Expected behavior: Clicking opens the Foundry file picker.
    */
-  test('Image picker has clickable area', async () => {
+  it('Image picker has clickable area', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -255,10 +253,10 @@ describe.serial('Image Picker Component Tests', () => {
 
     // Verify image picker is present in description tab
     const imagePicker = await getImagePicker();
-    expect(imagePicker).not.toBeNull();
+    expect(imagePicker).to.not.be.null;
   });
 
-  test('Image picker on session', async () => {
+  it('Image picker on session', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -289,14 +287,14 @@ describe.serial('Image Picker Component Tests', () => {
 
     // Verify image picker is present
     const imagePicker = await getImagePicker();
-    expect(imagePicker).not.toBeNull();
+    expect(imagePicker).to.not.be.null;
   });
 
   /**
    * What it tests: Placeholder is shown when no image is selected.
    * Expected behavior: Placeholder element or default image is visible.
    */
-  test('Image picker shows placeholder when no image', async () => {
+  it('Image picker shows placeholder when no image', async () => {
     const setting = testData.settings[0];
 
     // Create a new entry without an image
@@ -309,7 +307,7 @@ describe.serial('Image Picker Component Tests', () => {
 
     // Image picker should still be present
     const imagePicker = await getImagePicker();
-    expect(imagePicker).not.toBeNull();
+    expect(imagePicker).to.not.be.null;
 
     // May have placeholder image or no image
     const img = await getImageElement();

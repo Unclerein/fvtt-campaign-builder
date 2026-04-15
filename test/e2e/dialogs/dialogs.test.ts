@@ -4,10 +4,9 @@
  * relationship dialogs, and dialog cancellation.
  */
 
-import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting, openEntry } from '@e2etest/utils';
 import { getByTestId } from '../helpers';
 
@@ -113,17 +112,16 @@ const deleteEntryViaAPI = async (uuid: string): Promise<void> => {
  * Dialog Tests
  * Verifies dialog visibility, interaction, and cancellation.
  */
-describe.serial('Dialog Tests', () => {
+describe('Dialog Tests', () => {
   let createdEntryUuid: string | null = null;
   const testEntryName = 'Test Dialog Entry';
 
-  beforeAll(async () => {
-    await ensureSetup(false);
+  before(async () => {
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
   });
 
-  afterAll(async () => {
+  after(async () => {
     if (createdEntryUuid) {
       try {
         await deleteEntryViaAPI(createdEntryUuid);
@@ -134,41 +132,41 @@ describe.serial('Dialog Tests', () => {
   });
 
   // Create Entry Dialog Tests
-  test('Create entry button is visible in directory', async () => {
+  it('Create entry button is visible in directory', async () => {
     const page = sharedContext.page!;
     const createBtn = await page.$('.fcb-directory-header .fa-plus, [data-testid="create-entry-button"]');
-    expect(createBtn).not.toBeNull();
+    expect(createBtn).to.not.be.null;
   });
 
-  test('Open create entry dialog', async () => {
+  it('Open create entry dialog', async () => {
     await openCreateEntryDialog();
     
     const isVisible = await isDialogVisible();
-    expect(isVisible).toBe(true);
+    expect(isVisible).to.equal(true);
   });
 
   /**
    * What it tests: Create entry dialog has a title.
    * Expected behavior: Dialog title is present and not empty.
    */
-  test('Create entry dialog has title', async () => {
+  it('Create entry dialog has title', async () => {
     const title = await getDialogTitle();
-    expect(title.length).toBeGreaterThan(0);
+    expect(title.length).to.be.greaterThan(0);
   });
 
   /**
    * What it tests: Create entry dialog can be closed.
    * Expected behavior: Dialog is no longer visible after closing.
    */
-  test('Close create entry dialog', async () => {
+  it('Close create entry dialog', async () => {
     await closeDialog();
     
     const isVisible = await isDialogVisible();
-    expect(isVisible).toBe(false);
+    expect(isVisible).to.equal(false);
   });
 
   // Relationship Dialog Tests
-  test('Open entry for relationship testing', async () => {
+  it('Open entry for relationship testing', async () => {
     const setting = testData.settings[0];
     const characters = setting.topics[1]; // Topics.Character = 1
 
@@ -182,18 +180,18 @@ describe.serial('Dialog Tests', () => {
 
     const page = sharedContext.page!;
     const nameHeader = await page.$('.fcb-name-header');
-    expect(nameHeader).not.toBeNull();
+    expect(nameHeader).to.not.be.null;
   });
 
-  test('Entry has relationship section', async () => {
+  it('Entry has relationship section', async () => {
     const page = sharedContext.page!;
     
     // Look for relationships tab or section
     const relationshipSection = await page.$('[data-tab="relationships"], .fcb-relationships-section');
-    expect(relationshipSection).not.toBeNull();
+    expect(relationshipSection).to.not.be.null;
   });
 
-  test('Navigate to relationships tab', async () => {
+  it('Navigate to relationships tab', async () => {
     const page = sharedContext.page!;
     
     const relTab = await page.$('[data-tab="relationships"]');
@@ -203,10 +201,10 @@ describe.serial('Dialog Tests', () => {
     }
 
     const activeTab = await page.$('[data-tab="relationships"].active, [data-tab="relationships"][aria-selected="true"]');
-    expect(activeTab).not.toBeNull();
+    expect(activeTab).to.not.be.null;
   });
 
-  test('Add relationship button exists', async () => {
+  it('Add relationship button exists', async () => {
     const page = sharedContext.page!;
     
     // First navigate to relationships tab
@@ -217,10 +215,10 @@ describe.serial('Dialog Tests', () => {
     }
 
     const addBtn = await page.$('.fcb-relationship-add, [data-testid="add-relationship-button"], .fa-user-plus');
-    expect(addBtn).not.toBeNull();
+    expect(addBtn).to.not.be.null;
   });
 
-  test('Open add relationship dialog', async () => {
+  it('Open add relationship dialog', async () => {
     const page = sharedContext.page!;
     
     // First navigate to relationships tab
@@ -233,19 +231,19 @@ describe.serial('Dialog Tests', () => {
     await clickAddRelationshipButton();
     
     const isVisible = await isDialogVisible();
-    expect(isVisible).toBe(true);
+    expect(isVisible).to.equal(true);
   });
 
-  test('Relationship dialog has title', async () => {
+  it('Relationship dialog has title', async () => {
     const title = await getDialogTitle();
-    expect(title.length).toBeGreaterThan(0);
+    expect(title.length).to.be.greaterThan(0);
   });
 
-  test('Close relationship dialog', async () => {
+  it('Close relationship dialog', async () => {
     await closeDialog();
     
     const isVisible = await isDialogVisible();
-    expect(isVisible).toBe(false);
+    expect(isVisible).to.equal(false);
   });
 
   // Dialog Button Tests
@@ -253,22 +251,22 @@ describe.serial('Dialog Tests', () => {
    * What it tests: Confirm dialog displays the correct message.
    * Expected behavior: Dialog message matches the expected text.
    */
-  test('Dialog has cancel button', async () => {
+  it('Dialog has cancel button', async () => {
     await openCreateEntryDialog();
     
     const page = sharedContext.page!;
     const cancelBtn = await page.$('.fcb-dialog-button:has-text("Cancel"), button:has-text("Cancel")');
-    expect(cancelBtn).not.toBeNull();
+    expect(cancelBtn).to.not.be.null;
     
     await closeDialog();
   });
 
-  test('Dialog has action button', async () => {
+  it('Dialog has action button', async () => {
     await openCreateEntryDialog();
     
     const page = sharedContext.page!;
     const actionBtn = await page.$('.fcb-dialog-button.primary, .fcb-dialog-button.default');
-    expect(actionBtn).not.toBeNull();
+    expect(actionBtn).to.not.be.null;
     
     await closeDialog();
   });

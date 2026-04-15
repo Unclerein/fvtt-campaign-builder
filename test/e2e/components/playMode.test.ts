@@ -4,10 +4,9 @@
  * session navigation, and generator bar visibility.
  */
 
-import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting } from '@e2etest/utils';
 import { getByTestId } from '../helpers';
 
@@ -140,12 +139,11 @@ const getCampaignUuidViaAPI = async (campaignName: string, settingName: string):
  * Play Mode Tests
  * Verifies play mode functionality and navigation.
  */
-describe.serial('Play Mode Tests', () => {
+describe('Play Mode Tests', () => {
   let campaignUuid: string | null = null;
   let createdSessionUuid: string | null = null;
 
-  beforeAll(async () => {
-    await ensureSetup(false);
+  before(async () => {
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
 
@@ -159,7 +157,7 @@ describe.serial('Play Mode Tests', () => {
     }
   });
 
-  afterAll(async () => {
+  after(async () => {
     if (createdSessionUuid) {
       try {
         await deleteSessionViaAPI(createdSessionUuid);
@@ -173,17 +171,17 @@ describe.serial('Play Mode Tests', () => {
    * What it tests: Play mode toggle button is visible.
    * Expected behavior: Toggle button is present in the UI.
    */
-  test('Play mode toggle is visible', async () => {
+  it('Play mode toggle is visible', async () => {
     const page = sharedContext.page!;
     const toggle = await page.$('.fcb-play-mode-toggle, .p-toggleswitch');
-    expect(toggle).not.toBeNull();
+    expect(toggle).to.not.be.null;
   });
 
   /**
    * What it tests: Toggling play mode on activates play mode UI.
    * Expected behavior: Play mode navigation becomes visible.
    */
-  test('Toggle play mode on', async () => {
+  it('Toggle play mode on', async () => {
     const isActive = await isPlayModeActive();
     
     if (!isActive) {
@@ -191,14 +189,14 @@ describe.serial('Play Mode Tests', () => {
     }
     
     const nowActive = await isPlayModeActive();
-    expect(nowActive).toBe(true);
+    expect(nowActive).to.equal(true);
   });
 
   /**
    * What it tests: Play mode shows session buttons bar.
    * Expected behavior: Session buttons bar is present in the UI.
    */
-  test('Play mode shows session buttons bar', async () => {
+  it('Play mode shows session buttons bar', async () => {
     const isActive = await isPlayModeActive();
     if (!isActive) {
       await togglePlayMode();
@@ -206,14 +204,14 @@ describe.serial('Play Mode Tests', () => {
     
     const page = sharedContext.page!;
     const sessionButtonsBar = await page.$('.fcb-play-session-tabs');
-    expect(sessionButtonsBar).not.toBeNull();
+    expect(sessionButtonsBar).to.not.be.null;
   });
 
   /**
    * What it tests: Play mode shows generator bar.
    * Expected behavior: Generator bar is present in the UI.
    */
-  test('Play mode shows generator bar', async () => {
+  it('Play mode shows generator bar', async () => {
     const isActive = await isPlayModeActive();
     if (!isActive) {
       await togglePlayMode();
@@ -221,42 +219,42 @@ describe.serial('Play Mode Tests', () => {
     
     const page = sharedContext.page!;
     const generatorBar = await page.$('.fcb-play-generators');
-    expect(generatorBar).not.toBeNull();
+    expect(generatorBar).to.not.be.null;
   });
 
   /**
    * What it tests: Session navigation buttons are visible in play mode.
    * Expected behavior: Previous/next session buttons are present.
    */
-  test('Session buttons are visible in play mode', async () => {
+  it('Session buttons are visible in play mode', async () => {
     const isActive = await isPlayModeActive();
     if (!isActive) {
       await togglePlayMode();
     }
     
     const buttonCount = await getSessionTabButtons();
-    expect(buttonCount).toBeGreaterThan(0);
+    expect(buttonCount).to.be.greaterThan(0);
   });
 
   /**
    * What it tests: Generator buttons are visible in play mode.
    * Expected behavior: Generator buttons are present.
    */
-  test('Generator buttons are visible in play mode', async () => {
+  it('Generator buttons are visible in play mode', async () => {
     const isActive = await isPlayModeActive();
     if (!isActive) {
       await togglePlayMode();
     }
     
     const buttonCount = await getGeneratorButtons();
-    expect(buttonCount).toBeGreaterThan(0);
+    expect(buttonCount).to.be.greaterThan(0);
   });
 
   /**
    * What it tests: Notes session tab button exists.
    * Expected behavior: Notes button is present in the UI.
    */
-  test('Notes session tab button exists', async () => {
+  it('Notes session tab button exists', async () => {
     const isActive = await isPlayModeActive();
     if (!isActive) {
       await togglePlayMode();
@@ -264,14 +262,14 @@ describe.serial('Play Mode Tests', () => {
     
     const page = sharedContext.page!;
     const notesButton = await page.$('[data-testid="session-tab-button-notes"]');
-    expect(notesButton).not.toBeNull();
+    expect(notesButton).to.not.be.null;
   });
 
   /**
    * What it tests: Lore session tab button exists.
    * Expected behavior: Lore button is present in the UI.
    */
-  test('Lore session tab button exists', async () => {
+  it('Lore session tab button exists', async () => {
     const isActive = await isPlayModeActive();
     if (!isActive) {
       await togglePlayMode();
@@ -279,14 +277,14 @@ describe.serial('Play Mode Tests', () => {
     
     const page = sharedContext.page!;
     const loreButton = await page.$('[data-testid="session-tab-button-lore"]');
-    expect(loreButton).not.toBeNull();
+    expect(loreButton).to.not.be.null;
   });
 
   /**
    * What it tests: NPC generator button exists.
    * Expected behavior: NPC button is present in the UI.
    */
-  test('NPC generator button exists', async () => {
+  it('NPC generator button exists', async () => {
     const isActive = await isPlayModeActive();
     if (!isActive) {
       await togglePlayMode();
@@ -294,14 +292,14 @@ describe.serial('Play Mode Tests', () => {
     
     const page = sharedContext.page!;
     const npcButton = await page.$('[data-testid="generator-button-npc"]');
-    expect(npcButton).not.toBeNull();
+    expect(npcButton).to.not.be.null;
   });
 
   /**
    * What it tests: Town generator button exists.
    * Expected behavior: Town button is present in the UI.
    */
-  test('Town generator button exists', async () => {
+  it('Town generator button exists', async () => {
     const isActive = await isPlayModeActive();
     if (!isActive) {
       await togglePlayMode();
@@ -309,14 +307,14 @@ describe.serial('Play Mode Tests', () => {
     
     const page = sharedContext.page!;
     const townButton = await page.$('[data-testid="generator-button-town"]');
-    expect(townButton).not.toBeNull();
+    expect(townButton).to.not.be.null;
   });
 
   /**
    * What it tests: Clicking notes tab button opens session.
    * Expected behavior: Session content is visible.
    */
-  test('Click notes tab button opens session', async () => {
+  it('Click notes tab button opens session', async () => {
     const isActive = await isPlayModeActive();
     if (!isActive) {
       await togglePlayMode();
@@ -328,14 +326,14 @@ describe.serial('Play Mode Tests', () => {
     const page = sharedContext.page!;
     await delay(500);
     const sessionContent = await page.$('.fcb-session-content, .fcb-name-header');
-    expect(sessionContent).not.toBeNull();
+    expect(sessionContent).to.not.be.null;
   });
 
   /**
    * What it tests: Campaign selector is visible when in play mode.
    * Expected behavior: Campaign selector dropdown is present.
    */
-  test('Campaign selector is visible in play mode', async () => {
+  it('Campaign selector is visible in play mode', async () => {
     const isActive = await isPlayModeActive();
     
     if (isActive) {
@@ -343,14 +341,14 @@ describe.serial('Play Mode Tests', () => {
     }
     
     const selector = await getCampaignSelector();
-    expect(selector).toBe(true);
+    expect(selector).to.equal(true);
   });
 
   /**
    * What it tests: Disabling play mode hides play mode UI.
    * Expected behavior: Play mode navigation is not visible.
    */
-  test('Disable play mode', async () => {
+  it('Disable play mode', async () => {
     const isActive = await isPlayModeActive();
     
     if (isActive) {
@@ -358,6 +356,6 @@ describe.serial('Play Mode Tests', () => {
     }
     
     const nowActive = await isPlayModeActive();
-    expect(nowActive).toBe(false);
+    expect(nowActive).to.equal(false);
   });
 });

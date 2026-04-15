@@ -4,10 +4,9 @@
  * location/NPC management, tab navigation, and play mode.
  */
 
-import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting } from '@e2etest/utils';
 import { getByTestId } from '../helpers';
 
@@ -176,13 +175,12 @@ const setSessionNumber = async (number: string): Promise<void> => {
  * Session Tests
  * Verifies session CRUD operations, location/NPC management, and navigation.
  */
-describe.serial('Session Tests', () => {
+describe('Session Tests', () => {
   let createdSessionUuid: string | null = null;
   let campaignUuid: string | null = null;
   const testSessionName = 'Test Session E2E';
 
-  beforeAll(async () => {
-    await ensureSetup(false);
+  before(async () => {
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
 
@@ -190,7 +188,7 @@ describe.serial('Session Tests', () => {
     campaignUuid = await getCampaignUuidViaAPI(setting.campaigns[0].name, setting.name);
   });
 
-  afterAll(async () => {
+  after(async () => {
     // Clean up created session
     if (createdSessionUuid) {
       try {
@@ -205,7 +203,7 @@ describe.serial('Session Tests', () => {
    * What it tests: Opening an existing session from the campaign directory tree.
    * Expected behavior: Session opens and displays the correct name in the header.
    */
-  test('Open existing session', async () => {
+  it('Open existing session', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -215,21 +213,21 @@ describe.serial('Session Tests', () => {
 
     // Verify session content is displayed
     const nameValue = await getSessionNameValue();
-    expect(nameValue).toBe(firstSession.name);
+    expect(nameValue).to.equal(firstSession.name);
   });
 
   /**
    * What it tests: Creating a new session via the API and verifying it in the directory.
    * Expected behavior: Session is created and visible in the directory.
    */
-  test('Create new session via API and verify in directory', async () => {
+  it('Create new session via API and verify in directory', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
 
     // Create session via API
     const sessionNumber = firstCampaign.sessions.length + 1;
     createdSessionUuid = await createSessionViaAPI(testSessionName, sessionNumber, campaignUuid!);
-    expect(createdSessionUuid).not.toBeNull();
+    expect(createdSessionUuid).to.not.be.null;
 
     // Refresh the directory
     await switchToSetting(testData.settings[1].name);
@@ -240,14 +238,14 @@ describe.serial('Session Tests', () => {
 
     // Verify name
     const nameValue = await getSessionNameValue();
-    expect(nameValue).toBe(testSessionName);
+    expect(nameValue).to.equal(testSessionName);
   });
 
   /**
    * What it tests: Editing a session's name with debounced auto-save.
    * Expected behavior: Name change persists after debounce period.
    */
-  test('Edit session name with debounce', async () => {
+  it('Edit session name with debounce', async () => {
     // Make sure we have the session open
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
@@ -259,14 +257,14 @@ describe.serial('Session Tests', () => {
 
     // Verify the name changed
     const nameValue = await getSessionNameValue();
-    expect(nameValue).toBe(newName);
+    expect(nameValue).to.equal(newName);
   });
 
   /**
    * What it tests: Session number is displayed in the header.
    * Expected behavior: Session number is visible.
    */
-  test('Session number is displayed', async () => {
+  it('Session number is displayed', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -276,14 +274,14 @@ describe.serial('Session Tests', () => {
 
     // Verify session number is displayed
     const numberValue = await getSessionNumberValue();
-    expect(numberValue).toBe(firstSession.number.toString());
+    expect(numberValue).to.equal(firstSession.number.toString());
   });
 
   /**
    * What it tests: Switching to the notes tab showing session notes.
    * Expected behavior: Notes tab becomes visible with editor.
    */
-  test('Switch to notes tab', async () => {
+  it('Switch to notes tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -294,14 +292,14 @@ describe.serial('Session Tests', () => {
     // Verify notes tab is active by default (editor visible)
     const page = sharedContext.page!;
     const editor = await page.$('.ProseMirror');
-    expect(editor).not.toBeNull();
+    expect(editor).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the items tab showing items for this session.
    * Expected behavior: Items tab becomes visible with item list.
    */
-  test('Switch to items tab', async () => {
+  it('Switch to items tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -315,14 +313,14 @@ describe.serial('Session Tests', () => {
     // Verify items tab content is visible
     const page = sharedContext.page!;
     const itemsTab = await page.$('[data-tab="items"]');
-    expect(itemsTab).not.toBeNull();
+    expect(itemsTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the locations tab showing locations for this session.
    * Expected behavior: Locations tab becomes visible with location list.
    */
-  test('Switch to locations tab', async () => {
+  it('Switch to locations tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -336,14 +334,14 @@ describe.serial('Session Tests', () => {
     // Verify locations tab content is visible
     const page = sharedContext.page!;
     const locationsTab = await page.$('[data-tab="locations"]');
-    expect(locationsTab).not.toBeNull();
+    expect(locationsTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the journals tab showing linked journals.
    * Expected behavior: Journals tab becomes visible.
    */
-  test('Switch to journals tab', async () => {
+  it('Switch to journals tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -357,14 +355,14 @@ describe.serial('Session Tests', () => {
     // Verify journals tab content is visible
     const page = sharedContext.page!;
     const journalsTab = await page.$('[data-tab="journals"]');
-    expect(journalsTab).not.toBeNull();
+    expect(journalsTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the monsters tab showing monsters for this session.
    * Expected behavior: Monsters tab becomes visible with monster list.
    */
-  test('Switch to monsters tab', async () => {
+  it('Switch to monsters tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -378,14 +376,14 @@ describe.serial('Session Tests', () => {
     // Verify monsters tab content is visible
     const page = sharedContext.page!;
     const monstersTab = await page.$('[data-tab="monsters"]');
-    expect(monstersTab).not.toBeNull();
+    expect(monstersTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the NPCs tab showing NPCs for this session.
    * Expected behavior: NPCs tab becomes visible with NPC list.
    */
-  test('Switch to NPCs tab', async () => {
+  it('Switch to NPCs tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -399,14 +397,14 @@ describe.serial('Session Tests', () => {
     // Verify NPCs tab content is visible
     const page = sharedContext.page!;
     const npcsTab = await page.$('[data-tab="npcs"]');
-    expect(npcsTab).not.toBeNull();
+    expect(npcsTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the vignettes tab showing vignettes for this session.
    * Expected behavior: Vignettes tab becomes visible with vignette list.
    */
-  test('Switch to vignettes tab', async () => {
+  it('Switch to vignettes tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -420,14 +418,14 @@ describe.serial('Session Tests', () => {
     // Verify vignettes tab content is visible
     const page = sharedContext.page!;
     const vignettesTab = await page.$('[data-tab="vignettes"]');
-    expect(vignettesTab).not.toBeNull();
+    expect(vignettesTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the PCs tab showing PCs for this session.
    * Expected behavior: PCs tab becomes visible with PC list.
    */
-  test('Switch to PCs tab', async () => {
+  it('Switch to PCs tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -441,14 +439,14 @@ describe.serial('Session Tests', () => {
     // Verify PCs tab content is visible
     const page = sharedContext.page!;
     const pcsTab = await page.$('[data-tab="pcs"]');
-    expect(pcsTab).not.toBeNull();
+    expect(pcsTab).to.not.be.null;
   });
 
   /**
    * What it tests: Session tags are visible.
    * Expected behavior: Tags component is present.
    */
-  test('Session tags are visible', async () => {
+  it('Session tags are visible', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -459,6 +457,6 @@ describe.serial('Session Tests', () => {
     // Verify tags component is present
     const page = sharedContext.page!;
     const tagsComponent = await page.$('.tags-wrapper');
-    expect(tagsComponent).not.toBeNull();
+    expect(tagsComponent).to.not.be.null;
   });
 });

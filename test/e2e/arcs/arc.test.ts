@@ -4,10 +4,9 @@
  * session management, tab navigation, and arc progression.
  */
 
-import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting } from '@e2etest/utils';
 import { getByTestId } from '../helpers';
 
@@ -145,13 +144,12 @@ const getCampaignUuidViaAPI = async (campaignName: string, settingName: string):
  * Arc Tests
  * Verifies arc CRUD operations, session management, and navigation.
  */
-describe.serial('Arc Tests', () => {
+describe('Arc Tests', () => {
   let createdArcUuid: string | null = null;
   let campaignUuid: string | null = null;
   const testArcName = 'Test Arc E2E';
 
-  beforeAll(async () => {
-    await ensureSetup(false);
+  before(async () => {
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
 
@@ -163,7 +161,7 @@ describe.serial('Arc Tests', () => {
     }
   });
 
-  afterAll(async () => {
+  after(async () => {
     if (createdArcUuid) {
       try {
         await deleteArcViaAPI(createdArcUuid);
@@ -177,15 +175,15 @@ describe.serial('Arc Tests', () => {
    * What it tests: Creating a new arc via the API.
    * Expected behavior: Arc is created and has a valid UUID.
    */
-  test('Create new arc via API', async () => {
-    expect(createdArcUuid).not.toBeNull();
+  it('Create new arc via API', async () => {
+    expect(createdArcUuid).to.not.be.null;
   });
 
   /**
    * What it tests: Opening an existing arc from the campaign directory tree.
    * Expected behavior: Arc opens and displays the correct name in the header.
    */
-  test('Open existing arc', async () => {
+  it('Open existing arc', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -200,14 +198,14 @@ describe.serial('Arc Tests', () => {
     await openArc(firstCampaign.name, testArcName);
 
     const nameValue = await getArcNameValue();
-    expect(nameValue).toBe(testArcName);
+    expect(nameValue).to.equal(testArcName);
   });
 
   /**
    * What it tests: Editing an arc's name with debounced auto-save.
    * Expected behavior: Name change persists after debounce period.
    */
-  test('Edit arc name with debounce', async () => {
+  it('Edit arc name with debounce', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -221,7 +219,7 @@ describe.serial('Arc Tests', () => {
     await setArcName(newName);
 
     const nameValue = await getArcNameValue();
-    expect(nameValue).toBe(newName);
+    expect(nameValue).to.equal(newName);
   });
 
   // Tab Navigation Tests
@@ -229,7 +227,7 @@ describe.serial('Arc Tests', () => {
    * What it tests: Switching to the description tab showing arc description.
    * Expected behavior: Description tab becomes visible.
    */
-  test('Switch to description tab', async () => {
+  it('Switch to description tab', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -242,14 +240,14 @@ describe.serial('Arc Tests', () => {
 
     const page = sharedContext.page!;
     const descTab = await page.$('[data-tab="description"]');
-    expect(descTab).not.toBeNull();
+    expect(descTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the journals tab showing linked journals.
    * Expected behavior: Journals tab becomes visible.
    */
-  test('Switch to journals tab', async () => {
+  it('Switch to journals tab', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -262,14 +260,14 @@ describe.serial('Arc Tests', () => {
 
     const page = sharedContext.page!;
     const journalsTab = await page.$('[data-tab="journals"]');
-    expect(journalsTab).not.toBeNull();
+    expect(journalsTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the sessions tab showing sessions in this arc.
    * Expected behavior: Sessions tab becomes visible with session list.
    */
-  test('Switch to sessions tab', async () => {
+  it('Switch to sessions tab', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -282,14 +280,14 @@ describe.serial('Arc Tests', () => {
 
     const page = sharedContext.page!;
     const sessionsTab = await page.$('[data-tab="sessions"]');
-    expect(sessionsTab).not.toBeNull();
+    expect(sessionsTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the vignettes tab showing vignettes in this arc.
    * Expected behavior: Vignettes tab becomes visible.
    */
-  test('Switch to vignettes tab', async () => {
+  it('Switch to vignettes tab', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -302,14 +300,14 @@ describe.serial('Arc Tests', () => {
 
     const page = sharedContext.page!;
     const vignettesTab = await page.$('[data-tab="vignettes"]');
-    expect(vignettesTab).not.toBeNull();
+    expect(vignettesTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the locations tab showing locations in this arc.
    * Expected behavior: Locations tab becomes visible.
    */
-  test('Switch to locations tab', async () => {
+  it('Switch to locations tab', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -322,14 +320,14 @@ describe.serial('Arc Tests', () => {
 
     const page = sharedContext.page!;
     const locationsTab = await page.$('[data-tab="locations"]');
-    expect(locationsTab).not.toBeNull();
+    expect(locationsTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the monsters tab showing monsters in this arc.
    * Expected behavior: Monsters tab becomes visible.
    */
-  test('Switch to monsters tab', async () => {
+  it('Switch to monsters tab', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -342,14 +340,14 @@ describe.serial('Arc Tests', () => {
 
     const page = sharedContext.page!;
     const monstersTab = await page.$('[data-tab="monsters"]');
-    expect(monstersTab).not.toBeNull();
+    expect(monstersTab).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the ideas tab showing ideas in this arc.
    * Expected behavior: Ideas tab becomes visible.
    */
-  test('Switch to ideas tab', async () => {
+  it('Switch to ideas tab', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -362,14 +360,14 @@ describe.serial('Arc Tests', () => {
 
     const page = sharedContext.page!;
     const ideasTab = await page.$('[data-tab="ideas"]');
-    expect(ideasTab).not.toBeNull();
+    expect(ideasTab).to.not.be.null;
   });
 
   /**
    * What it tests: Arc progression indicator is visible.
    * Expected behavior: Progression UI element is present.
    */
-  test('Arc progression is visible', async () => {
+  it('Arc progression is visible', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -381,14 +379,14 @@ describe.serial('Arc Tests', () => {
 
     const page = sharedContext.page!;
     const progressionIndicator = await page.$('.progression-indicator');
-    expect(progressionIndicator).not.toBeNull();
+    expect(progressionIndicator).to.not.be.null;
   });
 
   /**
    * What it tests: Arc tags are visible.
    * Expected behavior: Tags UI element is present.
    */
-  test('Arc tags are visible', async () => {
+  it('Arc tags are visible', async () => {
     if (!createdArcUuid) {
       return;
     }
@@ -400,6 +398,6 @@ describe.serial('Arc Tests', () => {
 
     const page = sharedContext.page!;
     const tagsComponent = await page.$('.tags-wrapper');
-    expect(tagsComponent).not.toBeNull();
+    expect(tagsComponent).to.not.be.null;
   });
 });

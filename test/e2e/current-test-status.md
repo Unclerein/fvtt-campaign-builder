@@ -7,31 +7,29 @@
 
 For each test file:
 
-1. **Run single file:** `npm test -- --file <path>` 
+1. **Run single file:** `mocha --config test/e2e/.mocharc.json test/e2e/<path>.test.ts` 
 2. **Verify all tests pass**
 3. **Modify test file** following existing patterns from e2e/entries/`character.test.ts`  
 
 ### Test File Template
 
 ```typescript
-import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting, expandTopicNode } from '@e2etest/utils';
 // Import test utilities
 
-describe.serial('Feature Name Tests', () => {
-  beforeAll(async () => {
-    await ensureSetup(false);
-    // Setup code
+describe('Feature Name Tests', () => {
+  before(async () => {
+    // Setup code (browser/data setup handled by globalSetup)
   });
 
-  afterAll(async () => {
+  after(async () => {
     // Cleanup created objects
   });
 
-  test('Test description', async () => {
+  it('Test description', async () => {
     // Test implementation
   });
 });

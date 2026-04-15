@@ -3,10 +3,9 @@
  * Tests search input, results display, and navigation.
  */
 
-import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting } from '@e2etest/utils';
 import { getByTestId } from '../helpers';
 
@@ -109,29 +108,28 @@ const clickSearchResult = async (index: number): Promise<void> => {
   }
 };
 
-describe.serial('Search Component Tests', () => {
-  beforeAll(async () => {
-    await ensureSetup(false);
+describe('Search Component Tests', () => {
+  before(async () => {
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
   });
 
-  test('Search input is visible', async () => {
+  it('Search input is visible', async () => {
     const hasInput = await getSearchInput();
-    expect(hasInput).toBe(true);
+    expect(hasInput).to.equal(true);
   });
 
-  test('Search input has placeholder', async () => {
+  it('Search input has placeholder', async () => {
     const page = sharedContext.page!;
     const input = await page.$('[data-testid="search-input"], .fcb-search-input');
     
     if (input) {
       const placeholder = await input.evaluate(el => (el as HTMLInputElement).placeholder);
-      expect(placeholder.length).toBeGreaterThan(0);
+      expect(placeholder.length).to.be.greaterThan(0);
     }
   });
 
-  test('Type in search input', async () => {
+  it('Type in search input', async () => {
     await typeInSearch('test');
     
     const page = sharedContext.page!;
@@ -139,13 +137,13 @@ describe.serial('Search Component Tests', () => {
     
     if (input) {
       const value = await input.evaluate(el => (el as HTMLInputElement).value);
-      expect(value).toBe('test');
+      expect(value).to.equal('test');
     }
     
     await clearSearch();
   });
 
-  test('Search with 3 characters shows results', async () => {
+  it('Search with 3 characters shows results', async () => {
     // Use a search term that should match something
     const setting = testData.settings[0];
     const characters = setting.topics[1]; // Topics.Character
@@ -159,13 +157,13 @@ describe.serial('Search Component Tests', () => {
       await delay(500);
       
       const isVisible = await areResultsVisible();
-      expect(isVisible).toBe(true);
+      expect(isVisible).to.equal(true);
     }
     
     await clearSearch();
   });
 
-  test('Search results contain matching entries', async () => {
+  it('Search results contain matching entries', async () => {
     const setting = testData.settings[0];
     const characters = setting.topics[1]; // Topics.Character
     
@@ -176,13 +174,13 @@ describe.serial('Search Component Tests', () => {
       await delay(500);
       
       const resultCount = await getSearchResults();
-      expect(resultCount).toBeGreaterThan(0);
+      expect(resultCount).to.be.greaterThan(0);
     }
     
     await clearSearch();
   });
 
-  test('Arrow down selects next result', async () => {
+  it('Arrow down selects next result', async () => {
     const setting = testData.settings[0];
     const characters = setting.topics[1];
     
@@ -200,14 +198,14 @@ describe.serial('Search Component Tests', () => {
         await delay(100);
         
         const selectedIndex = await getSelectedResultIndex();
-        expect(selectedIndex).toBe(0);
+        expect(selectedIndex).to.equal(0);
       }
     }
     
     await clearSearch();
   });
 
-  test('Arrow up selects previous result', async () => {
+  it('Arrow up selects previous result', async () => {
     const setting = testData.settings[0];
     const characters = setting.topics[1];
     
@@ -231,14 +229,14 @@ describe.serial('Search Component Tests', () => {
         await delay(100);
         
         const selectedIndex = await getSelectedResultIndex();
-        expect(selectedIndex).toBe(0);
+        expect(selectedIndex).to.equal(0);
       }
     }
     
     await clearSearch();
   });
 
-  test('Escape closes results', async () => {
+  it('Escape closes results', async () => {
     const setting = testData.settings[0];
     const characters = setting.topics[1];
     
@@ -254,13 +252,13 @@ describe.serial('Search Component Tests', () => {
       await delay(100);
       
       const isVisible = await areResultsVisible();
-      expect(isVisible).toBe(false);
+      expect(isVisible).to.equal(false);
     }
     
     await clearSearch();
   });
 
-  test('Click result opens entry', async () => {
+  it('Click result opens entry', async () => {
     const setting = testData.settings[0];
     const characters = setting.topics[1];
     
@@ -278,20 +276,20 @@ describe.serial('Search Component Tests', () => {
         // Verify content opened
         const page = sharedContext.page!;
         const content = await page.$('.fcb-name-header, .fcb-content-wrapper');
-        expect(content).not.toBeNull();
+        expect(content).to.not.be.null;
       }
     }
     
     await clearSearch();
   });
 
-  test('Search icon is visible', async () => {
+  it('Search icon is visible', async () => {
     const page = sharedContext.page!;
     const icon = await page.$('.fcb-search-icon');
-    expect(icon).not.toBeNull();
+    expect(icon).to.not.be.null;
   });
 
-  test('Clear search input', async () => {
+  it('Clear search input', async () => {
     await typeInSearch('test');
     
     const page = sharedContext.page!;
@@ -299,12 +297,12 @@ describe.serial('Search Component Tests', () => {
     
     if (input) {
       let value = await input.evaluate(el => (el as HTMLInputElement).value);
-      expect(value).toBe('test');
+      expect(value).to.equal('test');
       
       await clearSearch();
       
       value = await input.evaluate(el => (el as HTMLInputElement).value);
-      expect(value).toBe('');
+      expect(value).to.equal('');
     }
   });
 });

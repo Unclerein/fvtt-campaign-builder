@@ -4,10 +4,9 @@
  * danger/impulse tabs,grim portents, and tab navigation.
  */
 
-import { describe, test, beforeAll, afterAll, expect } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting } from '@e2etest/utils';
 
 /**
@@ -140,13 +139,12 @@ const getCampaignUuidViaAPI = async (campaignName: string, settingName: string):
   );
 };
 
-describe.serial('Front Tests', () => {
+describe('Front Tests', () => {
   let createdFrontUuid: string | null = null;
   let campaignUuid: string | null = null;
   const testFrontName = 'Test Front E2E';
 
-  beforeAll(async () => {
-    await ensureSetup(false);
+  before(async () => {
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
 
@@ -158,7 +156,7 @@ describe.serial('Front Tests', () => {
     }
   });
 
-  afterAll(async () => {
+  after(async () => {
     if (createdFrontUuid) {
       try {
         await deleteFrontViaAPI(createdFrontUuid);
@@ -168,15 +166,15 @@ describe.serial('Front Tests', () => {
     }
   });
 
-  test('Create new front via API', async () => {
-    expect(createdFrontUuid).not.toBeNull();
+  it('Create new front via API', async () => {
+    expect(createdFrontUuid).to.not.be.null;
   });
 
   /**
    * What it tests: Opening an existing front from the campaign directory tree.
    * Expected behavior: Front opens and displays the correct name in the header.
    */
-  test('Open existing front', async () => {
+  it('Open existing front', async () => {
     if (!createdFrontUuid) {
       return;
     }
@@ -187,14 +185,14 @@ describe.serial('Front Tests', () => {
     await openFront(firstCampaign.name, testFrontName);
 
     const nameValue = await getFrontNameValue();
-    expect(nameValue).toBe(testFrontName);
+    expect(nameValue).to.equal(testFrontName);
   });
 
   /**
    * What it tests: Editing a front's name with debounced auto-save.
    * Expected behavior: Name change persists after debounce period.
    */
-  test('Edit front name with debounce', async () => {
+  it('Edit front name with debounce', async () => {
     if (!createdFrontUuid) {
       return;
     }
@@ -208,7 +206,7 @@ describe.serial('Front Tests', () => {
     await setFrontName(newName);
 
     const nameValue = await getFrontNameValue();
-    expect(nameValue).toBe(newName);
+    expect(nameValue).to.equal(newName);
   });
 
   // Tab Navigation Tests
@@ -216,7 +214,7 @@ describe.serial('Front Tests', () => {
    * What it tests: Switching to the description tab showing front notes.
    * Expected behavior: Description tab becomes visible with editor.
    */
-  test('Switch to description tab', async () => {
+  it('Switch to description tab', async () => {
     if (!createdFrontUuid) {
       return;
     }
@@ -229,14 +227,14 @@ describe.serial('Front Tests', () => {
 
     const page = sharedContext.page!;
     const descTab = await page.$('[data-tab="description"]');
-    expect(descTab).not.toBeNull();
+    expect(descTab).to.not.be.null;
   });
 
   /**
    * What it tests: Front tags are visible.
    * Expected behavior: Tags component is visible.
    */
-  test('Front tags are visible', async () => {
+  it('Front tags are visible', async () => {
     if (!createdFrontUuid) {
       return;
     }
@@ -248,14 +246,14 @@ describe.serial('Front Tests', () => {
 
     const page = sharedContext.page!;
     const tagsComponent = await page.$('.tags-wrapper');
-    expect(tagsComponent).not.toBeNull();
+    expect(tagsComponent).to.not.be.null;
   });
 
   /**
    * What it tests: Front has add danger button.
    * Expected behavior: Add danger button is visible.
    */
-  test('Front has add danger button', async () => {
+  it('Front has add danger button', async () => {
     if (!createdFrontUuid) {
       return;
     }
@@ -268,10 +266,10 @@ describe.serial('Front Tests', () => {
     const page = sharedContext.page!;
     // Look for the add tab button (plus icon)
     const addTabBtn = await page.$('[data-tab="add"], .fcb-tab-icon .fa-plus');
-    expect(addTabBtn).not.toBeNull();
+    expect(addTabBtn).to.not.be.null;
   });
 
-  test('Description tab shows editor', async () => {
+  it('Description tab shows editor', async () => {
     if (!createdFrontUuid) {
       return;
     }
@@ -284,6 +282,6 @@ describe.serial('Front Tests', () => {
 
     const page = sharedContext.page!;
     const editor = await page.$('.ProseMirror');
-    expect(editor).not.toBeNull();
+    expect(editor).to.not.be.null;
   });
 });

@@ -3,10 +3,9 @@
  * Tests timeline, tag results navigation, and custom fields functionality.
  */
 
-import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting, openEntry } from '@e2etest/utils';
 
 /**
@@ -129,17 +128,16 @@ const deleteEntryViaAPI = async (uuid: string): Promise<void> => {
  * Features Tests
  * Verifies specialized feature functionality.
  */
-describe.serial('Features Tests', () => {
+describe('Features Tests', () => {
   let createdEntryUuid: string | null = null;
   const testEntryName = 'Test Feature Entry';
 
-  beforeAll(async () => {
-    await ensureSetup(false);
+  before(async () => {
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
   });
 
-  afterAll(async () => {
+  after(async () => {
     if (createdEntryUuid) {
       try {
         await deleteEntryViaAPI(createdEntryUuid);
@@ -153,7 +151,7 @@ describe.serial('Features Tests', () => {
    * What it tests: Timeline component is visible when opening a campaign.
    * Expected behavior: Timeline element is present in the DOM.
    */
-  test('Timeline is visible on campaign', async () => {
+  it('Timeline is visible on campaign', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     
@@ -161,71 +159,71 @@ describe.serial('Features Tests', () => {
     
     const page = sharedContext.page!;
     const nameHeader = await page.$('.fcb-name-header');
-    expect(nameHeader).not.toBeNull();
+    expect(nameHeader).to.not.be.null;
   });
 
   /**
    * What it tests: Timeline tab is present in the campaign.
    * Expected behavior: Timeline tab is present.
    */
-  test('Campaign has timeline tab', async () => {
+  it('Campaign has timeline tab', async () => {
     const page = sharedContext.page!;
     const timelineTab = await page.$('[data-tab="timeline"]');
-    expect(timelineTab).not.toBeNull();
+    expect(timelineTab).to.not.be.null;
   });
 
   /**
    * What it tests: Timeline tab can be navigated to.
    * Expected behavior: Timeline tab is active after navigation.
    */
-  test('Navigate to timeline tab', async () => {
+  it('Navigate to timeline tab', async () => {
     await clickContentTab('timeline');
     
     const page = sharedContext.page!;
     const activeTab = await page.$('[data-tab="timeline"].active, [data-tab="timeline"][aria-selected="true"]');
-    expect(activeTab).not.toBeNull();
+    expect(activeTab).to.not.be.null;
   });
 
   /**
    * What it tests: Timeline container is visible after navigation.
    * Expected behavior: Timeline container is present.
    */
-  test('Timeline container is visible', async () => {
+  it('Timeline container is visible', async () => {
     await clickContentTab('timeline');
     await delay(500);
     
     const hasTimeline = await getTimelineContainer();
-    expect(hasTimeline).toBe(true);
+    expect(hasTimeline).to.equal(true);
   });
 
   /**
    * What it tests: Timeline component has filter panel.
    * Expected behavior: Filter panel is present.
    */
-  test('Timeline has filter panel', async () => {
+  it('Timeline has filter panel', async () => {
     const page = sharedContext.page!;
     const filterPanel = await page.$('.timeline-filter-panel, .fcb-filter-panel');
-    expect(filterPanel).not.toBeNull();
+    expect(filterPanel).to.not.be.null;
   });
 
   /**
    * What it tests: Timeline displays loading indicator.
    * Expected behavior: Loading indicator is present.
    */
-  test('Timeline has loading indicator', async () => {
+  it('Timeline has loading indicator', async () => {
     const page = sharedContext.page!;
     await clickContentTab('timeline');
     
     // Look for loading state or loaded timeline
     const loading = await page.$('.timeline-loading, .vis-timeline');
-    expect(loading).not.toBeNull();
+    expect(loading).to.not.be.null;
   });
 
   /**
    * What it tests: Search for tag shows tag results.
    * Expected behavior: Tag results are displayed.
    */
-  test('Search for tag shows tag results', async () => {
+  it('Search for tag shows tag results', async () => {
     const setting = testData.settings[0];
     const characters = setting.topics[1];
     
@@ -238,7 +236,7 @@ describe.serial('Features Tests', () => {
       
       // Check if results appeared
       const results = await page.$('.fcb-search-results, .fcb-search-result');
-      expect(results).not.toBeNull();
+      expect(results).to.not.be.null;
     }
   });
 
@@ -246,19 +244,19 @@ describe.serial('Features Tests', () => {
    * What it tests: Tag results view shows tag icon.
    * Expected behavior: Tag icon is present.
    */
-  test('Tag results show tag icon', async () => {
+  it('Tag results show tag icon', async () => {
     const page = sharedContext.page!;
     
     // Look for tag result items with icon
     const tagIcon = await page.$('.fcb-search-tag-result .fa-tag');
-    expect(tagIcon).not.toBeNull();
+    expect(tagIcon).to.not.be.null;
   });
 
   /**
    * What it tests: Clicking a tag navigates to tag results view.
    * Expected behavior: Tag results view opens with filtered entries.
    */
-  test('Click tag result opens tag results tab', async () => {
+  it('Click tag result opens tag results tab', async () => {
     const page = sharedContext.page!;
     
     // Find a tag result
@@ -269,7 +267,7 @@ describe.serial('Features Tests', () => {
       
       // Check if tag results tab opened
       const tagResultsTab = await page.$('.tag-results-title, .fcb-tag-results');
-      expect(tagResultsTab).not.toBeNull();
+      expect(tagResultsTab).to.not.be.null;
     }
   });
 
@@ -277,27 +275,27 @@ describe.serial('Features Tests', () => {
    * What it tests: Tag results tab shows table.
    * Expected behavior: Table is present.
    */
-  test('Tag results tab shows table', async () => {
+  it('Tag results tab shows table', async () => {
     const page = sharedContext.page!;
     const table = await page.$('.base-table, table');
-    expect(table).not.toBeNull();
+    expect(table).to.not.be.null;
   });
 
   /**
    * What it tests: Tag results tab shows count.
    * Expected behavior: Count is present.
    */
-  test('Tag results tab shows count', async () => {
+  it('Tag results tab shows count', async () => {
     const page = sharedContext.page!;
     const countEl = await page.$('.tag-results-count');
-    expect(countEl).not.toBeNull();
+    expect(countEl).to.not.be.null;
   });
 
   /**
    * What it tests: Custom fields are visible when opening an entry.
    * Expected behavior: Custom fields section is present.
    */
-  test('Custom fields are visible on entry', async () => {
+  it('Custom fields are visible on entry', async () => {
     const setting = testData.settings[0];
     const locations = setting.topics[2]; // Topics.Location = 2
     
@@ -311,56 +309,56 @@ describe.serial('Features Tests', () => {
 
     const page = sharedContext.page!;
     const nameHeader = await page.$('.fcb-name-header');
-    expect(nameHeader).not.toBeNull();
+    expect(nameHeader).to.not.be.null;
   });
 
-  test('Entry has description tab', async () => {
+  it('Entry has description tab', async () => {
     const page = sharedContext.page!;
     const descTab = await page.$('[data-tab="description"]');
-    expect(descTab).not.toBeNull();
+    expect(descTab).to.not.be.null;
   });
 
-  test('Navigate to description tab', async () => {
+  it('Navigate to description tab', async () => {
     await clickContentTab('description');
     
     const page = sharedContext.page!;
     const activeTab = await page.$('[data-tab="description"].active, [data-tab="description"][aria-selected="true"]');
-    expect(activeTab).not.toBeNull();
+    expect(activeTab).to.not.be.null;
   });
 
-  test('Description tab shows editor', async () => {
+  it('Description tab shows editor', async () => {
     const page = sharedContext.page!;
     const editor = await page.$('.ProseMirror, .editor-content');
-    expect(editor).not.toBeNull();
+    expect(editor).to.not.be.null;
   });
 
-  test('Entry may have custom fields', async () => {
+  it('Entry may have custom fields', async () => {
     const page = sharedContext.page!;
     
     // Custom fields are optional, so just check the form structure exists
     const formGroup = await page.$('.form-group');
-    expect(formGroup).not.toBeNull();
+    expect(formGroup).to.not.be.null;
   });
 
-  test('Entry has tags section', async () => {
+  it('Entry has tags section', async () => {
     const page = sharedContext.page!;
     
     // Look for tags wrapper or tags input
     const tagsSection = await page.$('.tags-wrapper, .tags-container');
-    expect(tagsSection).not.toBeNull();
+    expect(tagsSection).to.not.be.null;
   });
 
-  test('Entry has name input', async () => {
+  it('Entry has name input', async () => {
     const page = sharedContext.page!;
     const nameInput = await page.$('.fcb-input-name input, [data-testid="entry-name-input"]');
-    expect(nameInput).not.toBeNull();
+    expect(nameInput).to.not.be.null;
   });
 
-  test('Entry has type field', async () => {
+  it('Entry has type field', async () => {
     const page = sharedContext.page!;
     
     // Look for type dropdown or display
     const typeField = await page.$('.type-field, [data-testid="type-select"], :text("Type")');
-    expect(typeField).not.toBeNull();
+    expect(typeField).to.not.be.null;
   });
 });

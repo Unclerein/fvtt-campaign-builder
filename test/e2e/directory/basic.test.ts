@@ -4,12 +4,11 @@
  * and opening entries from the directory.
  */
 
-import { describe, test, beforeAll, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { expandTopicNode, expandTypeNode, switchToSetting } from '@e2etest/utils';
-import { Topics, ValidTopic } from '@/types';
+import { Topics, ValidTopic } from '../types';
 import { getByTestId } from '../helpers';
 
 
@@ -17,10 +16,9 @@ import { getByTestId } from '../helpers';
  * Basic Directory Functions Tests
  * Verifies directory tree navigation and folder expansion.
  */
-describe.serial('Basic Directory functions', () => {
-	beforeAll(async () => {
+describe('Basic Directory functions', () => {
+	before(async () => {
 		// Ensure setup is done with test data populated
-		await ensureSetup(false);
 		
 		const setting = testData.settings[0];
 
@@ -34,7 +32,7 @@ describe.serial('Basic Directory functions', () => {
 	 * What it tests: Expanding entry topic folders reveals entries.
 	 * Expected behavior: Entries become visible when their topic folder is expanded.
 	 */
-	test('Expand entry folders', async () => {
+	it('Expand entry folders', async () => {
 		const page = sharedContext.page!;
 		const setting = testData.settings[0];
 
@@ -59,7 +57,7 @@ describe.serial('Basic Directory functions', () => {
 			});
 		}, setting.topics[Topics.Character][0].name);
 		// Expected behavior: Entry is not visible when folder is collapsed
-		expect(found).toBe(false);
+		expect(found).to.equal(false);
 
 		// open each folder and make sure the 1st node is visible
 		for (const topicKey in setting.topics) {
@@ -93,7 +91,7 @@ describe.serial('Basic Directory functions', () => {
 				}
 			}
 			// Expected behavior: Entry is visible after expanding folder
-			expect(entryFound).toBe(true);
+			expect(entryFound).to.equal(true);
 		}
 
 		// also check collapse all
@@ -114,6 +112,6 @@ describe.serial('Basic Directory functions', () => {
 			});
 		}, setting.topics[Topics.Character][0].name);
 		// Expected behavior: Entry is not visible after collapsing all
-		expect(foundAfterCollapse).toBe(false);
+		expect(foundAfterCollapse).to.equal(false);
 	});
 });

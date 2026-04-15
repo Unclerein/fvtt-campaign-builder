@@ -4,10 +4,9 @@
  * relationship management, and tab navigation.
  */
 
-import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting } from '@e2etest/utils';
 
 /**
@@ -127,13 +126,12 @@ const getCampaignUuidViaAPI = async (campaignName: string, settingName: string):
   );
 };
 
-describe.serial('StoryWeb Tests', () => {
+describe('StoryWeb Tests', () => {
   let createdStoryWebUuid: string | null = null;
   let campaignUuid: string | null = null;
   const testStoryWebName = 'Test StoryWeb E2E';
 
-  beforeAll(async () => {
-    await ensureSetup(false);
+  before(async () => {
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
 
@@ -145,7 +143,7 @@ describe.serial('StoryWeb Tests', () => {
     }
   });
 
-  afterAll(async () => {
+  after(async () => {
     if (createdStoryWebUuid) {
       try {
         await deleteStoryWebViaAPI(createdStoryWebUuid);
@@ -159,11 +157,11 @@ describe.serial('StoryWeb Tests', () => {
    * What it tests: Opening an existing story web from the campaign directory tree.
    * Expected behavior: Story web opens and displays the correct name in the header.
    */
-  test('Open existing story web', async () => {
-    expect(createdStoryWebUuid).not.toBeNull();
+  it('Open existing story web', async () => {
+    expect(createdStoryWebUuid).to.not.be.null;
   });
 
-  test('Open created story web and verify name', async () => {
+  it('Open created story web and verify name', async () => {
     if (!createdStoryWebUuid) {
       return;
     }
@@ -178,14 +176,14 @@ describe.serial('StoryWeb Tests', () => {
     await openStoryWeb(firstCampaign.name, testStoryWebName);
 
     const nameValue = await getStoryWebNameValue();
-    expect(nameValue).toBe(testStoryWebName);
+    expect(nameValue).to.equal(testStoryWebName);
   });
 
   /**
    * What it tests: Editing a story web's name with debounced auto-save.
    * Expected behavior: Name change persists after debounce period.
    */
-  test('Edit story web name with debounce', async () => {
+  it('Edit story web name with debounce', async () => {
     if (!createdStoryWebUuid) {
       return;
     }
@@ -199,14 +197,14 @@ describe.serial('StoryWeb Tests', () => {
     await setStoryWebName(newName);
 
     const nameValue = await getStoryWebNameValue();
-    expect(nameValue).toBe(newName);
+    expect(nameValue).to.equal(newName);
   });
 
   /**
    * What it tests: Switching to the foundry documents tab.
    * Expected behavior: Foundry documents tab becomes visible.
    */
-  test('Switch to foundry tab', async () => {
+  it('Switch to foundry tab', async () => {
     if (!createdStoryWebUuid) {
       return;
     }
@@ -223,14 +221,14 @@ describe.serial('StoryWeb Tests', () => {
     }
 
     const tabContent = await page.$('.fcb-tab-content-foundry-documents');
-    expect(tabContent).not.toBeNull();
+    expect(tabContent).to.not.be.null;
   });
 
   /**
    * What it tests: Switching to the description tab showing story web notes.
    * Expected behavior: Description tab becomes visible with editor.
    */
-  test('Switch to description tab', async () => {
+  it('Switch to description tab', async () => {
     if (!createdStoryWebUuid) {
       return;
     }
@@ -247,10 +245,10 @@ describe.serial('StoryWeb Tests', () => {
     }
 
     const tabContent = await page.$('.fcb-tab-content-description');
-    expect(tabContent).not.toBeNull();
+    expect(tabContent).to.not.be.null;
   });
 
-  test('Story web shows graph component', async () => {
+  it('Story web shows graph component', async () => {
     if (!createdStoryWebUuid) {
       return;
     }
@@ -263,10 +261,10 @@ describe.serial('StoryWeb Tests', () => {
     const page = sharedContext.page!;
     // Look for the graph container
     const graphComponent = await page.$('.story-web-graph, .fcb-graph-container, canvas');
-    expect(graphComponent).not.toBeNull();
+    expect(graphComponent).to.not.be.null;
   });
 
-  test('Story web has name header', async () => {
+  it('Story web has name header', async () => {
     if (!createdStoryWebUuid) {
       return;
     }
@@ -278,6 +276,6 @@ describe.serial('StoryWeb Tests', () => {
 
     const page = sharedContext.page!;
     const header = await page.$('.fcb-name-header');
-    expect(header).not.toBeNull();
+    expect(header).to.not.be.null;
   });
 });

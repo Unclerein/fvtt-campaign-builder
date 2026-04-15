@@ -3,10 +3,9 @@
  * Tests Items, Locations, Lore, Monsters, NPCs, and Vignettes tabs within session content.
  */
 
-import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting } from '@e2etest/utils';
 
 /**
@@ -88,19 +87,18 @@ const getSessionUuidViaAPI = async (sessionName: string, campaignUuid: string): 
   );
 };
 
-describe.serial('Session Content Tabs Tests', () => {
-  beforeAll(async () => {
-    await ensureSetup(false);
+describe('Session Content Tabs Tests', () => {
+  before(async () => {
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
   });
 
-  afterAll(async () => {
+  after(async () => {
     // Cleanup handled by test data reset
   });
 
   // Items/Magic Tab Tests
-  test('Navigate to items/magic tab', async () => {
+  it('Navigate to items/magic tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -110,27 +108,27 @@ describe.serial('Session Content Tabs Tests', () => {
 
     const page = sharedContext.page!;
     const itemsTab = await page.$('[data-tab="magic"]');
-    expect(itemsTab).not.toBeNull();
+    expect(itemsTab).to.not.be.null;
   });
 
-  test('Items tab shows table component', async () => {
+  it('Items tab shows table component', async () => {
     const page = sharedContext.page!;
     
     await page.waitForSelector('.base-table, .fcb-table', { timeout: 5000 });
     
     const table = await page.$('.base-table, .fcb-table');
-    expect(table).not.toBeNull();
+    expect(table).to.not.be.null;
   });
 
-  test('Items tab has add button', async () => {
+  it('Items tab has add button', async () => {
     const page = sharedContext.page!;
     
     const addBtn = await page.$('[data-testid="base-table-add-button"], .fcb-table-add-button, button[class*="add"]');
-    expect(addBtn).not.toBeNull();
+    expect(addBtn).to.not.be.null;
   });
 
   // Locations Tab Tests
-  test('Navigate to locations tab', async () => {
+  it('Navigate to locations tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -140,27 +138,27 @@ describe.serial('Session Content Tabs Tests', () => {
 
     const page = sharedContext.page!;
     const locationsTab = await page.$('[data-tab="locations"]');
-    expect(locationsTab).not.toBeNull();
+    expect(locationsTab).to.not.be.null;
   });
 
-  test('Locations tab shows table component', async () => {
+  it('Locations tab shows table component', async () => {
     const page = sharedContext.page!;
     
     await page.waitForSelector('.base-table, .fcb-table', { timeout: 5000 });
     
     const table = await page.$('.base-table, .fcb-table');
-    expect(table).not.toBeNull();
+    expect(table).to.not.be.null;
   });
 
-  test('Locations tab has add button', async () => {
+  it('Locations tab has add button', async () => {
     const page = sharedContext.page!;
     
     const addBtn = await page.$('[data-testid="base-table-add-button"], .fcb-table-add-button, button[class*="add"]');
-    expect(addBtn).not.toBeNull();
+    expect(addBtn).to.not.be.null;
   });
 
   // Lore Tab Tests
-  test('Navigate to lore tab', async () => {
+  it('Navigate to lore tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -170,27 +168,27 @@ describe.serial('Session Content Tabs Tests', () => {
 
     const page = sharedContext.page!;
     const loreTab = await page.$('[data-tab="lore"]');
-    expect(loreTab).not.toBeNull();
+    expect(loreTab).to.not.be.null;
   });
 
-  test('Lore tab shows table component', async () => {
+  it('Lore tab shows table component', async () => {
     const page = sharedContext.page!;
     
     await page.waitForSelector('.base-table, .fcb-table', { timeout: 5000 });
     
     const table = await page.$('.base-table, .fcb-table');
-    expect(table).not.toBeNull();
+    expect(table).to.not.be.null;
   });
 
-  test('Lore tab has add button', async () => {
+  it('Lore tab has add button', async () => {
     const page = sharedContext.page!;
     
     const addBtn = await page.$('[data-testid="base-table-add-button"], .fcb-table-add-button, button[class*="add"]');
-    expect(addBtn).not.toBeNull();
+    expect(addBtn).to.not.be.null;
   });
 
   // Monsters Tab Tests
-  test('Navigate to monsters tab', async () => {
+  it('Navigate to monsters tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -200,27 +198,27 @@ describe.serial('Session Content Tabs Tests', () => {
 
     const page = sharedContext.page!;
     const monstersTab = await page.$('[data-tab="monsters"]');
-    expect(monstersTab).not.toBeNull();
+    expect(monstersTab).to.not.be.null;
   });
 
-  test('Monsters tab shows table component', async () => {
+  it('Monsters tab shows table component', async () => {
     const page = sharedContext.page!;
     
     await page.waitForSelector('.base-table, .fcb-table', { timeout: 5000 });
     
     const table = await page.$('.base-table, .fcb-table');
-    expect(table).not.toBeNull();
+    expect(table).to.not.be.null;
   });
 
-  test('Monsters tab has add button', async () => {
+  it('Monsters tab has add button', async () => {
     const page = sharedContext.page!;
     
     const addBtn = await page.$('[data-testid="base-table-add-button"], .fcb-table-add-button, button[class*="add"]');
-    expect(addBtn).not.toBeNull();
+    expect(addBtn).to.not.be.null;
   });
 
   // NPCs Tab Tests
-  test('Navigate to NPCs tab', async () => {
+  it('Navigate to NPCs tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -230,27 +228,27 @@ describe.serial('Session Content Tabs Tests', () => {
 
     const page = sharedContext.page!;
     const npcsTab = await page.$('[data-tab="npcs"]');
-    expect(npcsTab).not.toBeNull();
+    expect(npcsTab).to.not.be.null;
   });
 
-  test('NPCs tab shows table component', async () => {
+  it('NPCs tab shows table component', async () => {
     const page = sharedContext.page!;
     
     await page.waitForSelector('.base-table, .fcb-table', { timeout: 5000 });
     
     const table = await page.$('.base-table, .fcb-table');
-    expect(table).not.toBeNull();
+    expect(table).to.not.be.null;
   });
 
-  test('NPCs tab has add button', async () => {
+  it('NPCs tab has add button', async () => {
     const page = sharedContext.page!;
     
     const addBtn = await page.$('[data-testid="base-table-add-button"], .fcb-table-add-button, button[class*="add"]');
-    expect(addBtn).not.toBeNull();
+    expect(addBtn).to.not.be.null;
   });
 
   // Vignettes Tab Tests
-  test('Navigate to vignettes tab', async () => {
+  it('Navigate to vignettes tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -260,27 +258,27 @@ describe.serial('Session Content Tabs Tests', () => {
 
     const page = sharedContext.page!;
     const vignettesTab = await page.$('[data-tab="vignettes"]');
-    expect(vignettesTab).not.toBeNull();
+    expect(vignettesTab).to.not.be.null;
   });
 
-  test('Vignettes tab shows table component', async () => {
+  it('Vignettes tab shows table component', async () => {
     const page = sharedContext.page!;
     
     await page.waitForSelector('.base-table, .fcb-table', { timeout: 5000 });
     
     const table = await page.$('.base-table, .fcb-table');
-    expect(table).not.toBeNull();
+    expect(table).to.not.be.null;
   });
 
-  test('Vignettes tab has add button', async () => {
+  it('Vignettes tab has add button', async () => {
     const page = sharedContext.page!;
     
     const addBtn = await page.$('[data-testid="base-table-add-button"], .fcb-table-add-button, button[class*="add"]');
-    expect(addBtn).not.toBeNull();
+    expect(addBtn).to.not.be.null;
   });
 
   // PCs Tab Tests
-  test('Navigate to PCs tab', async () => {
+  it('Navigate to PCs tab', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -290,20 +288,20 @@ describe.serial('Session Content Tabs Tests', () => {
 
     const page = sharedContext.page!;
     const pcsTab = await page.$('[data-tab="pcs"]');
-    expect(pcsTab).not.toBeNull();
+    expect(pcsTab).to.not.be.null;
   });
 
-  test('PCs tab shows table component', async () => {
+  it('PCs tab shows table component', async () => {
     const page = sharedContext.page!;
     
     await page.waitForSelector('.base-table, .fcb-table', { timeout: 5000 });
     
     const table = await page.$('.base-table, .fcb-table');
-    expect(table).not.toBeNull();
+    expect(table).to.not.be.null;
   });
 
   // Tab Navigation Tests
-  test('Can switch between multiple session tabs', async () => {
+  it('Can switch between multiple session tabs', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -321,10 +319,10 @@ describe.serial('Session Content Tabs Tests', () => {
     // Verify we're on monsters tab
     const page = sharedContext.page!;
     const monstersTab = await page.$('[data-tab="monsters"]');
-    expect(monstersTab).not.toBeNull();
+    expect(monstersTab).to.not.be.null;
   });
 
-  test('Notes tab is always available', async () => {
+  it('Notes tab is always available', async () => {
     const setting = testData.settings[0];
     const firstCampaign = setting.campaigns[0];
     const firstSession = firstCampaign.sessions[0];
@@ -334,6 +332,6 @@ describe.serial('Session Content Tabs Tests', () => {
 
     const page = sharedContext.page!;
     const notesTab = await page.$('[data-tab="notes"]');
-    expect(notesTab).not.toBeNull();
+    expect(notesTab).to.not.be.null;
   });
 });

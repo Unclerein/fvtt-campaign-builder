@@ -4,12 +4,11 @@
  * and tag persistence across different entry types.
  */
 
-import { describe, test, beforeAll, afterAll, expect, } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting, expandTopicNode, expandTypeNode } from '@e2etest/utils';
-import { Topics } from '@/types';
+import { Topics } from '../types';
 import {
   openEntry,
   addTag,
@@ -54,17 +53,16 @@ const isTagsInitialized = async () => {
  * Tags Component Tests
  * Verifies tag functionality across entry types.
  */
-describe.serial('Tags Component Tests', () => {
+describe('Tags Component Tests', () => {
   let createdEntryUuid: string | null = null;
   const testEntryName = 'Test Tags Entry';
 
-  beforeAll(async () => {
-    await ensureSetup(false);
+  before(async () => {
     const setting = testData.settings[0];
     await switchToSetting(setting.name);
   });
 
-  afterAll(async () => {
+  after(async () => {
     if (createdEntryUuid) {
       try {
         await deleteEntryViaAPI(createdEntryUuid);
@@ -78,7 +76,7 @@ describe.serial('Tags Component Tests', () => {
    * What it tests: Tags component is visible on entry open.
    * Expected behavior: Tags wrapper is present in the DOM.
    */
-  test('Tags component is visible on entry open', async () => {
+  it('Tags component is visible on entry open', async () => {
     const setting = testData.settings[0];
 
     // Open a character entry
@@ -93,26 +91,26 @@ describe.serial('Tags Component Tests', () => {
 
     // Verify tags wrapper is present
     const wrapper = await page.$('.tags-wrapper');
-    expect(wrapper).not.toBeNull();
+    expect(wrapper).to.not.be.null;
   });
 
   /**
    * What it tests: Tag input has placeholder text.
    * Expected behavior: Placeholder attribute is set on the input.
    */
-  test('Tag input has placeholder', async () => {
+  it('Tag input has placeholder', async () => {
     const page = sharedContext.page!;
 
     // Verify tags input exists
     const tagsInput = await page.$('.tags-wrapper input, .tagify__input');
-    expect(tagsInput).not.toBeNull();
+    expect(tagsInput).to.not.be.null;
   });
 
   /**
    * What it tests: Adding a tag to a character entry.
    * Expected behavior: Tag appears in the tags list after adding.
    */
-  test('Add a new tag', async () => {
+  it('Add a new tag', async () => {
     const setting = testData.settings[0];
 
     // Create a new entry for this test
@@ -140,14 +138,14 @@ describe.serial('Tags Component Tests', () => {
         break;
       }
     }
-    expect(found).toBe(true);
+    expect(found).to.equal(true);
   });
 
   /**
    * What it tests: Multiple tags can be added to an entry.
    * Expected behavior: All added tags appear in the tags list.
    */
-  test('Add multiple tags', async () => {
+  it('Add multiple tags', async () => {
     const page = sharedContext.page!;
 
     // Make sure we have the entry open
@@ -163,14 +161,14 @@ describe.serial('Tags Component Tests', () => {
     // Verify all tags are present
     const tags = await getAllTags();
     // Expected behavior: At least 2 tags are present
-    expect(tags.length).toBeGreaterThan(1);
+    expect(tags.length).to.be.greaterThan(1);
   });
 
   /**
    * What it tests: Removing a tag from a character entry.
    * Expected behavior: Tag is removed from the tags list.
    */
-  test('Remove a tag', async () => {
+  it('Remove a tag', async () => {
     const page = sharedContext.page!;
 
     // Make sure we have the entry open
@@ -192,7 +190,7 @@ describe.serial('Tags Component Tests', () => {
         break;
       }
     }
-    expect(found).toBe(true);
+    expect(found).to.equal(true);
 
     // Remove the tag
     await removeTag('tag-to-remove');
@@ -202,7 +200,7 @@ describe.serial('Tags Component Tests', () => {
     tags = await getAllTags();
     for (const tag of tags) {
       const text = await getTagText(tag);
-      expect(text.includes('tag-to-remove')).toBe(false);
+      expect(text.includes('tag-to-remove')).to.equal(false);
     }
   });
 
@@ -210,7 +208,7 @@ describe.serial('Tags Component Tests', () => {
    * What it tests: Clicking a tag opens a tag results tab showing entries with that tag.
    * Expected behavior: Tag results tab opens with matching entries.
    */
-  test('Click tag opens tag results tab', async () => {
+  it('Click tag opens tag results tab', async () => {
     const page = sharedContext.page!;
 
     // Make sure we have the entry open
@@ -230,7 +228,7 @@ describe.serial('Tags Component Tests', () => {
 
     // Verify new tab opened
     const tabs = await page.$$('.fcb-tab');
-    expect(tabs.length).toBeGreaterThan(1);
+    expect(tabs.length).to.be.greaterThan(1);
 
     // Close the tag results tab
     await closeActiveTab();
@@ -240,7 +238,7 @@ describe.serial('Tags Component Tests', () => {
    * What it tests: Tag shows X button on hover.
    * Expected behavior: X button is visible when hovering over a tag.
    */
-  test('Tag shows X button on hover', async () => {
+  it('Tag shows X button on hover', async () => {
     const page = sharedContext.page!;
 
     // Make sure we have the entry open
@@ -258,7 +256,7 @@ describe.serial('Tags Component Tests', () => {
       // Look for close button (may be hidden until hover)
       const closeBtn = await tags[0].$('.tagify__tag__removeBtn');
       // Close button should exist (even if hidden)
-      expect(closeBtn).not.toBeNull();
+      expect(closeBtn).to.not.be.null;
     }
   });
 
@@ -266,7 +264,7 @@ describe.serial('Tags Component Tests', () => {
    * What it tests: Tag persists after saving the entry.
    * Expected behavior: Tag is still present after page reload.
    */
-  test('Tags persist after entry save', async () => {
+  it('Tags persist after entry save', async () => {
     const page = sharedContext.page!;
 
     // Make sure we have the entry open
@@ -297,14 +295,14 @@ describe.serial('Tags Component Tests', () => {
         break;
       }
     }
-    expect(found).toBe(true);
+    expect(found).to.equal(true);
   });
 
   /**
    * What it tests: Tags input component is visible when opening a location entry.
    * Expected behavior: Tags input wrapper is present in the DOM.
    */
-  test('Tags input is visible on location entry', async () => {
+  it('Tags input is visible on location entry', async () => {
     const setting = testData.settings[0];
 
     // Open a location entry
@@ -317,14 +315,14 @@ describe.serial('Tags Component Tests', () => {
     const page = sharedContext.page!;
     await page.waitForSelector('.tags-wrapper:not(.uninitialized)', { timeout: 5000 });
     const wrapper = await page.$('.tags-wrapper');
-    expect(wrapper).not.toBeNull();
+    expect(wrapper).to.not.be.null;
   });
 
   /**
    * What it tests: Tags input component is visible when opening an organization entry.
    * Expected behavior: Tags input wrapper is present in the DOM.
    */
-  test('Tags input is visible on organization entry', async () => {
+  it('Tags input is visible on organization entry', async () => {
     const setting = testData.settings[0];
 
     // Open an organization entry
@@ -337,10 +335,10 @@ describe.serial('Tags Component Tests', () => {
     const page = sharedContext.page!;
     await page.waitForSelector('.tags-wrapper:not(.uninitialized)', { timeout: 5000 });
     const wrapper = await page.$('.tags-wrapper');
-    expect(wrapper).not.toBeNull();
+    expect(wrapper).to.not.be.null;
   });
 
-  test('Tags on session', async () => {
+  it('Tags on session', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -372,6 +370,6 @@ describe.serial('Tags Component Tests', () => {
     // Verify tags wrapper is present
     await page.waitForSelector('.tags-wrapper:not(.uninitialized)', { timeout: 5000 });
     const wrapper = await page.$('.tags-wrapper');
-    expect(wrapper).not.toBeNull();
+    expect(wrapper).to.not.be.null;
   });
 });

@@ -21,22 +21,22 @@ For full hardware acceleration, connect to a Windows browser via remote debuggin
 ## Running Tests
 
 ```bash
-npm test                                        # Run all tests (headed mode)
-BROWSER_MODE=attach npm test                    # Run all tests (attach mode)
-npm test -- --file directory/basic               # Run only directory/basic.test
-npm test -- --file entries/character --file entries/location  # Run multiple files
-npm test -- --grep "character"                   # Run suites/tests matching "character"
-npm test -- --file entries/character --grep "name"  # Combine file + grep filters
-npm run test:coverage                            # Run all tests with coverage report
-npm run test:rebuild                             # Reset world and repopulate test data
+npm test                                            # Run all tests (headed mode)
+BROWSER_MODE=attach npm test                        # Run all tests (attach mode)
+npm test -- --spec "test/e2e/entries/character.test.ts"  # Run only character test file
+npm test -- --spec "test/e2e/entries/*.test.ts"          # Run all entry test files
+npm test -- --grep "character"                       # Run suites/tests matching "character"
+npm test -- --grep "actorTags"                       # Run specific test by name
+npm run test:coverage                                # Run all tests with coverage report
+npm run test:rebuild                                 # Reset world and repopulate test data
 ```
 
 **Note:** Use `npm test` to run E2E tests. Only use `npm run debug` (which rebuilds the module) if application code was changed. If only test code was modified, no rebuild is needed.
 
 ### Test Filtering
 
-- **`--file <path>`** — Filter by test file path (relative to `test/e2e/`, without `.test.ts`). Can be specified multiple times.
-- **`--grep <pattern>`** — Filter by suite or test name (case-insensitive substring match). If a suite name matches, all its tests run. Otherwise, only matching tests within each suite run.
+- **`--spec <path>`** — Filter by test file path (full path relative to project root). When provided, **replaces** the default `test/e2e/**/*.test.ts` glob so only matching files run. Can be specified multiple times.
+- **`--grep <pattern>`** — Filter by suite or test name (regex match). If a suite name matches, all its tests run. Otherwise, only matching tests within each suite run.
 
 ### Code Coverage
 
@@ -65,8 +65,8 @@ If you run `npm test` without an instrumented build, coverage collection is sile
 
 ## Architecture
 
-- `testRunner.ts` - Custom Jest-like test runner (describe/test/beforeAll/afterAll/expect)
-- `ensureSetup.ts` - Browser connection and Foundry setup using agent infrastructure
+- `globalSetup.ts` - Mocha global setup/teardown (browser launch, data population, coverage collection)
+- `.mocharc.json` - Mocha configuration (serial execution, tsx loader, timeout)
 - `sharedContext.ts` - Shared browser/page context
 - `helpers.ts` - Puppeteer helpers (Locator class, getByTestId, etc.)
 - `types.ts` - Local types (Topics enum) to avoid importing Foundry-dependent code
@@ -76,42 +76,31 @@ If you run `npm test` without an instrumented build, coverage collection is sile
 
 ## Test Structure
 
-Tests use a **register-then-run** model:
+Tests use **Mocha CLI** with `mochaGlobalSetup`/`mochaGlobalTeardown`:
 
-1. **Test files register suites** using `describe()` and `test()`. They do NOT call `runTests()`.
-2. **`all.test.ts` imports all test files**, then calls `runTests()` once to execute all registered suites.
-3. **Each suite's `beforeAll` calls `ensureSetup()`** which uses a promise lock to ensure setup runs exactly once.
+1. **`mochaGlobalSetup`** runs once before all tests — launches browser, navigates to Foundry, populates test data, opens Campaign Builder.
+2. **Mocha discovers test files** via the `spec` glob in `.mocharc.json` — no manual import orchestration needed.
+3. **Each suite's `before()`** only does suite-specific setup (e.g., `switchToSetting()`, closing leftover tabs). Browser/data setup is already done.
+4. **`mochaGlobalTeardown`** runs once after all tests — collects Istanbul coverage and closes the browser.
 
 ### Creating a New Test File
 
 ```typescript
-import { describe, test, beforeAll, afterAll, expect } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
-import { ensureSetup } from '../ensureSetup';
 
-describe.serial('My Test Suite', () => {
-  beforeAll(async () => {
-    await ensureSetup(false);
-    // Navigate to starting point...
+describe('My Test Suite', () => {
+  before(async () => {
+    // Suite-specific setup (browser/data already initialized by globalSetup)
   });
 
-  test('my test case', async () => {
+  it('my test case', async () => {
     const page = sharedContext.page!;
     // Test logic...
   });
 });
 ```
 
-### Adding to the Test Runner
-
-After creating a new test file, add it to `allTestFiles` in `all.test.ts`:
-
-```typescript
-const allTestFiles: Record<string, () => Promise<void>> = {
-  // ... existing entries ...
-  'myFeature/myTest': () => import('./myFeature/myTest.test').then(() => {}),
-};
-```
 
 ## Key Points
 
@@ -129,11 +118,12 @@ const allTestFiles: Record<string, () => Promise<void>> = {
 
 ## Test Data Guidelines
 
-The `ensureSetup(true)` call creates a standard set of test data:
+The `mochaGlobalSetup` in `globalSetup.ts` creates a standard set of test data if none exists:
 - 2 settings with entries, campaigns, and sessions
-- This data persists across test runs (check with `testDataExists()`)
+- This data persists across test runs
 - **Read-only**: Use this data for navigation, display, and read-only tests
 - **Write tests**: Create your own objects within the test and delete them afterward
+- Use `npm run test:rebuild` to reset and repopulate test data
 
 ## Entry Creation Patterns
 
@@ -154,13 +144,12 @@ Use `createEntryViaUI()` from `@e2etest/utils` to create entries via the UI (sim
 ### Test Isolation
 
 Each test file should:
-1. Close leftover tabs in `beforeAll` (from previous test runs)
-2. Close all tabs in `afterEach` (between tests in the same suite)
-3. Clean up created entries in `afterAll`
+1. Close leftover tabs in `before()` (from previous test runs)
+2. Close all tabs in `afterEach()` (between tests in the same suite)
+3. Clean up created entries in `after()`
 
 ```typescript
-beforeAll(async () => {
-  await ensureSetup(false);
+before(async () => {
   await switchToSetting(setting.name);
   
   // Close leftover tabs

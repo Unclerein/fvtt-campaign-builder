@@ -6,12 +6,11 @@
  * description sub-components, name validation, and tab interaction depth.
  */
 
-import { describe, test, beforeAll, afterAll, afterEach, expect } from '../testRunner';
+import { expect } from 'chai';
 import { sharedContext } from '@e2etest/sharedContext';
 import { testData } from '@e2etest/data';
-import { ensureSetup } from '../ensureSetup';
 import { switchToSetting, expandTopicNode, expandTypeNode, getSetting, setSetting } from '@e2etest/utils';
-import { Topics } from '@/types';
+import { Topics } from '../types';
 import {
   openEntry,
   setEntryName,
@@ -92,13 +91,12 @@ const closeAllTabs = async () => {
  * Character Entry Tests
  * Verifies character entry CRUD operations, field editing, and navigation.
  */
-describe.serial('Character Entry Tests', () => {
+describe('Character Entry Tests', () => {
   let createdEntryUuid: string | null = null;
   const testEntryName = 'Test Character Entry';
 
-  beforeAll(async () => {
+  before(async () => {
     // Ensure setup is done with test data populated (don't rebuild)
-    await ensureSetup(false);
     
     const setting = testData.settings[0];
 
@@ -112,7 +110,7 @@ describe.serial('Character Entry Tests', () => {
     await closeAllTabs();
   });
 
-  afterAll(async () => {
+  after(async () => {
     // Clean up created entry
     if (createdEntryUuid) {
       try {
@@ -131,7 +129,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Opening an existing character entry from the directory tree.
    * Expected behavior: Entry opens and displays the correct character name in the name input.
    */
-  test('Open existing character entry', async () => {
+  it('Open existing character entry', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -154,14 +152,14 @@ describe.serial('Character Entry Tests', () => {
     }, { timeout: 5000 });
     const nameValue = await getEntryNameValue();
     // Expected behavior: Name input contains the character's name
-    expect(nameValue).toBe(firstChar.name);
+    expect(nameValue).to.equal(firstChar.name);
   });
 
   /**
    * What it tests: Editing a character's name with debounced auto-save.
    * Expected behavior: Name change persists after debounce period.
    */
-  test('Edit character name with debounce', async () => {
+  it('Edit character name with debounce', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -178,7 +176,7 @@ describe.serial('Character Entry Tests', () => {
     // Verify the name changed
     const nameValue = await getEntryNameValue();
     // Expected behavior: Name input reflects the new name after save
-    expect(nameValue).toBe(newName);
+    expect(nameValue).to.equal(newName);
 
     // Verify notification appeared
     // Note: name change doesn't show notification, but we can verify it persisted
@@ -188,7 +186,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Selecting an existing type from the typeahead dropdown.
    * Expected behavior: Type is selected and displayed in the type input field.
    */
-  test('Select existing type for character', async () => {
+  it('Select existing type for character', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
     let typeTestUuid: string | null = null;
@@ -227,7 +225,7 @@ describe.serial('Character Entry Tests', () => {
           // Verify type was set
           const typeValue = await getTypeValue();
           // Expected behavior: Type value matches the selected option
-          expect(typeValue).toBe(firstOptionText.trim());
+          expect(typeValue).to.equal(firstOptionText.trim());
         }
       }
     }
@@ -243,7 +241,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Creating a new type via the typeahead input.
    * Expected behavior: New type is created, selected, and displayed.
    */
-  test('Add new type for character', async () => {
+  it('Add new type for character', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
     let newTypeTestUuid: string | null = null;
@@ -268,7 +266,7 @@ describe.serial('Character Entry Tests', () => {
       // Verify the type was added and selected
       const typeValue = await getTypeValue();
       // Expected behavior: Type value reflects the newly created type
-      expect(typeValue).toBe(newType);
+      expect(typeValue).to.equal(newType);
     }
     finally {
       // Clean up
@@ -282,7 +280,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Selecting a species from the species typeahead dropdown.
    * Expected behavior: Species is selected and displayed in the species input field.
    */
-  test('Select species for character', async () => {
+  it('Select species for character', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
     let speciesTestUuid: string | null = null;
@@ -316,7 +314,7 @@ describe.serial('Character Entry Tests', () => {
             // Verify species was set
             const speciesValue = await getSpeciesValue();
             // Expected behavior: Species value matches the selected option
-            expect(speciesValue).toBe(firstOptionText.trim());
+            expect(speciesValue).to.equal(firstOptionText.trim());
           }
         }
       }
@@ -333,7 +331,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Adding and removing tags from a character entry.
    * Expected behavior: Tags can be added and removed, with UI reflecting changes.
    */
-  test('Add and remove tags', async () => {
+  it('Add and remove tags', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
     let tagTestUuid: string | null = null;
@@ -365,7 +363,7 @@ describe.serial('Character Entry Tests', () => {
         }
       }
       // Expected behavior: Tag appears in the tags list after adding
-      expect(found).toBe(true);
+      expect(found).to.equal(true);
 
       // Remove the tag
       await removeTag(testTag);
@@ -375,7 +373,7 @@ describe.serial('Character Entry Tests', () => {
       for (const tag of tagsAfter) {
         const text = await tag.evaluate(el => el.textContent);
         // Expected behavior: Tag no longer appears in the tags list
-        expect(text?.includes(testTag)).toBe(false);
+        expect(text?.includes(testTag)).to.equal(false);
       }
     }
     finally {
@@ -390,7 +388,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Clicking a tag opens a tag results tab showing entries with that tag.
    * Expected behavior: New tab opens displaying tag search results.
    */
-  test('Click tag opens tag results tab', async () => {
+  it('Click tag opens tag results tab', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
     let clickTagTestUuid: string | null = null;
@@ -434,7 +432,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Pushing a character entry to a session via the push-to-session button.
    * Expected behavior: Context menu appears with campaign options, entry is linked to session.
    */
-  test('Push character to session', async () => {
+  it('Push character to session', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
     let entryUuid: string | null = null;
@@ -487,7 +485,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Generate button displays a context menu with AI generation options.
    * Expected behavior: Context menu appears with generation options.
    */
-  test('Generate button shows context menu', async () => {
+  it('Generate button shows context menu', async () => {
     const page = sharedContext.page!;
 
     // Click the generate button
@@ -505,7 +503,7 @@ describe.serial('Character Entry Tests', () => {
     // Verify menu items exist
     const menuItems = await page.$$('.mx-context-menu-item');
     // Expected behavior: Context menu contains at least one generation option
-    expect(menuItems.length).toBeGreaterThan(0);
+    expect(menuItems.length).to.be.greaterThan(0);
 
     // Close menu by clicking elsewhere
     await page.evaluate(() => {
@@ -517,7 +515,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Foundry document button state when no actors are attached.
    * Expected behavior: Button disabled state is defined (true if no actors, false if actors exist).
    */
-  test('Foundry doc button disabled when no actors attached', async () => {
+  it('Foundry doc button disabled when no actors attached', async () => {
     const page = sharedContext.page!;
 
     // For a character with no actors, the button should be disabled
@@ -532,14 +530,14 @@ describe.serial('Character Entry Tests', () => {
     // Expected behavior: Button has a defined disabled state
     // If the character has no actors, button should be disabled
     // If it has actors, this test will pass anyway
-    expect(isDisabled !== undefined).toBe(true);
+    expect(isDisabled !== undefined).to.equal(true);
   });
 
   /**
    * What it tests: Switching to the journals content tab.
    * Expected behavior: Journals tab becomes visible and shows linked journals.
    */
-  test('Switch to journals tab', async () => {
+  it('Switch to journals tab', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -573,19 +571,19 @@ describe.serial('Character Entry Tests', () => {
       return tab?.classList.contains('active') ?? false;
     });
     // Expected behavior: Journals tab is active
-    expect(isActive).toBe(true);
+    expect(isActive).to.equal(true);
 
     // Verify journal data is present
     const journalCount = await getJournalCount();
     // Expected behavior: At least one journal is linked to the character
-    expect(journalCount).toBeGreaterThan(0);
+    expect(journalCount).to.be.greaterThan(0);
   });
 
   /**
    * What it tests: Switching to the characters relationship tab.
    * Expected behavior: Characters relationship tab becomes visible and shows related characters.
    */
-  test('Switch to characters relationship tab', async () => {
+  it('Switch to characters relationship tab', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -615,19 +613,19 @@ describe.serial('Character Entry Tests', () => {
       return style.display !== 'none';
     });
     // Expected behavior: Characters tab is visible
-    expect(isVisible).toBe(true);
+    expect(isVisible).to.equal(true);
 
     // Verify relationship data is present
     const relatedCount = await getRelatedEntryCount('characters');
     // Expected behavior: At least one character relationship exists
-    expect(relatedCount).toBeGreaterThan(0);
+    expect(relatedCount).to.be.greaterThan(0);
   });
 
   /**
    * What it tests: Switching to the locations relationship tab.
    * Expected behavior: Locations relationship tab becomes visible and shows related locations.
    */
-  test('Switch to locations relationship tab', async () => {
+  it('Switch to locations relationship tab', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -657,19 +655,19 @@ describe.serial('Character Entry Tests', () => {
       return style.display !== 'none';
     });
     // Expected behavior: Locations tab is visible
-    expect(isVisible).toBe(true);
+    expect(isVisible).to.equal(true);
 
     // Verify relationship data is present
     const relatedCount = await getRelatedEntryCount('locations');
     // Expected behavior: At least one location relationship exists
-    expect(relatedCount).toBeGreaterThan(0);
+    expect(relatedCount).to.be.greaterThan(0);
   });
 
   /**
    * What it tests: Switching to the organizations relationship tab.
    * Expected behavior: Organizations relationship tab becomes visible and shows related organizations.
    */
-  test('Switch to organizations relationship tab', async () => {
+  it('Switch to organizations relationship tab', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -699,19 +697,19 @@ describe.serial('Character Entry Tests', () => {
       return style.display !== 'none';
     });
     // Expected behavior: Organizations tab is visible
-    expect(isVisible).toBe(true);
+    expect(isVisible).to.equal(true);
 
     // Verify relationship data is present
     const relatedCount = await getRelatedEntryCount('organizations');
     // Expected behavior: At least one organization relationship exists
-    expect(relatedCount).toBeGreaterThan(0);
+    expect(relatedCount).to.be.greaterThan(0);
   });
 
   /**
    * What it tests: Switching to the sessions tab.
    * Expected behavior: Sessions tab becomes visible and shows sessions the character appears in.
    */
-  test('Switch to sessions tab', async () => {
+  it('Switch to sessions tab', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -746,19 +744,19 @@ describe.serial('Character Entry Tests', () => {
       return style.display !== 'none';
     });
     // Expected behavior: Sessions tab is visible
-    expect(isVisible).toBe(true);
+    expect(isVisible).to.equal(true);
 
     // Verify session data is present
     const sessionCount = await getSessionCount();
     // Expected behavior: At least one session shows the character
-    expect(sessionCount).toBeGreaterThan(0);
+    expect(sessionCount).to.be.greaterThan(0);
   });
 
   /**
    * What it tests: Switching to the foundry documents tab.
    * Expected behavior: Foundry documents tab becomes visible and shows linked documents.
    */
-  test('Switch to foundry tab', async () => {
+  it('Switch to foundry tab', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -788,19 +786,19 @@ describe.serial('Character Entry Tests', () => {
       return style.display !== 'none';
     });
     // Expected behavior: Foundry tab is visible
-    expect(isVisible).toBe(true);
+    expect(isVisible).to.equal(true);
 
     // Verify foundry document data is present
     const docCount = await getRelatedDocumentCount();
     // Expected behavior: At least one foundry document is linked
-    expect(docCount).toBeGreaterThan(0);
+    expect(docCount).to.be.greaterThan(0);
   });
 
   /**
    * What it tests: Switching to the PCs relationship tab for a character entry.
    * Expected behavior: PCs tab becomes visible and shows related PCs.
    */
-  test('Switch to PCs relationship tab', async () => {
+  it('Switch to PCs relationship tab', async () => {
     const page = sharedContext.page!;
 
     await openFirstCharacter();
@@ -818,14 +816,14 @@ describe.serial('Character Entry Tests', () => {
       return style.display !== 'none';
     });
     // Expected behavior: PCs tab is visible for a character entry
-    expect(isVisible).toBe(true);
+    expect(isVisible).to.equal(true);
   });
 
   /**
    * What it tests: Switching to the actors tab for a character entry.
    * Expected behavior: Actors tab becomes visible and shows the actors table.
    */
-  test('Switch to actors tab', async () => {
+  it('Switch to actors tab', async () => {
     const page = sharedContext.page!;
 
     await openFirstCharacter();
@@ -843,19 +841,19 @@ describe.serial('Character Entry Tests', () => {
       return style.display !== 'none';
     });
     // Expected behavior: Actors tab is visible for a character entry
-    expect(isVisible).toBe(true);
+    expect(isVisible).to.equal(true);
 
     // Verify the actors table exists
     const actorsTable = await page.$('[data-testid="actors-table"]');
     // Expected behavior: Actors table is rendered
-    expect(actorsTable).not.toBeNull();
+    expect(actorsTable).to.not.be.null;
   });
 
   /**
    * What it tests: Adding an actor to a character entry via drag-drop on the actors tab.
    * Expected behavior: Actor appears in the actors table after being dropped.
    */
-  test('Add actor to character via drag-drop', async () => {
+  it('Add actor to character via drag-drop', async () => {
     const page = sharedContext.page!;
     let entryUuid: string | null = null;
 
@@ -893,7 +891,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Voice button visibility toggles with enableVoiceRecording setting.
    * Expected behavior: Voice button appears when setting is enabled, disappears when disabled.
    */
-  test('Voice button visibility toggles with enableVoiceRecording setting', async () => {
+  it('Voice button visibility toggles with enableVoiceRecording setting', async () => {
     const page = sharedContext.page!;
 
     // Save the original setting value
@@ -913,7 +911,7 @@ describe.serial('Character Entry Tests', () => {
       });
       // Expected behavior: Voice button is visible when setting is enabled for a character
       // (may still be hidden if browser doesn't support MediaRecorder, but that's unlikely in Chromium)
-      expect(visibleWhenEnabled).toBe(true);
+      expect(visibleWhenEnabled).to.equal(true);
 
       // Close the entry before changing the setting
       await closeActiveTab();
@@ -930,7 +928,7 @@ describe.serial('Character Entry Tests', () => {
         return btn !== null;
       });
       // Expected behavior: Voice button is hidden when setting is disabled
-      expect(visibleWhenDisabled).toBe(false);
+      expect(visibleWhenDisabled).to.equal(false);
     }
     finally {
       // Restore the original setting value
@@ -942,7 +940,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Voice button context menu shows record/play/delete/change folder options.
    * Expected behavior: Clicking the voice button shows a context menu with voice recording options.
    */
-  test('Voice button shows context menu with options', async () => {
+  it('Voice button shows context menu with options', async () => {
     const page = sharedContext.page!;
 
     await openFirstCharacter();
@@ -970,7 +968,7 @@ describe.serial('Character Entry Tests', () => {
     const hasRecordOption = menuLabels.some(label => 
       label.toLowerCase().includes('record') || label.toLowerCase().includes('microphone')
     );
-    expect(hasRecordOption).toBe(true);
+    expect(hasRecordOption).to.equal(true);
 
     // Close menu by clicking elsewhere
     await page.evaluate(() => document.body.click());
@@ -980,7 +978,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Foundry doc button opens actor sheet when a single actor is attached.
    * Expected behavior: Clicking the button with one actor opens that actor's sheet.
    */
-  test('Foundry doc button opens actor sheet when actor attached', async () => {
+  it('Foundry doc button opens actor sheet when actor attached', async () => {
     const page = sharedContext.page!;
     let entryUuid: string | null = null;
 
@@ -1027,7 +1025,7 @@ describe.serial('Character Entry Tests', () => {
       // The button should now be enabled
       const isDisabled = await isFoundryDocButtonDisabled();
       // Expected behavior: Button is enabled when actors are attached
-      expect(isDisabled).toBe(false);
+      expect(isDisabled).to.equal(false);
 
       // Get the actor UUID before clicking
       const actorUuid = await page.evaluate(async (entryUuid: string) => {
@@ -1064,7 +1062,7 @@ describe.serial('Character Entry Tests', () => {
       }, { timeout: 5000 }, actorUuid).then(() => true).catch(() => false);
 
       // Expected behavior: The actor sheet is rendered after clicking the button
-      expect(sheetRenderedAfter).toBe(true);
+      expect(sheetRenderedAfter).to.equal(true);
 
       // If the sheet wasn't rendered before, it should be a new render
       // If it was rendered before, we just verify it's still rendered
@@ -1093,7 +1091,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Foundry doc button shows context menu when multiple actors are attached.
    * Expected behavior: Clicking the button with multiple actors shows a context menu to pick which one.
    */
-  test('Foundry doc button shows context menu with multiple actors', async () => {
+  it('Foundry doc button shows context menu with multiple actors', async () => {
     const page = sharedContext.page!;
     let entryUuid: string | null = null;
 
@@ -1140,7 +1138,7 @@ describe.serial('Character Entry Tests', () => {
         // Verify menu items exist (should be at least 2 actors)
         const menuItems = await page.$$('.mx-context-menu-item');
         // Expected behavior: Context menu shows options for each attached actor
-        expect(menuItems.length).toBeGreaterThan(1);
+        expect(menuItems.length).to.be.greaterThan(1);
 
         // Close menu by clicking elsewhere
         await page.evaluate(() => document.body.click());
@@ -1158,7 +1156,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Generate button context menu includes "Generate name & description" option.
    * Expected behavior: Context menu contains the name & description generation option.
    */
-  test('Generate button menu includes name and description option', async () => {
+  it('Generate button menu includes name and description option', async () => {
     const page = sharedContext.page!;
 
     await openFirstCharacter();
@@ -1196,7 +1194,7 @@ describe.serial('Character Entry Tests', () => {
     const hasNameDescOption = menuLabels.some(label =>
       label.toLowerCase().includes('name') && label.toLowerCase().includes('description')
     );
-    expect(hasNameDescOption).toBe(true);
+    expect(hasNameDescOption).to.equal(true);
 
     // Close menu by clicking elsewhere
     await page.evaluate(() => document.body.click());
@@ -1206,7 +1204,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Generate button context menu includes "Generate image" option for non-PC entries.
    * Expected behavior: Character entries (not PC) show the image generation option.
    */
-  test('Generate button menu includes image option for character', async () => {
+  it('Generate button menu includes image option for character', async () => {
     const page = sharedContext.page!;
 
     await openFirstCharacter();
@@ -1244,7 +1242,7 @@ describe.serial('Character Entry Tests', () => {
     const hasImageOption = menuLabels.some(label =>
       label.toLowerCase().includes('image')
     );
-    expect(hasImageOption).toBe(true);
+    expect(hasImageOption).to.equal(true);
 
     // Close menu by clicking elsewhere
     await page.evaluate(() => document.body.click());
@@ -1254,7 +1252,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Push-to-session shows context menu with campaign names when multiple campaigns exist.
    * Expected behavior: Context menu lists campaigns with available sessions.
    */
-  test('Push to session shows campaign names in context menu', async () => {
+  it('Push to session shows campaign names in context menu', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
     let entryUuid: string | null = null;
@@ -1290,7 +1288,7 @@ describe.serial('Character Entry Tests', () => {
       });
 
       // Expected behavior: Context menu shows at least one campaign option
-      expect(menuLabels.length).toBeGreaterThan(0);
+      expect(menuLabels.length).to.be.greaterThan(0);
 
       // Verify at least one menu item references a campaign name from the test data
       const campaignNames = setting.campaigns.map(c => c.name);
@@ -1298,7 +1296,7 @@ describe.serial('Character Entry Tests', () => {
         campaignNames.some(name => label.includes(name))
       );
       // Expected behavior: At least one menu item references a known campaign
-      expect(hasCampaignName).toBe(true);
+      expect(hasCampaignName).to.equal(true);
 
       // Click the first campaign option
       const menuItems = await page.$$('.mx-context-menu-item');
@@ -1319,7 +1317,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Image picker is visible on the description tab for character entries.
    * Expected behavior: Image picker element exists and can be clicked.
    */
-  test('Image picker visible on description tab', async () => {
+  it('Image picker visible on description tab', async () => {
     const page = sharedContext.page!;
 
     await openFirstCharacter();
@@ -1333,14 +1331,14 @@ describe.serial('Character Entry Tests', () => {
     // Verify image picker exists
     const imagePicker = await getImagePicker();
     // Expected behavior: Image picker is rendered on the description tab
-    expect(imagePicker).not.toBeNull();
+    expect(imagePicker).to.not.be.null;
   });
 
   /**
    * What it tests: Custom fields block renders for character entries when custom fields are defined.
    * Expected behavior: CustomFieldsBlocks component is present for Character content type.
    */
-  test('Custom fields block renders for character', async () => {
+  it('Custom fields block renders for character', async () => {
     const page = sharedContext.page!;
 
     await openFirstCharacter();
@@ -1369,7 +1367,7 @@ describe.serial('Character Entry Tests', () => {
         return Array.from(formGroups).map(el => el.textContent?.trim() || '');
       });
       // Expected behavior: At least one custom field form group exists
-      expect(customFieldLabels.length).toBeGreaterThan(0);
+      expect(customFieldLabels.length).to.be.greaterThan(0);
     }
     // If no custom fields are configured, there's nothing to render - that's valid
   });
@@ -1378,7 +1376,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Parent hierarchy typeahead is visible for character entries with hierarchy.
    * Expected behavior: Parent typeahead input exists when the topic supports hierarchy.
    */
-  test('Parent hierarchy typeahead visible for character', async () => {
+  it('Parent hierarchy typeahead visible for character', async () => {
     const page = sharedContext.page!;
 
     await openFirstCharacter();
@@ -1397,7 +1395,7 @@ describe.serial('Character Entry Tests', () => {
     });
 
     // Expected behavior: At least 2 typeahead inputs (type, species) for a character (no parent hierarchy)
-    expect(typeaheadCount >= 2).toBe(true);
+    expect(typeaheadCount >= 2).to.equal(true);
 
     // Verify no parent typeahead is shown (characters don't have hierarchy)
     const showHierarchy = await page.evaluate(() => {
@@ -1409,14 +1407,14 @@ describe.serial('Character Entry Tests', () => {
       return parentLabels.some(el => el.textContent?.toLowerCase().includes('parent'));
     });
     // Expected behavior: No parent typeahead for characters (hierarchy not supported)
-    expect(showHierarchy).toBe(false);
+    expect(showHierarchy).to.equal(false);
   });
 
   /**
    * What it tests: Empty name is rejected.
    * Expected behavior: Clearing the name reverts to the previous name.
    */
-  test('Empty name is rejected', async () => {
+  it('Empty name is rejected', async () => {
     const page = sharedContext.page!;
     let entryUuid: string | null = null;
 
@@ -1442,7 +1440,7 @@ describe.serial('Character Entry Tests', () => {
       // Verify name was reverted to the original
       const currentName = await getEntryNameValue();
       // Expected behavior: Name reverts to the previous value when emptied
-      expect(currentName).toBe(emptyNameTestName);
+      expect(currentName).to.equal(emptyNameTestName);
     }
     finally {
       // Clean up
@@ -1456,7 +1454,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Whitespace-only name is rejected.
    * Expected behavior: Setting the name to only whitespace shows a warning and reverts.
    */
-  test('Whitespace-only name rejection', async () => {
+  it('Whitespace-only name rejection', async () => {
     const page = sharedContext.page!;
     let entryUuid: string | null = null;
 
@@ -1473,7 +1471,7 @@ describe.serial('Character Entry Tests', () => {
       // Verify name was reverted to the original
       const currentName = await getEntryNameValue();
       // Expected behavior: Whitespace-only name is treated as empty and reverts
-      expect(currentName).toBe(wsNameTestName);
+      expect(currentName).to.equal(wsNameTestName);
     }
     finally {
       // Clean up
@@ -1487,7 +1485,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Adding a journal to a character entry via drag-drop on the journals tab.
    * Expected behavior: Journal appears in the journals table after being dropped.
    */
-  test('Add journal to character via drag-drop', async () => {
+  it('Add journal to character via drag-drop', async () => {
     const page = sharedContext.page!;
     let entryUuid: string | null = null;
     let journalUuid: string | null = null;
@@ -1525,7 +1523,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Removing a journal from a character entry via the journals tab.
    * Expected behavior: Journal count decreases after removing a journal.
    */
-  test('Remove journal from character entry', async () => {
+  it('Remove journal from character entry', async () => {
     const page = sharedContext.page!;
 
     // Use the first character which already has a journal from setup
@@ -1560,7 +1558,7 @@ describe.serial('Character Entry Tests', () => {
 
       const newCount = await getJournalCount();
       // Expected behavior: Journal count decreases after removal
-      expect(newCount).toBe(initialCount - 1);
+      expect(newCount).to.equal(initialCount - 1);
     }
   });
 
@@ -1568,7 +1566,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Clicking a session name in the sessions tab navigates to that session.
    * Expected behavior: Clicking a session row opens the session in a new tab.
    */
-  test('Click session name navigates to session', async () => {
+  it('Click session name navigates to session', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
 
@@ -1599,7 +1597,7 @@ describe.serial('Character Entry Tests', () => {
       }, { timeout: 8000 }).then(() => true).catch(() => false);
 
       // Expected behavior: Session tab opens with the session name
-      expect(sessionOpened).toBe(true);
+      expect(sessionOpened).to.equal(true);
     }
   });
 
@@ -1607,7 +1605,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Adding a relationship via drag-drop on a relationship tab.
    * Expected behavior: Related entry count increases after dropping an entry.
    */
-  test('Add relationship via drag-drop on characters tab', async () => {
+  it('Add relationship via drag-drop on characters tab', async () => {
     const page = sharedContext.page!;
     const setting = testData.settings[0];
     let entryUuid: string | null = null;
@@ -1656,7 +1654,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Adding a Foundry document via the foundry tab.
    * Expected behavior: Foundry document count increases after adding a document.
    */
-  test('Add Foundry document to character entry', async () => {
+  it('Add Foundry document to character entry', async () => {
     const page = sharedContext.page!;
     let entryUuid: string | null = null;
 
@@ -1694,7 +1692,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Timeline tab visibility toggles with useTimeline setting.
    * Expected behavior: Timeline tab only appears when useTimeline is enabled and Calendaria is available.
    */
-  test('Timeline tab visibility toggles with useTimeline setting', async () => {
+  it('Timeline tab visibility toggles with useTimeline setting', async () => {
     const page = sharedContext.page!;
 
     // Save the original setting value
@@ -1715,7 +1713,7 @@ describe.serial('Character Entry Tests', () => {
         // When both enabled and Calendaria available, timeline tab should be present
         const timelineTab = await page.$('[data-tab="timeline"]');
         // Expected behavior: Timeline tab is present when both conditions are met
-        expect(timelineTab).not.toBeNull();
+        expect(timelineTab).to.not.be.null;
       }
 
       // Close the entry before changing the setting
@@ -1730,7 +1728,7 @@ describe.serial('Character Entry Tests', () => {
       // When disabled, timeline tab should NOT be present regardless of Calendaria
       const timelineTabWhenDisabled = await page.$('[data-tab="timeline"]');
       // Expected behavior: Timeline tab is absent when useTimeline is disabled
-      expect(timelineTabWhenDisabled).toBeNull();
+      expect(timelineTabWhenDisabled).to.be.null;
     }
     finally {
       // Restore the original setting value
@@ -1746,7 +1744,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Image picker visibility toggles with showImages.entries setting.
    * Expected behavior: Image picker is hidden when showImages.entries is false, visible when true.
    */
-  test('Image picker visibility toggles with showImages setting', async () => {
+  it('Image picker visibility toggles with showImages setting', async () => {
     const page = sharedContext.page!;
 
     // Save the original setting value
@@ -1763,7 +1761,7 @@ describe.serial('Character Entry Tests', () => {
         return picker !== null;
       });
       // Expected behavior: Image picker is visible when showImages.entries is true
-      expect(imagePickerVisible).toBe(true);
+      expect(imagePickerVisible).to.equal(true);
 
       // Close the entry before changing the setting
       await closeActiveTab();
@@ -1785,7 +1783,7 @@ describe.serial('Character Entry Tests', () => {
         return picker !== null;
       });
       // Expected behavior: Image picker is hidden when showImages.entries is false
-      expect(imagePickerHidden).toBe(false);
+      expect(imagePickerHidden).to.equal(false);
     }
     finally {
       // Restore the original setting value
@@ -1797,7 +1795,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Tab visibility settings control which content tabs appear for character entries.
    * Expected behavior: Hiding a tab via tabVisibilitySettings removes it from the tab strip.
    */
-  test('Tab visibility settings control which tabs appear', async () => {
+  it('Tab visibility settings control which tabs appear', async () => {
     const page = sharedContext.page!;
 
     // Save the original setting value
@@ -1812,7 +1810,7 @@ describe.serial('Character Entry Tests', () => {
         return tab !== null;
       });
       // Expected behavior: Journals tab is visible with default settings
-      expect(journalsTabVisible).toBe(true);
+      expect(journalsTabVisible).to.equal(true);
 
       // Close the entry before changing the setting
       await closeActiveTab();
@@ -1836,7 +1834,7 @@ describe.serial('Character Entry Tests', () => {
         return tab !== null;
       });
       // Expected behavior: Journals tab is hidden when EntryCharacterJournals is false
-      expect(journalsTabHidden).toBe(false);
+      expect(journalsTabHidden).to.equal(false);
 
       // Description tab should still be visible (always present)
       const descriptionTabVisible = await page.evaluate(() => {
@@ -1844,7 +1842,7 @@ describe.serial('Character Entry Tests', () => {
         return tab !== null;
       });
       // Expected behavior: Description tab remains visible regardless of tab visibility settings
-      expect(descriptionTabVisible).toBe(true);
+      expect(descriptionTabVisible).to.equal(true);
     }
     finally {
       // Restore the original setting value
@@ -1856,7 +1854,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Hiding multiple tabs via tabVisibilitySettings removes them all.
    * Expected behavior: Multiple tabs can be hidden simultaneously.
    */
-  test('Multiple tabs can be hidden via tab visibility settings', async () => {
+  it('Multiple tabs can be hidden via tab visibility settings', async () => {
     const page = sharedContext.page!;
 
     // Save the original setting value
@@ -1901,9 +1899,9 @@ describe.serial('Character Entry Tests', () => {
       });
 
       // Expected behavior: All three tabs are hidden
-      expect(journalsTabHidden).toBe(true);
-      expect(actorsTabHidden).toBe(true);
-      expect(foundryTabHidden).toBe(true);
+      expect(journalsTabHidden).to.equal(true);
+      expect(actorsTabHidden).to.equal(true);
+      expect(foundryTabHidden).to.equal(true);
 
       // Description tab should still be visible
       const descriptionTabVisible = await page.evaluate(() => {
@@ -1913,7 +1911,7 @@ describe.serial('Character Entry Tests', () => {
         return style.display !== 'none';
       });
       // Expected behavior: Description tab remains visible
-      expect(descriptionTabVisible).toBe(true);
+      expect(descriptionTabVisible).to.equal(true);
     }
     finally {
       // Restore the original setting value
@@ -1925,7 +1923,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: actorTags setting supplements the tag whitelist for character entries.
    * Expected behavior: Actor tag names appear as available tags when the setting is configured.
    */
-  test('actorTags setting supplements tag whitelist for characters', async () => {
+  it('actorTags setting supplements tag whitelist for characters', async () => {
     const page = sharedContext.page!;
     let entryUuid: string | null = null;
 
@@ -2012,7 +2010,7 @@ describe.serial('Character Entry Tests', () => {
       }, testActorTagName);
 
       // Expected behavior: Actor tag name appears in the tag whitelist dropdown
-      expect(actorTagInWhitelist).toBe(true);
+      expect(actorTagInWhitelist).to.equal(true);
     }
     finally {
       // Clean up
@@ -2030,7 +2028,7 @@ describe.serial('Character Entry Tests', () => {
    *   the auto-relationship dialog. When enabled, the setting is active and the dialog
    *   can be triggered by editor content changes.
    */
-  test('autoRelationships setting controls related entries dialog', async () => {
+  it('autoRelationships setting controls related entries dialog', async () => {
     const page = sharedContext.page!;
 
     // Save the original setting value
@@ -2085,7 +2083,7 @@ describe.serial('Character Entry Tests', () => {
         });
 
         // Expected behavior: Dialog appears only when autoRelationships is enabled
-        expect(dialogVisible).toBe(autoRelationshipsEnabled);
+        expect(dialogVisible).to.equal(autoRelationshipsEnabled);
 
         // Close and delete the entry
         await closeActiveTab();
@@ -2102,7 +2100,7 @@ describe.serial('Character Entry Tests', () => {
    * What it tests: Generate button disabled state reflects backend availability.
    * Expected behavior: Generate button is disabled when backend is unavailable, enabled when available.
    */
-  test('Generate button disabled state reflects backend availability', async () => {
+  it('Generate button disabled state reflects backend availability', async () => {
     const page = sharedContext.page!;
 
     await openFirstCharacter();
@@ -2144,7 +2142,7 @@ describe.serial('Character Entry Tests', () => {
       // Generate button should be disabled
       const isDisabledWhenUnavailable = await page.$eval(genSelector, (el) => (el as HTMLButtonElement).disabled);
       // Expected behavior: Generate button is disabled when backend is unavailable
-      expect(isDisabledWhenUnavailable).toBe(true);
+      expect(isDisabledWhenUnavailable).to.equal(true);
 
       // Set backend to available via Pinia store
       await page.evaluate(() => {
@@ -2163,7 +2161,7 @@ describe.serial('Character Entry Tests', () => {
       // Generate button should be enabled
       const isDisabledWhenAvailable = await page.$eval(genSelector, (el) => (el as HTMLButtonElement).disabled);
       // Expected behavior: Generate button is enabled when backend is available
-      expect(isDisabledWhenAvailable).toBe(false);
+      expect(isDisabledWhenAvailable).to.equal(false);
     }
     finally {
       // Restore the original backend available state
