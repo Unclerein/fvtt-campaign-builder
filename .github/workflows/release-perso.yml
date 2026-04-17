@@ -1,0 +1,59 @@
+name: Release Perso
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag de la release (ex: v1.10.2-perso)'
+        required: true
+        default: 'v1.10.2-perso'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Replace version and download placeholders in module.json
+        uses: cschleiden/replace-tokens@v1
+        with:
+          files: './static/module.json'
+        env:
+          VERSION: ${{ github.ref_name != 'main' && inputs.tag || github.ref_name }}
+          DOWNLOAD: https://github.com/${{ github.repository }}/releases/download/${{ inputs.tag }}/module.zip
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build module
+        run: npm run build
+        env:
+          GH_PROJECT: ${{ github.repository }}
+          GH_TAG: ${{ inputs.tag }}
+
+      - name: Zip dist folder
+        run: (cd dist; zip -r ../module.zip .)
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ inputs.tag }}
+          name: ${{ inputs.tag }}
+          draft: false
+          prerelease: true
+          artifacts: './dist/module.json, ./module.zip'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          body: |
+            Release personnalisée incluant le fix des liens enrichisseurs dans les notes de session.
+
+            **Installation dans Foundry :** collez l'URL du manifest dans "Installer un module" :
+            `https://github.com/${{ github.repository }}/releases/latest/download/module.json`
