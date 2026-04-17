@@ -25,13 +25,12 @@ jobs:
         with:
           node-version: 20
 
-      - name: Replace version and download placeholders in module.json
-        uses: cschleiden/replace-tokens@v1
-        with:
-          files: './static/module.json'
-        env:
-          VERSION: ${{ inputs.tag }}
-          DOWNLOAD: https://github.com/${{ github.repository }}/releases/download/${{ inputs.tag }}/module.zip
+      - name: Patch module.json (version + download URL)
+        run: |
+          TAG="${{ inputs.tag }}"
+          DOWNLOAD="https://github.com/${{ github.repository }}/releases/download/${TAG}/module.zip"
+          sed -i "s|\#{VERSION}#|${TAG}|g" static/module.json
+          sed -i "s|\#{DOWNLOAD}#|${DOWNLOAD}|g" static/module.json
 
       - name: Install dependencies
         run: npm ci
@@ -43,19 +42,17 @@ jobs:
           GH_TAG: ${{ inputs.tag }}
 
       - name: Zip dist folder
-        run: (cd dist; zip -r ../module.zip .)
+        run: cd dist && zip -r ../module.zip . && cd ..
 
       - name: Create GitHub Release
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ inputs.tag }}
-          name: ${{ inputs.tag }}
-          draft: false
-          prerelease: true
-          artifacts: './dist/module.json, ./module.zip'
-          token: ${{ secrets.GITHUB_TOKEN }}
-          body: |
-            Release personnalisée incluant le fix des liens enrichisseurs dans les notes de session.
+        run: |
+          gh release create "${{ inputs.tag }}" \
+            ./dist/module.json \
+            ./module.zip \
+            --title "${{ inputs.tag }}" \
+            --prerelease \
+            --notes "Release personnalisée avec le fix des liens enrichisseurs dans les notes de session.
 
-            **Installation dans Foundry :** collez l'URL du manifest dans "Installer un module" :
-            `https://github.com/Unclerein/fvtt-campaign-builder/releases/latest/download/module.json`
+Installation dans Foundry :\n\`https://github.com/${{ github.repository }}/releases/latest/download/module.json\`"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
