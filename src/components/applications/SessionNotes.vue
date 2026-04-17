@@ -1,5 +1,5 @@
 <template>
-  <div class="fcb-session-notes-container">
+  <div class="fcb-session-notes-container" @click="onFcbLinkClick">
     <!-- enabledEntityLinking is false because when we save we don't want to convert ids into html tags -->
     <Editor
       ref="editorRef"
@@ -20,6 +20,9 @@
   import { useMainStore, usePlayingStore } from '@/applications/stores';
   import Editor from '@/components/Editor.vue';
   import { Session } from '@/classes';
+  import { useFcbLinkClick } from '@/composables/useFcbLinkClick';
+
+  const { onFcbLinkClick } = useFcbLinkClick();
 
   // stores
   const mainStore = useMainStore();

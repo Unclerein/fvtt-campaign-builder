@@ -6,7 +6,7 @@
   <div  
     class="fcb"
     :class="{ 'is-disabled': isArcManagerOpen }"
-    @click="onClickApplication"
+    @click="onFcbLinkClick"
   >
     <!-- When the arc manager is open, bad things can happen if you start messing with sessions and then save -->
     <div v-if="isArcManagerOpen" class="fcb-disabled-overlay"></div>
@@ -80,6 +80,7 @@
   import { getCurrentSetting, } from '@/compendia';
   import { SettingKey, ModuleSettings, } from '@/settings';
   import { useMainStore, useNavigationStore, useBackendStore } from '@/applications/stores';
+  import { useFcbLinkClick } from '@/composables/useFcbLinkClick';
   import { localize } from '@/utils/game';
   import TitleUpdaterService from '@/utils/titleUpdater';
   import { notifyWarn } from '@/utils/notifications';
@@ -96,7 +97,6 @@
   import TitleBarComponents from '@/components/TitleBarComponents.vue';
 
   // types
-  import { WindowTabType, } from '@/types';
   import { RootFolder, FCBSetting, } from '@/classes';
 
   
@@ -111,6 +111,7 @@
   const mainStore = useMainStore();
   const navigationStore = useNavigationStore();
   const backendStore = useBackendStore();
+  const { onFcbLinkClick } = useFcbLinkClick();
   const { currentSetting, rootFolder, isArcManagerOpen } = storeToRefs(mainStore);
   const { tabs, panelKeys } = storeToRefs(navigationStore);
   const { available, inProgress } = storeToRefs(backendStore);
@@ -141,56 +142,6 @@
       splitterRef.value?.resetState();
   };
 
-  // whenever we click on a link inside the application that is a link to a document (these are inserted by TextEditor.enrichHTML)
-  //    if it's a document in setting builder, open in here instead of the default functionality
-  const onClickApplication = (event: MouseEvent) => {
-    const target = event.target as HTMLElement;
-
-    // ignore anything that's not an <a> with class 'content-link'
-    if (target.tagName!=='A')
-      return;
-
-    let found=false;
-    for (let i=0; i< target.classList.length; i++) {
-      if (target.classList[i]==='fcb-content-link' && target.dataset.uuid) {
-        found=true; 
-        break;
-      }
-    }
-    if (!found)
-      return;
-
-    // cancel any other actions
-    event.stopPropagation();
-    
-    // the only things tagged fcb-content-link are ones for the setting we're looking at, so just need to open it
-    switch (parseInt(target.dataset.linkType ?? '-1')) {
-      case WindowTabType.Entry:
-        void navigationStore.openEntry(target.dataset.uuid, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
-        break;
-      case WindowTabType.Campaign:
-        void navigationStore.openCampaign(target.dataset.uuid, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
-        break;
-      case WindowTabType.Session:
-        void navigationStore.openSession(target.dataset.uuid, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
-        break;
-      case WindowTabType.Arc:
-        void navigationStore.openArc(target.dataset.uuid, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
-        break;
-      case WindowTabType.Front:
-        void navigationStore.openFront(target.dataset.uuid, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
-        break;
-      case WindowTabType.StoryWeb:
-        void navigationStore.openStoryWeb(target.dataset.uuid, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
-        break;
-      case WindowTabType.Setting:
-        void navigationStore.openSetting(target.dataset.uuid, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
-        break;
-      case WindowTabType.TagResults:
-        void navigationStore.openTagResults(target.dataset.uuid, { newTab: event.ctrlKey, panelIndex: event.altKey ? -1 : undefined });
-        break;
-    }  
-  };
 
   ////////////////////////////////
   // watchers
