@@ -324,6 +324,11 @@
 
     // For edit-only mode (like in SessionNotes), don't destroy the editor
     if (remove && !props.editOnlyMode) {
+      // Pre-enrich saved content so read mode shows fresh links immediately
+      if (currentSetting.value) {
+        enrichedInitialContent.value = await enrichFcbHTML(currentSetting.value.uuid, content);
+      }
+
       // this also blows up the DOM... don't think we actually need it
       (toRaw(editor.value) as ProseMirrorEditor)?.destroy();
       editor.value = null;
