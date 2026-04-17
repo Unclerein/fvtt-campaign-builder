@@ -69,7 +69,7 @@
 
   "version": "#{VERSION}#",
   "url": "https://github.com/dovrosenberg/fvtt-campaign-builder",
-  "manifest": "https://github.com/dovrosenberg/fvtt-campaign-builder/releases/latest/download/module.json",
+  "manifest": "https://raw.githubusercontent.com/Unclerein/fvtt-campaign-builder/refs/heads/claude/fix-notes-enricher-links-wVj4m/static/module.json",
   "download": "#{DOWNLOAD}#",
 
   "license": "https://github.com/dovrosenberg/fvtt-campaign-builder/blob/master/LICENSE.md",
