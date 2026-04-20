@@ -88,8 +88,6 @@
       "storyWebSettingsHelp": "Configure line colors/styles and element text for story webs",
       "enableVoiceRecording": "Enable Voice Recording",
       "enableVoiceRecordingHelp": "Allow recording voice samples for characters to help remember voices/accents",
-      "anthropicAPIKey": "Anthropic API Key (NPC Generator)",
-      "anthropicAPIKeyHelp": "API key for direct NPC generation via Claude Haiku 4.5. Get a key at console.anthropic.com.",
       "tableGrouping": "Table Grouping Settings",
       "tableGroupingLabel": "Table Grouping",
       "tableGroupingHelp": "Configure which tabs use grouped tables for each content type",

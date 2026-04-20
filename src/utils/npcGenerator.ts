@@ -35,9 +35,9 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans aucun texte avant ou après 
 Toutes les valeurs doivent être en français. Garde les descriptions courtes (1-3 phrases max par champ).`;
 
 export async function generateNpc(race: NpcRace, gender: NpcGender): Promise<NpcData> {
-  const apiKey = ModuleSettings.get(SettingKey.AnthropicAPIKey);
+  const apiKey = ModuleSettings.get(SettingKey.APIToken);
   if (!apiKey) {
-    throw new Error('Clé API Anthropic non configurée. Renseigne-la dans les paramètres avancés du module.');
+    throw new Error('API Token non configuré. Renseigne-le dans Paramètres avancés → Backend → API Token.');
   }
 
   const resolvedRace = race === 'Aléatoire' ? pickRandom(RACES) : race;

@@ -27,7 +27,7 @@
         <!-- Avertissement clé API manquante -->
         <div v-if="!hasApiKey" class="npc-warning">
           <i class="fas fa-exclamation-triangle"></i>
-          Clé API Anthropic manquante — configure-la dans les paramètres avancés du module.
+          API Token manquant — configure-le dans Paramètres avancés → Backend → API Token.
         </div>
 
         <!-- Chargement -->
@@ -68,7 +68,8 @@
   import { useMainStore, useNavigationStore, useSettingDirectoryStore } from '@/applications/stores';
   import { ModuleSettings, SettingKey } from '@/settings';
   import { Topics } from '@/types';
-  import { generateNpc, formatNpcDescription, NPC_RACES, NPC_GENDERS, NpcRace, NpcGender, NpcData } from '@/utils/npcGenerator';
+  import { generateNpc, formatNpcDescription, NPC_RACES, NPC_GENDERS } from '@/utils/npcGenerator';
+  import type { NpcRace, NpcGender, NpcData } from '@/utils/npcGenerator';
 
   const emit = defineEmits<{ (e: 'close'): void }>();
 

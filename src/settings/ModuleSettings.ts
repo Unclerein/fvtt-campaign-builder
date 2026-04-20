@@ -73,7 +73,6 @@ export enum SettingKey {
   advancedSettingsMenu = 'advancedSettingsMenu',  // display the advanced setting menu
   APIURL = 'APIURL',   // URL of backend
   APIToken = 'APIToken',
-  AnthropicAPIKey = 'AnthropicAPIKey', // Anthropic API key for direct NPC generation
   selectedTextModel = 'selectedTextModel', // selected text generation model
   selectedImageModel = 'selectedImageModel', // selected image generation model
   useGmailToDos = 'useGmailToDos', // whether to use Gmail for toDos
@@ -139,7 +138,6 @@ export type SettingKeyType<K extends SettingKey> =
     K extends SettingKey.customFieldsMenu ? never :
     K extends SettingKey.APIURL ? string :
     K extends SettingKey.APIToken ? string :
-    K extends SettingKey.AnthropicAPIKey ? string :
     K extends SettingKey.selectedTextModel ? ApiCustomGenerateImagePostRequestTextModelEnum :
     K extends SettingKey.selectedImageModel ? ApiCustomGenerateImagePostRequestImageModelEnum :
     K extends SettingKey.defaultAddToSession ? boolean :
@@ -375,13 +373,6 @@ export class ModuleSettings {
       hint: 'settings.enableVoiceRecordingHelp',
       default: true,
       type: Boolean,
-    },
-    {
-      settingID: SettingKey.AnthropicAPIKey,
-      name: 'settings.anthropicAPIKey',
-      hint: 'settings.anthropicAPIKeyHelp',
-      default: '',
-      type: String,
     },
   ];
 
