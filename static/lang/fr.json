@@ -89,6 +89,8 @@
       "tableGroupingHelp": "Configurer quels onglets utilisent des tables groupées pour chaque type de contenu",
       "enableVoiceRecording": "Activer l'enregistrement vocal",
       "enableVoiceRecordingHelp": "Autoriser l'enregistrement d'échantillons vocaux pour les personnages afin d'aider à se souvenir des voix/accents",
+      "anthropicAPIKey": "Clé API Anthropic (Générateur PNJ)",
+      "anthropicAPIKeyHelp": "Clé API Anthropic pour la génération de PNJ via Claude Haiku 4.5. Obtenir une clé sur console.anthropic.com.",
       "importExport": "Importer/Exporter les données du module",
       "importExportLabel": "Importer/Exporter les données du module",
       "importExportHelp": "Exporter toutes les données du module vers un fichier ou importer depuis un export précédent",

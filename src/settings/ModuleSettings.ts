@@ -376,6 +376,13 @@ export class ModuleSettings {
       default: true,
       type: Boolean,
     },
+    {
+      settingID: SettingKey.AnthropicAPIKey,
+      name: 'settings.anthropicAPIKey',
+      hint: 'settings.anthropicAPIKeyHelp',
+      default: '',
+      type: String,
+    },
   ];
 
   // these are client-specific and displayed in settings
@@ -522,12 +529,6 @@ export class ModuleSettings {
       settingID: SettingKey.APIToken,
       default: '',
       requiresReload: true,
-      type: String,
-    },
-    {
-      settingID: SettingKey.AnthropicAPIKey,
-      default: '',
-      requiresReload: false,
       type: String,
     },
     {
