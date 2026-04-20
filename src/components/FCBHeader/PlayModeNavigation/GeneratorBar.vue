@@ -23,6 +23,11 @@
     @add-to-setting="onOptionAddToSetting"
   />
 
+  <NpcGeneratorDialog
+    v-if="showNpcGeneratorDialog"
+    @close="showNpcGeneratorDialog = false"
+  />
+
 </template>
 
 <script setup lang="ts">
@@ -37,6 +42,7 @@
   
   // local components
   import GenerateNameDialog from '@/components/AIGeneration/GenerateNameDialog.vue';
+  import NpcGeneratorDialog from '@/components/AIGeneration/NpcGeneratorDialog.vue';
   
   // types
   import { GeneratorType, ToDoTypes, Topics, ValidTopic} from '@/types';
@@ -59,6 +65,7 @@
   ]);
 
   const showGenerateNameDialog = ref<boolean>(false);
+  const showNpcGeneratorDialog = ref<boolean>(false);
   const currentGeneratorType = ref<GeneratorType>(GeneratorType.NPC);
 
   // used to do a full generation
@@ -70,7 +77,12 @@
   const onGeneratorClick = (event: MouseEvent, type: GeneratorType) => {
     event.preventDefault();
     event.stopPropagation();
-    
+
+    if (type === GeneratorType.NPC) {
+      showNpcGeneratorDialog.value = true;
+      return;
+    }
+
     currentGeneratorType.value = type;
     showGenerateNameDialog.value = true;
   };

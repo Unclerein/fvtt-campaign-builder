@@ -38,6 +38,20 @@
                   {{ localize('applications.advancedSettings.labels.APITokenHint') }}
                 </p>
               </div>
+
+              <div class="form-group">
+                <label>Clé API Anthropic (générateur PNJ)</label>
+                <div class="form-fields">
+                  <InputText
+                    v-model="anthropicAPIKey"
+                    data-testid="anthropic-api-key-input"
+                    unstyled
+                  />
+                </div>
+                <p class="hint">
+                  Clé API Anthropic pour la génération directe de PNJ (claude-haiku-4-5). Obtenir une clé sur console.anthropic.com.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -207,6 +221,7 @@
   // data
   const APIURL = ref<string>('');
   const APIToken = ref<string>('');
+  const anthropicAPIKey = ref<string>('');
   const useGmailToDos = ref<boolean>(false);
   const emailDefaultSetting = ref<string>('');
   const emailDefaultCampaign = ref<string>('');
@@ -281,6 +296,7 @@
   const onSubmitClick = async () => {
     await ModuleSettings.set(SettingKey.APIURL, APIURL.value);
     await ModuleSettings.set(SettingKey.APIToken, APIToken.value);
+    await ModuleSettings.set(SettingKey.AnthropicAPIKey, anthropicAPIKey.value);
     await ModuleSettings.set(SettingKey.useGmailToDos, useGmailToDos.value);
     await ModuleSettings.set(SettingKey.emailDefaultSetting, emailDefaultSetting.value);
     await ModuleSettings.set(SettingKey.emailDefaultCampaign, emailDefaultCampaign.value);
@@ -301,6 +317,7 @@
   const onResetClick = async () => {
     APIURL.value = ModuleSettings.get(SettingKey.APIURL);
     APIToken.value = ModuleSettings.get(SettingKey.APIToken);
+    anthropicAPIKey.value = ModuleSettings.get(SettingKey.AnthropicAPIKey);
     useGmailToDos.value = ModuleSettings.get(SettingKey.useGmailToDos);
     emailDefaultSetting.value = ModuleSettings.get(SettingKey.emailDefaultSetting);
     emailDefaultCampaign.value = ModuleSettings.get(SettingKey.emailDefaultCampaign);
@@ -328,6 +345,7 @@
     // load the settings
     APIURL.value = ModuleSettings.get(SettingKey.APIURL);
     APIToken.value = ModuleSettings.get(SettingKey.APIToken);
+    anthropicAPIKey.value = ModuleSettings.get(SettingKey.AnthropicAPIKey);
     useGmailToDos.value = ModuleSettings.get(SettingKey.useGmailToDos);
     emailDefaultSetting.value = ModuleSettings.get(SettingKey.emailDefaultSetting);
     emailDefaultCampaign.value = ModuleSettings.get(SettingKey.emailDefaultCampaign);
